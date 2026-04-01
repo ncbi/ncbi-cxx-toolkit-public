@@ -405,6 +405,8 @@ struct CDeleter
 /// @sa
 ///   Deleter(), ArrayDeleter(), CDeleter()
 
+#define DEPRECATE_AUTO_PTR 0
+
 template< class X, class Del = Deleter<X> >
 class AutoPtr
 {
@@ -413,51 +415,80 @@ public:
     typedef Del deleter_type;       ///< Alias for template argument.
 
     /// Constructor.
-    AutoPtr(element_type* p = 0)
+    AutoPtr() noexcept
+        : m_Ptr(nullptr), m_Data(false)
+    { }
+
+    /// Constructor.
+    AutoPtr(element_type* p) noexcept
         : m_Ptr(p), m_Data(true)
     { }
 
     /// Constructor.
-    AutoPtr(element_type* p, const deleter_type& deleter)
+    AutoPtr(element_type* p, const deleter_type& deleter) noexcept
         : m_Ptr(p), m_Data(deleter, true)
     { }
 
     /// Constructor, own the pointed object if ownership == eTakeOwnership
-    AutoPtr(element_type* p, EOwnership ownership)
+    AutoPtr(element_type* p, EOwnership ownership) noexcept
         : m_Ptr(p), m_Data(ownership != eNoOwnership)
     { }
 
     /// Constructor, own the pointed object if ownership == eTakeOwnership
-    AutoPtr(element_type* p, const deleter_type& deleter, EOwnership ownership)
+    AutoPtr(element_type* p, const deleter_type& deleter, EOwnership ownership) noexcept
         : m_Ptr(p), m_Data(deleter, ownership != eNoOwnership)
     { }
 
-    /// Copy constructor.
-    AutoPtr(const AutoPtr<X, Del>& p)
-        : m_Ptr(0), m_Data(p.m_Data)
+#if DEPRECATE_AUTO_PTR
+    /// Move constructor.
+    AutoPtr(AutoPtr<X, Del>&& p) noexcept
+        : m_Data(p.m_Data) // copy ownership info first
     {
-        m_Ptr = p.x_Release();
+        m_Ptr = p.release(); // then the pointer
     }
-
+    
+    NCBI_DEPRECATED
+#endif
+    /// Copy constructor.
+    AutoPtr(const AutoPtr<X, Del>& p) noexcept
+        : m_Data(p.m_Data) // copy ownership info first
+    {
+        m_Ptr = p.x_Release(); // then the pointer
+    }
+    
     /// Destructor.
     ~AutoPtr(void)
     {
         reset();
     }
 
-    /// Assignment operator.
-    AutoPtr<X, Del>& operator=(const AutoPtr<X, Del>& p)
+#if DEPRECATE_AUTO_PTR
+    /// Move assignment operator.
+    AutoPtr<X, Del>& operator=(AutoPtr<X, Del>&& p) noexcept
     {
         if (this != &p) {
-            bool owner = p.m_Data.second();
-            reset(p.x_Release());
-            m_Data.second() = owner;
+            auto data = p.m_Data; // copy ownership info first
+            reset(p.release()); // then the pointer
+            m_Data = data;
+        }
+        return *this;
+    }
+    
+    NCBI_DEPRECATED
+#endif
+    /// Assignment operator.
+    AutoPtr<X, Del>& operator=(const AutoPtr<X, Del>& p) noexcept
+    {
+        if (this != &p) {
+            auto data = p.m_Data; // copy ownership info first
+            reset(p.x_Release()); // then the pointer
+            m_Data = data;
         }
         return *this;
     }
 
     /// Assignment operator.
-    AutoPtr<X, Del>& operator=(element_type* p)
+    AutoPtr<X, Del>& operator=(element_type* p) noexcept
     {
         reset(p);
         return *this;
@@ -469,48 +500,62 @@ public:
     // Standard getters.
 
     /// Dereference operator.
-    element_type& operator* (void) const { return *m_Ptr; }
+    element_type& operator* (void) const noexcept { return *m_Ptr; }
 
     /// Reference operator.
-    element_type* operator->(void) const { return  m_Ptr; }
+    element_type* operator->(void) const noexcept { return  m_Ptr; }
 
     /// Get pointer.
-    element_type* get       (void) const { return  m_Ptr; }
+    element_type* get       (void) const noexcept { return  m_Ptr; }
 
     /// Release will release ownership of pointer to caller.
-    element_type* release(void)
+    element_type* release(void) noexcept
     {
+        auto ptr = m_Ptr;
         m_Data.second() = false;
-        return m_Ptr;
+#if DEPRECATE_AUTO_PTR > 1
+        m_Ptr = nullptr; // strictly conforming release() resets the ptr
+#endif
+        return ptr;
+    }
+
+    /// Reset will delete the old pointer (if owned)
+    void reset() noexcept
+    {
+        if ( IsOwned() ) {
+            m_Data.first().Delete(release());
+        }
+        m_Ptr = nullptr;
+        m_Data.second() = false;
     }
 
     /// Reset will delete the old pointer (if owned), set content to the new
     /// value, and assume the ownership upon the new pointer by default.
-    void reset(element_type* p = 0, EOwnership ownership = eTakeOwnership)
+    void reset(element_type* p, EOwnership ownership = eTakeOwnership) noexcept
     {
         if ( m_Ptr != p ) {
-            if (m_Ptr  &&  m_Data.second()) {
-                m_Data.first().Delete(release());
-            }
-            m_Ptr   = p;
+            reset();
         }
-        m_Data.second() = ownership != eNoOwnership;
+        if ( p ) {
+            m_Ptr = p;
+            m_Data.second() = ownership != eNoOwnership;
+        }
     }
 
-    void Swap(AutoPtr<X, Del>& a)
+    void Swap(AutoPtr<X, Del>& a) noexcept
     {
         swap(m_Ptr,  a.m_Ptr);
         swap(m_Data, a.m_Data);
     }
 
-    bool IsOwned(void) const { return m_Ptr  &&  m_Data.second(); }
+    bool IsOwned(void) const noexcept { return m_Ptr  &&  m_Data.second(); }
 
 private:
     element_type* m_Ptr;                  ///< Internal pointer representation.
-    mutable pair_base_member<deleter_type, bool> m_Data; ///< State info.
+    pair_base_member<deleter_type, bool> m_Data; ///< State info.
 
-    /// Release for const object.
-    element_type* x_Release(void) const
+    /// Release for const object, used in deprecated methods
+    element_type* x_Release(void) const noexcept
     {
         return const_cast<AutoPtr<X, Del>*>(this)->release();
     }
@@ -542,20 +587,35 @@ public:
 
     /// Construct the array using C++ new[] operator
     /// @note In this case you should use ArrayDeleter<> or compatible
-    explicit AutoArray(size_t size)
+    explicit AutoArray(size_t size) noexcept
         : m_Ptr(new element_type[size]), m_Data(true)
     { }
 
-    explicit AutoArray(element_type* p = 0)
+    AutoArray() noexcept
+        : m_Ptr(nullptr), m_Data(false)
+    { }
+
+    explicit AutoArray(element_type* p) noexcept
         : m_Ptr(p), m_Data(true)
     { }
 
-    AutoArray(element_type* p, const deleter_type& deleter)
+    AutoArray(element_type* p, const deleter_type& deleter) noexcept
         : m_Ptr(p), m_Data(deleter, true)
     { }
 
-    AutoArray(const AutoArray<X, Del>& p)
-        : m_Ptr(0), m_Data(p.m_Data)
+#if DEPRECATE_AUTO_PTR
+    /// Move constructor
+    AutoArray(AutoArray<X, Del>&& p) noexcept
+        : m_Data(p.m_Data)
+    {
+        m_Ptr = p.release();
+    }
+
+    NCBI_DEPRECATED
+#endif
+    /// Copy constructor
+    AutoArray(const AutoArray<X, Del>& p) noexcept
+        : m_Data(p.m_Data)
     {
         m_Ptr = p.x_Release();
     }
@@ -565,19 +625,33 @@ public:
         reset();
     }
 
-    /// Assignment operator.
-    AutoArray<X, Del>& operator=(const AutoArray<X, Del>& p)
+#if DEPRECATE_AUTO_PTR
+    /// Move assignment operator.
+    AutoArray<X, Del>& operator=(AutoArray<X, Del>&& p) noexcept
     {
         if (this != &p) {
-            bool owner = p.m_Data.second();
+            auto data = p.m_Data;
+            reset(p.release());
+            m_Data = data;
+        }
+        return *this;
+    }
+    
+    NCBI_DEPRECATED
+#endif
+    /// Assignment operator.
+    AutoArray<X, Del>& operator=(const AutoArray<X, Del>& p) noexcept
+    {
+        if (this != &p) {
+            auto data = p.m_Data;
             reset(p.x_Release());
-            m_Data.second() = owner;
+            m_Data = data;
         }
         return *this;
     }
 
     /// Assignment operator.
-    AutoArray<X, Del>& operator=(element_type* p)
+    AutoArray<X, Del>& operator=(element_type* p) noexcept
     {
         reset(p);
         return *this;
@@ -587,43 +661,59 @@ public:
     DECLARE_OPERATOR_BOOL_PTR(m_Ptr);
 
     /// Get pointer.
-    element_type* get (void) const { return  m_Ptr; }
+    element_type* get (void) const noexcept { return  m_Ptr; }
 
     /// Release will release ownership of pointer to caller.
-    element_type* release(void)
+    element_type* release(void) noexcept
     {
+        auto ptr = m_Ptr;
         m_Data.second() = false;
-        return m_Ptr;
+#if DEPRECATE_AUTO_PTR > 1
+        m_Ptr = nullptr; // strictly conforming release() resets the ptr
+#endif
+        return ptr;
     }
 
     /// Array style dereference (returns value)
-    const element_type& operator[](size_t pos) const { return m_Ptr[pos]; }
+    const element_type& operator[](size_t pos) const noexcept { return m_Ptr[pos]; }
 
     /// Array style dereference (returns reference)
-    element_type&       operator[](size_t pos)       { return m_Ptr[pos]; }
+    element_type&       operator[](size_t pos) noexcept       { return m_Ptr[pos]; }
 
+    /// Reset will delete the old pointer.
+    void reset() noexcept
+    {
+        if ( IsOwned() ) {
+            m_Data.first().Delete(release());
+        }
+        m_Ptr = nullptr;
+        m_Data.second() = false;
+    }
+    
     /// Reset will delete the old pointer, set content to the new value,
     /// and assume the ownership upon the new pointer.
-    void reset(element_type* p = 0)
+    void reset(element_type* p) noexcept
     {
         if (m_Ptr != p) {
-            if (m_Ptr  &&  m_Data.second()) {
-                m_Data.first().Delete(release());
-            }
-            m_Ptr  = p;
+            reset();
         }
-        m_Data.second() = true;
+        if ( p ) {
+            m_Ptr = p;
+            m_Data.second() = true;
+        }
     }
 
-    void Swap(AutoPtr<X, Del>& a)
+    void Swap(AutoPtr<X, Del>& a) noexcept
     {
         swap(m_Ptr,  a.m_Ptr);
         swap(m_Data, a.m_Data);
     }
 
+    bool IsOwned(void) const noexcept { return m_Ptr  &&  m_Data.second(); }
+
 private:
-    /// Release for const object.
-    element_type* x_Release(void) const
+    /// Release for const object, used in deprecated methods
+    element_type* x_Release(void) const noexcept
     {
         return const_cast<AutoArray<X, Del>*>(this)->release();
     }
@@ -971,7 +1061,7 @@ CNcbiIstream& operator>>(CNcbiIstream& in, CStrictId<TKey, TStorage>& id)
 /// Use this typedef rather than its expansion, which may change.
 
 //#define NCBI_INT4_GI
-//#define NCBI_STRICT_GI
+//#define NCBI_STRICT_GI 1
 //#define NCBI_STRICT_ENTREZ_ID
 //#define NCBI_STRICT_TAX_ID
 
@@ -1524,7 +1614,7 @@ BEGIN_STD_NAMESPACE;
 template<class T1, class T2>
 inline
 void swap(NCBI_NS_NCBI::pair_base_member<T1,T2>& pair1,
-          NCBI_NS_NCBI::pair_base_member<T1,T2>& pair2)
+          NCBI_NS_NCBI::pair_base_member<T1,T2>& pair2) noexcept
 {
     pair1.Swap(pair2);
 }
@@ -1533,7 +1623,7 @@ void swap(NCBI_NS_NCBI::pair_base_member<T1,T2>& pair1,
 template<class P, class D>
 inline
 void swap(NCBI_NS_NCBI::AutoPtr<P,D>& ptr1,
-          NCBI_NS_NCBI::AutoPtr<P,D>& ptr2)
+          NCBI_NS_NCBI::AutoPtr<P,D>& ptr2) noexcept
 {
     ptr1.Swap(ptr2);
 }
