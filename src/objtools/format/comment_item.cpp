@@ -1620,9 +1620,19 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
         return result.str();
     }
     if ( label_str == "Annotation Software Version") {
-        result << "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_euk/release_notes/#version"
-               << data_str
-               << "\">" << data_str << "</a>";
+        if (NStr::FindNoCase(pipeline, "EGAPx") != NPOS) {
+            string leadingV = "";
+            if (! NStr::StartsWith(data_str, "v")) {
+                leadingV = "v";
+            }
+            result << "<a href=\"https://github.com/ncbi/egapx/releases/tag/"
+                   << leadingV << data_str
+                   << "\">" << data_str << "</a>";
+        } else {
+            result << "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_euk/release_notes/#version"
+                   << data_str
+                   << "\">" << data_str << "</a>";
+        }
         return result.str();
     } else if ( NStr::Equal (label_str, "Annotation Name") &&
         ( NStr::Equal (provider, "NCBI") || NStr::Equal (provider, "NCBI RefSeq") ) &&
