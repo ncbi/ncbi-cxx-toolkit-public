@@ -27,16 +27,16 @@
  */
 
 #ifndef _EDIT_RNA_EDIT__HPP_
-#define _EDIT_RNA_EDIT__HPP_
+#  define _EDIT_RNA_EDIT__HPP_
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbiobj.hpp>
-#include <util/line_reader.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objmgr/seq_entry_handle.hpp>
-#include <objmgr/bioseq_handle.hpp>
-#include <objmgr/bioseq_ci.hpp>
+#  include <corelib/ncbistd.hpp>
+#  include <corelib/ncbiobj.hpp>
+#  include <util/line_reader.hpp>
+#  include <objects/seqfeat/Seq_feat.hpp>
+#  include <objects/seqloc/Seq_loc.hpp>
+#  include <objmgr/seq_entry_handle.hpp>
+#  include <objmgr/bioseq_handle.hpp>
+#  include <objmgr/bioseq_ci.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -45,33 +45,30 @@ BEGIN_SCOPE(edit)
 class NCBI_XOBJEDIT_EXPORT CFindITSParser
 {
 public:
-    CFindITSParser(const char *input, CSeq_entry_Handle tse);
-    CRef <CSeq_feat> ParseLine();
-    bool AtEOF() {return m_lr->AtEOF();}
-    CBioseq_Handle GetBSH() {return m_bsh;}
-    bool GetNegative() {return m_negative;}
-    string GetMsg() {return m_msg;}
+    CFindITSParser(const char* input, CSeq_entry_Handle tse);
+    CRef<CSeq_feat> ParseLine();
+    bool            AtEOF() { return m_lr->AtEOF(); }
+    CBioseq_Handle  GetBSH() { return m_bsh; }
+    bool            GetNegative() { return m_negative; }
+    string          GetMsg() { return m_msg; }
+
 private:
-   // Prohibit copy constructor and assignment operator
+    // Prohibit copy constructor and assignment operator
     CFindITSParser(const CFindITSParser& value);
     CFindITSParser& operator=(const CFindITSParser& value);
 
-    CRef <CSeq_feat> x_ParseLine(const CTempString &line, CSeq_entry_Handle tse, CBioseq_Handle &bsh, bool &negative, string &msg);
-    CRef <CSeq_feat> x_CreateMiscRna(const string &comment, CBioseq_Handle bsh);
-    CRef <CSeq_feat> x_CreateRRna(const string &comment, CBioseq_Handle bsh);
-    bool IsLengthTooLarge(const string& str, int max_length,  int i,
-                          const vector<int>& starts,
-                          const vector<int>& stops,
-                          const vector<bool>& spans,
-                          int bioseq_length);
-    void GetSpan(const string& str, vector<int>& starts, vector<int>& stops, vector<bool>& spans);
-    CBioseq_Handle x_GetBioseqHandleFromIdGuesser(const string &id_str, objects::CSeq_entry_Handle tse);
-    CNcbiIfstream m_istr;
+    CRef<CSeq_feat>   x_ParseLine(const CTempString& line, CSeq_entry_Handle tse, CBioseq_Handle& bsh, bool& negative, string& msg);
+    CRef<CSeq_feat>   x_CreateMiscRna(const string& comment, CBioseq_Handle bsh);
+    CRef<CSeq_feat>   x_CreateRRna(const string& comment, CBioseq_Handle bsh);
+    bool              IsLengthTooLarge(const string& str, int max_length, int i, const vector<int>& starts, const vector<int>& stops, const vector<bool>& spans, int bioseq_length);
+    void              x_GetSpan(const string& str, vector<int>& starts, vector<int>& stops, vector<bool>& spans);
+    CBioseq_Handle    x_GetBioseqHandleFromIdGuesser(const string& id_str, objects::CSeq_entry_Handle tse);
+    CNcbiIfstream     m_istr;
     CRef<ILineReader> m_lr;
     CSeq_entry_Handle m_tse;
-    CBioseq_Handle m_bsh;
-    bool m_negative;
-    string m_msg;
+    CBioseq_Handle    m_bsh;
+    bool              m_negative;
+    string            m_msg;
 };
 
 END_SCOPE(edit)
@@ -79,4 +76,4 @@ END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif
-        // _EDIT_RNA_EDIT__HPP_
+// _EDIT_RNA_EDIT__HPP_
