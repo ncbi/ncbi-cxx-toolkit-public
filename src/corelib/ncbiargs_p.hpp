@@ -561,7 +561,8 @@ public:
     // argument rather than the alias.
     CArgDesc_Alias(const string& alias,
                    const string& arg_name,
-                   const string& comment);
+                   const string& comment,
+                   bool negativeFlag = false);
     virtual ~CArgDesc_Alias(void);
 
     const string& GetAliasedName(void) const;

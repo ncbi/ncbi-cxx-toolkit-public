@@ -998,6 +998,16 @@ inline bool operator< (const AutoPtr<CArgDesc>& x, const AutoPtr<CArgDesc>& y)
     return x->GetName() < y->GetName();
 }
 
+inline bool operator< (const string& x, const AutoPtr<CArgDesc>& y)
+{
+    return x < y->GetName();
+}
+
+inline bool operator< (const AutoPtr<CArgDesc>& x, const string& y)
+{
+    return x->GetName() < y;
+}
+
 string CArgDesc::PrintXml(CNcbiOstream& out) const
 // note: I open 'role' tag, but do not close it here
 {
@@ -1718,10 +1728,11 @@ string CArgDesc_KeyDef::GetUsageSynopsis(bool name_only) const
 
 CArgDesc_Alias::CArgDesc_Alias(const string& alias,
                                const string& arg_name,
-                               const string& comment)
+                               const string& comment,
+                               bool negativeFlag)
     : CArgDesc(alias, comment),
       m_ArgName(arg_name),
-      m_NegativeFlag(false)
+      m_NegativeFlag(negativeFlag)
 {
 }
 
@@ -2441,11 +2452,9 @@ void CArgDescriptions::AddKey
  EType         type,
  TFlags        flags)
 {
-    unique_ptr<CArgDesc_Key> arg(new CArgDesc_Key(name,
+    AutoPtr<CArgDesc> arg(new CArgDesc_Key(name,
         comment, type, flags, synopsis));
-
-    x_AddDesc(*arg);
-    arg.release();
+    x_AddDesc(std::move(arg));
 }
 
 
@@ -2456,11 +2465,9 @@ void CArgDescriptions::AddOptionalKey
  EType         type,
  TFlags        flags)
 {
-    unique_ptr<CArgDesc_KeyOpt> arg(new CArgDesc_KeyOpt(name,
+    AutoPtr<CArgDesc> arg(new CArgDesc_KeyOpt(name,
         comment, type, flags, synopsis));
-
-    x_AddDesc(*arg);
-    arg.release();
+    x_AddDesc(std::move(arg));
 }
 
 
@@ -2474,11 +2481,9 @@ void CArgDescriptions::AddDefaultKey
  const string& env_var,
  const char*   display_value)
 {
-    unique_ptr<CArgDesc_KeyDef> arg(new CArgDesc_KeyDef(name,
+    AutoPtr<CArgDesc> arg(new CArgDesc_KeyDef(name,
         comment, type, flags, synopsis, default_value, env_var, display_value));
-
-    x_AddDesc(*arg);
-    arg.release();
+    x_AddDesc(std::move(arg));
 }
 
 
@@ -2488,9 +2493,8 @@ void CArgDescriptions::AddFlag(
     CBoolEnum<EFlagValue> set_value,
     TFlags        flags)
 {
-    unique_ptr<CArgDesc_Flag> arg(new CArgDesc_Flag(name, comment, set_value == eFlagHasValueIfSet, flags));
-    x_AddDesc(*arg);
-    arg.release();
+    AutoPtr<CArgDesc> arg(new CArgDesc_Flag(name, comment, set_value == eFlagHasValueIfSet, flags));
+    x_AddDesc(std::move(arg));
 }
 
 
@@ -2500,10 +2504,8 @@ void CArgDescriptions::AddPositional(
     EType         type,
     TFlags        flags)
 {
-    unique_ptr<CArgDesc_Pos> arg(new CArgDesc_Pos(name, comment, type, flags));
-
-    x_AddDesc(*arg);
-    arg.release();
+    AutoPtr<CArgDesc> arg(new CArgDesc_Pos(name, comment, type, flags));
+    x_AddDesc(std::move(arg));
 }
 
 
@@ -2513,10 +2515,8 @@ void CArgDescriptions::AddOpening(
     EType         type,
     TFlags        flags)
 {
-    unique_ptr<CArgDesc_Opening> arg(new CArgDesc_Opening(name, comment, type, flags));
-
-    x_AddDesc(*arg);
-    arg.release();
+    AutoPtr<CArgDesc> arg(new CArgDesc_Opening(name, comment, type, flags));
+    x_AddDesc(std::move(arg));
 }
 
 
@@ -2526,11 +2526,8 @@ void CArgDescriptions::AddOptionalPositional(
     EType         type,
     TFlags        flags)
 {
-    unique_ptr<CArgDesc_PosOpt> arg
-        (new CArgDesc_PosOpt(name, comment, type, flags));
-
-    x_AddDesc(*arg);
-    arg.release();
+    AutoPtr<CArgDesc> arg(new CArgDesc_PosOpt(name, comment, type, flags));
+    x_AddDesc(std::move(arg));
 }
 
 
@@ -2543,11 +2540,9 @@ void CArgDescriptions::AddDefaultPositional(
      const string& env_var,
      const char*   display_value)
 {
-    unique_ptr<CArgDesc_PosDef> arg(new CArgDesc_PosDef(name,
+    AutoPtr<CArgDesc> arg(new CArgDesc_PosDef(name,
         comment, type, flags, default_value, env_var, display_value));
-
-    x_AddDesc(*arg);
-    arg.release();
+    x_AddDesc(std::move(arg));
 }
 
 
@@ -2570,23 +2565,19 @@ void CArgDescriptions::AddExtra(
     m_nExtra    = n_mandatory;
     m_nExtraOpt = n_optional;
 
-    unique_ptr<CArgDesc_Pos> arg
+    AutoPtr<CArgDesc> arg
         (m_nExtra ?
-         new CArgDesc_Pos   (kEmptyStr, comment, type, flags) :
-         new CArgDesc_PosOpt(kEmptyStr, comment, type, flags));
-
-    x_AddDesc(*arg);
-    arg.release();
+            new CArgDesc_Pos(kEmptyStr, comment, type, flags) :
+            new CArgDesc_PosOpt(kEmptyStr, comment, type, flags));
+    x_AddDesc(std::move(arg));
 }
 
 
 void CArgDescriptions::AddAlias(const string& alias,
                                 const string& arg_name)
 {
-    unique_ptr<CArgDesc_Alias>arg
-        (new CArgDesc_Alias(alias, arg_name, kEmptyStr));
-    x_AddDesc(*arg);
-    arg.release();
+    AutoPtr<CArgDesc> arg(new CArgDesc_Alias(alias, arg_name, kEmptyStr));
+    x_AddDesc(std::move(arg));
 }
 
 
@@ -2601,11 +2592,8 @@ void CArgDescriptions::AddNegatedFlagAlias(const string& alias,
             "Attempt to negate a non-flag argument: " + arg_name);
     }
 
-    unique_ptr<CArgDesc_Alias> arg(new CArgDesc_Alias(alias, arg_name, comment));
-    arg->SetNegativeFlag(true);
-
-    x_AddDesc(*arg);
-    arg.release();
+    AutoPtr<CArgDesc> arg(new CArgDesc_Alias(alias, arg_name, comment, true));
+    x_AddDesc(std::move(arg));
 }
 
 void CArgDescriptions::AddDependencyGroup(CArgDependencyGroup* dep_group)
@@ -2743,8 +2731,7 @@ private:
 CArgDescriptions::TArgsCI CArgDescriptions::x_Find(const string& name,
                                                    bool* negative) const
 {
-    CArgDescriptions::TArgsCI arg =
-        m_Args.find(AutoPtr<CArgDesc> (new CArgDesc_NameOnly(name)));
+    CArgDescriptions::TArgsCI arg = m_Args.find(name);
     if ( arg != m_Args.end() ) {
         const CArgDesc_Alias* al =
             dynamic_cast<const CArgDesc_Alias*>(arg->get());
@@ -2761,8 +2748,7 @@ CArgDescriptions::TArgsCI CArgDescriptions::x_Find(const string& name,
 CArgDescriptions::TArgsI CArgDescriptions::x_Find(const string& name,
                                                    bool* negative)
 {
-    CArgDescriptions::TArgsI arg =
-        m_Args.find(AutoPtr<CArgDesc> (new CArgDesc_NameOnly(name)));
+    CArgDescriptions::TArgsI arg = m_Args.find(name);
     if ( arg != m_Args.end() ) {
         const CArgDesc_Alias* al =
             dynamic_cast<const CArgDesc_Alias*>(arg->get());
@@ -3406,8 +3392,9 @@ bool CArgDescriptions::VerifyName(const string& name, bool extended)
 }
 
 
-void CArgDescriptions::x_AddDesc(CArgDesc& arg)
+void CArgDescriptions::x_AddDesc(AutoPtr<CArgDesc> arg_ptr)
 {
+    auto& arg = *arg_ptr;
     const string& name = arg.GetName();
 
     if ( Exist(name) ) {
@@ -3444,7 +3431,7 @@ void CArgDescriptions::x_AddDesc(CArgDesc& arg)
     }
 
     arg.SetErrorHandler(m_ErrorHandler.GetPointerOrNull());
-    m_Args.insert(&arg);
+    m_Args.insert(std::move(arg_ptr));
 }
 
 
@@ -4088,7 +4075,7 @@ void CCommandArgDescriptions::AddCommand(
         } else {
             m_HasHidden = true;
         }
-        m_Description[command] = description;
+        m_Description[command] = TDescriptions::mapped_type(description);
         m_Groups[command] = m_CurrentCmdGroup;
         if (!alias.empty()) {
             m_Aliases[command] = alias;

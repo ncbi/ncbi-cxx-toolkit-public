@@ -573,6 +573,9 @@ public:
     CArgDescriptions(bool auto_help = true,
                      CArgErrorHandler* err_handler = 0);
 
+    CArgDescriptions(const CArgDescriptions&) = delete;
+    CArgDescriptions& operator=(const CArgDescriptions&) = delete;
+
     /// Destructor.
     virtual ~CArgDescriptions(void);
 
@@ -1142,7 +1145,7 @@ public:
     void AddDefaultFileArguments(const string& default_config);
 
 private:
-    typedef set< AutoPtr<CArgDesc> >  TArgs;    ///< Argument descr. type
+    typedef set<AutoPtr<CArgDesc>, less<>> TArgs;    ///< Argument descr. type
     typedef TArgs::iterator           TArgsI;   ///< Arguments iterator
     typedef TArgs::const_iterator     TArgsCI;  ///< Const arguments iterator
     typedef /*deque*/vector<string>   TPosArgs; ///< Positional arg. vector
@@ -1213,7 +1216,7 @@ private:
     size_t x_GetGroupIndex(const string& group) const;
 
     /// Helper method for adding description.
-    void x_AddDesc(CArgDesc& arg); 
+    void x_AddDesc(AutoPtr<CArgDesc> arg); 
 
     /// Helper method for doing pre-processing consistency checks.
     void x_PreCheck(void) const; 
