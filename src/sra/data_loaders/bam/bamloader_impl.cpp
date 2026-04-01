@@ -429,7 +429,7 @@ bool CBAMBlobId::operator==(const CBlobId& id) const
 
 CBAMDataLoader_Impl::CBAMDataLoader_Impl(
     const CBAMDataLoader::SLoaderParams& params)
-    : m_IdMapper(params.m_IdMapper)
+    : m_IdMapper(std::move(params.m_IdMapper))
 {
     if ( !m_IdMapper ) {
         string mapper_file_name = GetMapperFileName();
