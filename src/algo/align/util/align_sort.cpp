@@ -607,7 +607,7 @@ void CAlignSort::MergeSortedFiles(const vector<string> &input_files,
     ITERATE (vector<string>, it, input_files) {
         AutoPtr<CObjectIStream> is
             (CObjectIStream::Open(eSerial_AsnBinary, *it));
-        files.push_back(is);
+        files.push_back(std::move(is));
     }
 
     ///
