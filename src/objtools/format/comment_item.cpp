@@ -1625,8 +1625,7 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
             if (! NStr::StartsWith(data_str, "v")) {
                 leadingV = "v";
             }
-            result << "<a href=\"https://github.com/ncbi/egapx/releases/tag/"
-                   << leadingV << data_str
+            result << "<a href=\"https://github.com/ncbi/egapx/releases"
                    << "\">" << data_str << "</a>";
         } else {
             result << "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_euk/release_notes/#version"
