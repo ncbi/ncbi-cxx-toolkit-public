@@ -64,7 +64,7 @@ public:
         };
 
         SLoaderParams(void)
-            : m_MinMapQuality(kMinMapQuality_config),
+          : m_MinMapQuality(kMinMapQuality_config),
               m_PileupGraphs(kPileupGraphs_config),
               m_QualityGraphs(kQualityGraphs_config),
               m_SpotGroups(kSpotGroups_config),
@@ -72,10 +72,23 @@ public:
               m_PathInId(kPathInId_config)
             {
             }
+        SLoaderParams(const SLoaderParams& p)
+          : m_DirPath(p.m_DirPath),
+            m_CSRAFiles(p.m_CSRAFiles),
+            m_IdMapper(std::move(m_IdMapper)),
+            m_AnnotName(p.m_AnnotName),
+            m_MinMapQuality(p.m_MinMapQuality),
+            m_PileupGraphs(p.m_PileupGraphs),
+            m_QualityGraphs(p.m_QualityGraphs),
+            m_SpotGroups(p.m_SpotGroups),
+            m_SpotReadAlign(p.m_SpotReadAlign),
+            m_PathInId(p.m_PathInId)
+        {
+        }
 
         string          m_DirPath;
         vector<string>  m_CSRAFiles;
-        AutoPtr<IIdMapper> m_IdMapper;
+        mutable AutoPtr<IIdMapper> m_IdMapper; // mutable to pass it to the loader
         string          m_AnnotName;
         int             m_MinMapQuality;
         int             m_PileupGraphs; // bool value or kPileupGraphs_config
