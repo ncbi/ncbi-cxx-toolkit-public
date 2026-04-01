@@ -353,8 +353,8 @@ namespace {
     class CDB_Result_Reader : public CObject, public IReader
     {
     public:
-        CDB_Result_Reader(AutoPtr<CDB_Result> db_result)
-            : m_DB_Result(db_result)
+        CDB_Result_Reader(const AutoPtr<CDB_Result>& db_result)
+            : m_DB_Result(db_result.get())
             {
             }
 
@@ -385,7 +385,7 @@ namespace {
             }
 
     private:
-        AutoPtr<CDB_Result> m_DB_Result;
+        CDB_Result* m_DB_Result;
     };
 }
 
