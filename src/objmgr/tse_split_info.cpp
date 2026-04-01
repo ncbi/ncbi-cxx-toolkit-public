@@ -591,7 +591,7 @@ void CTSE_Split_Info::x_LoadChunks(const TChunkIds& chunk_ids) const
             continue;
         }
         chunks.push_back(chunk);
-        guards.push_back(guard);
+        guards.push_back(std::move(guard));
         if ( guards.size() >= limit_chunks_request ) {
             // Load chunks
             info_nc.GetDataLoader().GetChunks(chunks);
@@ -654,7 +654,7 @@ void CTSE_Split_Info::x_LoadChunks(CDataLoader* loader,
             continue;
         }
         chunks.push_back(chunk);
-        guards.push_back(guard);
+        guards.push_back(std::move(guard));
         if ( guards.size() >= limit_chunks_request ) {
             // Load chunks
             loader->GetChunks(chunks);
