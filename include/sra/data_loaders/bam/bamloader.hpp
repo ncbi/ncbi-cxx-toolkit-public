@@ -67,9 +67,17 @@ public:
     };
     struct SLoaderParams
     {
+        SLoaderParams() = default;
+        SLoaderParams(const SLoaderParams& p)
+            : m_DirPath(p.m_DirPath),
+            m_BamFiles(p.m_BamFiles),
+            m_IdMapper(std::move(p.m_IdMapper))
+        {
+        }
+
         string          m_DirPath;
         vector<SBamFileName> m_BamFiles;
-        AutoPtr<IIdMapper> m_IdMapper;
+        mutable AutoPtr<IIdMapper> m_IdMapper; // mutable to pass to the loader
     };
 
 
