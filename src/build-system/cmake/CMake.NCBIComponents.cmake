@@ -297,6 +297,7 @@ if(NOT NCBI_PTBCFG_PACKAGING AND EXISTS "${NCBI_PROTOC_APP}")
     execute_process(
         COMMAND ${NCBI_PROTOC_APP} --version
         OUTPUT_VARIABLE NCBI_PROTOC_APP_VERSION
+        ERROR_QUIET
     )
 endif()
 
