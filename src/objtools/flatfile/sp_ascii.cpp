@@ -4169,7 +4169,6 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, cons
     }
 
     while ((ptr = StringStr(str, tag))) {
-        len = StringLen(str);
         str1.assign(str, ptr);
 
         ptr += shift;

@@ -792,6 +792,7 @@ static int CkQualNote(CGb_qual& cur, bool error_msgs, bool perform_corrections)
  *  -- scan embedded valid qualifier
  *                                                                  6-29-93
  *****************************************************************************/
+NCBI_UNUSED
 static bool ScanEmbedQual(const Char* value)
 {
     const Char* bptr;
