@@ -391,14 +391,16 @@ BOOST_AUTO_TEST_CASE(Test_High_FDs)
         // canary_bufN should surround the other local variables, so
         // whichever winds up at a lower address will take any hits.
         char                      canary_buf1[NUM_CANARIES];
-        CTempString               canary1(canary_buf1, NUM_CANARIES), canary2; /* NCBI_FAKE_WARNING */
+        CTempString               canary1, canary2;
         int                       i, j;
         unique_ptr<CSocket>       socks[NUM_CANARY_BITS];
         unique_ptr<CTimeoutGuard> GUARD;
         unique_ptr<IConnection>   conn;
         char                      canary_buf2[NUM_CANARIES];
 
+        canary1.assign(canary_buf1, NUM_CANARIES);
         canary2.assign(canary_buf2, NUM_CANARIES);
+
         for (i = 0;  i < NUM_CANARIES * 8;  ++i) {
             socks[i].reset(new CDatagramSocket(fSOCK_KeepOnExec));
             if (socks[i]->GetStatus(eIO_Open) != eIO_Success) {
