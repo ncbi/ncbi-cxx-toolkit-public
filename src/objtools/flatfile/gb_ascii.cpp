@@ -1148,6 +1148,7 @@ static void GenBankGetDivision(char* division, Int4 div, const DataBlk& entry)
     division[3] = '\0';
 }
 
+NCBI_UNUSED
 static void xGenBankGetDivision(char* division, Int4 div, const string& locusText)
 {
     StringCpy(division, locusText.substr(64, 3).c_str());

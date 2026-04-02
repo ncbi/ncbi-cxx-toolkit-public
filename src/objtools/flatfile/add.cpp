@@ -1571,7 +1571,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, const char* offset, Parse
     CRef<CUser_object> user_obj;
     if (newstyle) {
         i = 0;
-        for (const auto& tvnp : vnp)
+        for (NCBI_UNUSED const auto& tvnp : vnp)
             i++;
 
         if (! got) {

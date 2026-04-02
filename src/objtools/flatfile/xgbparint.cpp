@@ -319,7 +319,7 @@ static unsigned advance_to(const char c, unsigned current_pos, const string& lin
 }
 
 
-static size_t sParseAccessionPrefix(string_view accession)
+static unsigned sParseAccessionPrefix(string_view accession)
 {
     if (accession.empty()) {
         return 0;
@@ -330,8 +330,6 @@ static size_t sParseAccessionPrefix(string_view accession)
     auto it = find_if_not(begin(accession),
                           end(accession),
                           IsAlpha);
-
-
     if (it == end(accession)) {
         return 1;
     }
@@ -348,7 +346,7 @@ static size_t sParseAccessionPrefix(string_view accession)
         }
         prefix_length = distance(begin(accession), it);
         if (prefix_length == 3 || prefix_length == 7) {
-            return prefix_length;
+            return unsigned(prefix_length);
         }
         return 1;
     } else if (accession.size() >= 3 &&
@@ -362,7 +360,7 @@ static size_t sParseAccessionPrefix(string_view accession)
         prefix_length == 2 ||
         prefix_length == 4 ||
         prefix_length == 6) {
-        return prefix_length;
+        return unsigned(prefix_length);
     }
 
     return 1;
@@ -374,24 +372,24 @@ static int sGetAccession(string& accession, unsigned int& current_col, const str
     const auto  length = line.size();
     string_view tempString(line.c_str() + current_col, length - current_col);
     auto        prefixLength    = sParseAccessionPrefix(tempString);
-    size_t      accessionLength = prefixLength;
+    unsigned    accessionLength = prefixLength;
 
     tempString       = tempString.substr(prefixLength);
     auto notDigitPos = tempString.find_first_not_of("0123456789");
     if (notDigitPos != string_view::npos) {
-        accessionLength += notDigitPos;
+        accessionLength += unsigned(notDigitPos);
         if (accver && tempString[notDigitPos] == '.') {
             ++accessionLength;
             if (tempString.size() > notDigitPos) {
                 tempString  = tempString.substr(notDigitPos + 1);
                 notDigitPos = tempString.find_first_not_of("0123456789");
                 if (notDigitPos != string_view::npos) {
-                    accessionLength += notDigitPos;
+                    accessionLength += unsigned(notDigitPos);
                 }
             }
         }
     } else {
-        accessionLength = length - current_col;
+        accessionLength = unsigned(length - current_col);
     }
 
     int retval = 0;
@@ -431,7 +429,7 @@ static int xgbparselex_ver(string_view linein, TTokens& tokens, bool accver)
                 current_token.choice = ETokenType::eNumber;
                 string_view tempString(line.c_str() + current_col, size_t(length - current_col));
                 auto        not_digit_pos = tempString.find_first_not_of("0123456789");
-                auto        num_digits    = (not_digit_pos == string_view::npos) ? size_t(length - current_col) : not_digit_pos;
+                auto        num_digits    = (not_digit_pos == string_view::npos) ? unsigned(length - current_col) : unsigned(not_digit_pos);
                 current_token.data        = string(line.c_str() + current_col, num_digits);
                 tokens.push_back(current_token);
                 current_col += num_digits;
@@ -447,7 +445,7 @@ static int xgbparselex_ver(string_view linein, TTokens& tokens, bool accver)
                     xlex_error_func("unterminated string", line, current_col);
                     retval++;
                 } else {
-                    size_t len         = closing_quote_pos - current_col + 1;
+                    unsigned len       = unsigned(closing_quote_pos - current_col + 1);
                     current_token.data = string(line.c_str() + current_col, len);
                     current_col += len;
                 }
