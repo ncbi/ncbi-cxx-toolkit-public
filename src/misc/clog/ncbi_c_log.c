@@ -730,8 +730,8 @@ static TNcbiLog_TID s_GetTID(void)
 #if defined(NCBI_NO_THREADS)
     tid = 0;
 #elif defined(NCBI_OS_UNIX)
-#  if defined(SYS_gettid)
-    tid = (TNcbiLog_TID)syscall(SYS_gettid); /* NCBI_FAKE_WARNING: Clang */
+#  if defined(SYS_gettid)  &&  !defined(__APPLE__)
+    tid = (TNcbiLog_TID)syscall(SYS_gettid);
 #  else
     // pthread_self() function returns the pthread handle of the calling thread.
     // On Mac OS X >= 10.6 and iOS >= 3.2 non-portable pthread_getthreadid_np()
