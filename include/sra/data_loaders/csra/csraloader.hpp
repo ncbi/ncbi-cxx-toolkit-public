@@ -88,7 +88,7 @@ public:
 
         string          m_DirPath;
         vector<string>  m_CSRAFiles;
-        mutable AutoPtr<IIdMapper> m_IdMapper;
+        mutable AutoPtr<IIdMapper> m_IdMapper; // mutable to pass it to the loader
         string          m_AnnotName;
         int             m_MinMapQuality;
         int             m_PileupGraphs; // bool value or kPileupGraphs_config
