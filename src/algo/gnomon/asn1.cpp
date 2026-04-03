@@ -554,7 +554,8 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
                 if(NStr::StartsWith(accession, "gi|")) {
                     ests.push_back(accession);
                     ests_count += m->Weight();
-                } else if(NStr::StartsWith(accession, "gnl|SRA")) {
+                } else if(NStr::StartsWith(accession, "gnl|SRA") ||
+                         NStr::StartsWith(accession, "lcl|LONG_SRA_COLLAPSE")) {
                     long_sras.push_back(accession);
                     long_sras_count += m->Weight();
                 } else {
