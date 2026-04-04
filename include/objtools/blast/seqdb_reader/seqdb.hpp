@@ -54,6 +54,7 @@
 #include <objects/blastdb/Blast_db_mask_info.hpp>
 #include <util/sequtil/sequtil.hpp>
 #include <util/range.hpp>
+#include <corelib/ncbifile.hpp>
 #include <set>
 #include <objmgr/bioseq_handle.hpp>
 
@@ -1531,6 +1532,24 @@ public:
     /// Get OIDs from an ID list
     /// @param id_list input id list/output oid found
     bool IdsToOids(CSeqDBGiList & id_list) const;
+
+    /// Set the memory mapping strategy for BLAST database files.
+    ///
+    /// This advises the operating system about the expected access pattern
+    /// for memory-mapped BLAST database files, allowing it to optimize
+    /// page cache behavior.  The default is eMMA_Normal (OS-decided,
+    /// typically with readahead enabled).
+    ///
+    /// This method applies the hint retroactively to already-opened files
+    /// and to all files opened subsequently.  Callers performing sparse
+    /// random lookups (e.g., fetching individual sequences by OID) may
+    /// benefit from eMMA_Random to disable readahead and reduce page cache
+    /// pollution.
+    ///
+    /// @param strategy
+    ///   The desired access pattern hint.
+    /// @sa CMemoryFile_Base::EMemMapAdvise
+    void SetMMapStrategy(CMemoryFile_Base::EMemMapAdvise strategy);
 
 protected:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).

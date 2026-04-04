@@ -103,7 +103,8 @@ const int CSeqDBAtlas::kDefaultMaxFileDescriptors;
 CSeqDBAtlas::CSeqDBAtlas(bool use_atlas_lock)
      :m_UseLock           (use_atlas_lock),
       m_MaxFileSize       (0),      
-      m_SearchPath        (GenerateSearchPath())
+      m_SearchPath        (GenerateSearchPath()),
+      m_MMapStrategy      (CMemoryFile_Base::eMMA_Normal)
 {
     m_OpenedFilesCount = 0;
     m_MaxOpenedFilesCount = 0;
@@ -126,11 +127,20 @@ CMemoryFile* CSeqDBAtlas::GetMemoryFile(const string& fileName)
     	//LOG_POST(Info << "File: " << fileName << " count " << it->second.get()->m_Count);
         return it->second.get();
     }
-    CAtlasMappedFile* file(new CAtlasMappedFile(fileName));
+    CAtlasMappedFile* file(new CAtlasMappedFile(fileName, m_MMapStrategy));
     m_FileMemMap[fileName].reset(file);
    	_TRACE("Open File: " << fileName);
     ChangeOpenedFilseCount(CSeqDBAtlas::eFileCounterIncrement);
     return file;
+}
+
+void CSeqDBAtlas::SetMMapStrategy(CMemoryFile_Base::EMemMapAdvise strategy)
+{
+    std::lock_guard<std::mutex> guard(m_FileMemMapMutex);
+    m_MMapStrategy = strategy;
+    for (auto& kv : m_FileMemMap) {
+        kv.second->MemMapAdvise(strategy);
+    }
 }
 
 CMemoryFile* CSeqDBAtlas::ReturnMemoryFile(const string& fileName)
