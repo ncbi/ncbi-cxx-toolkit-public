@@ -1126,9 +1126,16 @@ CParallelProcessing<TParams>::CParallelProcessing(const TParams& params) :
     auto item_complete = bind(m_Impl.GetItemComplete(), ref(m_Impl.json_out), _1, _2);
     auto reply_complete = bind(m_Impl.GetReplyComplete(), ref(m_Impl.json_out), _1, _2);
     auto new_item = bind(m_Impl.GetNewItem(), ref(m_Impl.json_out), _1);
+    auto no_item_complete = [](EPSG_Status, const shared_ptr<CPSG_ReplyItem>&) {};
+    auto no_reply_complete = [](EPSG_Status, const shared_ptr<CPSG_Reply>&) {};
 
     for (int n = params.worker_threads; n > 0; --n) {
-        m_PsgQueues.emplace_back(params.service, item_complete, reply_complete, new_item);
+        if (params.no_output) {
+            m_PsgQueues.emplace_back(params.service, no_item_complete, no_reply_complete);
+        } else {
+            m_PsgQueues.emplace_back(params.service, item_complete, reply_complete, new_item);
+        }
+
         auto& queue = m_PsgQueues.back();
         queue.SetRequestFlags(params.request_flags);
         queue.SetUserArgs(params.user_args);

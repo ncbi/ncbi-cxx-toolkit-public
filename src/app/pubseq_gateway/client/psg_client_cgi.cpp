@@ -130,6 +130,7 @@ struct SParallelProcessing : SBase<TParams>
             1,
             false,
             false,
+            false,
             std::forward<TInitArgs>(init_args)...
         }
     {

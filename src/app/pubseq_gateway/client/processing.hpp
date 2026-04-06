@@ -210,13 +210,15 @@ struct SParallelProcessingParams : SParams
     const double rate;
     const int worker_threads;
     const bool pipe;
+    const bool no_output;
     const bool server;
 
-    SParallelProcessingParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, double r, int wt, bool p, bool srv) :
+    SParallelProcessingParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, double r, int wt, bool p, bool no, bool srv) :
         SParams(std::move(s), rf, std::move(ua)),
         rate(r),
         worker_threads(wt),
         pipe(p),
+        no_output(no),
         server(srv)
     {}
 };
@@ -231,8 +233,8 @@ struct SResolveParams
 
 struct SBatchResolveParams : SParallelProcessingParams, SResolveParams
 {
-    SBatchResolveParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, double r, int wt, bool p, bool srv, SResolveParams resolve_params) :
-        SParallelProcessingParams(std::move(s), rf, std::move(ua), r, wt, p, srv),
+    SBatchResolveParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, double r, int wt, bool p, bool no, bool srv, SResolveParams resolve_params) :
+        SParallelProcessingParams(std::move(s), rf, std::move(ua), r, wt, p, no, srv),
         SResolveParams(std::move(resolve_params))
     {}
 };
@@ -246,8 +248,8 @@ struct SInteractiveParams : SParallelProcessingParams
     const bool echo;
     const bool testing;
 
-    SInteractiveParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, double r, int wt, bool p, bool srv, size_t dl, size_t ps, bool e, bool os, bool t) :
-        SParallelProcessingParams(GetService(std::move(s), os), rf, std::move(ua), r, wt, p, srv),
+    SInteractiveParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, double r, int wt, bool p, bool no, bool srv, size_t dl, size_t ps, bool e, bool os, bool t) :
+        SParallelProcessingParams(GetService(std::move(s), os), rf, std::move(ua), r, wt, p, no, srv),
         data_limit(dl),
         preview_size(ps),
         echo(e),

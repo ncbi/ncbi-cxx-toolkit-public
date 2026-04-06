@@ -202,6 +202,7 @@ void s_InitPsgOptions(CArgDescriptions& arg_desc, bool parallel)
     if (parallel) {
         arg_desc.AddDefaultKey("rate", "RATE", "DEPRECATED", CArgDescriptions::eDouble, "0.0", CArgDescriptions::fHidden);
         arg_desc.AddDefaultKey("worker-threads", "THREADS_NUM", "Number of worker threads of each type", CArgDescriptions::eInteger, "7", CArgDescriptions::fHidden);
+        arg_desc.AddFlag("no-output", "No output (e.g. for profiling)", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
     }
 }
 
@@ -474,6 +475,7 @@ struct SParallelProcessing : SBase<TParams>, SIoRedirector
             args["rate"].AsDouble(),
             max(1, min(10, args["worker-threads"].AsInteger())),
             args["input-file"].AsString() == "-",
+            args["no-output"].AsBoolean(),
             args["server-mode"].AsBoolean(),
             std::forward<TInitArgs>(init_args)...
         },
