@@ -845,6 +845,11 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
 
     ssize_t  index_to_pick = 0;
     if (record_count > 1) {
+        // SelectBioseqInfoRecord() may log ambiguity cases so a request context
+        // needs to be set
+        CRequestContextResetter     context_resetter;
+        m_Request->SetRequestContext();
+
         // false => this is not cache
         SPSGS_BioseqSelectionResult  result = SelectBioseqInfoRecord(records, false);
         index_to_pick = result.index;

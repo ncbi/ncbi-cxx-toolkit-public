@@ -209,6 +209,12 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
         m_FinishedCB(std::move(m_BioseqResolution));
         return;
     }
+
+    // SelectBioseqInfoRecord() may log ambiguity cases so a request context
+    // needs to be set
+    CRequestContextResetter     context_resetter;
+    m_Request->SetRequestContext();
+
     // Here: there are more than 1 records so a record will be picked for sure.
     // false => this is not cache
     SPSGS_BioseqSelectionResult     result = SelectBioseqInfoRecord(records, false);
