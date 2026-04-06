@@ -6143,17 +6143,8 @@ CStringUTF8 NStr::SQLEncode(const CStringUTF8& str, ESqlEncode flag)
 }
 
 
-static void s_URLDecode(const CTempString src, string& dst, NStr::EUrlDecode flag)
+static SIZE_TYPE s_URLDecode(SIZE_TYPE len, const CTempString src, char* dst, NStr::EUrlDecode flag)
 {
-    SIZE_TYPE len = src.length();
-    if ( !len ) {
-        dst.erase();
-        return;
-    }
-    if (dst.length() < src.length()) {
-        dst.resize(len);
-    }
-
     SIZE_TYPE pdst = 0;
     for (SIZE_TYPE psrc = 0;  psrc < len;  pdst++) {
         switch ( src[psrc] ) {
@@ -6184,6 +6175,14 @@ static void s_URLDecode(const CTempString src, string& dst, NStr::EUrlDecode fla
             dst[pdst] = src[psrc++];
         }
     }
+    return pdst;
+}
+
+
+static void s_URLDecode(SIZE_TYPE len, const CTempString src, string& dst, NStr::EUrlDecode flag)
+{
+    auto pdst = s_URLDecode(len, src, dst.data(), flag);
+
     if (pdst < len) {
         dst.resize(pdst);
     }
@@ -6192,15 +6191,24 @@ static void s_URLDecode(const CTempString src, string& dst, NStr::EUrlDecode fla
 
 string NStr::URLDecode(const CTempString str, EUrlDecode flag)
 {
+    auto len = str.length();
     string dst;
-    s_URLDecode(str, dst, flag);
+    dst.resize(len);
+    s_URLDecode(len, str, dst, flag);
     return dst;
 }
 
 
 void NStr::URLDecodeInPlace(string& str, EUrlDecode flag)
 {
-    s_URLDecode(str, str, flag);
+    auto len = str.length();
+    s_URLDecode(len, str, str, flag);
+}
+
+
+SIZE_TYPE NStr::URLDecodeInPlace(char* str, SIZE_TYPE len, EUrlDecode flag)
+{
+    return s_URLDecode(len, CTempString(str, len), str, flag);
 }
 
 

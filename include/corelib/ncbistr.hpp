@@ -3168,6 +3168,8 @@ public:
     static string URLDecode(const CTempString str, EUrlDecode flag = eUrlDec_All);
     /// URL-decode string to itself
     static void URLDecodeInPlace(string& str, EUrlDecode flag = eUrlDec_All);
+    static SIZE_TYPE URLDecodeInPlace(char* str, SIZE_TYPE len, EUrlDecode flag = eUrlDec_All);
+
     /// Check if the string needs the requested URL-encoding
     static bool NeedsURLEncoding(const CTempString str, EUrlEncode flag = eUrlEnc_SkipMarkChars);
 
