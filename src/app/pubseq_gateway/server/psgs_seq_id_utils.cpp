@@ -156,7 +156,8 @@ bool IsAccessionLike(const string &  user_input)
         case CSeq_id::eTagged:
             {
                 string  err_msg =
-                    "Inconsistency detected: CSeq_id parsing failed but "
+                    "Inconsistency detected: CSeq_id parsing failed (user input is '" +
+                    user_input + "') but "
                     "CSeq_id::AssessAccession() returned eIdentifiable or eTagged: " +
                     to_string(accession) +
                     ".";
