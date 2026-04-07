@@ -676,7 +676,7 @@ DISCREPANCY_CASE(SP_NOT_UNCULTURED, BIOSRC, eOncaller, "Organism ending in sp. n
 DISCREPANCY_CASE(FIND_STRAND_TRNAS, SEQUENCE, eDisc, "Find tRNAs on the same strand")
 {
     const CSeqdesc* biosrc = context.GetBiosource();
-    if (biosrc && biosrc->GetSource().IsSetGenome() && (biosrc->GetSource().GetGenome() == CBioSource::eGenome_mitochondrion || biosrc->GetSource().GetGenome() == CBioSource::eGenome_chloroplast || biosrc->GetSource().GetGenome() == CBioSource::eGenome_plastid)) {
+    if (biosrc && biosrc->GetSource().IsSetGenome() && (biosrc->GetSource().GetGenome() == CBioSource::eGenome_mitochondrion || biosrc->GetSource().GetGenome() == CBioSource::eGenome_chloroplast || biosrc->GetSource().GetGenome() == CBioSource::eGenome_plastid) || biosrc->GetSource().GetGenome() == CBioSource::eGenome_nitroplast) {
         bool strand_plus = false;
         bool strand_minus = false;
         for (const auto& feat : context.FeatTRNAs()) {
@@ -941,7 +941,7 @@ DISCREPANCY_CASE(ORGANELLE_ITS, SEQUENCE, eOncaller, "Test Bioseqs for suspect r
         if (genome == CBioSource::eGenome_apicoplast || genome == CBioSource::eGenome_chloroplast || genome == CBioSource::eGenome_chromatophore
                 || genome == CBioSource::eGenome_chromoplast || genome == CBioSource::eGenome_cyanelle || genome == CBioSource::eGenome_hydrogenosome
                 || genome == CBioSource::eGenome_kinetoplast || genome == CBioSource::eGenome_leucoplast || genome == CBioSource::eGenome_mitochondrion
-                || genome == CBioSource::eGenome_plastid || genome == CBioSource::eGenome_proplastid) {
+                || genome == CBioSource::eGenome_plastid || genome == CBioSource::eGenome_proplastid || genome == CBioSource::eGenome_nitroplast) {
             for (const CSeq_feat& feat : context.GetFeat()) {
                 if (feat.IsSetData() && feat.GetData().IsRna()) {
                     const CRNA_ref& rna = feat.GetData().GetRna();

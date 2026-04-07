@@ -50,7 +50,7 @@ static inline string rRnaLabel(const CSeqFeatData& data) // eSubtype_rRNA assume
 DISCREPANCY_CASE1(COUNT_RRNAS, SEQUENCE, eDisc, "Count rRNAs", "FIND_DUP_RRNAS")
 {
     const CSeqdesc* biosrc = context.GetBiosource();
-    if (biosrc && biosrc->GetSource().IsSetGenome() && (biosrc->GetSource().GetGenome() == CBioSource::eGenome_mitochondrion || biosrc->GetSource().GetGenome() == CBioSource::eGenome_chloroplast || biosrc->GetSource().GetGenome() == CBioSource::eGenome_plastid)) {
+    if (biosrc && biosrc->GetSource().IsSetGenome() && (biosrc->GetSource().GetGenome() == CBioSource::eGenome_mitochondrion || biosrc->GetSource().GetGenome() == CBioSource::eGenome_chloroplast || biosrc->GetSource().GetGenome() == CBioSource::eGenome_plastid || biosrc->GetSource().GetGenome() == CBioSource::eGenome_nitroplast)) {
         size_t total = 0;
         CReportNode tmp;
         for (const CSeq_feat* feat : context.FeatRRNAs()) {
@@ -120,7 +120,7 @@ static const DesiredAAData desired_aaList[] = {
 DISCREPANCY_CASE1(COUNT_TRNAS, SEQUENCE, eDisc, "Count tRNAs", "FIND_DUP_TRNAS")
 {
     const CSeqdesc* biosrc = context.GetBiosource();
-    if (biosrc && biosrc->GetSource().IsSetGenome() && (biosrc->GetSource().GetGenome() == CBioSource::eGenome_mitochondrion || biosrc->GetSource().GetGenome() == CBioSource::eGenome_chloroplast || biosrc->GetSource().GetGenome() == CBioSource::eGenome_plastid)) {
+    if (biosrc && biosrc->GetSource().IsSetGenome() && (biosrc->GetSource().GetGenome() == CBioSource::eGenome_mitochondrion || biosrc->GetSource().GetGenome() == CBioSource::eGenome_chloroplast || biosrc->GetSource().GetGenome() == CBioSource::eGenome_plastid || biosrc->GetSource().GetGenome() == CBioSource::eGenome_nitroplast)) {
         size_t total = 0;
         CReportNode tmp;
         for (const CSeq_feat* feat : context.FeatTRNAs()) {

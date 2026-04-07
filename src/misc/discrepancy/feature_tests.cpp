@@ -1610,7 +1610,7 @@ static const size_t kIntergenicSpacerNames_len = ArraySize(kIntergenicSpacerName
 DISCREPANCY_CASE(UNWANTED_SPACER, FEAT, eOncaller, "Intergenic spacer without plastid location")
 {
     const CSeqdesc* biosrc = context.GetBiosource();
-    if (biosrc && biosrc->GetSource().IsSetGenome() && (biosrc->GetSource().GetGenome() == CBioSource::eGenome_chloroplast || biosrc->GetSource().GetGenome() == CBioSource::eGenome_plastid)) {
+    if (biosrc && biosrc->GetSource().IsSetGenome() && (biosrc->GetSource().GetGenome() == CBioSource::eGenome_chloroplast || biosrc->GetSource().GetGenome() == CBioSource::eGenome_plastid || biosrc->GetSource().GetGenome() == CBioSource::eGenome_nitroplast)) {
         return;
     }
     if (biosrc && biosrc->GetSource().IsSetOrg() && biosrc->GetSource().GetOrg().IsSetTaxname() && CDiscrepancyContext::IsUnculturedNonOrganelleName(biosrc->GetSource().GetOrg().GetTaxname())) {
