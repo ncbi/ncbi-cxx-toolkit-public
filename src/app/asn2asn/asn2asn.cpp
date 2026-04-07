@@ -822,7 +822,7 @@ void MergeExternal(CObjectIStream& in, CObjectOStream& out, TGi gi,
                 }
                 else if ( name == "asn1" ) {
                     // asn1 column contains the blob data.
-                    result = dbr;
+                    result = std::move(dbr);
                     break;
                 }
                 else {
