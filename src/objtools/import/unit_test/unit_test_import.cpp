@@ -246,7 +246,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
 
     // clean out stale results from prior tests:
     auto oldOutputFiles = CDir(dirOutput).GetEntries("", CDir::fIgnoreRecursive);
-    for (auto oldFile: oldOutputFiles) {
+    for (auto& oldFile: oldOutputFiles) {
         oldFile->Remove();
     }
 
