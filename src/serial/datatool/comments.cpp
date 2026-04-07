@@ -46,12 +46,6 @@ CComments::~CComments(void)
 {
 }
 
-CComments& CComments::operator= (const CComments& other)
-{
-    m_Comments = other.m_Comments;
-    return *this;
-}
-
 void CComments::Add(const string& s)
 {
     m_Comments.push_back(s);

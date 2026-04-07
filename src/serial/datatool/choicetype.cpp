@@ -342,7 +342,7 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetRefCType(void) const
                                                            Namespace(),
                                                            FileName(),
                                                            Comments()));
-        return AutoPtr<CTypeStrings>(new CChoicePtrRefTypeStrings(cls));
+        return AutoPtr<CTypeStrings>(new CChoicePtrRefTypeStrings(std::move(cls)));
     }
     else {
         return AutoPtr<CTypeStrings>(new CChoiceRefTypeStrings(ClassName(),
@@ -360,7 +360,7 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
                 GlobalName(), ClassName(), GetNamespaceName(), this, Comments()));
         ITERATE ( TMembers, i, GetMembers() ) {
             AutoPtr<CTypeStrings> varType = (*i)->GetType()->GetFullCType();
-            code->AddVariant((*i)->GetName(), varType);
+            code->AddVariant((*i)->GetName(), std::move(varType));
         }
         SetParentClassTo(*code);
         return AutoPtr<CTypeStrings>(code.release());
@@ -381,7 +381,7 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
             }
             bool delayed = GetBoolVar((*i)->GetName()+"._delay");
             bool in_union = GetBoolVar((*i)->GetName()+"._in_union", true);
-            code->AddVariant(external_name, member_name, varType, delayed, in_union,
+            code->AddVariant(external_name, member_name, std::move(varType), delayed, in_union,
                              (*i)->GetType()->GetTag(),
                              !IsASNDataSpec(), (*i)->Attlist(), (*i)->Notag(),
                              (*i)->SimpleType(),(*i)->GetType(),

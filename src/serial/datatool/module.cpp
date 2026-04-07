@@ -65,7 +65,7 @@ void CDataTypeModule::SetSourceLine(int line)
 }
 
 void CDataTypeModule::AddDefinition(const string& name,
-                                    const AutoPtr<CDataType>& type)
+                                    AutoPtr<CDataType> type)
 {
     CDataType*& oldType = m_LocalTypes[name];
     if ( oldType ) {
@@ -76,7 +76,7 @@ void CDataTypeModule::AddDefinition(const string& name,
     }
     CDataType* dataType = type.get();
     oldType = dataType;
-    m_Definitions.push_back(make_pair(name, type));
+    m_Definitions.push_back(make_pair(name, std::move(type)));
     dataType->SetParent(this, name);
 }
 
@@ -85,9 +85,9 @@ void CDataTypeModule::AddExports(const TExports& exports)
     m_Exports.insert(m_Exports.end(), exports.begin(), exports.end());
 }
 
-void CDataTypeModule::AddImports(const TImports& imports)
+void CDataTypeModule::AddImports(TImports imports)
 {
-    m_Imports.insert(m_Imports.end(), imports.begin(), imports.end());
+    m_Imports.insert(m_Imports.end(), make_move_iterator(imports.begin()), make_move_iterator(imports.end()));
 }
 
 void CDataTypeModule::AddImports(const string& module, const list<string>& types)
@@ -95,7 +95,7 @@ void CDataTypeModule::AddImports(const string& module, const list<string>& types
     AutoPtr<Import> import(new Import());
     import->moduleName = module;
     import->types.insert(import->types.end(), types.begin(), types.end());
-    m_Imports.push_back(import);
+    m_Imports.push_back(std::move(import));
 }
 
 void CDataTypeModule::SetSubnamespace(const string& sub_ns)

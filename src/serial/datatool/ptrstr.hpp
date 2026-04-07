@@ -42,7 +42,7 @@ class CPointerTypeStrings : public CTypeStrings
 {
     typedef CTypeStrings CParent;
 public:
-    CPointerTypeStrings(CTypeStrings* type);
+    //CPointerTypeStrings(CTypeStrings* type);
     CPointerTypeStrings(AutoPtr<CTypeStrings> type);
     ~CPointerTypeStrings(void);
 

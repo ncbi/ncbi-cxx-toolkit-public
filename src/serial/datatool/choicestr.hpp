@@ -66,7 +66,7 @@ public:
         const CDataType* dataType;
         CComments comments;
 
-        SVariantInfo(const string& external_name, const string& name, const AutoPtr<CTypeStrings>& type,
+        SVariantInfo(const string& external_name, const string& name, AutoPtr<CTypeStrings> type,
                      bool delayed, bool in_union,
                      int tag, bool noPrefx, bool attlst, bool noTg,
                      bool simpl, const CDataType* dataTp, const CComments& commnts);
@@ -85,7 +85,7 @@ public:
 
     void AddVariant(const string& external_name,
                     const string& name,
-                    const AutoPtr<CTypeStrings>& type,
+                    AutoPtr<CTypeStrings> type,
                     bool delayed, bool in_union, int tag,
                     bool noPrefix, bool attlist,
                     bool noTag, bool simple, const CDataType* dataType,

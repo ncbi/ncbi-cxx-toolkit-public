@@ -80,7 +80,7 @@ public:
     virtual const string& GetSourceFileName(void) const override;
     virtual string GetFileNamePrefix(void) const override;
 
-    void AddModule(const AutoPtr<CDataTypeModule>& module);
+    void AddModule(AutoPtr<CDataTypeModule> module);
 
     const TModules& GetModules(void) const
         {
@@ -114,7 +114,7 @@ class CFileSet : public CModuleContainer
 public:
     typedef list< AutoPtr< CFileModules > > TModuleSets;
 
-    void AddFile(const AutoPtr<CFileModules>& moduleSet);
+    void AddFile(AutoPtr<CFileModules> moduleSet);
 
     const TModuleSets& GetModuleSets(void) const
         {

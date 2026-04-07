@@ -77,9 +77,9 @@ public:
     const string GetVar(const string& section, const string& value, bool collect) const;
     virtual string GetFileNamePrefix(void) const override;
     
-    void AddDefinition(const string& name, const AutoPtr<CDataType>& type);
+    void AddDefinition(const string& name, AutoPtr<CDataType> type);
     void AddExports(const TExports& exports);
-    void AddImports(const TImports& imports);
+    void AddImports(TImports imports);
     void AddImports(const string& module, const list<string>& types);
 
     void SetSubnamespace(const string& sub_ns);

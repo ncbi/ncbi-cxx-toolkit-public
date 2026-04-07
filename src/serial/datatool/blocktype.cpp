@@ -80,9 +80,9 @@ protected:
         }
 };
 
-void CDataMemberContainerType::AddMember(const AutoPtr<CDataMember>& member)
+void CDataMemberContainerType::AddMember(AutoPtr<CDataMember> member)
 {
-    m_Members.push_back(member);
+    m_Members.push_back(std::move(member));
 }
 
 void CDataMemberContainerType::PrintASN(CNcbiOstream& out, int indent) const
@@ -870,7 +870,7 @@ AutoPtr<CTypeStrings> CDataContainerType::AddMembers(
         if (member_name.empty()) {
             member_name = external_name;
         }
-        code->AddMember(external_name, member_name, memberType,
+        code->AddMember(external_name, member_name, std::move(memberType),
                         (*i)->GetType()->GetVar("_pointer"),
                         optional, defaultCode, delayed,
                         (*i)->GetType()->GetTag(),
@@ -1031,8 +1031,8 @@ AutoPtr<CTypeStrings> CWsdlDataType::GetFullCType(void) const
 }
 
 
-CDataMember::CDataMember(const string& name, const AutoPtr<CDataType>& type)
-    : m_Name(name), m_Type(type), m_Optional(false),
+CDataMember::CDataMember(const string& name, AutoPtr<CDataType> type_in)
+    : m_Name(name), m_Type(std::move(type_in)), m_Optional(false),
     m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_SimpleType(false),
     m_Nillable(false)
 {
@@ -1158,9 +1158,9 @@ bool CDataMember::Check(void) const
     return GetType()->CheckValue(*m_Default);
 }
 
-void CDataMember::SetDefault(const AutoPtr<CDataValue>& value)
+void CDataMember::SetDefault(AutoPtr<CDataValue> value)
 {
-    m_Default = value;
+    m_Default = std::move(value);
 }
 
 void CDataMember::SetOptional(void)

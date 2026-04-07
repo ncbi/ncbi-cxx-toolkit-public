@@ -84,8 +84,8 @@ public:
 private:
     const CModuleContainer* m_Parent;
 
-    CModuleContainer(const CModuleContainer&);
-    CModuleContainer& operator=(const CModuleContainer&);
+    CModuleContainer(const CModuleContainer&) = delete;
+    CModuleContainer& operator=(const CModuleContainer&) = delete;
 };
 
 END_NCBI_SCOPE

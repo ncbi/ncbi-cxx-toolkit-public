@@ -143,7 +143,7 @@ void x_CollectMembers(
     const CWsdlDataType* memb_type,
     const CWsdlTypeStrings::TMembers& members)
 {
-    CDataMemberContainerType::TMembers memin = memb_type->GetMembers();
+    const CDataMemberContainerType::TMembers& memin = memb_type->GetMembers();
     ITERATE( CDataMemberContainerType::TMembers, mi, memin) {
         const string& name = (*mi)->GetName();
         ITERATE ( CWsdlTypeStrings::TMembers, ii, members ) {
@@ -200,7 +200,7 @@ void CWsdlTypeStrings::GenerateClassCode(
         list<TMembers::const_iterator> headeroutputs;
         list<TMembers::const_iterator> outputs;
         // operation
-        CDataMemberContainerType::TMembers memb = type->GetMembers();
+        const CDataMemberContainerType::TMembers& memb = type->GetMembers();
         ITERATE( CDataMemberContainerType::TMembers, m, memb) {
             const CWsdlDataType* memb_type = x_WsdlDataType((*m)->GetType());
             if (!memb_type) {

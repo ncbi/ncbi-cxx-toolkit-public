@@ -71,7 +71,7 @@ public:
         CComments comments;
         SMemberInfo(const string& external_name,
                     const string& name, 
-                    const AutoPtr<CTypeStrings>& type,
+                    AutoPtr<CTypeStrings> type,
                     const string& pointerType,
                     bool optional, const string& defaultValue,
                     bool delayed, int tag,
@@ -105,15 +105,15 @@ public:
                         const string& fileName);
 
     void AddMember(const string& external_name, const string& name,
-                   const AutoPtr<CTypeStrings>& type,
+                   AutoPtr<CTypeStrings> type,
                    const string& pointerType,
                    bool optional, const string& defaultValue,
                    bool delayed, int tag,
                    bool noPrefix, bool attlist, bool noTag, bool simple,
                    const CDataType* dataType, bool nonEmpty, const CComments& comments);
-    void AddMember(const AutoPtr<CTypeStrings>& type, int tag, bool nonEmpty, bool noPrefix)
+    void AddMember(AutoPtr<CTypeStrings> type, int tag, bool nonEmpty, bool noPrefix)
         {
-            AddMember(NcbiEmptyString, NcbiEmptyString, type, NcbiEmptyString,
+            AddMember(NcbiEmptyString, NcbiEmptyString, std::move(type), NcbiEmptyString,
                       false, NcbiEmptyString, false, tag,
                       noPrefix,false,false,false,0,nonEmpty,CComments());
         }

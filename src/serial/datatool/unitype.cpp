@@ -43,9 +43,10 @@
 
 BEGIN_NCBI_SCOPE
 
-CUniSequenceDataType::CUniSequenceDataType(const AutoPtr<CDataType>& element)
+CUniSequenceDataType::CUniSequenceDataType(AutoPtr<CDataType> element_in)
 {
-    SetElementType(element);
+    SetElementType(std::move(element_in));
+    auto element = GetElementType();
     m_NonEmpty = false;
     m_NoPrefix = false;
     if (element->IsNsQualified() != eNSQNotSet) {
@@ -78,12 +79,12 @@ const char* CUniSequenceDataType::GetDEFKeyword(void) const
     return "_SEQUENCE_OF_";
 }
 
-void CUniSequenceDataType::SetElementType(const AutoPtr<CDataType>& type)
+void CUniSequenceDataType::SetElementType(AutoPtr<CDataType> type)
 {
     if ( GetElementType() )
         NCBI_THROW(CDatatoolException,eInvalidData,
             "double element type " + LocationString());
-    m_ElementType = type;
+    m_ElementType = std::move(type);
 }
 
 void CUniSequenceDataType::PrintASN(CNcbiOstream& out, int indent) const
@@ -604,11 +605,11 @@ AutoPtr<CTypeStrings> CUniSequenceDataType::GetFullCType(void) const
     string templ = GetAndVerifyVar("_type");
     if ( templ.empty() )
         templ = "list";
-    return AutoPtr<CTypeStrings>(new CListTypeStrings(templ, tData, GetNamespaceName(), this));
+    return AutoPtr<CTypeStrings>(new CListTypeStrings(templ, std::move(tData), GetNamespaceName(), this));
 }
 
-CUniSetDataType::CUniSetDataType(const AutoPtr<CDataType>& elementType)
-    : CParent(elementType)
+CUniSetDataType::CUniSetDataType(AutoPtr<CDataType> elementType)
+    : CParent(std::move(elementType))
 {
 }
 
@@ -638,11 +639,11 @@ AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const
             templ = "list";
         }
         else {
-            return AutoPtr<CTypeStrings>(new CListTypeStrings("list", tData,
+            return AutoPtr<CTypeStrings>(new CListTypeStrings("list", std::move(tData),
                 GetNamespaceName(), this, true));
         }
     }
-    return AutoPtr<CTypeStrings>(new CListTypeStrings(templ, tData,
+    return AutoPtr<CTypeStrings>(new CListTypeStrings(templ, std::move(tData),
         GetNamespaceName(), this, true));
 }
 

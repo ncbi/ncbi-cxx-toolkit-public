@@ -81,27 +81,27 @@ CChoiceTypeStrings::~CChoiceTypeStrings(void)
 
 void CChoiceTypeStrings::AddVariant(const string& external_name,
                                     const string& name,
-                                    const AutoPtr<CTypeStrings>& type,
+                                    AutoPtr<CTypeStrings> type,
                                     bool delayed, bool in_union, int tag,
                                     bool noPrefix, bool attlist, bool noTag,
                                     bool simple, const CDataType* dataType,
                                     const CComments& comments)
 {
-    m_Variants.push_back(SVariantInfo(external_name, name, type, delayed, in_union, tag,
+    m_Variants.push_back(SVariantInfo(external_name, name, std::move(type), delayed, in_union, tag,
                                       noPrefix,attlist,noTag,simple,dataType,
                                       comments));
 }
 
 CChoiceTypeStrings::SVariantInfo::SVariantInfo(const string& external_name,
                                                const string& name,
-                                               const AutoPtr<CTypeStrings>& t,
+                                               AutoPtr<CTypeStrings> t,
                                                bool del, bool in_un, int tag,
                                                bool noPrefx, bool attlst,
                                                bool noTg,bool simpl,
                                                const CDataType* dataTp,
                                                const CComments& commnts)
     : externalName(external_name), cName(Identifier(name)),
-      type(t), delayed(del), in_union(in_un), memberTag(tag),
+      type(std::move(t)), delayed(del), in_union(in_un), memberTag(tag),
       noPrefix(noPrefx), attlist(attlst), noTag(noTg), simple(simpl),
       dataType(dataTp), comments(commnts)
 {

@@ -56,7 +56,7 @@ public:
     struct SClassInfo {
         SClassInfo(const CNamespace& classNamespace,
                    AutoPtr<CTypeStrings> classCode)
-            : ns(classNamespace), code(classCode)
+            : ns(classNamespace), code(std::move(classCode))
             {
             }
 

@@ -135,8 +135,8 @@ public:
 
 class CNamedDataValue : public CDataValue {
 public:
-    CNamedDataValue(const string& id, const AutoPtr<CDataValue>& v)
-        : m_Name(id), m_Value(v)
+    CNamedDataValue(const string& id, AutoPtr<CDataValue> v)
+        : m_Name(id), m_Value(std::move(v))
         {
         }
     ~CNamedDataValue(void);

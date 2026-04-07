@@ -37,13 +37,13 @@
 
 BEGIN_NCBI_SCOPE
 
-CPointerTypeStrings::CPointerTypeStrings(CTypeStrings* dataType)
+/*CPointerTypeStrings::CPointerTypeStrings(CTypeStrings* dataType)
     : m_DataTypeStr(dataType)
 {
-}
+}*/
 
 CPointerTypeStrings::CPointerTypeStrings(AutoPtr<CTypeStrings> dataType)
-    : m_DataTypeStr(dataType)
+    : m_DataTypeStr(std::move(dataType))
 {
 }
 
@@ -107,7 +107,7 @@ CRefTypeStrings::CRefTypeStrings(CTypeStrings* dataType)
 }
 
 CRefTypeStrings::CRefTypeStrings(AutoPtr<CTypeStrings> dataType)
-    : CParent(dataType)
+    : CParent(std::move(dataType))
 {
 }
 

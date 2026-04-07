@@ -111,7 +111,7 @@ bool CClassTypeStrings::x_IsUniSeq(TMembers::const_iterator i) const
 
 void CClassTypeStrings::AddMember(const string& external_name,
                                   const string& name,
-                                  const AutoPtr<CTypeStrings>& type,
+                                  AutoPtr<CTypeStrings> type,
                                   const string& pointerType,
                                   bool optional,
                                   const string& defaultValue,
@@ -120,7 +120,7 @@ void CClassTypeStrings::AddMember(const string& external_name,
                                   bool simple,const CDataType* dataType,
                                   bool nonempty, const CComments& comments)
 {
-    m_Members.push_back(SMemberInfo(external_name, name, type,
+    m_Members.push_back(SMemberInfo(external_name, name, std::move(type),
                                     pointerType,
                                     optional, defaultValue,
                                     delayed, tag, noPrefix,attlist,noTag,
@@ -129,7 +129,7 @@ void CClassTypeStrings::AddMember(const string& external_name,
 
 CClassTypeStrings::SMemberInfo::SMemberInfo(const string& external_name,
                                             const string& name,
-                                            const AutoPtr<CTypeStrings>& t,
+                                            AutoPtr<CTypeStrings> type_in,
                                             const string& pType,
                                             bool opt, const string& defValue,
                                             bool del, int tag, bool noPrefx,
@@ -138,7 +138,7 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& external_name,
                                             const CComments& commnts)
     : externalName(external_name), cName(Identifier(name)),
       mName("m_"+cName), tName('T'+cName),
-      type(t), ptrType(pType),
+      type(std::move(type_in)), ptrType(pType),
       optional(opt), delayed(del), memberTag(tag),
       defaultValue(defValue), noPrefix(noPrefx), attlist(attlst), noTag(noTg),
       simple(simpl),dataType(dataTp),nonEmpty(nEmpty), comments(commnts)

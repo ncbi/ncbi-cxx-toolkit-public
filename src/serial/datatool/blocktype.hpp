@@ -42,7 +42,7 @@ class CClassTypeInfo;
 
 class CDataMember {
 public:
-    CDataMember(const string& name, const AutoPtr<CDataType>& type);
+    CDataMember(const string& name, AutoPtr<CDataType> type);
     ~CDataMember(void);
 
     void PrintASN(CNcbiOstream& out, int indent, bool last) const;
@@ -99,7 +99,7 @@ public:
     void SetAttlist(void);
     void SetNotag(void);
     void SetSimpleType(void);
-    void SetDefault(const AutoPtr<CDataValue>& value);
+    void SetDefault(AutoPtr<CDataValue> value);
     void SetNillable(void);
 
     CComments& Comments(void)
@@ -146,7 +146,7 @@ public:
     virtual void FixTypeTree(void) const override;
     virtual bool CheckType(void) const override;
 
-    void AddMember(const AutoPtr<CDataMember>& member);
+    void AddMember(AutoPtr<CDataMember> member);
 
     virtual TObjectPtr CreateDefault(const CDataValue& value) const override;
 

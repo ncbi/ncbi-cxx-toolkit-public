@@ -54,7 +54,7 @@ CTemplate1TypeStrings::CTemplate1TypeStrings(const string& templateName,
                                              const string& namespaceName,
                                              const CDataType* dataType)
     : CParent(namespaceName, dataType),
-      m_TemplateName(templateName), m_Arg1Type(arg1Type)
+      m_TemplateName(templateName), m_Arg1Type(std::move(arg1Type))
 {
     x_ParseTemplateName(templateName);
 }
@@ -158,7 +158,8 @@ CTemplate2TypeStrings::CTemplate2TypeStrings(const string& templateName,
                                              AutoPtr<CTypeStrings> arg2Type,
                                              const string& namespaceName,
                                              const CDataType* dataType)
-    : CParent(templateName, arg1Type, namespaceName, dataType), m_Arg2Type(arg2Type)
+    : CParent(templateName, std::move(arg1Type), namespaceName, dataType),
+      m_Arg2Type(std::move(arg2Type))
 {
 }
 
@@ -203,7 +204,7 @@ CSetTypeStrings::CSetTypeStrings(const string& templateName,
                                  AutoPtr<CTypeStrings> type,
                                  const string& namespaceName,
                                  const CDataType* dataType)
-    : CParent(templateName, type, namespaceName, dataType)
+    : CParent(templateName, std::move(type), namespaceName, dataType)
 {
 }
 
@@ -250,7 +251,7 @@ CListTypeStrings::CListTypeStrings(const string& templateName,
                                    const string& namespaceName,
                                    const CDataType* dataType,
                                    bool externalSet)
-    : CParent(templateName, type, namespaceName, dataType), m_ExternalSet(externalSet)
+    : CParent(templateName, std::move(type), namespaceName, dataType), m_ExternalSet(externalSet)
 {
 }
 
@@ -305,7 +306,7 @@ CMapTypeStrings::CMapTypeStrings(const string& templateName,
                                  AutoPtr<CTypeStrings> valueType,
                                  const string& namespaceName,
                                  const CDataType* dataType)
-    : CParent(templateName, keyType, valueType, namespaceName, dataType)
+    : CParent(templateName, std::move(keyType), std::move(valueType), namespaceName, dataType)
 {
 }
 

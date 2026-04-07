@@ -40,7 +40,8 @@ BEGIN_NCBI_SCOPE
 class CUniSequenceDataType : public CDataType {
     typedef CDataType CParent;
 public:
-    CUniSequenceDataType(const AutoPtr<CDataType>& elementType);
+    explicit
+    CUniSequenceDataType(AutoPtr<CDataType> elementType);
 
     virtual void PrintASN(CNcbiOstream& out, int indent) const override;
     virtual void PrintSpecDumpExtra(CNcbiOstream& out, int indent) const override;
@@ -63,7 +64,7 @@ public:
         {
             return m_ElementType.get();
         }
-    void SetElementType(const AutoPtr<CDataType>& type);
+    void SetElementType(AutoPtr<CDataType> type);
 
     virtual CTypeInfo* CreateTypeInfo(void) override;
     virtual bool NeedAutoPointer(const CTypeInfo* typeInfo) const override;
@@ -99,7 +100,7 @@ private:
 class CUniSetDataType : public CUniSequenceDataType {
     typedef CUniSequenceDataType CParent;
 public:
-    CUniSetDataType(const AutoPtr<CDataType>& elementType);
+    CUniSetDataType(AutoPtr<CDataType> elementType);
 
     virtual CTypeInfo* CreateTypeInfo(void) override;
     

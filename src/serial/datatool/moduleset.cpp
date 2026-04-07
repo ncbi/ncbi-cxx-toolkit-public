@@ -52,7 +52,7 @@ CFileModules::CFileModules(const string& name)
 {
 }
 
-void CFileModules::AddModule(const AutoPtr<CDataTypeModule>& module)
+void CFileModules::AddModule(AutoPtr<CDataTypeModule> module)
 {
     module->SetModuleContainer(this);
     CDataTypeModule*& mptr = m_ModulesByName[module->GetName()];
@@ -62,7 +62,7 @@ void CFileModules::AddModule(const AutoPtr<CDataTypeModule>& module)
     }
     else {
         mptr = module.get();
-        m_Modules.push_back(module);
+        m_Modules.push_back(std::move(module));
     }
 }
 
@@ -337,10 +337,10 @@ void CFileModules::CollectAllTypeinfo(set<TTypeInfo>& types) const
     }
 }
 
-void CFileSet::AddFile(const AutoPtr<CFileModules>& moduleSet)
+void CFileSet::AddFile(AutoPtr<CFileModules> moduleSet)
 {
     moduleSet->SetModuleContainer(this);
-    m_ModuleSets.push_back(moduleSet);
+    m_ModuleSets.push_back(std::move(moduleSet));
 }
 
 void CFileSet::PrintSampleDEF(const string& rootdir) const

@@ -59,12 +59,12 @@ CChoicePtrTypeStrings::CChoicePtrTypeStrings(const string& externalName,
 void CChoicePtrTypeStrings::AddVariant(const string& name,
                                        AutoPtr<CTypeStrings> type)
 {
-    m_Variants.push_back(SVariantInfo(name, type));
+    m_Variants.push_back(SVariantInfo(name, std::move(type)));
 }
 
 CChoicePtrTypeStrings::SVariantInfo::SVariantInfo(const string& n,
                                                   AutoPtr<CTypeStrings> t)
-    : externalName(n), cName(Identifier(n)), type(t)
+    : externalName(n), cName(Identifier(n)), type(std::move(t))
 {
 }
 
@@ -187,7 +187,7 @@ CChoicePtrRefTypeStrings::CChoicePtrRefTypeStrings(CTypeStrings* type)
 }
 
 CChoicePtrRefTypeStrings::CChoicePtrRefTypeStrings(AutoPtr<CTypeStrings> type)
-    : CParent(type)
+    : CParent(std::move(type))
 {
 }
 

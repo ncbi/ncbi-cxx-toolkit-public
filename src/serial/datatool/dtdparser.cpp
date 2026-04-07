@@ -137,7 +137,7 @@ void DTDParser::BuildDataTree(
     AutoPtr<CFileModules>& modules, AutoPtr<CDataTypeModule>& module)
 {
     GenerateDataTree(*module, "*");
-    modules->AddModule(module);
+    modules->AddModule(std::move(module));
 }
 
 void DTDParser::BeginDocumentTree(void)
@@ -932,7 +932,7 @@ void DTDParser::GenerateDataTree(CDataTypeModule& module, const string& name_spa
 void DTDParser::ModuleType(CDataTypeModule& module, const DTDElement& node)
 {
     AutoPtr<CDataType> type = Type(node, node.GetOccurrence(), false);
-    module.AddDefinition(node.GetName(), type);
+    module.AddDefinition(node.GetName(), std::move(type));
 }
 
 
@@ -1156,7 +1156,7 @@ CDataType* DTDParser::x_Type(
         member->SetOptional();
         member->SetNotag();
         member->SetNoPrefix();
-        container->AddMember(member);
+        container->AddMember(std::move(member));
         type = container.release();
     }
     if (!fromInside) {
@@ -1233,12 +1233,12 @@ CDataType* DTDParser::NillableBlock(const DTDElement& node, bool ignoreAttrib)
         AddAttributes(container, tmp);
     }
     AutoPtr<CDataType> type(Type(tmp, DTDElement::eOne, false, true));
-    AutoPtr<CDataMember> member(new CDataMember( tmp.GetName(), type));
     type->SetNillable();
+    AutoPtr<CDataMember> member(new CDataMember( tmp.GetName(), std::move(type)));
     member->SetNotag();
     member->SetNillable();
     member->SetNoPrefix();
-    container->AddMember(member);
+    container->AddMember(std::move(member));
     return container.release();
 }
 
@@ -1255,10 +1255,10 @@ CDataType* DTDParser::TypesBlock(
     for (list<string>::const_iterator i= refs.begin(); i != refs.end(); ++i) {
         if (*i == s_SpecialName) {
             AutoPtr<CDataType> stype(new CStringDataType());
-            AutoPtr<CDataMember> smember(new CDataMember("-CharData", stype));
+            AutoPtr<CDataMember> smember(new CDataMember("-CharData", std::move(stype)));
             smember->SetNotag();
             smember->SetNoPrefix();
-            container->AddMember(smember);
+            container->AddMember(std::move(smember));
             continue;
         }
         DTDElement& refNode = m_MapElement[*i];
@@ -1293,15 +1293,16 @@ CDataType* DTDParser::TypesBlock(
                 if (uniseq2 || (optional && refseq)) {
                     refname.insert(0,"E");
                 }
+                auto line = type->GetSourceLine();
                 AutoPtr<CDataMemberContainerType> type_container(new CDataSequenceType());
-                AutoPtr<CDataMember> member(new CDataMember(refname, type));
-                type_container->SetSourceLine(type->GetSourceLine());
+                AutoPtr<CDataMember> member(new CDataMember(refname, std::move(type)));
+                type_container->SetSourceLine(line);
                 if (optional) {
                     member->SetOptional();
                 }
                 member->SetNotag();
                 member->SetNoPrefix();
-                type_container->AddMember(member);
+                type_container->AddMember(std::move(member));
                 type.reset(type_container.release());
             }
             else if (uniseq2 && setnil) {
@@ -1312,14 +1313,15 @@ CDataType* DTDParser::TypesBlock(
                 setnil = false;
             }
             if (uniseq2) {
-                CUniSequenceDataType* uniType = new CUniSequenceDataType(type);
-                uniType->SetSourceLine( type->GetSourceLine());
+                auto line = type->GetSourceLine();
+                CUniSequenceDataType* uniType = new CUniSequenceDataType(std::move(type));
+                uniType->SetSourceLine(line);
                 uniType->SetNonEmpty( occ == DTDElement::eOneOrMore);
                 type.reset(uniType);
 
             }
         }
-        AutoPtr<CDataMember> member(new CDataMember(refNode.GetName(), type));
+        AutoPtr<CDataMember> member(new CDataMember(refNode.GetName(), std::move(type)));
         if ((occ == DTDElement::eZeroOrOne) ||
             (occ == DTDElement::eZeroOrMore)) {
             member->SetOptional();
@@ -1340,7 +1342,7 @@ CDataType* DTDParser::TypesBlock(
         if (refNode.IsEmbedded()) {
             member->SetRestrictions( refNode.GetRestrictions());
         }
-        container->AddMember(member);
+        container->AddMember(std::move(member));
     }
     if (m_SrcType == eDTD || node.IsEmbedded()) {
         container->Comments() = node.GetComments();
@@ -1359,11 +1361,11 @@ CDataType* DTDParser::CompositeNode(
 
     AutoPtr<CDataType> type(Type(node, DTDElement::eOne, false, true));
     if (uniseq) {
-        int line = type->GetSourceLine();
-        type.reset(new CUniSequenceDataType(type));
+        auto line = type->GetSourceLine();
+        type.reset(new CUniSequenceDataType(std::move(type)));
         type->SetSourceLine( line );
     }
-    AutoPtr<CDataMember> member(new CDataMember(node.GetName(), type));
+    AutoPtr<CDataMember> member(new CDataMember(node.GetName(), std::move(type)));
 
     if ((occ == DTDElement::eZeroOrOne) ||
         (occ == DTDElement::eZeroOrMore)) {
@@ -1381,7 +1383,7 @@ CDataType* DTDParser::CompositeNode(
     if (!uniseq) {
         member->SetSimpleType();
     }
-    container->AddMember(member);
+    container->AddMember(std::move(member));
     if (m_SrcType == eDTD || node.IsEmbedded()) {
         container->Comments() = node.GetComments();
     }
@@ -1397,7 +1399,7 @@ void DTDParser::AddAttributes(
         member->SetNoPrefix();
         member->SetAttlist();
         member->Comments() = node.GetAttribComments();
-        container->AddMember(member);
+        container->AddMember(std::move(member));
     }
 }
 
@@ -1409,7 +1411,10 @@ CDataType* DTDParser::AttribBlock(const DTDElement& node)
     for (list<DTDAttribute>::const_iterator i= att.begin();
         i != att.end(); ++i) {
         AutoPtr<CDataType> type(x_AttribType(*i));
-        AutoPtr<CDataMember> member(new CDataMember(i->GetName(), type));
+        if (type->IsNsQualified() == eNSQualified) {
+            has_nsq = true;
+        }
+        AutoPtr<CDataMember> member(new CDataMember(i->GetName(), std::move(type)));
         string defValue( i->GetValue());
         if (!defValue.empty()) {
             member->SetDefault(x_AttribValue(*i,defValue));
@@ -1419,10 +1424,7 @@ CDataType* DTDParser::AttribBlock(const DTDElement& node)
         }
         member->SetNoPrefix();
         member->Comments() = i->GetComments();
-        if (type->IsNsQualified() == eNSQualified) {
-            has_nsq = true;
-        }
-        container->AddMember(member);
+        container->AddMember(std::move(member));
     }
     if (has_nsq) {
         container->SetNamespaceName(node.GetNamespaceName());

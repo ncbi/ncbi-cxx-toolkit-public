@@ -299,6 +299,12 @@ public:
         {
             return m_Comments;
         }
+    CComments ExtractComments()
+        {
+            CComments comments = std::move(m_Comments);
+            m_Comments = CComments();
+            return comments;
+        }
 
     void SetDataMember(CDataMember* dm) {
         m_DataMember = dm;
@@ -487,8 +493,8 @@ private:
     bool m_EmptyExternalName;
     list<CMemberFacet> m_Restrictions;
 
-    CDataType(const CDataType&);
-    CDataType& operator=(const CDataType&);
+    CDataType(const CDataType&) = delete;
+    CDataType& operator=(const CDataType&) = delete;
     static bool sm_EnableDTDEntities;
     static bool sm_EnforcedStdXml;
     static EDataSpec sm_SourceDataSpec;

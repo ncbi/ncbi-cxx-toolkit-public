@@ -45,7 +45,10 @@ class CComments
 public:
     CComments(void);
     ~CComments(void);
-    CComments& operator= (const CComments& other);
+    CComments(const CComments&) = default;
+    CComments& operator= (const CComments&) = default;
+    CComments(CComments&&) = default;
+    CComments& operator= (CComments&&) = default;
 
     void Add(const string& s);
 

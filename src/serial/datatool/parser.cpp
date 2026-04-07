@@ -202,7 +202,7 @@ void ASNParser::ModuleType(CDataTypeModule& module, const string& name)
     if (type->IsStdType()  ||  type->IsReference()) {
         type->SetIsAlias(true);
     }
-    module.AddDefinition(name, type);
+    module.AddDefinition(name, std::move(type));
 }
 
 AutoPtr<CDataType> ASNParser::Type(void)
@@ -261,9 +261,9 @@ CDataType* ASNParser::x_Type(void)
         Consume();
         if ( ConsumeIf(K_OF) ) {
             AutoPtr<CDataType> elem = Type();
-            CDataType* uni = new CUniSequenceDataType(elem);
-            uni->Comments() = elem->Comments();
-            elem->Comments() = CComments();
+            CComments comments = elem->ExtractComments();
+            CDataType* uni = new CUniSequenceDataType(std::move(elem));
+            uni->Comments() = std::move(comments);
             return uni;
         }
         else
@@ -272,9 +272,9 @@ CDataType* ASNParser::x_Type(void)
         Consume();
         if ( ConsumeIf(K_OF) ) {
             AutoPtr<CDataType> elem = Type();
-            CDataType* uni = new CUniSetDataType(elem);
-            uni->Comments() = elem->Comments();
-            elem->Comments() = CComments();
+            auto comments = elem->ExtractComments();
+            CDataType* uni = new CUniSetDataType(std::move(elem));
+            uni->Comments() = std::move(comments);
             return uni;
         }
         else
@@ -417,7 +417,7 @@ CDataType* ASNParser::TypesBlock(CDataMemberContainerType* containerType,
             CopyComments(member->Comments());
             CopyLineComment(member->GetType()->GetSourceLine(), member->Comments());
         }
-        container->AddMember(member);
+        container->AddMember(std::move(member));
     }
     return container.release();
 }
@@ -514,7 +514,7 @@ AutoPtr<CDataMember> ASNParser::NamedDataType(bool allowDefaults)
     }
     AutoPtr<CDataType> type(Type());
 
-    AutoPtr<CDataMember> member(new CDataMember(name, type));
+    AutoPtr<CDataMember> member(new CDataMember(name, std::move(type)));
     if ( allowDefaults ) {
         switch ( Next() ) {
         default:
@@ -525,7 +525,7 @@ AutoPtr<CDataMember> ASNParser::NamedDataType(bool allowDefaults)
             break;
         case K_DEFAULT:
             Consume();
-            member->SetDefault(Value(type.get()));
+            member->SetDefault(Value(member->GetType()));
             break;
         }
     }

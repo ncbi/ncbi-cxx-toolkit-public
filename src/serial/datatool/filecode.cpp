@@ -906,7 +906,7 @@ bool CFileCode::AddType(const CDataType* type)
     m_SourceFiles.insert(type->GetSourceFileName());
     AutoPtr<CTypeStrings> code = type->GenerateCode();
     code->SetModuleName(type->GetModule()->GetName());
-    m_Classes.push_front(SClassInfo(type->Namespace(), code));
+    m_Classes.push_front(SClassInfo(type->Namespace(), std::move(code)));
     return true;
 }
 

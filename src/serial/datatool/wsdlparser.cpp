@@ -155,7 +155,7 @@ void WSDLParser::BuildDataTree(
                 namesp2module[*a] = basename;
             }
         }
-        modNs.push_back(module);
+        modNs.push_back(std::move(module));
         module2nsprefix[basename] = "";
     } else {
         problem_ns = all_ns;
@@ -175,7 +175,7 @@ void WSDLParser::BuildDataTree(
         namesp2module[*a] = module_name;
         if (!modN->GetDefinitions().empty()) {
             modN->SetSubnamespace(ns_prefix);
-            modNs.push_back(modN);
+            modNs.push_back(std::move(modN));
             module2nsprefix[module_name] = ns_prefix;
         }
     }
@@ -230,9 +230,9 @@ void WSDLParser::BuildDataTree(
         }
     }
 // add modules
-    for (list< AutoPtr<CDataTypeModule> >::const_iterator n= modNs.begin();
+    for (list< AutoPtr<CDataTypeModule> >::iterator n= modNs.begin();
             n != modNs.end(); ++n) {
-        modules->AddModule(*n);
+        modules->AddModule(std::move(*n));
     }
 }
 

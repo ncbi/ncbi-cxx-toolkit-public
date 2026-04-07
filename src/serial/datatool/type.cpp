@@ -806,7 +806,7 @@ AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
             nonempty = uniseq->IsNonEmpty();
         }
         noprefix = !IsASNDataSpec();
-        code->AddMember(dType, GetTag(), nonempty, noprefix);
+        code->AddMember(std::move(dType), GetTag(), nonempty, noprefix);
         SetParentClassTo(*code);
         return AutoPtr<CTypeStrings>(code.release());
     }
