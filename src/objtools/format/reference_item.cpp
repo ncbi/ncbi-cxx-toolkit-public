@@ -1507,7 +1507,14 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
                             if( ! hasPmidOrMuid ) {
                                 ITERATE( CArticleIdSet_Base::Tdata, it, ids.Get() ) {
                                     if( (*it)->Which() == CArticleId_Base::e_Doi) {
-                                        const string & doi = (*it)->GetDoi().Get();
+                                        const string & origdoi = (*it)->GetDoi().Get();
+                                        string doi = origdoi;
+                                        if (NStr::StartsWith( doi, "http") || NStr::StartsWith( doi, "dx") || NStr::StartsWith( doi, "doi")) {
+                                            size_t pos = NStr::Find( doi, "10");
+                                            if (pos != NPOS) {
+                                                doi = doi.erase(0, pos);
+                                            }
+                                        }
                                         if( NStr::StartsWith( doi, "10." ) ) {
                                             if( ctx.Config().DoHTML() && ! CommentHasSuspiciousHtml(doi) ) {
                                                 ostringstream result;
