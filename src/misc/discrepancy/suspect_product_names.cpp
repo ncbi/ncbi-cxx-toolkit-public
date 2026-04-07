@@ -628,7 +628,7 @@ DISCREPANCY_CASE(ORGANELLE_PRODUCTS, FEAT, eOncaller, "Organelle products on non
     if (biosrc) {
         const CBioSource&   src    = biosrc->GetSource();
         CBioSource::TGenome genome = src.GetGenome();
-        if (genome == CBioSource::eGenome_mitochondrion || genome == CBioSource::eGenome_chloroplast || genome == CBioSource::eGenome_plastid || context.IsViral(&src) || context.IsBacterial(&src)) {
+        if (genome == CBioSource::eGenome_mitochondrion || genome == CBioSource::eGenome_chloroplast || genome == CBioSource::eGenome_plastid || genome == CBioSource::eGenome_nitroplast || context.IsViral(&src) || context.IsBacterial(&src)) {
             return;
         }
         if (src.IsSetOrg() && src.GetOrg().IsSetTaxname() && CDiscrepancyContext::IsUnculturedNonOrganelleName(src.GetOrg().GetTaxname())) {

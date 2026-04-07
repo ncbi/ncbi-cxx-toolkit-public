@@ -2134,6 +2134,7 @@ DISCREPANCY_CASE(ORGANELLE_PRESENT, SEQ_SET, eSubmitter | eSmart, "Discrepancy p
                     case CBioSource::eGenome_leucoplast:
                     case CBioSource::eGenome_nucleomorph:
                     case CBioSource::eGenome_plastid:
+                    case CBioSource::eGenome_nitroplast:
                         m_Objs["one or more organelles are present"];
                         break;
                     default:

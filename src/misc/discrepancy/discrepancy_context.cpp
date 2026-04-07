@@ -130,7 +130,8 @@ bool CDiscrepancyContext::IsOrganelle(const CBioSource* biosrc) {
             || genome == CBioSource::eGenome_proplastid
             || genome == CBioSource::eGenome_hydrogenosome
             || genome == CBioSource::eGenome_plastid
-            || genome == CBioSource::eGenome_chromatophore;
+            || genome == CBioSource::eGenome_chromatophore
+            || genome == CBioSource::eGenome_nitroplast;
     }
     return false;
 }
@@ -144,6 +145,7 @@ bool CDiscrepancyContext::IsEukaryotic(const CBioSource* biosrc) const
             && genome != CBioSource::eGenome_chloroplast
             && genome != CBioSource::eGenome_plastid
             && genome != CBioSource::eGenome_apicoplast
+            && genome != CBioSource::eGenome_nitroplast
             && HasLineage(*biosrc, GetLineage(), "Eukaryota");
     }
     return false;
