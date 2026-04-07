@@ -1209,7 +1209,7 @@ int CAsn2FastaApp::x_ProcessISubdirectory(const CDir& dir)
         WARNING_POST("No files matching " + mask + " found in " + dir.GetName());
     }
 
-    for (CDir::TEntry de : entries) {
+    for (CDir::TEntry& de : entries) {
         const string ifname = de->GetPath();
         string ofname = ifname;
         if (NStr::EndsWith(ofname, ext)) {
