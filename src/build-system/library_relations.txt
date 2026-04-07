@@ -273,6 +273,10 @@ ctutils needs3party $(SYBASE_DLLS)
 ctutils needs3party $(SYBASE_LIBS)
 ctutils needs3party $(VDB_LIBS)
 ctutils needs3party ncbiobj
+ctutils-ftds needs $(FTDS_LIB)
+ctutils-ftds needs3party $(FTDS_LIBS)
+ctutils-ftds needs3party $(VDB_LIBS)
+ctutils-ftds needs3party ncbiobj
 curl needs3party $(ORIG_LIBS)
 data_loaders_util needs $(DBAPI_FTDS)
 data_loaders_util needs $(FTDS_LIB)
