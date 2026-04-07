@@ -44,7 +44,7 @@ CMultiFileSource::CMultiFileSource(
     mDir.Reset(de.GetDir());
     mGlob = de.GetName();
     CDir::TEntries entries = mDir.GetEntries(mGlob);
-    for (CDir::TEntry it : entries) {
+    for (CDir::TEntry& it : entries) {
         mEntries.push_back(it->GetPath());
     }
     mEntries.sort();
