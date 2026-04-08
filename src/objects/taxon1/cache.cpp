@@ -783,8 +783,11 @@ CDomainStorage::CDomainStorage()
 void
 CDomainStorage::AddField( int field_no, int val_type, const string& name )
 {
+    if ( field_no < 0 ) {
+        NCBI_THROW(CException, eUnknown, "CDomainStorage::AddField: invalid field number");
+    }
     m_fields.insert( TFieldMap::value_type( name, field_no ) );
-    if( m_types.size() <= field_no ) {
+    if( m_types.size() <= size_t(field_no) ) {
         m_types.resize(field_no+1);
     }
     m_types[field_no] = val_type;
