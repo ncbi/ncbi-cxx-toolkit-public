@@ -1311,7 +1311,7 @@ void CSubSource::IsCorrectLatLonFormat (string lat_lon, bool& format_correct, bo
     if (NStr::IsBlank(lat_lon)) {
         return;
     } else if (sscanf (lat_lon.c_str(), "%lf %c %lf %c%n", &ns, &lat, &ew, &lon, &processed) != 4
-               || size_t(processed) != lat_lon.length()) {
+               || static_cast<size_t>(processed) != lat_lon.length()) {
         return;
     } else if ((lat != 'N' && lat != 'S') || (lon != 'E' && lon != 'W')) {
         return;
@@ -4607,7 +4607,7 @@ CCountries::EStateCleanup s_DoUSAStateCleanup ( string& country ) {
     }
 
     for ( size_t j = 0; j < components.size(); j++ ) {
-        if ( j == size_t(match)) continue;
+        if ( j == static_cast<size_t>(match)) continue;
         res.append ( pfx );
         res.append ( components[j] );
         pfx = ", ";
