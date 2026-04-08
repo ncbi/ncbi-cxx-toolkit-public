@@ -596,7 +596,8 @@ void CPSGS_AsyncResolveBase::x_Process(void)
                 // - only if the seq id type has not been supplied by the user
                 // - only if seq_id_resolve flag effective value is true
                 // - only if parsing did not succeed
-                if (IsAccessionLike(m_CurrentSeqIdToResolve->seq_id)) {
+                if (IsAccessionLike(m_CurrentSeqIdToResolve->seq_id,
+                                    m_Request, m_Reply)) {
                     x_PrepareAccessionLikeBioseqInfoQuery();
                     break;
                 }
@@ -851,7 +852,9 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
         m_Request->SetRequestContext();
 
         // false => this is not cache
-        SPSGS_BioseqSelectionResult  result = SelectBioseqInfoRecord(records, false);
+        SPSGS_BioseqSelectionResult  result = SelectBioseqInfoRecord(records, false,
+                                                                     m_Request,
+                                                                     m_Reply);
         index_to_pick = result.index;
         if (result.status == CRequestStatus::e300_MultipleChoices) {
             if (m_Request->NeedTrace()) {
@@ -972,7 +975,8 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
     // false => it is not cache
     SPSGS_BioseqSelectionResult     decision = DecideINSDC(records,
                                                            m_BioseqInfoRequestedVersion,
-                                                           false);
+                                                           false,
+                                                           m_Request, m_Reply);
 
     if (m_Request->NeedTrace()) {
         string  msg = to_string(records.size()) +

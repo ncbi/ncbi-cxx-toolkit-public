@@ -112,7 +112,9 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
                 // More than one record; may be need to pick the latest version
                 // true => it is cache
                 SPSGS_BioseqSelectionResult     result = SelectBioseqInfoRecord(records,
-                                                                                true);
+                                                                                true,
+                                                                                m_Request,
+                                                                                m_Reply);
                 if (result.status == CRequestStatus::e300_MultipleChoices) {
                     // Many found and could not select one => treat as not
                     // found
@@ -213,7 +215,8 @@ CPSGCache::x_LookupINSDCBioseqInfo(IPSGS_Processor *  processor,
         auto                            records = cache->FetchBioseqInfo(fetch_request);
 
         // true => it is cache
-        SPSGS_BioseqSelectionResult     decision = DecideINSDC(records, version, true);
+        SPSGS_BioseqSelectionResult     decision = DecideINSDC(records, version, true,
+                                                               m_Request, m_Reply);
 
         if (m_NeedTrace) {
             string  msg = to_string(records.size()) +

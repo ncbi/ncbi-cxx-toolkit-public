@@ -42,6 +42,8 @@ USING_NCBI_SCOPE;
 using namespace ncbi::objects;
 
 class IPSGS_Processor;
+class CPSGS_Request;
+class CPSGS_Reply;
 
 
 struct SPSGSeqId {
@@ -52,7 +54,9 @@ struct SPSGSeqId {
 void PSGSortSeqIds(list<SPSGSeqId>& seq_ids, IPSGS_Processor *  processor);
 string StripTrailingVerticalBars(const string &  seq_id);
 CSeq_id_Base::E_Choice   DetectSeqIdTypeForIPG(const string &  seq_id);
-bool IsAccessionLike(const string &  user_input);
+bool IsAccessionLike(const string &  user_input,
+                     shared_ptr<CPSGS_Request> request,
+                     shared_ptr<CPSGS_Reply> reply);
 
 #endif /* PSGS_SEQ_ID_UTILS__HPP */
 

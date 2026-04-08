@@ -436,7 +436,8 @@ void CPSGS_ResolveBase::x_ResolveSeqId(void)
                 // - only if the seq id type has not been supplied by the user
                 // - only if seq_id_resolve flag effective value is true
                 // - only if parsing did not succeed
-                if (IsAccessionLike(m_CurrentSeqIdToResolve->seq_id)) {
+                if (IsAccessionLike(m_CurrentSeqIdToResolve->seq_id,
+                                    m_Request, m_Reply)) {
                     bioseq_resolution.Reset();
                     x_ResolveAsAccesionLike(bioseq_resolution);
                 }

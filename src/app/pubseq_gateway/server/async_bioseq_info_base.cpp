@@ -217,7 +217,9 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
 
     // Here: there are more than 1 records so a record will be picked for sure.
     // false => this is not cache
-    SPSGS_BioseqSelectionResult     result = SelectBioseqInfoRecord(records, false);
+    SPSGS_BioseqSelectionResult     result = SelectBioseqInfoRecord(records, false,
+                                                                    m_Request,
+                                                                    m_Reply);
     if (result.status == CRequestStatus::e300_MultipleChoices) {
         // More than one and it was impossible to make a choice
         app->GetTiming().Register(this, eLookupCassBioseqInfo,
@@ -277,7 +279,8 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
 
     // false => it is not cache
     SPSGS_BioseqSelectionResult decision = DecideINSDC(records,
-                                                       request_version, false);
+                                                       request_version, false,
+                                                       m_Request, m_Reply);
 
     if (m_NeedTrace) {
         string  msg = to_string(records.size()) +

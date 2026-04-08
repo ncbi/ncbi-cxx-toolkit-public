@@ -41,6 +41,8 @@
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
 
+class CPSGS_Request;
+class CPSGS_Reply;
 
 bool IsINSDCSeqIdType(CBioseqInfoRecord::TSeqIdType  seq_id_type);
 
@@ -49,7 +51,9 @@ bool IsINSDCSeqIdType(CBioseqInfoRecord::TSeqIdType  seq_id_type);
 SPSGS_BioseqSelectionResult
 DecideINSDC(const vector<CBioseqInfoRecord>&  records,
             CBioseqInfoRecord::TVersion  version,
-            bool  is_cache);
+            bool  is_cache,
+            shared_ptr<CPSGS_Request> request,
+            shared_ptr<CPSGS_Reply> reply);
 
 #endif
 

@@ -42,7 +42,9 @@ USING_NCBI_SCOPE;
 
 SPSGS_BioseqSelectionResult
 SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records,
-                       bool  is_cache)
+                       bool  is_cache,
+                       shared_ptr<CPSGS_Request> request,
+                       shared_ptr<CPSGS_Reply> reply)
 {
     if (records.empty())
         return {CRequestStatus::e404_NotFound, -1, ""};
@@ -162,6 +164,11 @@ SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records,
             // it is not a per-processor counter
             app->GetCounters().Increment(nullptr,
                                          CPSGSCounters::ePSGS_BioseqInfoCacheLookupAmbiguity);
+
+            if (request->NeedTrace()) {
+                reply->SendTrace("Cache lookup: " + ret.message,
+                                 request->GetStartTimestamp());
+            }
         } else {
             PSG_WARNING("Cassandra lookup: " + ret.message);
             app->GetAlerts().Register(ePSGS_BioseqInfoDBLookupIncompatibleRecords,
@@ -171,6 +178,11 @@ SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records,
             // it is not a per-processor counter
             app->GetCounters().Increment(nullptr,
                                          CPSGSCounters::ePSGS_BioseqInfoDBLookupAmbiguity);
+
+            if (request->NeedTrace()) {
+                reply->SendTrace("Cassandra lookup: " + ret.message,
+                                 request->GetStartTimestamp());
+            }
         }
     }
 

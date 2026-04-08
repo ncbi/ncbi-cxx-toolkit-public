@@ -142,7 +142,9 @@ CSeq_id_Base::E_Choice   DetectSeqIdTypeForIPG(const string &  seq_id)
 // an accession. It is called only if the CSeq_id parsing failed so some of the
 // return values are not expected, thus there will be a log message and an
 // alert.
-bool IsAccessionLike(const string &  user_input)
+bool IsAccessionLike(const string &  user_input,
+                     shared_ptr<CPSGS_Request> request,
+                     shared_ptr<CPSGS_Reply> reply)
 {
     auto    accession = CSeq_id::AssessAccession(user_input);
     switch (accession) {
@@ -167,13 +169,26 @@ bool IsAccessionLike(const string &  user_input)
                 CPubseqGatewayApp *     app = CPubseqGatewayApp::GetInstance();
                 app->GetAlerts().Register(ePSGS_SeqIdInconsistencyParsingAndAssess,
                                           err_msg);
+
+                if (request->NeedTrace()) {
+                    reply->SendTrace(err_msg, request->GetStartTimestamp());
+                }
                 return true;
             }
         default:
-            PSG_ERROR("Unexpected accession received from CSeq_id::AssessAccession(): " +
-                      to_string(accession) +
-                      ". Continue with an additional try to lookup in BIOSEQ_INFO table.");
-            return true;
+            {
+                string  err_msg = "Unexpected accession received from "
+                                  "CSeq_id::AssessAccession(): " +
+                                  to_string(accession) +
+                                  ". Continue with an additional try "
+                                  "to lookup in BIOSEQ_INFO table.";
+                PSG_ERROR(err_msg);
+
+                if (request->NeedTrace()) {
+                    reply->SendTrace(err_msg, request->GetStartTimestamp());
+                }
+                return true;
+            }
     }
 }
 

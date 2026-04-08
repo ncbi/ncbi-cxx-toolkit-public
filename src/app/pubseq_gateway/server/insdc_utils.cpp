@@ -63,7 +63,9 @@ bool IsINSDCSeqIdType(CBioseqInfoRecord::TSeqIdType  seq_id_type)
 SPSGS_BioseqSelectionResult
 DecideINSDC(const vector<CBioseqInfoRecord> &  records,
             CBioseqInfoRecord::TVersion  version,
-            bool  is_cache)
+            bool  is_cache,
+            shared_ptr<CPSGS_Request> request,
+            shared_ptr<CPSGS_Reply> reply)
 {
     SPSGS_BioseqSelectionResult      decision = {CRequestStatus::e404_NotFound, -1, ""};
 
@@ -103,6 +105,10 @@ DecideINSDC(const vector<CBioseqInfoRecord> &  records,
                         // it is not a per-processor counter
                         app->GetCounters().Increment(nullptr,
                                                      CPSGSCounters::ePSGS_BioseqInfoCacheLookupINSDCAmbiguity);
+                        if (request->NeedTrace()) {
+                            reply->SendTrace("Cache lookup: " + decision.message,
+                                             request->GetStartTimestamp());
+                        }
                     } else {
                         PSG_ERROR("Cassandra lookup: " + decision.message);
                         app->GetAlerts().Register(ePSGS_BioseqInfoDBLookupINSDCIncompatibleRecords,
@@ -111,6 +117,10 @@ DecideINSDC(const vector<CBioseqInfoRecord> &  records,
                         // it is not a per-processor counter
                         app->GetCounters().Increment(nullptr,
                                                      CPSGSCounters::ePSGS_BioseqInfoDBLookupINSDCAmbiguity);
+                        if (request->NeedTrace()) {
+                            reply->SendTrace("Cassandra lookup: " + decision.message,
+                                             request->GetStartTimestamp());
+                        }
                     }
 
                     return decision;
@@ -173,6 +183,10 @@ DecideINSDC(const vector<CBioseqInfoRecord> &  records,
             // it is not a per-processor counter
             app->GetCounters().Increment(nullptr,
                                          CPSGSCounters::ePSGS_BioseqInfoCacheLookupINSDCAmbiguity);
+            if (request->NeedTrace()) {
+                reply->SendTrace("Cache lookup: " + decision.message,
+                                 request->GetStartTimestamp());
+            }
         } else {
             PSG_ERROR("Cassandra lookup: " + decision.message);
             app->GetAlerts().Register(ePSGS_BioseqInfoDBLookupINSDCIncompatibleRecords,
@@ -181,6 +195,10 @@ DecideINSDC(const vector<CBioseqInfoRecord> &  records,
             // it is not a per-processor counter
             app->GetCounters().Increment(nullptr,
                                          CPSGSCounters::ePSGS_BioseqInfoDBLookupINSDCAmbiguity);
+            if (request->NeedTrace()) {
+                reply->SendTrace("Cassandra lookup: " + decision.message,
+                                 request->GetStartTimestamp());
+            }
         }
     }
 

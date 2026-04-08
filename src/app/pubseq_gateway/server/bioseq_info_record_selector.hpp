@@ -43,6 +43,9 @@ USING_IDBLOB_SCOPE;
 #include <vector>
 using namespace std;
 
+class CPSGS_Request;
+class CPSGS_Reply;
+
 
 struct SPSGS_BioseqSelectionResult
 {
@@ -59,6 +62,8 @@ struct SPSGS_BioseqSelectionResult
 // Can return statuses 200, 300 and 404
 SPSGS_BioseqSelectionResult
 SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records,
-                       bool  is_cache);
+                       bool  is_cache,
+                       shared_ptr<CPSGS_Request> request,
+                       shared_ptr<CPSGS_Reply> reply);
 
 #endif
