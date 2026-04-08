@@ -97,7 +97,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self._default_requires("lzo/2.10")
         self._default_requires("openssl/[>=3.5.1 <=3.6.0]")
         self._optional_requires("opentelemetry-cpp/[>=1.14.2 <=1.21.0]")
-        self._default_requires("pcre/8.45")
+        self._optional_requires("pcre/8.45")
         self._default_requires("pcre2/10.42")
         self._default_requires("protobuf/[>=3.21.12 <=6.30.1]")
         self._default_requires("sqlite3/[>=3.40.0 <=3.50.4]")
