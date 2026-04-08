@@ -2478,8 +2478,8 @@ void CDeflineGenerator::x_SetTitleFromProtein (
                 m_MainTitle.erase (pos + 1);
             }
 
-            int offset = 0;
-            int delta = 0;
+            size_t offset = 0;
+            size_t delta = 0;
             string comma;
             string isoform;
             if (NStr::StartsWith (m_MainTitle, "hypothetical protein")) {
