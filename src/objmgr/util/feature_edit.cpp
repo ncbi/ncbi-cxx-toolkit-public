@@ -306,7 +306,7 @@ static TSeqPos s_GetTrimmedLength(const CSeq_loc& trimmed_loc)
     }
 
     if (trimmed_loc.IsPacked_pnt()) {
-        return trimmed_loc.GetPacked_pnt().GetPoints().size();
+        return static_cast<TSeqPos>(trimmed_loc.GetPacked_pnt().GetPoints().size());
     }
 
     if (trimmed_loc.IsMix()) {
