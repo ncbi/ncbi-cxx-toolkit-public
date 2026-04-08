@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Fri Apr  3 05:33:04 EDT 2026; formally
+/* time_t value corresponding to Wed Apr  8 05:33:05 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1775208784UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1775640785UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -528,6 +528,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BAS<BGR>\ts\tBulgarian Academy of Science\t\t\t",
 "BAS<CHE>\ts\tHerbarium, Botanisches Institut, Universitat Basel\t\t\t",
 "BASBG\ts\tUniversitaet Basel, Basler Botanische Gesellschaft\t\t\t",
+"BASEF\ts\tBaskent University\t\t\t",
 "BASSA\ts\tMuseo Civico, Bassano del Grappa\t\t\t",
 "BASU\ts\tBu-Ali Sina University\t\t\t",
 "BAT\ts\tBagshaw Museum\t\t\t",
@@ -538,6 +539,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BATU\ts\tBatumi Botanical Garden, Botany Department\t\t\t",
 "BAU\ts\tBeijing Agricultural University\t\t\t",
 "BAUH\ts\tAl-Baha University\t\t\t",
+"BAUP\ts\tBahcesehir University\t\t\t",
 "BAV\ts\tSlovenskej akademie vied\t\t\t",
 "BAY\ts\tMuseum d'Histoire Naturelle de Bayonne\t\t\t",
 "BAYLU\ts\tBaylor University, Biology Department\t\t\t",
@@ -615,6 +617,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BDNF\ts\tBeaverhead-Deerlodge National Forest\t\t\t",
 "BDNHM\ts\tPaleozoological Museum of China (Baoding Natural History Museum)\t\t\t",
 "BDPA\ts\tArboretum, Bolestraszyce - Zamek, Department of Physiography\t\t\t",
+"BDU\tc\tNational Repository for Microalgae and Cyanobacteria, Bharathidasan University\t\t\t",
 "BDUC\ts\tUniversity of Calgary\t\t\t",
 "BDUN\tc\tDepartment of Botany, University of Nottingham\t\t\t",
 "BDUW\ts\tUniversity of Waterloo\t\t\t",
@@ -646,6 +649,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BERN\ts\tUniversity of Bern\t\t\t",
 "BESA\ts\tMuseum d'Histoire naturelle de Besancon\t\t\t",
 "BESM\ts\tBvumbwe Experiment Station\t\t\t",
+"BEUH\ts\tBitlis Eren University\t\t\t",
 "BEV\ts\tBorough of Beverley Art Gallery and Museum\t\t\t",
 "BEX\ts\tBexhill Museum\t\t\t",
 "BFBI\ts\tBiologisches Forschunsstation Burgenland\t\t\t",
@@ -969,6 +973,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BUS\ts\tUniversity of Miami, Biology Department\t\t\t",
 "BUT\ts\tButler University\t\t\t",
 "BUTC\ts\tBoston University\t\t\t",
+"BUTOF\ts\tBursa Technical University\t\t\t",
 "BUU\ts\tBurapha University\t\t\t",
 "BVC\ts\tBuena Vista College\t\t\t",
 "BVS\ts\tTransylvania University of Brasov\t\t\t",
@@ -1769,6 +1774,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CUE\ts\tCairo University\t\t\t",
 "CUEF\ts\tCukurova University\t\t\t",
 "CUETM\tc\tCollection Unite Ecotoxicologie Microbienne, INSERM\t\t\t",
+"CUFEFB\ts\tCUKUROVA UNIVERSITY, SCIENCE AND LETTER FACULTY\t\t\t",
 "CUFH\ts\tCumhuriyet University, Biology Department\t\t\t",
 "CUFP\ts\tFaculty of Pharmacy Cairo University\t\t\t",
 "CUFPM\ts\tCairo University\t\t\t",
@@ -3365,6 +3371,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HUEF\ts\tHacettepe UEniversitesi\t\t\t",
 "HUEFS\ts\tUniversidade Estadual de Feira de Santana, Departamento de Ciencias Biologicas\t\t\t",
 "HUEG\ts\tUniversidade Estadual de Goias\t\t\t",
+"HUEH\ts\tHarran University Faculty of Pharmacy Herbarium\t\t\t",
 "HUEM\ts\tUniversidade Estadual de Maringa, Departamento de Biologia\t\t\t",
 "HUENF\ts\tUniversidade Estadual do Norte Fluminense Darcy Ribeiro (UENF)\t\t\t",
 "HUESB\ts\tUniversidade Estadual do Sudoeste da Bahia-Campus de Jequie\t\t\t",
@@ -4179,6 +4186,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "KBAI\ts\tKuban Agricultural State University, Department of Biology and Ecology\t\t\t",
 "KBFH\ts\tKurdistan Botanical Foundation\t\t\t",
 "KBG\tb\tKyoto Botanical Garden\t\t\t",
+"KBH\ts\tKastamonu University, Faculty of Science, Department of Biology\t\t\t",
 "KBHG\ts\tH. M. Berbekov Kabardian-Balkarian State University, Department of Botany\t\t\t",
 "KBL\ts\tKelley Botanical Library\t\t\t",
 "KBM\ts\tBalaton Museum\t\t\t",

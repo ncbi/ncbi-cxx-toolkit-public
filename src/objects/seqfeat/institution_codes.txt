@@ -492,6 +492,7 @@ BART	s	Bartlett Arboretum
 BAS<BGR>	s	Bulgarian Academy of Science			
 BAS<CHE>	s	Herbarium, Botanisches Institut, Universitat Basel			
 BASBG	s	Universitaet Basel, Basler Botanische Gesellschaft			
+BASEF	s	Baskent University			
 BASSA	s	Museo Civico, Bassano del Grappa			
 BASU	s	Bu-Ali Sina University			
 BAT	s	Bagshaw Museum			
@@ -502,6 +503,7 @@ BATSTATEU	s	Verde Island Passage Center for Oceanographic Research and Aquatic L
 BATU	s	Batumi Botanical Garden, Botany Department			
 BAU	s	Beijing Agricultural University			
 BAUH	s	Al-Baha University			
+BAUP	s	Bahcesehir University			
 BAV	s	Slovenskej akademie vied			
 BAY	s	Museum d'Histoire Naturelle de Bayonne			
 BAYLU	s	Baylor University, Biology Department			
@@ -579,6 +581,7 @@ BDMU	s	McMaster University
 BDNF	s	Beaverhead-Deerlodge National Forest			
 BDNHM	s	Paleozoological Museum of China (Baoding Natural History Museum)			
 BDPA	s	Arboretum, Bolestraszyce - Zamek, Department of Physiography			
+BDU	c	National Repository for Microalgae and Cyanobacteria, Bharathidasan University			
 BDUC	s	University of Calgary			
 BDUN	c	Department of Botany, University of Nottingham			
 BDUW	s	University of Waterloo			
@@ -610,6 +613,7 @@ BEREA	s	Berea College, Biology Department
 BERN	s	University of Bern			
 BESA	s	Museum d'Histoire naturelle de Besancon			
 BESM	s	Bvumbwe Experiment Station			
+BEUH	s	Bitlis Eren University			
 BEV	s	Borough of Beverley Art Gallery and Museum			
 BEX	s	Bexhill Museum			
 BFBI	s	Biologisches Forschunsstation Burgenland			
@@ -933,6 +937,7 @@ BURN	s	Instituto de Investigaciones en Recursos Naturales, Agroecologia y Desarr
 BUS	s	University of Miami, Biology Department			
 BUT	s	Butler University			
 BUTC	s	Boston University			
+BUTOF	s	Bursa Technical University			
 BUU	s	Burapha University			
 BVC	s	Buena Vista College			
 BVS	s	Transylvania University of Brasov			
@@ -1733,6 +1738,7 @@ CUC	c	Cepario de la Universidad de Concepcion de Chile
 CUE	s	Cairo University			
 CUEF	s	Cukurova University			
 CUETM	c	Collection Unite Ecotoxicologie Microbienne, INSERM			
+CUFEFB	s	CUKUROVA UNIVERSITY, SCIENCE AND LETTER FACULTY			
 CUFH	s	Cumhuriyet University, Biology Department			
 CUFP	s	Faculty of Pharmacy Cairo University			
 CUFPM	s	Cairo University			
@@ -3329,6 +3335,7 @@ HUEB	s	Universidad El Bosque
 HUEF	s	Hacettepe UEniversitesi			
 HUEFS	s	Universidade Estadual de Feira de Santana, Departamento de Ciencias Biologicas			
 HUEG	s	Universidade Estadual de Goias			
+HUEH	s	Harran University Faculty of Pharmacy Herbarium			
 HUEM	s	Universidade Estadual de Maringa, Departamento de Biologia			
 HUENF	s	Universidade Estadual do Norte Fluminense Darcy Ribeiro (UENF)			
 HUESB	s	Universidade Estadual do Sudoeste da Bahia-Campus de Jequie			
@@ -4143,6 +4150,7 @@ KBA	s	Baekdudaegan National Arboretum
 KBAI	s	Kuban Agricultural State University, Department of Biology and Ecology			
 KBFH	s	Kurdistan Botanical Foundation			
 KBG	b	Kyoto Botanical Garden			
+KBH	s	Kastamonu University, Faculty of Science, Department of Biology			
 KBHG	s	H. M. Berbekov Kabardian-Balkarian State University, Department of Botany			
 KBL	s	Kelley Botanical Library			
 KBM	s	Balaton Museum			
