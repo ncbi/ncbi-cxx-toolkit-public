@@ -80,7 +80,7 @@ void CEntrez2_id_list::Resize(size_t size)
 {
     x_SetNativeUidSize();
     SetUids().resize(size * sizeof(TUid));
-    SetNum(size);
+    SetNum(static_cast<TNum>(size));
 }
 
 

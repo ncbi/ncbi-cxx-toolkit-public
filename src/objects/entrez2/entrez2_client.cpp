@@ -165,10 +165,10 @@ void CEntrez2Client::Query(const string& query,
 
     // set some limits
     if (start > 0) {
-        bexp.SetLimits().SetOffset_UIDs(start);
+        bexp.SetLimits().SetOffset_UIDs(static_cast<CEntrez2_limits::TOffset_UIDs>(start));
     }
     if (count > 0) {
-        bexp.SetLimits().SetMax_UIDs(count);
+        bexp.SetLimits().SetMax_UIDs(static_cast<CEntrez2_limits::TMax_UIDs>(count));
     }
 
     CEntrez2_eval_boolean req;
