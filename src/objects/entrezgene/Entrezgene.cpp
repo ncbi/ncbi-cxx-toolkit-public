@@ -219,7 +219,7 @@ CRef<CGene_commentary> CEntrezgene::FindComment(const string& heading) const
 {
     CRef<CGene_commentary> found_comment;
 
-    for ( const auto root_comment : GetComments() ) {
+    for ( auto& root_comment : GetComments() ) {
         if (root_comment->IsSetHeading() && (root_comment->GetHeading() == heading)) {
             found_comment = root_comment;
             break;
