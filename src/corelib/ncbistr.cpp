@@ -6943,7 +6943,8 @@ struct SLocaleEncoder : public SCharEncoder
         return w;
     }
     virtual char ToChar(TUnicodeSymbol sym) const {
-        char ch = m_Facet.narrow(sym,0);
+        _ASSERT(sym < 0xFFFF);
+        char ch = m_Facet.narrow((wchar_t)sym, 0);
         if (ch == 0 && sym != 0) {
             string msg("Failed to convert Unicode symbol ");
             msg += NStr::NumericToString(sym) + " to requested locale " + m_Lcl.name();
@@ -7237,7 +7238,7 @@ bool CUtf8::IsWhiteSpace(TUnicodeSymbol chU)
         }
         return chU <=0x200A || chU == 0x2028 || chU == 0x2029 || chU == 0x202F || chU ==  0x205F;
     }
-    return iswspace(chU)!=0;
+    return iswspace((wint_t)chU) != 0;
 }
 
 
