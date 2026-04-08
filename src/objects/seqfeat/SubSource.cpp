@@ -4607,7 +4607,7 @@ CCountries::EStateCleanup s_DoUSAStateCleanup ( string& country ) {
     }
 
     for ( size_t j = 0; j < components.size(); j++ ) {
-        if ( j == match) continue;
+        if ( j == size_t(match)) continue;
         res.append ( pfx );
         res.append ( components[j] );
         pfx = ", ";
