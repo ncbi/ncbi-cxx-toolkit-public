@@ -4172,7 +4172,7 @@ string NStr::HtmlEncode(const CTempString str, THtmlEncode flags)
             result.append("&quot;");
             break;
         default:
-            if ((unsigned int)c < 0x20) {
+            if (c < 0x20) {
                 static const char charmap[] = "0123456789abcdef";
                 result.append("&#x");
                 Uint1 ch = Uint1(c);
@@ -4185,7 +4185,7 @@ string NStr::HtmlEncode(const CTempString str, THtmlEncode flags)
             } else if (c > 0x7F) {
                 result.append("&#x").append( NStr::NumericToString(c, 0, 16)).append(1, ';');;
             } else {
-                result.append(1, c);
+                result.append(1, char(c));
             }
             break;
         }
