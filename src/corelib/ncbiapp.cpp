@@ -219,6 +219,7 @@ void CNcbiApplicationAPI::SetPhoneHomePolicy(IPhoneHomePolicy* policy, ENcbiOwne
     }
     m_PhoneHomePolicy = policy;
     if (m_PhoneHomePolicy) {
+        m_PhoneHomePolicy_Ownership = ownership;
         m_PhoneHomePolicy->Apply(this);
     }
 };
