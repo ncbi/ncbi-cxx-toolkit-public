@@ -508,7 +508,7 @@ void CSeqportTestApp::NonSeqDataTest()
                     GetMapToIndexESeq();
                     break;
                 }
-            } catch (runtime_error e) {
+            } catch (runtime_error& e) {
                 string msg(e.what());
                 if (msg == "Done") {
                     break;
