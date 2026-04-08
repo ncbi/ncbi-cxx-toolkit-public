@@ -879,7 +879,7 @@ void CSeqTable_multi_data::ChangeToCommon_string(const string* omit_value)
             const string& key = *it;
             TIndexMap::iterator iter = index_map.lower_bound(key);
             if ( iter == index_map.end() || iter->first != key ) {
-                iter = index_map.insert(iter, TIndexMap::value_type(key, arr.size()));
+                iter = index_map.insert(iter, TIndexMap::value_type(key, static_cast<TIndexMap::mapped_type>(arr.size())));
                 arr.push_back(key);
             }
             indexes.push_back(iter->second);
@@ -952,7 +952,7 @@ void CSeqTable_multi_data::ChangeToCommon_bytes(const TBytesValue* omit_value)
             const TBytesValue* key = *it;
             TIndexMap::iterator iter = index_map.lower_bound(key);
             if ( iter == index_map.end() || *iter->first != *key ) {
-                iter = index_map.insert(iter, TIndexMap::value_type(key, arr.size()));
+                iter = index_map.insert(iter, TIndexMap::value_type(key, static_cast<TIndexMap::mapped_type>(arr.size())));
                 arr.push_back(new TBytesValue(*key));
             }
             indexes.push_back(iter->second);

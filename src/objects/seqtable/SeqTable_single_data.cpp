@@ -186,7 +186,7 @@ void CSeqTable_single_data::GetValue(double& v) const
         v = GetInt();
         break;
     case e_Int8:
-        v = GetInt8();
+        v = static_cast<double>(GetInt8());
         break;
     case e_Real:
         v = GetReal();
