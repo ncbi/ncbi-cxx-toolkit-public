@@ -1518,7 +1518,7 @@ s_GetGapCount(const CSeq_align& align, CSeq_align::TDim row,
                              (*iter)->GetRowSeq_insertions(
                                   r, align.GetSegs().GetSpliced(), ranges);
                         retval += get_total_count ? insertions.GetCoveredLength()
-                                                  : insertions.size();
+                                                  : static_cast<TSeqPos>(insertions.size());
                     }
                 }
             }
