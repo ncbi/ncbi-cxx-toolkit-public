@@ -305,11 +305,7 @@ bool CProjectFolder::RemoveChildItem(CProjectItem::TId id)
 void CProjectFolder::RemoveAllChildItems()
 {
     if(IsSetItems())    {
-        TItems& items = SetItems();
-        NON_CONST_ITERATE(TItems, it, items)    {
-            CProjectItem& item = **it;
-        }
-        items.clear();
+        ResetItems();
     }
 }
 
