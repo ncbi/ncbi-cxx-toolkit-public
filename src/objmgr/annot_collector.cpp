@@ -1733,7 +1733,6 @@ bool CAnnot_Collector::x_NoMoreObjects(void) const
         // search segment limit reached
         return true;
     }
-    typedef SAnnotSelector::TMaxSize TMaxSize;
     TMaxSize limit = m_Selector->GetMaxSize();
     if ( limit >= numeric_limits<TMaxSize>::max() ) {
         return false;
@@ -3640,18 +3639,18 @@ void CAnnot_Collector::x_SearchAll(const CSeq_entry_Info& entry_info)
 }
 
 
-void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& annot_info)
+void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& seq_annot_info)
 {
-    if ( m_Selector->ExcludedAnnotName(annot_info.GetName()) ) {
+    if ( m_Selector->ExcludedAnnotName(seq_annot_info.GetName()) ) {
         return;
     }
 
     _ASSERT(m_Selector->m_LimitTSE);
-    annot_info.UpdateAnnotIndex();
-    CSeq_annot_Handle sah(annot_info, m_Selector->m_LimitTSE);
+    seq_annot_info.UpdateAnnotIndex();
+    CSeq_annot_Handle sah(seq_annot_info, m_Selector->m_LimitTSE);
     // Collect all annotations from the annot
     ITERATE ( CSeq_annot_Info::TAnnotObjectInfos, aoit,
-              annot_info.GetAnnotObjectInfos() ) {
+              seq_annot_info.GetAnnotObjectInfos() ) {
         const CAnnotObject_Info& annot_info = *aoit;
         if ( annot_info.IsRemoved() ) {
             continue;
@@ -3688,9 +3687,9 @@ void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& annot_info)
         CAnnotType_Index::GetSubtypeIndex(CSeqFeatData::eSubtype_variation);
 
     if ( m_CollectAnnotTypes.test(kAnnotTypeIndex_SNP) &&
-         annot_info.x_HasSNP_annot_Info() ) {
+         seq_annot_info.x_HasSNP_annot_Info() ) {
         const CSeq_annot_SNP_Info& snp_annot =
-            annot_info.x_GetSNP_annot_Info();
+            seq_annot_info.x_GetSNP_annot_Info();
         ITERATE ( CSeq_annot_SNP_Info, snp_it, snp_annot ) {
             const SSNP_Info& snp = *snp_it;
             CAnnotObject_Ref annot_ref(snp_annot, sah, snp, 0);
