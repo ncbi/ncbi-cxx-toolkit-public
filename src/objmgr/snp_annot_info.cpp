@@ -818,7 +818,8 @@ CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(CSeq_annot& annot)
 
 
 CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(const CSeq_annot_SNP_Info& info)
-    : m_Seq_id(info.m_Seq_id),
+    : TParent(info, nullptr),
+      m_Seq_id(info.m_Seq_id),
       m_SNP_Set(info.m_SNP_Set),
       m_Comments(info.m_Comments),
       m_Alleles(info.m_Alleles),
