@@ -882,7 +882,7 @@ CNcbiTestsTreeBuilder::test_suite_start(but::test_suite const& suite)
 }
 
 void
-CNcbiTestsTreeBuilder::test_suite_finish(but::test_suite const& suite)
+CNcbiTestsTreeBuilder::test_suite_finish([[maybe_unused]] but::test_suite const& suite)
 {
     _ASSERT(m_CurElem->GetTestUnit() == &static_cast<const but::test_unit&>(suite));
     m_CurElem = m_CurElem->GetParent();
