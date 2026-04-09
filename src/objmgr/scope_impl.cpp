@@ -173,7 +173,7 @@ void CScope::SetKeepExternalAnnotsForEdit(bool keep)
 void CScope_Impl::SetKeepExternalAnnotsForEdit(bool keep)
 {
     TConfWriteLockGuard guard(m_ConfLock);
-    m_KeepExternalAnnotsForEdit = true;
+    m_KeepExternalAnnotsForEdit = keep;
     x_ClearAnnotCache();
 }
 
