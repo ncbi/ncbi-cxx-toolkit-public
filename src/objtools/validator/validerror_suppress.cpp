@@ -44,6 +44,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objtools/validator/validerror_suppress.hpp>
+#include <utility>
 
 
 BEGIN_NCBI_SCOPE
@@ -70,7 +71,7 @@ void CValidErrorSuppress::AddSuppression(CUser_object& user, TErrCode error_code
                 if (pUserField->IsSetData()) {
                     if (pUserField->GetData().IsInt()) {
                         const auto old_val = pUserField->GetData().GetInt(); 
-                        if (old_val != error_code) {
+                        if (cmp_not_equal(old_val, error_code)) {
                             pUserField->SetData().SetInts().push_back(old_val);
                             pUserField->SetData().SetInts().push_back(error_code);
                         }

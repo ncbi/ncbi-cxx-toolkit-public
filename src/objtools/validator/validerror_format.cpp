@@ -1106,19 +1106,6 @@ string CValidErrorFormat::GetObjectLabel(const CObject& obj, const CSeq_entry& c
 //LCOV_EXCL_STOP
 
 
-static const string kSuppressFieldLabel = "Suppress";
-
-static bool s_IsSuppressField (const CUser_field& field)
-{
-    if (field.IsSetLabel() &&
-        field.GetLabel().IsStr() &&
-        NStr::EqualNocase(field.GetLabel().GetStr(), kSuppressFieldLabel)) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
 
 void CValidErrorFormat::AddSuppression(CUser_object& user, CValidErrItem::TErrIndex error_code)
 {   
