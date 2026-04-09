@@ -180,7 +180,8 @@ CSeqMap::CSeqMap(TSeqPos length)
 
 
 CSeqMap::CSeqMap(const CSeqMap& sm)
-    : m_Bioseq(0),
+    : CObject(),
+      m_Bioseq(0),
       m_Segments(sm.m_Segments),
       m_Resolved(sm.m_Resolved.load(memory_order_relaxed)),
       m_Delta(sm.m_Delta),
