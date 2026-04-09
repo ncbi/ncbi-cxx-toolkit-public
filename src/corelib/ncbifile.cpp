@@ -1474,6 +1474,7 @@ bool CDirEntry::StringToMode(const CTempString& mode,
                     case 't':
                         is_special = true;
                         // fall through
+                        [[fallthrough]];
                     case 'x':
                         m |= fExecute;
                         break;
@@ -1542,6 +1543,7 @@ bool CDirEntry::StringToMode(const CTempString& mode,
                     case 't':
                         is_special = true;
                         // fall through
+                        [[fallthrough]];
                     case 'x':
                         m |= fExecute;
                         break;
@@ -1944,7 +1946,7 @@ bool CDirEntry::SetTime(const CTime* modification,
 #else // NCBI_OS_UNIX
 
     // Creation time doesn't used on Unix
-    creation = NULL;  /* DUMMY, to avoid warnings */
+    (void)creation;  /* DUMMY, to avoid warnings */
 
     if ( !modification  &&  !last_access  /*&&  !creation*/ ) {
         return true;
@@ -2082,7 +2084,7 @@ bool CDirEntry::SetTimeT(const time_t* modification,
 #else // NCBI_OS_UNIX
 
     // Creation time doesn't used on Unix
-    creation = NULL;  /* DUMMY, to avoid warnings */
+    (void)creation;  /* DUMMY, to avoid warnings */
 
     if ( !modification  &&  !last_access  /*&&  !creation*/ )
         return true;
@@ -3638,6 +3640,7 @@ string CDir::GetHome(EHomeWindows home_check_order)
         }
     }
 #elif defined(NCBI_OS_UNIX)
+    (void)home_check_order;
     // Try get home dir from environment variable
     char* str = NcbiSys_getenv(_TX("HOME"));
     if ( str ) {
@@ -4918,6 +4921,7 @@ void s_GetDiskSpace_PANFS(const string& path, CFileUtil::SFileSystemInfo* info)
         case NCBI_PANFS_THROW:
              do_throw = true;
              /*FALLTHRU*/
+             [[fallthrough]];
              
         // Same processing for all errors codes, but could be detailed
         case NCBI_PANFS_ERR:
