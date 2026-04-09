@@ -134,20 +134,20 @@ int CSnpPtisTestApp::Run(void)
     sw.Restart();
     size_t NQ = args["threads"].AsInteger();
     vector<thread> tt(NQ);
-    for ( size_t i = 0; i < NQ; ++i ) {
-        tt[i] =
-            thread([&]
-                   (size_t thread_id, vector<string> ids, vector<string>* out_tracks)
+    for ( size_t t = 0; t < NQ; ++t ) {
+        tt[t] =
+            thread([&client]
+                   (size_t thread_id, vector<string> thr_ids, vector<string>* out_tracks)
                    {
                        if ( thread_id % 2 ) {
                            CRandom random((int)thread_id);
-                           for ( size_t i = 0; i < ids.size(); ++i ) {
-                               swap(ids[i], ids[random.GetRandIndexSize_t(i+1)]);
+                           for ( size_t i = 0; i < thr_ids.size(); ++i ) {
+                               swap(thr_ids[i], thr_ids[random.GetRandIndexSize_t(i+1)]);
                            }
                        }
-                       vector<string> tracks;
-                       tracks.reserve(ids.size());
-                       for ( const auto& id : ids ) {
+                       vector<string> thr_tracks;
+                       thr_tracks.reserve(thr_ids.size());
+                       for ( const auto& id : thr_ids ) {
                            string track;
                            try {
                                if ( isdigit(id[0]) ) {
@@ -161,15 +161,15 @@ int CSnpPtisTestApp::Run(void)
                                ERR_POST("Exception while resolving SNP track for "<<id<<": "<<exc);
                                throw;
                            }
-                           tracks.push_back(track);
+                           thr_tracks.push_back(track);
                        }
                        if ( out_tracks ) {
-                           *out_tracks = tracks;
+                           *out_tracks = thr_tracks;
                        }
-                   }, i, ids, i==0? &tracks: 0);
+                   }, t, ids, t==0? &tracks: 0);
     }
-    for ( size_t i = 0; i < NQ; ++i ) {
-        tt[i].join();
+    for ( size_t t = 0; t < NQ; ++t ) {
+        tt[t].join();
     }
     double t = sw.Elapsed();
 
@@ -181,7 +181,7 @@ int CSnpPtisTestApp::Run(void)
     
     LOG_POST("Resolved SNP tracks in "<<t<<" sec");
     if ( ids.size() > 1 ) {
-        LOG_POST("Time per one of "<<ids.size()<<" Seq-ids: "<<t/ids.size()<<" sec");
+        LOG_POST("Time per one of "<<ids.size()<<" Seq-ids: "<<t/double(ids.size())<<" sec");
     }
     
     return 0;
