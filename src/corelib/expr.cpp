@@ -1249,6 +1249,7 @@ void CExprParser::Parse(const char* str)
                     m_VStack[m_v_sp-1].fval = -m_VStack[m_v_sp-1].fval;
                 }
                 // no break
+                [[fallthrough]];
               case ePLUS:
                 if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
                     ReportError("Illegal operation on string literals");
