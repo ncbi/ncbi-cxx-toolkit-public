@@ -1897,12 +1897,14 @@ Int8 s_TestForOverlapEx(const CSeq_loc& loc1,
     case eOverlap_Contains:
         swap(ploc1, ploc2);
         // Go on to the next case
+        [[fallthrough]];
     case eOverlap_Contained:
         return s_Test_Extremes(*ploc1, *ploc2, eOverlap_Contained,
             syns, topologies, flags, scope);
     case eOverlap_SubsetRev:
         swap(ploc1, ploc2);
         // continue to eOverlap_Subset case
+        [[fallthrough]];
     case eOverlap_Subset:
         if ( !s_Test_Subset(*ploc1, *ploc2, scope) ) return -1;
         return Int8(GetCoverage(*ploc1, scope)) -
@@ -1910,6 +1912,7 @@ Int8 s_TestForOverlapEx(const CSeq_loc& loc1,
     case eOverlap_CheckIntRev:
         swap(ploc1, ploc2);
         // Go on to the next case
+        [[fallthrough]];
     case eOverlap_CheckIntervals:
         {
             // Check intervals' boundaries.
