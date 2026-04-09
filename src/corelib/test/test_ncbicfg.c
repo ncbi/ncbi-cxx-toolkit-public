@@ -36,6 +36,8 @@
 
 int main(int argc, char** argv)
 {
+    (void)argc;
+    (void)argv;
     printf("[Default] runpath:     %s\n", NCBI_GetRunpath());
     printf("[Default] Sybase path: %s\n", NCBI_GetSybasePath());
     return 0;
