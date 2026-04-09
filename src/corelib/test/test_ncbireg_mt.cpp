@@ -305,13 +305,17 @@ bool CTestRegApp::TestApp_Init(void)
     }
     assert( m_Registry.Empty() );
 
-    list<string> sections;
-    m_Registry.EnumerateSections(&sections);
-    assert( sections.empty() );
+    {{
+        list<string> sections;
+        m_Registry.EnumerateSections(&sections);
+        assert( sections.empty() );
+    }}
 
-    list<string> entries;
-    m_Registry.EnumerateEntries(NcbiEmptyString, &entries);
-    assert( entries.empty() );
+    {{
+        list<string> entries;
+        m_Registry.EnumerateEntries(NcbiEmptyString, &entries);
+        assert( entries.empty() );
+    }}
 
     // Test setting and deletion of environment variables
     {{
