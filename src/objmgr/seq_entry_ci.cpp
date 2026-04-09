@@ -245,8 +245,8 @@ CSeq_entry_I::CSeq_entry_I(const CBioseq_set_EditHandle& seqset,
 
 
 CSeq_entry_I::CSeq_entry_I(const CSeq_entry_I& iter)
+    : CSeq_entry_CI(iter)
 {
-    *this = iter;
 }
 
 
