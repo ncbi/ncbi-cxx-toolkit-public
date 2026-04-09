@@ -126,8 +126,8 @@ static const int kTestErrno = 555;
 #define STR8(v)  { #v, DF, -1, kBad, kBad, NCBI_CONST_INT8(v), NCBI_CONST_UINT8(v), NCBI_CONST_FLOAT(v), v##., 0.}
 #define STRI8(v) { #v, DF, -1, kBad, kBad, NCBI_CONST_INT8(v), kBad, NCBI_CONST_FLOAT(v), v##., 0.}
 #define STRU8(v) { #v, DF, -1, kBad, kBad, kBad, NCBI_CONST_UINT8(v), NCBI_CONST_FLOAT(v), v##., 0. }
-#define STRF(v)  { #v, DF, -1, kBad, kBad, kBad, kBad, NCBI_CONST_FLOAT(v), v##. }
-#define STRD(v)  { #v, DF, -1, kBad, kBad, kBad, kBad, kBad, v##. }
+#define STRF(v)  { #v, DF, -1, kBad, kBad, kBad, kBad, NCBI_CONST_FLOAT(v), v##., 0. }
+#define STRD(v)  { #v, DF, -1, kBad, kBad, kBad, kBad, kBad, v##., 0. }
 
 
 static const SStringNumericValues s_Str2NumTests[] = {
@@ -4207,12 +4207,14 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
     BOOST_CHECK_EQUAL( (int)CUtf8::StringToEncoding("csISOLatin1"),     (int)eEncoding_ISO8859_1);
     BOOST_CHECK_EQUAL( (int)CUtf8::StringToEncoding("ISO-2022-CN-EXT"), (int)eEncoding_Unknown);
 
-    TStringUnicode uus = CUtf8::AsBasicString<TUnicodeSymbol>(u8sample);
-    TStringUCS4    u4s = CUtf8::AsBasicString<TCharUCS4>(u8sample);
-    TStringUCS2    u2s = CUtf8::AsBasicString<TCharUCS2>(u8sample);
+    {{
+        TStringUnicode uus = CUtf8::AsBasicString<TUnicodeSymbol>(u8sample);
+        TStringUCS4    u4s = CUtf8::AsBasicString<TCharUCS4>(u8sample);
+        TStringUCS2    u2s = CUtf8::AsBasicString<TCharUCS2>(u8sample);
 #if defined(HAVE_WSTRING)
-    wstring        uws = CUtf8::AsBasicString<wchar_t>(u8sample);
+        wstring        uws = CUtf8::AsBasicString<wchar_t>(u8sample);
 #endif
+    }}
 
 // other types
 #if defined(HAVE_WSTRING)
