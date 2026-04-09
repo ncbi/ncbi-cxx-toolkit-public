@@ -89,6 +89,7 @@ struct ITest
 {
     int  a;
     ITest() : a(10) {}
+    virtual ~ITest() = default;
 
     virtual int GetA() const = 0;
 };
