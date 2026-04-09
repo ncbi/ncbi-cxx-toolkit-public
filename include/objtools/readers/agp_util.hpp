@@ -514,7 +514,7 @@ public:
     virtual int AppliesTo(int mask=0xFFFFFFFF);
 
     // When adding new errors to this enum, also update sMessageMap (see .cpp file)
-    enum EErrCode {
+    enum EErrCode : int {
         // Errors within one line (detected in CAgpRow)
         E_ColumnCount=1 ,
         E_EmptyColumn   ,
@@ -647,17 +647,15 @@ class NCBI_XOBJREAD_EXPORT CAgpErrEx : public CAgpErr
 {
 public:
 
-    enum {
-        /// The number of the first CAgpErr error enum
-        CODE_First = E_First,
-        /// Reserve space for some user errors (to count, or to skip).
-        /// The strange value of this enum is meant to give a separation
-        /// of 10 or 20 between the last built-in error
-        /// (currently G_Last) and the first user errors.
-        CODE_Extended = ((((G_Last / 10 ) + 2) * 10) + 1),
-        /// This is one past the last code allowed, after built-in and user errors.
-        CODE_Last=CODE_Extended+20
-    };
+    /// The number of the first CAgpErr error enum
+    static constexpr int CODE_First = E_First;
+    /// Reserve space for some user errors (to count, or to skip).
+    /// The strange value of this enum is meant to give a separation
+    /// of 10 or 20 between the last built-in error
+    /// (currently G_Last) and the first user errors.
+    static constexpr int CODE_Extended = ((((G_Last / 10 ) + 2) * 10) + 1);
+    /// This is one past the last code allowed, after built-in and user errors.
+    static constexpr int CODE_Last=CODE_Extended+20;
 
     //static const char* GetMsgEx(int code);
     string GetPrintableCode(int code, bool strict=false) const; // Returns a string like e01 w12

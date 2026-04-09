@@ -308,10 +308,12 @@ static void xlex_error_func(
 
 static unsigned advance_to(const char c, unsigned current_pos, const string& line)
 {
-    unsigned pos = current_pos;
+    _ASSERT(current_pos > 0);
+
+    auto pos = current_pos;
     while (pos < line.size()) {
         if (line[pos] == c) {
-            return pos - 1;
+            break;
         }
         ++pos;
     }

@@ -441,6 +441,29 @@ void CAlnWriter::AddGaps(
 
 // -----------------------------------------------------------------------------
 
+static string s_GetSegString(const string& seq_plus,
+        CSeqUtil::ECoding coding,
+        ENa_strand strand,
+        TSeqPos start,
+        size_t len)
+{
+    if (start >= seq_plus.size()) {
+        NCBI_THROW(CObjWriterException,
+            eBadInput,
+            "Bad location: impossible start");
+    }
+        
+    if (strand != eNa_strand_minus) {
+        return seq_plus.substr(start, len);
+    }
+    // else
+    string seq_minus;
+    CSeqManip::ReverseComplement(seq_plus, coding, start, len, seq_minus);
+    return seq_minus;
+}
+
+// -----------------------------------------------------------------------------
+
 string CAlnWriter::GetSegString(const string& seq_plus,
     CSeqUtil::ECoding coding,
     const ENa_strand strand,
@@ -448,20 +471,9 @@ string CAlnWriter::GetSegString(const string& seq_plus,
     const size_t len)
 {
     if (start >= 0) {
-        if (start >= seq_plus.size()) {
-            NCBI_THROW(CObjWriterException,
-                eBadInput,
-                "Bad location: impossible start");
-        }
-        if (strand != eNa_strand_minus) {
-            return seq_plus.substr(start, len);
-        }
-        // else
-        string seq_minus;
-        CSeqManip::ReverseComplement(seq_plus, coding, start, len, seq_minus);
-        return seq_minus;
+        return s_GetSegString(seq_plus, coding, strand, static_cast<TSeqPos>(start), len);
     }
-
+    // else
     return string(len, '-');
 }
 
