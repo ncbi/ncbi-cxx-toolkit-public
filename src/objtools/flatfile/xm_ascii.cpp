@@ -1390,7 +1390,6 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
 
 
     if (seq_long) {
-        seq_long = false;
         mTotals.Long++;
     } else {
         result = seq_entries.front();

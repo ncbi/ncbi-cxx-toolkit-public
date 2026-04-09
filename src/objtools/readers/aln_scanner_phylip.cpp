@@ -185,10 +185,10 @@ CAlnScannerPhylip::xImportAlignmentData(
         ++dataLineCount;
     }
 
-    int incompleteBlockSize = dataLineCount % mSequenceCount;
-    if (incompleteBlockSize) {
+    size_t incompleteBlockSize = dataLineCount % mSequenceCount;
+    if (incompleteBlockSize > 0) {
         string description =
-            ErrorPrintf("The final sequence block in the Phylip file is incomplete. It contains data for just %d sequences, but %d sequences are expected.",
+            ErrorPrintf("The final sequence block in the Phylip file is incomplete. It contains data for just %zu sequences, but %zu sequences are expected.",
             incompleteBlockSize,
             mSequenceCount);
         throw SShowStopper(
@@ -207,8 +207,8 @@ CAlnScannerPhylip::xVerifyAlignmentData(
 {
     if (mSequenceCount != mSeqIds.size()) {
         auto description = ErrorPrintf(
-            "Phylip sequence count from first line (%d) does not agree with "
-            "the actual sequence count (%d).",
+            "Phylip sequence count from first line (%zu) does not agree with "
+            "the actual sequence count (%zu).",
             mSequenceCount, mSeqIds.size());
         throw SShowStopper(
             -1,
@@ -216,13 +216,13 @@ CAlnScannerPhylip::xVerifyAlignmentData(
             description);
     }
     size_t actualSequenceLength = 0;
-    for (auto sequenceData: mSequences[0]) {
+    for (const auto& sequenceData : mSequences[0]) {
         actualSequenceLength += sequenceData.mData.size();
     }
     if (mSequenceLength != actualSequenceLength) {
         auto description = ErrorPrintf(
-            "Phylip sequence length from first line (%d) does not agree with "
-            "the actual sequence length (%d).",
+            "Phylip sequence length from first line (%zu) does not agree with "
+            "the actual sequence length (%zu).",
             mSequenceLength, actualSequenceLength);
         throw SShowStopper(
             -1,

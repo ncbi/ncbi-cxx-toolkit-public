@@ -308,7 +308,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
             TKeywordList kwds;
             size_t       kwds_len = 0;
             list<string> dbl;
-            size_t       dbl_len = 0;
+            NCBI_UNUSED size_t dbl_len = 0;
 
             while (currentKeyword != ParFlat_END && ! end_of_file) {
                 switch (currentKeyword) {
@@ -453,7 +453,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                     break;
                 case ParFlat_SEGMENT:
                     FtaErrPost(SEV_ERROR, ERR_SEGMENT, 
-                            "Error at linenum %d. Segmented sets are not supported.",
+                            "Error at linenum {}. Segmented sets are not supported.",
                             entry->linenum);
                     entry->drop = true;
                     break;

@@ -2334,8 +2334,7 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
 void CEmbl2Asn::PostTotals()
 {
     FtaErrPost(SEV_INFO, ERR_ENTRY_ParsingComplete, 
-            "COMPLETED : SUCCEEDED = %d; SKIPPED = %d.", mTotals.Succeeded, mParser.indx-mTotals.Succeeded);
-
+            "COMPLETED : SUCCEEDED = {}; SKIPPED = {}.", mTotals.Succeeded, mParser.indx - mTotals.Succeeded);
 }
 
 
