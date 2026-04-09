@@ -8782,6 +8782,7 @@ USNM:Herp Tissue	s	National Museum of Natural History, Smithsonian Institution, 
 USNM:IZ	s	National Museum of Natural History, Smithsonian Institution, Department of Invertebrate Zoology	Invertebrate Zoology,USNM:Invert	https://collections.nmnh.si.edu/search/iz/?nb=	
 USNM:LAB	b	National Museum of Natural History, Smithsonian Institution, Laboratories of Analytical Biology			
 USNM:MAMM	s	National Museum of Natural History, Smithsonian Institution, Division of Mammals	Mammals	https://collections.nmnh.si.edu/search/mammals/?nb=	
+USNM:PAL	s	National Museum of Natural History, Smithsonian Institution, PaleoBiology collections			
 USNTC	s	U.S. National Tick Collection			
 USON	s	Universidad de Sonora, Departamento de Investigaciones Cientificas y Technologicas			
 USP<BRA>	s	Universidade de Sao Paulo			
