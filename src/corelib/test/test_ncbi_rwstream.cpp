@@ -262,7 +262,7 @@ ERW_Result CMyReaderWriter::Flush(void)
 END_NCBI_SCOPE
 
 
-int main(int argc, char* argv[])
+int main(int /*argc*/, char* /*argv*/[])
 {
     USING_NCBI_SCOPE;
 
