@@ -139,21 +139,12 @@ if (defined($opt_source)) {
         $location = "AWS";
     }
 } else {
-    # Try to auto-detect whether we're on the cloud
+    # Try to auto-detect whether we're on the cloud.
+    # For GCP autodetection disabled, use AWS by default.
+    #  
     if (defined($curl)) {
         my $tmpfile = File::Temp->new();
-        my $gcp_cmd = "$curl --connect-timeout 3 --retry 3 --retry-max-time 30 -sfo $tmpfile -H 'Metadata-Flavor: Google' " . GCP_URL;
         my $aws_cmd = "$curl --connect-timeout 3 --retry 3 --retry-max-time 30 -sfo /dev/null " . AMI_URL;
-        print "$gcp_cmd\n" if DEBUG;
-        if (system($gcp_cmd) == 0) { 
-            # status not always reliable.  Check that curl output is all digits.
-            my $tmpfile_content = do { local $/; <$tmpfile>};
-            print "curl output $tmpfile_content\n" if DEBUG;
-            $location = "GCP" if ($tmpfile_content =~ m/^(\d+)$/);
-        } elsif (DEBUG) {
-            # Consult https://ec.haxx.se/usingcurl/usingcurl-returns
-            print "curl to GCP metadata server returned ", $?>>8, "\n";
-        }
 
         print "$aws_cmd\n" if DEBUG;
         if (system($aws_cmd) == 0) {
