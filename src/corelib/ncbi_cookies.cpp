@@ -196,14 +196,19 @@ void CHttpCookie::x_Validate(const string& value, EFieldType field) const
     case eField_Name:
         // Make sure name is valid, but do not encode.
         if ( IsValidValue(value, eField_Name, &err_msg) ) return;
+        break;
     case eField_Value:
         if ( IsValidValue(value, eField_Value, &err_msg) ) return;
+        break;
     case eField_Domain:
         if ( IsValidValue(value, eField_Domain, &err_msg) ) return;
+        break;
     case eField_Path:
         if ( IsValidValue(value, eField_Path, &err_msg) ) return;
+        break;
     case eField_Extension:
         if ( IsValidValue(value, eField_Extension, &err_msg) ) return;
+        break;
     default:
         return;
     }
