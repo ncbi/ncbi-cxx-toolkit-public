@@ -243,7 +243,7 @@ bool CTSE_Chunk_Info::ContainsBioseq(const CSeq_id_Handle& id) const
 }
 
 
-bool CTSE_Chunk_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
+bool CTSE_Chunk_Info::x_GetRecords(const CSeq_id_Handle& id, bool /*bioseq*/) const
 {
     if ( IsLoaded() ) {
         return true;
