@@ -153,8 +153,8 @@ BOOST_AUTO_TEST_CASE(s_MTGiTest)
 {
     const size_t NQ = 20;
     vector<thread> tt(NQ);
-    for ( size_t i = 0; i < NQ; ++i ) {
-        tt[i] =
+    for ( size_t t = 0; t < NQ; ++t ) {
+        tt[t] =
             thread([&]
                    (TGi gi1, TGi gi2)
                    {
@@ -164,10 +164,10 @@ BOOST_AUTO_TEST_CASE(s_MTGiTest)
                            _VERIFY(id1.GetSeqId()->GetGi() == gi1);
                            _VERIFY(id2.GetSeqId()->GetGi() == gi2);
                        }
-                   }, GI_FROM(size_t, i+1), GI_FROM(size_t, i+2));
+                   }, GI_FROM(size_t, t+1), GI_FROM(size_t, t+2));
     }
-    for ( size_t i = 0; i < NQ; ++i ) {
-        tt[i].join();
+    for ( size_t t = 0; t < NQ; ++t ) {
+        tt[t].join();
     }
 }
 #endif
@@ -1755,9 +1755,9 @@ void s_Match_id(size_t num_ids,
                 continue;
             }
             CSeq_id_Handle id = CSeq_id_Handle::GetHandle(fasta_ids[i]);
-            vector<string> ids;
-            NStr::Split(match_to_ids[i], ",", ids);
-            ITERATE ( vector<string>, it, ids ) {
+            vector<string> match_ids;
+            NStr::Split(match_to_ids[i], ",", match_ids);
+            ITERATE ( vector<string>, it, match_ids ) {
                 if ( !strs.count(*it) ) {
                     continue;
                 }
@@ -1771,9 +1771,9 @@ void s_Match_id(size_t num_ids,
                 continue;
             }
             CSeq_id_Handle id = CSeq_id_Handle::GetHandle(fasta_ids[i]);
-            vector<string> ids;
-            NStr::Split(weak_match_to_ids[i], ",", ids);
-            ITERATE ( vector<string>, it, ids ) {
+            vector<string> match_ids;
+            NStr::Split(weak_match_to_ids[i], ",", match_ids);
+            ITERATE ( vector<string>, it, match_ids ) {
                 if ( !strs.count(*it) ) {
                     continue;
                 }
@@ -2381,17 +2381,13 @@ static const TFastaOSLTMap kTestFastaOSLTMap = {
 
 BOOST_AUTO_TEST_CASE(s_TestOSLT)
 {
-    string primary_id_ref;
-    string primary_id;
-    string secondary_id_ref;
-    bool has_secondary_ids;
-
     LOG_POST("Testing generation of OSLT strings");
 
     ITERATE(TFastaOSLTMap, it, kTestFastaOSLTMap) {
         CSeq_id id(it->first);
-        primary_id_ref = it->second[0];
-        has_secondary_ids = (it->second.size() == 2);
+        string primary_id_ref = it->second[0];
+        string secondary_id_ref;
+        bool has_secondary_ids = (it->second.size() == 2);
         if (has_secondary_ids)
             secondary_id_ref = it->second[1];
         list<string> secondary_ids;
