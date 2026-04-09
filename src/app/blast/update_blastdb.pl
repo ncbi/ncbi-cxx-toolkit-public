@@ -128,7 +128,7 @@ my $curl = &get_curl_path();
 my $gsutil = &get_gsutil_path();
 my $gcloud = &get_gcloud_path();
 
-my $location = "NCBI";
+my $location = "AWS";
 # If provided, the source takes precedence over any attempts to determine the closest location
 if (defined($opt_source)) {
     if ($opt_source =~ /^ncbi/i) {
