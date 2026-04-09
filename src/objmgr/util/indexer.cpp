@@ -1495,6 +1495,7 @@ void CBioseqIndex::x_InitSource (void)
                         if (m_Breed.empty()) {
                             m_Breed = str;
                         }
+                        break;
                     case NCBI_ORGMOD(common):
                         com = &str;
                         numcom++;
@@ -1696,6 +1697,7 @@ void CBioseqIndex::x_InitDescs (void)
                                 // m_Reconstruct = true;
                                 m_Title.clear();
                                 // fall through
+                                [[fallthrough]];
                             case NCBI_TECH(htgs_3):
                                 m_HTGTech = true;
                                 m_UseBiosrc = true;
@@ -1878,7 +1880,7 @@ void CBioseqIndex::x_InitDescs (void)
     }
 }
 
-void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, bool onlyNear, CScope& scope)
+void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, bool onlyNear, [[maybe_unused]] CScope& scope)
 
 {
     bool snpOK = false;
