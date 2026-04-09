@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(SemaphorePostRace)
             ts.emplace_back(std::move(t));
         }
 
-        auto r = accumulate(fs.begin(), fs.end(), 0, [](int i, future<int>& f) { return i + f.get(); });
+        auto r = accumulate(fs.begin(), fs.end(), 0, [](int sum, future<int>& f) { return sum + f.get(); });
 
         for (auto& t : ts) {
             t.join();
@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(MutexRace)
         objs.push_back(make_unique<SObject>());
     }
     vector<thread> tt;
-    for ( size_t i = 0; i < kThreadCount; ++i ) {
+    for ( size_t t = 0; t < kThreadCount; ++t ) {
         tt.push_back(thread([&]() {
             for ( size_t p = 0; p < kPassCount; ++p ) {
                 for ( size_t i = 0; i < kObjectCount; ++i ) {
