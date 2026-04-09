@@ -52,6 +52,7 @@ CMappedFeat::CMappedFeat(const CSeq_feat_Handle& feat)
 
 
 CMappedFeat::CMappedFeat(const CMappedFeat& feat)
+    : CSeq_feat_Handle()
 {
     *this = feat;
 }
