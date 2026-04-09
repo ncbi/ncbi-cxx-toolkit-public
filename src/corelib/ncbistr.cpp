@@ -341,6 +341,7 @@ static EMatchesMaskResult s_MatchesMask(CTempString str, CTempString mask, bool 
             if (!(m = mask[++mask_pos]))
                 return eMismatch; // mismatch, pattern error
             /*FALLTHRU*/
+            [[fallthrough]];
 
         default:
             // Compare non-pattern character with the string
@@ -794,6 +795,7 @@ Int8 NStr::StringToInt8(const CTempString str, TStringToNumFlags flags, int base
     case '-':
         sign = true;
         /*FALLTHRU*/
+        [[fallthrough]];
     case '+':
         pos++;
         break;
@@ -1809,7 +1811,7 @@ static void s_SignedBase10ToString(string&                 out_str,
                                    unsigned long           value,
                                    long                    svalue,
                                    NStr::TNumToStringFlags flags,
-                                   int                     base)
+                                   [[maybe_unused]] int    base)
 {
     _ASSERT(base == 10);
 
@@ -1827,13 +1829,13 @@ static void s_SignedBase10ToString(string&                 out_str,
                 *--pos = ',';
                 cnt = 0;
             }
-            *--pos = '0' + value % 10;
+            *--pos = static_cast<char>('0' + value % 10);
             value /= 10;
         } while (value);
     }
     else {
         do {
-            *--pos = '0' + value % 10;
+            *--pos = static_cast<char>('0' + value % 10);
             value /= 10;
         } while (value);
     }
@@ -1903,13 +1905,13 @@ void NStr::ULongToString(string&          out_str,
                     *--pos = ',';
                     cnt = 0;
                 }
-                *--pos = '0' + value % 10;
+                *--pos = static_cast<char>('0' + value % 10);
                 value /= 10;
             } while ( value );
         }
         else {
             do {
-                *--pos = '0' + value % 10;
+                *--pos = static_cast<char>('0' + value % 10);
                 value /= 10;
             } while ( value );
         }
@@ -1953,7 +1955,7 @@ static char* s_PrintBase10Uint8(char*                   pos,
                     *--pos = ',';
                     cnt = 0;
                 }
-                *--pos = '0' + chunk % 10;
+                *--pos = static_cast<char>('0' + chunk % 10);
                 chunk /= 10;
             } while ( pos != end );
         }
@@ -1964,7 +1966,7 @@ static char* s_PrintBase10Uint8(char*                   pos,
                 *--pos = ',';
                 cnt = 0;
             }
-            *--pos = '0' + chunk % 10;
+            *--pos = static_cast<char>('0' + chunk % 10);
             chunk /= 10;
         } while ( chunk );
 #else
@@ -1988,19 +1990,19 @@ static char* s_PrintBase10Uint8(char*                   pos,
             chunk -= PRINT_INT8_CHUNK*Uint4(value);
             char* end = pos - PRINT_INT8_CHUNK_SIZE;
             do {
-                *--pos = '0' + chunk % 10;
+                *--pos = static_cast<char>('0' + chunk % 10);
                 chunk /= 10;
             } while ( pos != end );
         }
         // process all remaining digits in 32-bit number
         Uint4 chunk = Uint4(value);
         do {
-            *--pos = '0' + chunk % 10;
+            *--pos = static_cast<char>('0' + chunk % 10);
             chunk /= 10;
         } while ( chunk );
 #else
         do {
-            *--pos = '0' + value % 10;
+            *--pos = static_cast<char>('0' + value % 10);
             value /= 10;
         } while ( value );
 #endif
@@ -2298,7 +2300,6 @@ void NStr::DoubleToString(string& out_str, double value,
                           int precision, TNumToStringFlags flags)
 {
     char buffer[kMaxDoubleStringSize]; // inludes ending '\0'
-    int n = 0;
     if (precision >= 0 ||
         ((flags & fDoublePosix) && (!finite(value) || value == 0.))) {
         SIZE_TYPE n = DoubleToString(value, precision, buffer, kMaxDoubleStringSize, flags);
@@ -2317,7 +2318,7 @@ void NStr::DoubleToString(string& out_str, double value,
                 format = "%g";
                 break;
         }
-        n = ::snprintf(buffer, kMaxDoubleStringSize, format, value);
+        int n = ::snprintf(buffer, kMaxDoubleStringSize, format, value);
         if (n < 0) {
             buffer[0] = '\0';
         }
@@ -4128,7 +4129,7 @@ string NStr::HtmlEncode(const CTempString str, THtmlEncode flags)
                             // Check on numeric character reference encoding
                             if (flags & fHtmlEnc_SkipNumericEntities) {
                                 p++;
-                                if (len  ||  len <= 4) {
+                                if (len  &&  len <= 4) {
                                     for (; p < semicolon; ++p) {
                                         if (!isdigit((unsigned char)(str[p])))
                                             break;
@@ -6908,6 +6909,7 @@ char CUtf8::SymbolToChar(TUnicodeSymbol cp, EEncoding encoding)
 
 struct SCharEncoder
 {
+    virtual ~SCharEncoder() = default;
     virtual TUnicodeSymbol ToUnicode(char ch) const = 0;
     virtual char ToChar(TUnicodeSymbol sym) const = 0;
 };
