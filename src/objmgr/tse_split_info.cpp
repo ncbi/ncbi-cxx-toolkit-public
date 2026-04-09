@@ -415,14 +415,14 @@ bool CTSE_Split_Info::x_CanAddBioseq(const TBioseqId& id) const
 
 
 // annot index
-void CTSE_Split_Info::x_UpdateFeatIdIndex(CSeqFeatData::E_Choice type,
-                                          EFeatIdType id_type)
+void CTSE_Split_Info::x_UpdateFeatIdIndex(CSeqFeatData::E_Choice /*type*/,
+                                          EFeatIdType /*id_type*/)
 {
 }
 
 
-void CTSE_Split_Info::x_UpdateFeatIdIndex(CSeqFeatData::ESubtype subtype,
-                                          EFeatIdType id_type)
+void CTSE_Split_Info::x_UpdateFeatIdIndex(CSeqFeatData::ESubtype /*subtype*/,
+                                          EFeatIdType /*id_type*/)
 {
 }
 
