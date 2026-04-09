@@ -1246,8 +1246,8 @@ BOOST_AUTO_TEST_CASE(s_UrlArgsTest)
             BOOST_ERROR("Parsed args size (" << parsed.size() << ") does not match expected one (" <<
                     expected.size() << ") for '" << source << "' and flags=" << flags);
         } else {
-            auto l = [](const CUrlArgs::SUrlArg& l, const CUrlArgs::SUrlArg& r) { return l.name == r.name && l.value == r.value; };
-            auto r = mismatch(expected.begin(), expected.end(), parsed.begin(), l);
+            auto cmp = [](const CUrlArgs::SUrlArg& l, const CUrlArgs::SUrlArg& r) { return l.name == r.name && l.value == r.value; };
+            auto r = mismatch(expected.begin(), expected.end(), parsed.begin(), cmp);
 
             if (r.first != expected.end()) {
                 BOOST_ERROR("Parsed does not match expected, first mismatch: '" <<
