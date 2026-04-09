@@ -880,7 +880,7 @@ void CSeq_annot_Info::x_AddAlignKeys(CAnnotObject_Info& info,
 
 
 void CSeq_annot_Info::x_AddAlignIndex(CAnnotObject_Info& info,
-                                      const CSeq_align& align,
+                                      const CSeq_align& /*align*/,
                                       CTSEAnnotObjectMapper& mapper,
                                       vector<CHandleRangeMap>& hrmaps,
                                       const TTotalRangesMap* total_ranges_map)
