@@ -528,7 +528,7 @@ static string s_FormatCall(const char* method_name,
                            CDataLoader::EChoice choice)
 {
     ostringstream out;
-    out << method_name << '(' << seq_id << ')';
+    out << method_name << '(' << seq_id << ", " << choice << ')';
     return out.str();
 }
 
