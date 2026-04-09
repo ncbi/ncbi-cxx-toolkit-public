@@ -66,6 +66,14 @@ static atomic<unsigned int> s_NextIndex = 0;
         } \
     } while (0)
 
+#define TESTAPP_ASSERT_FAILED(expr, failed, msg) \
+    do { \
+        if (!(expr)) { \
+            cerr << "Assertion failed: (" << #expr << ") --- " << msg << endl; \
+            failed = true; \
+        } \
+    } while (0)
+
 /////////////////////////////////////////////////////////////////////////////
 // Randomization parameters
 
@@ -136,9 +144,8 @@ CTestThread::CTestThread(int idx)
 
 CTestThread::~CTestThread(void)
 {
-    s_NumberOfThreads.Add(-1);
-    auto num = s_NumberOfThreads.Get();
-    TESTAPP_ASSERT(num >= 0,
+    auto num = s_NumberOfThreads.Add(-1);
+    TESTAPP_ASSERT((num+1) > 0,
         "CTestThread::~CTestThread() - invalid number of threads: " << num);
     if ( s_Application != 0 )
         TESTAPP_ASSERT(s_Application->Thread_Destroy(m_Idx),
@@ -426,9 +433,8 @@ void CThreadGroup::SyncPoint(void)
 inline
 void CThreadGroup::ThreadWait(void)
 {
-    s_NumberOfThreads.Add(-1);
-    auto num = s_NumberOfThreads.Get();
-    TESTAPP_ASSERT(num >= 0,
+    auto num = s_NumberOfThreads.Add(-1);
+    TESTAPP_ASSERT((num+1) > 0,
         "CThreadGroup::ThreadWait() - invalid number of threads: " << num);
     m_Semaphore.Wait();
 }
@@ -508,6 +514,7 @@ void CThreadedApp::Init(void)
 
 int CThreadedApp::Run(void)
 {
+    bool failed = false;
     // Process command line
     const CArgs& args = GetArgs();
 
@@ -582,12 +589,12 @@ int CThreadedApp::Run(void)
 #ifdef USE_NATIVE_THREADS
             if (thr[i]) {
                 thr[i]->JoinNative(&join_result);
-                TESTAPP_ASSERT(join_result,
+                TESTAPP_ASSERT_FAILED(join_result, failed, 
                     "CThreadedApp::Run() - thread " << i << " failed to pass result to Join()");
             }
 #else
             thr[i]->Join(&join_result);
-            TESTAPP_ASSERT(join_result,
+            TESTAPP_ASSERT_FAILED(join_result, failed,
                 "CThreadedApp::Run() - thread " << i << " failed to pass result to Join()");
 #endif
         }
@@ -599,7 +606,7 @@ int CThreadedApp::Run(void)
                  t < m_ThreadGroups[g].number_of_threads; ++t, ++i) {
                 void* join_result;
                 thr[i]->Join(&join_result);
-                TESTAPP_ASSERT(join_result,
+                TESTAPP_ASSERT_FAILED(join_result, failed,
                     "CThreadedApp::Run() - thread " << i << " failed to pass result to Join()");
             }
         }
@@ -619,7 +626,7 @@ int CThreadedApp::Run(void)
         thr_group[i].Reset();
     }
 
-    return 0;
+    return failed? 1: 0;
 }
 
 
