@@ -331,8 +331,8 @@ CTaxon1::x_ConvertOrgrefProps( CTaxon2_data& data )
 			       (*i)->IsSetTag() && (*i)->GetTag().IsStr() ) {
 			list< string > lBlastNames;
 			NStr::Split( (*i)->GetTag().GetStr(), ";", lBlastNames, NStr::fSplit_Tokenize );
-                        NON_CONST_ITERATE( list< string >, i, lBlastNames ) {
-                            NStr::TruncateSpacesInPlace( *i );
+                        for ( auto& s : lBlastNames ) {
+                            NStr::TruncateSpacesInPlace( s );
                         }
 			lBlastNames.reverse();
 			data.SetBlast_name().insert( data.SetBlast_name().end(),
