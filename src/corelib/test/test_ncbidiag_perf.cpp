@@ -110,7 +110,7 @@ bool CTestDiagApp::TestApp_Args(CArgDescriptions& args)
 }
 
 
-bool CTestDiagApp::Thread_Init(int idx)
+bool CTestDiagApp::Thread_Init(int /*idx*/)
 {
     return true;
 }
@@ -130,7 +130,7 @@ bool CTestDiagApp::Thread_Run(int idx)
                     stop_watch_time = sw.Restart();
                     CDiagContext::GetRequestContext();
                     first_time = sw.Restart();
-                    for ( int i = 1; i < calls; ++i ) {
+                    for ( int j = 1; j < calls; ++j ) {
                         CDiagContext::GetRequestContext();
                     }
                     other_time = sw.Elapsed();
@@ -174,7 +174,7 @@ bool CTestDiagApp::TestApp_Exit(void)
              << NcbiEndl;
     NcbiCout <<"first: "<<(m_FirstTime/m_FirstCalls*1e6)<<" us"
              << NcbiEndl;
-    NcbiCout <<"other: "<<(m_OtherTime/m_OtherCalls*1e6)<<" us"
+    NcbiCout <<"other: "<<(m_OtherTime/static_cast<double>(m_OtherCalls)*1e6)<<" us"
              << NcbiEndl;
     return true;
 }
