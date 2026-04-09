@@ -138,7 +138,8 @@ CSeqVector::CSeqVector(void)
 
 
 CSeqVector::CSeqVector(const CSeqVector& vec)
-    : m_Scope(vec.m_Scope),
+    : CObject(),
+      m_Scope(vec.m_Scope),
       m_SeqMap(vec.m_SeqMap),
       m_TSE(vec.m_TSE),
       m_Size(vec.m_Size),
