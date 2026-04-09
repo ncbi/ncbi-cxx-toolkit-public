@@ -542,7 +542,7 @@ void* CObject::operator new(size_t size, void* place)
 }
 
 // complement placement delete operator -> do nothing
-void CObject::operator delete(void* _DEBUG_ARG(ptr), void* /*place*/)
+void CObject::operator delete([[maybe_unused]] void* ptr, void* /*place*/)
 {
     // Can be called either from regular destruction (with counter initialized)
     // or before CObject constructor is called (counter is not set yet).
