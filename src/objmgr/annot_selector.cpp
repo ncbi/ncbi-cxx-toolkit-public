@@ -155,6 +155,7 @@ SAnnotSelector::SAnnotSelector(TFeatSubtype feat_subtype)
 
 
 SAnnotSelector::SAnnotSelector(const SAnnotSelector& sel)
+    : SAnnotTypeSelector(sel)
 {
     *this = sel;
 }
@@ -623,7 +624,7 @@ bool SAnnotSelector::IsIncludedNamedAnnotAccession(const string& acc) const
 
 SAnnotSelector& SAnnotSelector::SetAdaptiveDepth(bool value)
 {
-    m_AdaptiveDepthFlags = value? GetDefaultAdaptiveDepthFlags(): kAdaptive_None;
+    m_AdaptiveDepthFlags = value? GetDefaultAdaptiveDepthFlags(): TAdaptiveDepthFlags(kAdaptive_None);
     return *this;
 }
 
