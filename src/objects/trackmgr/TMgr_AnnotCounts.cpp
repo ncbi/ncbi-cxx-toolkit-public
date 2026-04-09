@@ -61,8 +61,7 @@ CTMgr_AnnotCounts::x_GetCount(ETMgr_AnnotType type) const
         return it->second;
     }
     TTypeStatRef retval;
-    NON_CONST_ITERATE (TCounts, it, const_cast<CTMgr_AnnotCounts*>(this)->SetCounts()) {
-        TTypeStatRef cnt = *it;
+    for ( auto& cnt : GetCounts() ) {
         m_Counts.insert(make_pair(cnt->GetType(), cnt));
         if (cnt->GetType() == type) {
             retval = cnt;
