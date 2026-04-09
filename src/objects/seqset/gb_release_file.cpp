@@ -129,8 +129,8 @@ void CGBReleaseFileImpl::ReadClassMember
         it >> *se;
         if ( se ) {
             if ( m_Propagate ) {
-                EDIT_EACH_DESCRIPTOR_ON_SEQSET (it, parent_set) {
-                    CSeqdesc& desc = **it;
+                EDIT_EACH_DESCRIPTOR_ON_SEQSET (desc_it, parent_set) {
+                    CSeqdesc& desc = **desc_it;
                     ADD_DESCRIPTOR_TO_SEQENTRY (*se, CRef<CSeqdesc>(SerialClone(desc)));
                 }
             }
