@@ -549,7 +549,7 @@ void CScopeInfo_Base::x_AttachTSE(CTSE_ScopeInfo* tse)
 }
 
 
-void CScopeInfo_Base::x_DetachTSE(CTSE_ScopeInfo* tse)
+void CScopeInfo_Base::x_DetachTSE([[maybe_unused]] CTSE_ScopeInfo* tse)
 {
     _ASSERT(tse);
     _ASSERT(!IsDetached());
@@ -906,10 +906,10 @@ CSeq_feat_Handle CTSE_Handle::GetGeneByRef(const CGene_ref& ref,
 {
     CSeq_feat_Handle feat;
     if ( ref.IsSetLocus_tag() ) {
-        feat = GetGeneWithLocus(ref.GetLocus_tag(), true);
+        feat = GetGeneWithLocus(ref.GetLocus_tag(), true, src_annot);
     }
     if ( !feat && ref.IsSetLocus() ) {
-        feat = GetGeneWithLocus(ref.GetLocus(), false);
+        feat = GetGeneWithLocus(ref.GetLocus(), false, src_annot);
     }
     return feat;
 }
