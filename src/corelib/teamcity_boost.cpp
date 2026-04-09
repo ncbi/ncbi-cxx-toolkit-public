@@ -184,7 +184,7 @@ void TeamcityBoostLogFormatter::test_unit_finish(std::ostream &out, boost::unit_
 void TeamcityBoostLogFormatter::test_unit_skipped(std::ostream &/*out*/, boost::unit_test::test_unit const& /*tu*/)
 {}
 
-void TeamcityBoostLogFormatter::test_unit_skipped(std::ostream &out, boost::unit_test::test_unit const& tu, boost::unit_test::const_string reason)
+void TeamcityBoostLogFormatter::test_unit_skipped(std::ostream &/*out*/, boost::unit_test::test_unit const& tu, boost::unit_test::const_string reason)
 {
     messages.testIgnored(tu.p_name, toString(reason), flowId);
 }
