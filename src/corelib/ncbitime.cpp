@@ -1635,7 +1635,7 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
                   break;
         case 'p': str += ( t->Hour() < 12) ? "am" : "pm" ;  break;
         case 'P': str += ( t->Hour() < 12) ? "AM" : "PM" ;  break;
-        case 'o': tz_fmt_make.activate(); /* FALL THROUGH */
+        case 'o': tz_fmt_make.activate(); /* FALL THROUGH */ [[fallthrough]];
         case 'z': {
 #if defined(NCBI_TIMEZONE_IS_UNDEFINED)
                   ERR_POST_X(5, "Format symbol 'z' is unsupported "
@@ -2005,12 +2005,15 @@ CTime& CTime::Truncate(ERoundPrecision precision)
         case eRound_Day:
             m_Data.hour = 0;
             // fall through
+            [[fallthrough]];
         case eRound_Hour:
             m_Data.min = 0;
             // fall through
+            [[fallthrough]];
         case eRound_Minute:
             m_Data.sec = 0;
             // fall through
+            [[fallthrough]];
         case eRound_Second:
             m_Data.nanosec = 0;
             break;
@@ -3769,6 +3772,7 @@ bool CTimeout::operator>= (const CTimeout& t) const
         if ( t.IsZero() )
             return true;  // default >= zero
         // fall through
+        [[fallthrough]];
     default:
         NCBI_THROW(CTimeException, eArgument,
                    "Unable to compare with " +
@@ -3792,6 +3796,7 @@ bool CTimeout::operator<= (const CTimeout& t) const
         if ( IsZero() ) 
             return true;  // zero <= default
         // fall through
+        [[fallthrough]];
     default:
         NCBI_THROW(CTimeException, eArgument,
                    "Unable to compare with " +
