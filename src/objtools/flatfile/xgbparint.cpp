@@ -308,7 +308,7 @@ static void xlex_error_func(
 
 static unsigned advance_to(const char c, unsigned current_pos, const string& line)
 {
-    int pos = current_pos;
+    unsigned pos = current_pos;
     while (pos < line.size()) {
         if (line[pos] == c) {
             return pos - 1;
@@ -1552,7 +1552,7 @@ CRef<CSeq_loc> xgbparseint_ver(string_view raw_intervals, bool& keep_rawPt, int&
     } while (in_sites && current_token != end_it);
 
     if (numErrors) {
-        return CRef<CSeq_loc>();
+        return {};
     }
 
     return ret;

@@ -1698,7 +1698,7 @@ static void fta_check_embl_drxref_dups(const TEmblAccList& embl_acc_list)
             for (auto p = pid.begin() + dot + 1; p != pid.end(); ++p) {
                 if (IS_DIGIT(*p))
                     continue;
-                dot = string::npos;
+                dot = string_view::npos;
                 break;
             }
         }
