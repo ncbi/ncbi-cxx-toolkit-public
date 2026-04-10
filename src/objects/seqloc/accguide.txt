@@ -170,6 +170,8 @@ version  1 # of file format
 4+8   HAZG    embl_tpa_tsa_nuc # 4+8
 4+8   HBDM    embl_tpa_wgs_nuc # Fallback for old clients
 4+8   HBDM    embl_tpa_tsa_nuc # 4+8
+4+8   HBGS    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBGS    embl_tpa_tsa_nuc # 4+8
 4+8   HBHG    embl_tpa_wgs_nuc # Fallback for old clients
 4+8   HBHG    embl_tpa_tsa_nuc # 4+8
 4+8   HBHS    embl_tpa_wgs_nuc # Fallback for old clients
