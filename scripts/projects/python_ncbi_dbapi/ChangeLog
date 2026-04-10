@@ -1,3 +1,8 @@
+Version 1.27.2 (2026-04-10):
+* Fix crashes from basing generator expressions on cursor iterators under
+  recent Python (3.13, maybe also 3.12).
+* Avoid (compilation-time!) deprecation warnings under Python 3.11+.
+
 Version 1.27.1 (2026-03-11):
 * Fix crashes that could occur when encountering errors under Python 3.13.
 
