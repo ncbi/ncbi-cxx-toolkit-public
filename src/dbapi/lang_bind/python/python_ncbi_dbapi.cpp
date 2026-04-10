@@ -3395,7 +3395,7 @@ extern "C"
 PyObject*
 s_GetCursorIterFromIter(PyObject* iter_obj)
 {
-    return iter_obj;
+    return pythonpp::IncRefCount(iter_obj);
 }
 
 extern "C"
