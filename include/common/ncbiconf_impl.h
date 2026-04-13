@@ -370,6 +370,13 @@
 #endif
 
 
+#if __has_attribute(format)
+#  define NCBI_ATTRIBUTE_PRINTF(fmt, args) __attribute__((format(printf, fmt, args)))
+#else
+#  define NCBI_ATTRIBUTE_PRINTF(fmt, args)
+#endif
+
+
 #include <common/ncbi_skew_guard.h>
 
 
