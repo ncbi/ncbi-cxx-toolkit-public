@@ -137,8 +137,8 @@ CPagedFile::~CPagedFile()
     if ( s_GetDebug() >= 1 ) {
         auto stat = GetReadStatistics();
         if ( stat.first ) {
-            LOG_POST("BGZF: Total read "<<stat.first/double(1<<20)<<" MB"
-                     " speed: "<<stat.first/(stat.second*(1<<20))<<" MB/s"
+            LOG_POST("BGZF: Total read "<<double(stat.first)/(1<<20)<<" MB"
+                     " speed: "<<double(stat.first)/(stat.second*(1<<20))<<" MB/s"
                      " time: "<<stat.second);
         }
     }
@@ -197,7 +197,7 @@ size_t CPagedFile::GetNextPageSizePow2() const
     Uint8 read_bytes = stats.first + m_PreviousReadBytes + add_read_bytes;
     double read_seconds = stats.second + m_PreviousReadSeconds +
         add_read_bytes/add_read_bytes_per_second;
-    double seconds_per_byte = read_seconds/read_bytes;
+    double seconds_per_byte = read_seconds/double(read_bytes);
 
     size_t size_pow2 = kSegmentSizePow2Max;
     double seconds = (size_t(1)<<size_pow2)*seconds_per_byte;
@@ -253,7 +253,7 @@ void CPagedFile::x_ReadPage(CPagedFilePage& page, TFilePos file_pos, size_t size
             if ( s_GetDebug() >= 3 ) {
                 LOG_POST(Info<<"BGZF: Read page @ "<<file_pos
                          <<" "<<bytes<<" bytes in "<<seconds<<" sec"
-                         " speed: "<<bytes/(seconds*(1<<20))<<" MB/s");
+                         " speed: "<<double(bytes)/(seconds*(1<<20))<<" MB/s");
             }
         }
         if (rem) {
@@ -374,8 +374,8 @@ CBGZFFile::~CBGZFFile()
     if ( s_GetDebug() >= 1 ) {
         auto stat = GetUncompressStatistics();
         if ( stat.first ) {
-            LOG_POST("BGZF: Total decompressed "<<stat.first/double(1<<20)<<" MB"
-                     " speed: "<<stat.first/(stat.second*(1<<20))<<" MB/s"
+            LOG_POST("BGZF: Total decompressed "<<double(stat.first)/(1<<20)<<" MB"
+                     " speed: "<<double(stat.first)/(stat.second*(1<<20))<<" MB/s"
                      " time: "<<stat.second);
         }
     }
@@ -610,7 +610,7 @@ bool CBGZFFile::x_ReadBlock(CBGZFBlock& block,
         if ( s_GetDebug() >= 5 ) {
             LOG_POST(Info<<"BGZF: Decompressed block"
                      " @ "<<file_pos0<<" in "<<seconds<<" sec"
-                     " speed: "<<compressed_size/(seconds*(1<<20))<<" MB/s");
+                     " speed: "<<double(compressed_size)/(seconds*(1<<20))<<" MB/s");
         }
     }
     
