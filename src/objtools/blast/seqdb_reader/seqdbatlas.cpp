@@ -259,7 +259,7 @@ char * CSeqDBAtlas::Alloc(size_t length, bool clear)
             memset(newcp, 0, length);
         }
     }
-    catch(std::bad_alloc) {
+    catch(std::bad_alloc&) {
         NCBI_THROW(CSeqDBException, eMemErr,
                    "CSeqDBAtlas::Alloc: allocation failed.");
     }
