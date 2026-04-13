@@ -1090,6 +1090,9 @@ STypeLink::STypeLink(CSeqFeatData::ESubtype subtype,
     case CSeqFeatData::eSubtype_mat_peptide:
     case CSeqFeatData::eSubtype_sig_peptide:
     case CSeqFeatData::eSubtype_transit_peptide:
+//    case CSeqFeatData::eSubtype_mat_peptide_aa:
+//    case CSeqFeatData::eSubtype_sig_peptide_aa:
+//    case CSeqFeatData::eSubtype_transit_peptide_aa:
         m_ParentType = CSeqFeatData::eSubtype_prot;
         break;
     case CSeqFeatData::eSubtype_mRNA:
@@ -1969,6 +1972,7 @@ CFeatTree::~CFeatTree(void)
 
 
 CFeatTree::CFeatTree(const CFeatTree& ft)
+    : CObject()
 {
     *this = ft;
 }
@@ -3504,6 +3508,7 @@ void GetOverlappingFeatures(CScope& scope, const CSeq_loc& loc,
     case eOverlap_CheckIntRev:
         revert_locations = true;
         // there's no break here - proceed to "default"
+        [[fallthrough]];
     default:
         // Require intervals overlap
         annot_overlap_type = SAnnotSelector::eOverlap_Intervals;
