@@ -582,7 +582,7 @@ void CAgpValidateReader::OnObjectChange()
             CBioseq::TId ids;
             gnl = CSeq_id::ParseFastaIds( ids, m_this_row->GetObject() ) > 0;
           }
-          catch(CException e){
+          catch(CException& e){
             gnl = false;
             parsing_error = e.GetMsg();
           }
