@@ -252,11 +252,12 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromStdAcc)
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("J12345", kCautious)));
     BOOST_CHECK(id->IsGenbank());
 
-    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("BN00123")));
-    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("bn000123")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("FR73401")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("F734011")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("fr734011")));
     BOOST_CHECK(id->IsTpe());
-    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("BN00012B")));
-    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("BN0000123")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("FR734OIl")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("FR0734011")));
 
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("FAA0017")));
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("FAA00017")));
