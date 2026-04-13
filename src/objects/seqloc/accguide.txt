@@ -8604,6 +8604,30 @@ special  CEVFDV000000000-CEVFMB999999999  embl_tpa_wgs_nuc # 6+9
 special  CEVKVT000000000-CEVNDK999999999  embl_tpa_wgs_nuc # 6+9
 special  CEVNFD000000000-CEVQHU999999999  embl_tpa_wgs_nuc # 6+9
 special  CEVQIZ000000000-CEVQYS999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWVE000000000-CEVWVJ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWVL000000000-CEVWVL999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWVQ000000000-CEVWVT999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWVZ000000000-CEVWVZ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWWB000000000-CEVWWD999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWWH000000000-CEVWWM999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWWR000000000-CEVWWR999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWWU000000000-CEVWWU999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWWX000000000-CEVWWZ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWXB000000000-CEVWXB999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWXE000000000-CEVWXI999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWXK000000000-CEVWXL999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWXS000000000-CEVWXU999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWXW000000000-CEVWXZ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWYE000000000-CEVWYE999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWYG000000000-CEVWYH999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWYJ000000000-CEVWYP999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWYR000000000-CEVWYR999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWYT000000000-CEVWYU999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWYW000000000-CEVWZA999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWZD000000000-CEVWZF999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVWZH000000000-CEVXHX999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVXIA000000000-CEVXIA999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVXJA000000000-CEVXKJ999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" 8- and 10-character protein accessions are really third-party
 # annotations.
