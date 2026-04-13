@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE(OpenMultipleBAMFiles)
                        (const string& url, uint64_t exp_size, uint32_t exp_magic, const vector<char>& exp_data)
                        {
                            {
-                               CMutexGuard start_guard(start_mutex);
+                               CMutexGuard thread_start_guard(start_mutex);
                            }
                            VPath* path = 0;
                            CALL(VFSManagerMakePath(mgr, &path, url.c_str()));
