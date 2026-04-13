@@ -427,6 +427,20 @@ int CAgpRow::FromString(const string& line)
     // Comments
     cols.clear();
     pcomment = line.find("#");
+    if(pcomment==0) return -1; // A comment line; to be skipped.
+    else {
+        // 2026/04/10 GCOL-17016
+        // If "#" is not after at least 8 columns / 7 tabs - then it is not a comment;
+        // it could be a part of the object name.
+        const int MIN_TabCnt = 7;
+        for(SIZE_TYPE ptab = 0, tab_cnt=0; tab_cnt <= 7; tab_cnt++)  {
+            ptab = line.find("\t", ptab + 1);
+            if(ptab == NPOS || ptab > pcomment) {
+                pcomment = NPOS; // not a EOL comment
+                break;
+            }
+        }
+    }
 
     bool tabsStripped=false;
     bool extraTabOrSpace=false;
