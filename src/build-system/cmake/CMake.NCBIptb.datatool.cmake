@@ -76,6 +76,46 @@ endif()
 endif()
 
 ##############################################################################
+function(NCBI_is_file_generated _file _result)
+    if(TOOLKIT_GIT_REVISION)
+        if(Git_FOUND)
+            execute_process(
+                COMMAND ${GIT_EXECUTABLE}  ls-files --error-unmatch  "${_file}"
+                WORKING_DIRECTORY "${NCBI_TREE_ROOT}"
+                RESULT_VARIABLE _R
+                OUTPUT_QUIET ERROR_QUIET
+            )
+            if(${_R} EQUAL 0)
+                set(${_result} FALSE PARENT_SCOPE)
+            else()
+                set(${_result} TRUE PARENT_SCOPE)
+            endif()
+            return()
+        endif()
+    elseif(TOOLKIT_WC_REVISION)
+        if(Subversion_FOUND)
+            execute_process(
+                COMMAND ${Subversion_SVN_EXECUTABLE} info "${_file}"
+                WORKING_DIRECTORY "${NCBI_TREE_ROOT}"
+                RESULT_VARIABLE _R
+                OUTPUT_QUIET ERROR_QUIET
+            )
+            if(${_R} EQUAL 0)
+                set(${_result} FALSE PARENT_SCOPE)
+            else()
+                set(${_result} TRUE PARENT_SCOPE)
+            endif()
+            return()
+        endif()
+    endif()
+    if(EXISTS "${_file}")
+        set(${_result} FALSE PARENT_SCOPE)
+    else()
+        set(${_result} TRUE PARENT_SCOPE)
+    endif()
+endfunction()
+
+##############################################################################
 function(NCBI_internal_process_dataspec _variable _access _value)
     if(NOT "${_access}" STREQUAL "MODIFIED_ACCESS" OR "${_value}" STREQUAL "")
         return()
@@ -139,7 +179,10 @@ function(NCBI_internal_process_dataspec _variable _access _value)
                     elseif(NOT _found)
                         break()
                     endif()
-                    list(APPEND _byproducts ${_path}/${_key}.cpp)
+                    NCBI_is_file_generated( ${_path}/${_key}.cpp _isgen)
+                    if(_isgen)
+                        list(APPEND _byproducts ${_path}/${_key}.cpp)
+                    endif()
                     list(APPEND _byproducts ${_path}/${_key}_.cpp)
                 endforeach()
                 break()
