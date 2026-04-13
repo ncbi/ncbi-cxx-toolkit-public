@@ -31,6 +31,8 @@
  * ===========================================================================
  */
 
+#define NCBI_TEST_APPLICATION
+
 #include <ncbi_pch.hpp>
 #include <objtools/blast/blastdb_format/seq_formatter.hpp>
 #include <objtools/blast/blastdb_format/invalid_data_exception.hpp>
