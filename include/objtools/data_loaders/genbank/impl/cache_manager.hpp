@@ -49,6 +49,10 @@ public:
     {
         SReaderCacheInfo(ICache& cache, ECacheType cache_type);
         ~SReaderCacheInfo(void);
+        SReaderCacheInfo(const SReaderCacheInfo&) = delete;
+        SReaderCacheInfo& operator=(const SReaderCacheInfo&) = delete;
+        SReaderCacheInfo(SReaderCacheInfo&&) = default;
+        SReaderCacheInfo& operator=(SReaderCacheInfo&&) = default;
 
         AutoPtr<ICache> m_Cache;
         TCacheType      m_Type;

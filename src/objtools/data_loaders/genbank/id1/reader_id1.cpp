@@ -239,7 +239,7 @@ void CId1Reader::x_ConnectAtSlot(TConn conn)
     tmout.sec = 0; tmout.usec = 1; // no wait on close
     CONN_SetTimeout(stream.GetCONN(), eIO_Close, &tmout);
 
-    m_Connections[conn] = conn_info;
+    m_Connections[conn] = std::move(conn_info);
 }
 
 

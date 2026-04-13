@@ -1818,9 +1818,8 @@ string CGBDataLoader::BlobIdToString(const TBlobId& id) const
 void CGBReaderCacheManager::RegisterCache(ICache& cache,
                                           ECacheType cache_type)
 {
-    SReaderCacheInfo info(cache, cache_type);
     //!!! Make sure the cache is not registered yet!
-    m_Caches.push_back(info);
+    m_Caches.push_back(SReaderCacheInfo(cache, cache_type));
 }
 
 
