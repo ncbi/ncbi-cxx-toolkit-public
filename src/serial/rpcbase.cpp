@@ -366,7 +366,7 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
 }
 
 
-bool CRPCClient_Base::x_ShouldRetry(unsigned int tries) /* NCBI_FAKE_WARNING */
+bool CRPCClient_Base::x_ShouldRetry(unsigned int /*tries*/)
 {
     return true;
 }
