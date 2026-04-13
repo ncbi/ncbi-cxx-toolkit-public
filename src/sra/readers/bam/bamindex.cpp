@@ -236,9 +236,9 @@ const char* SBamIndexBinInfo::Read(const char* ptr, const char* end,
     m_Chunks.reserve(n_chunks);
     const char* data = s_Read(ptr, end, n_chunks*16);
     for ( size_t i = 0; i < n_chunks; ++i ) {
-        Uint8 start = SBamUtil::MakeUint8(data+i*16);
-        Uint8 end = SBamUtil::MakeUint8(data+i*16+8);
-        m_Chunks.push_back(CBGZFRange(CBGZFPos(start), CBGZFPos(end)));
+        Uint8 start_pos = SBamUtil::MakeUint8(data+i*16);
+        Uint8 end_pos = SBamUtil::MakeUint8(data+i*16+8);
+        m_Chunks.push_back(CBGZFRange(CBGZFPos(start_pos), CBGZFPos(end_pos)));
     }
     return ptr;
 }
@@ -344,7 +344,7 @@ void SBamIndexRefIndex::ProcessBin(const SBamIndexBinInfo& bin)
 
 void SBamIndexRefIndex::Read(CNcbiIstream& in,
                              SBamIndexParams params,
-                             int32_t ref_index)
+                             int32_t /*ref_index*/)
 {
     SBamIndexParams::operator=(params);
     m_EstimatedLength = GetMinBinSize();
@@ -378,7 +378,7 @@ void SBamIndexRefIndex::Read(CNcbiIstream& in,
 
 const char* SBamIndexRefIndex::Read(const char* buffer_ptr, const char* buffer_end,
                                     SBamIndexParams params,
-                                    int32_t ref_index)
+                                    int32_t /*ref_index*/)
 {
     SBamIndexParams::operator=(params);
     m_EstimatedLength = GetMinBinSize();
@@ -635,8 +635,8 @@ else {
         auto ins = sp2minfp.insert(make_pair(sp, fp));
         if ( !ins.second ) {
             // uptade with minimum
-            auto& minfp = ins.first->second;
-            minfp = min(minfp, fp);
+            auto& spminfp = ins.first->second;
+            spminfp = min(spminfp, fp);
         }
     }
     map<CBGZFPos, TSeqPos> fp2sp; // map filepos to seqpos that certainly appear at or after
@@ -667,14 +667,14 @@ else {
                 levelBinSeqRange[level] = s_GetSeqRange(*this, levelBins[level]);
             }
             if ( is_CSI ) {
-                CBGZFPos overlap_fp;
+                CBGZFPos level_overlap_fp;
                 if ( seqPos >= levelBinSeqRange[level].GetFrom() ) {
-                    overlap_fp = s_GetOverlap(levelBins[level]);
+                    level_overlap_fp = s_GetOverlap(levelBins[level]);
                 }
                 else {
-                    overlap_fp = levelPrevOverlap[level];
+                    level_overlap_fp = levelPrevOverlap[level];
                 }
-                prev_overlap_fp = max(prev_overlap_fp, overlap_fp);
+                prev_overlap_fp = max(prev_overlap_fp, level_overlap_fp);
             }
         }        
         CBGZFPos found_fp = CBGZFPos::GetInvalid(); // earliest filepos of overlapping alignment
@@ -1706,11 +1706,11 @@ CBamFileRangeSet::~CBamFileRangeSet()
 
 ostream& operator<<(ostream& out, const CBamFileRangeSet& ranges)
 {
-    cout << '(';
+    out << '(';
     for ( auto& r : ranges ) {
-        cout << " (" << r.first<<" "<<r.second<<")";
+        out << " (" << r.first<<" "<<r.second<<")";
     }
-    return cout << " )";
+    return out << " )";
 }
 
 
@@ -2068,7 +2068,7 @@ string SBamAlignInfo::get_read() const
         ret.resize(len);
         char* dst = &ret[0];
         const char* src = get_read_ptr();
-        for ( uint32_t len = get_read_len(); len; ) {
+        while ( len ) {
             char c = *src++;
             uint32_t b1 = (c >> 4)&0xf;
             uint32_t b2 = (c     )&0xf;
@@ -2092,7 +2092,7 @@ void SBamAlignInfo::get_read(CBamString& str) const
     str.resize(len);
     char* dst = str.data();
     const char* src = get_read_ptr();
-    for ( uint32_t len = get_read_len(); len; ) {
+    while ( len ) {
         char c = *src++;
         uint32_t b1 = (c >> 4)&0xf;
         uint32_t b2 = (c     )&0xf;
