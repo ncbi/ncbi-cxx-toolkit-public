@@ -102,6 +102,7 @@ OPTIONS:
   --without-analysis         -- skip source tree analysis
   --with-generator="X"       -- use generator X
   --with-conan               -- use Conan to install required components
+  --with-conan-build         -- use Conan to build missing and install required components
 OPTIONAL ENVIRONMENT VARIABLES:
   CMAKE_CMD                  -- full path to 'cmake'
   CMAKE_ARGS                 -- additional arguments to pass to 'cmake'
@@ -283,6 +284,9 @@ do
       ;; 
     --with-conan)
       WITH_CONAN="ON"
+      ;;
+    --with-conan-build)
+      WITH_CONAN="BUILD"
       ;;
     [A-Z]*)
       cxx_name=$arg

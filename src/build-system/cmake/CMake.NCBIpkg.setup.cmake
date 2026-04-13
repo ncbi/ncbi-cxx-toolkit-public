@@ -58,7 +58,22 @@ if(NCBI_PTBCFG_USECONAN)
     else()
         set(_profile default)
     endif()
-    set(_cmd install ${CMAKE_BINARY_DIR} --build missing -pr:b ${_profile} -of ${CMAKE_BINARY_DIR}/${NCBI_DIRNAME_CONANGEN})
+    set(_build_missing)
+    if("${NCBI_PTBCFG_USECONAN}" STREQUAL "BUILD")
+        set(_build_missing --build missing)
+    else()
+        execute_process(
+            COMMAND ${NCBI_CONAN_APP} remote list
+            OUTPUT_VARIABLE _tmp
+            ERROR_QUIET
+        )
+        string(FIND "${_tmp}" "ncbi.nlm.nih.gov" _pos)
+        if("${_pos}" LESS 0)
+            set(_build_missing --build missing)
+        endif()
+    endif()
+
+    set(_cmd install ${CMAKE_BINARY_DIR} ${_build_missing} -pr:b ${_profile} -of ${CMAKE_BINARY_DIR}/${NCBI_DIRNAME_CONANGEN})
     if( NOT "${NCBI_PTBCFG_PROJECT_COMPONENTS}" STREQUAL "")
         string(REPLACE ";" "," _req "${NCBI_PTBCFG_PROJECT_COMPONENTS}")
         set(_cmd ${_cmd} -o ncbi-cxx-toolkit/*:with_req=${_req})

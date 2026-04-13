@@ -83,6 +83,7 @@ OPTIONS:
   --with-build-root=name     -- specify a non-default build directory name
   --without-analysis         -- skip source tree analysis
   --with-conan               -- use Conan to install required components
+  --with-conan-build         -- use Conan to build missing and install required components
 OPTIONAL ENVIRONMENT VARIABLES:
   CMAKE_CMD                  -- full path to 'cmake'
   CMAKE_ARGS                 -- additional arguments to pass to 'cmake'
@@ -186,6 +187,9 @@ while [ $# != 0 ]; do
       ;;
     --with-conan)
       WITH_CONAN="ON"
+      ;;
+    --with-conan-build)
+      WITH_CONAN="BUILD"
       ;;
     [A-Z]*)
       ;; 
