@@ -389,7 +389,7 @@ int CTestTransmission::Run(void)
             assert(buf3[j] == (unsigned char)(i + j));
         }
     }
-    assert(total_read = tsize);
+    assert(total_read == tsize);
     }}
 
     // ---------------------------
