@@ -153,7 +153,7 @@ void SOfflineJobContextImpl::x_RunJob()
             this_job_context.CommitJobWithFailure(
                     "Job was not explicitly committed");
             /* FALL THROUGH */
-            [[fallthrough]];
+            NCBI_FALLTHROUGH;
 
         case CWorkerNodeJobContext::eCS_Failure:
             job_serializer.SaveJobOutput(CNetScheduleAPI::eFailed,
