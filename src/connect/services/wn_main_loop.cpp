@@ -520,6 +520,7 @@ void SWorkerNodeJobContextImpl::x_RunJob()
             m_JobCommitStatus = CWorkerNodeJobContext::eCS_Failure;
             m_Job.error_msg = "Job was not explicitly committed";
             /* FALL THROUGH */
+            [[fallthrough]];
 
         case CWorkerNodeJobContext::eCS_Failure:
             m_WorkerNode->x_NotifyJobWatchers(this_job_context,
