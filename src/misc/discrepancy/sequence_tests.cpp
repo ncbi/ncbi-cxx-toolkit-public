@@ -1476,9 +1476,9 @@ DISCREPANCY_AUTOFIX(SEQ_SHORTER_THAN_200bp)
 }
 
 
-// GENOME_SHORTER_THAN_1000bp
+// SEQUENCES_SHORTER_THAN_1000bp
 
-DISCREPANCY_CASE(GENOME_SHORTER_THAN_1000bp, SEQUENCE, eDisc | eSubmitter | eSmart | eBig, "Short Genome")
+DISCREPANCY_CASE(SEQUENCES_SHORTER_THAN_1000bp, SEQUENCE, eDisc | eSubmitter | eSmart | eBig, "Short Genome")
 {
     const CBioseq& bioseq = context.CurrentBioseq();
     if (bioseq.CanGetInst() && bioseq.GetInst().IsNa() && bioseq.IsSetLength() && bioseq.GetLength() < 1000) {
@@ -1496,12 +1496,12 @@ DISCREPANCY_CASE(GENOME_SHORTER_THAN_1000bp, SEQUENCE, eDisc | eSubmitter | eSma
                 }
             }
         }
-        m_Objs["[n] genome[s] [is] shorter than 1000 nt"].Add(*context.BioseqObjRef(fix));
+        m_Objs["[n] sequence[s] [is] shorter than 1000 nt"].Add(*context.BioseqObjRef(fix));
     }
 }
 
 
-DISCREPANCY_SUMMARIZE(GENOME_SHORTER_THAN_1000bp)
+DISCREPANCY_SUMMARIZE(SEQUENCES_SHORTER_THAN_1000bp)
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
