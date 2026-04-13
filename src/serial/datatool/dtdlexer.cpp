@@ -220,6 +220,7 @@ bool DTDLexer::ProcessComment(bool sgml_type)
                 }
             }
             // no break here
+            [[fallthrough]];
         default:
             allblank = allblank && isspace((unsigned char)c);
             comment.AddChar(c);
