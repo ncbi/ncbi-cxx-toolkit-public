@@ -124,6 +124,7 @@ private:
     EOutputFormat x_GetOutputFormat(void);
     void x_SendResult(const string& data_to_send, EOutputFormat output_format);
     void x_SendBioseqInfo(void);
+    void x_SendBlobProps(void);
     void x_SendBlobProps(const string& psg_blob_id, CBlobRecord& blob_props);
     void x_SendBlobForbidden(const string& psg_blob_id);
     void x_SendBlobData(const string& psg_blob_id, const objects::CID2_Reply_Data& data);

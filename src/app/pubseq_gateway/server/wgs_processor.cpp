@@ -472,6 +472,10 @@ void CPSGS_WGSProcessor::OnResolvedSeqId(void)
                 GetRequest()->GetStartTimestamp());
         }
         x_SendBioseqInfo();
+        if ( GetRequest()->GetRequestType() == CPSGS_Request::ePSGS_BlobBySeqIdRequest ) {
+            // get request for blob state only
+            x_SendBlobProps();
+        }
     }
     catch (exception& exc) {
         m_WGSDataError = "Exception when handling a request: "+string(exc.what());
@@ -997,6 +1001,18 @@ void CPSGS_WGSProcessor::x_SendForbidden(void)
     s_SetBlobState(blob_props, m_WGSData->GetID2BlobState());
     x_SendBlobProps(psg_blob_id, blob_props);
     x_SendBlobForbidden(psg_blob_id);
+}
+
+
+void CPSGS_WGSProcessor::x_SendBlobProps(void)
+{
+    CID2_Blob_Id& id2_blob_id = *m_WGSData->m_Id2BlobId;
+    const string& psg_blob_id = m_WGSData->m_BlobId;
+
+    CBlobRecord blob_props;
+    s_SetBlobVersion(blob_props, id2_blob_id);
+    s_SetBlobState(blob_props, m_WGSData->GetID2BlobState());
+    x_SendBlobProps(psg_blob_id, blob_props);
 }
 
 
