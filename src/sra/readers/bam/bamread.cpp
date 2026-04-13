@@ -464,7 +464,7 @@ CRef<CSeq_id> sx_GetRefSeq_id(const string& str, IIdMapper* idmapper)
 
 
 static
-CRef<CSeq_id> sx_GetShortSeq_id(const string& str, IIdMapper* idmapper, bool external)
+CRef<CSeq_id> sx_GetShortSeq_id(const string& str, IIdMapper* /*idmapper*/, bool external)
 {
     if ( external || str.find('|') != NPOS ) {
         try {
@@ -1000,8 +1000,8 @@ CRef<CSeq_id> CBamDb::GetRefSeq_id(const string& label) const
         if ( !m_RefSeqIds ) {
             AutoPtr<TRefSeqIds> ids(new TRefSeqIds);
             for ( CBamRefSeqIterator it(*this); it; ++it ) {
-                string label = it.GetRefSeqId();
-                (*ids)[label] = sx_GetRefSeq_id(label, GetIdMapper());
+                string ref_label = it.GetRefSeqId();
+                (*ids)[ref_label] = sx_GetRefSeq_id(ref_label, GetIdMapper());
             }
             m_RefSeqIds = std::move(ids);
         }
@@ -1440,7 +1440,7 @@ size_t CBamDb::CollectPileup(SPileupValues& values,
 {
     values.initialize(graph_range, intron_mode);
     
-    size_t count = 0;
+    size_t align_count = 0;
 
     CBamAlignIterator ait(*this, ref_id, graph_range.GetFrom(), graph_range.GetLength());
     if ( CBamRawAlignIterator* rit = ait.GetRawIndexIteratorPtr() ) {
@@ -1448,7 +1448,7 @@ size_t CBamDb::CollectPileup(SPileupValues& values,
             if ( callback && !callback->AcceptAlign(ait) ) {
                 continue;
             }
-            ++count;
+            ++align_count;
 
             TSeqPos ref_pos = rit->GetRefSeqPos();
             values.update_current_ref_start(ref_pos, callback);
@@ -1516,7 +1516,7 @@ size_t CBamDb::CollectPileup(SPileupValues& values,
             if ( callback && !callback->AcceptAlign(ait) ) {
                 continue;
             }
-            ++count;
+            ++align_count;
 
             TSeqPos ref_pos = ait.GetRefSeqPos();
             values.update_current_ref_start(ref_pos, callback);
@@ -1599,7 +1599,7 @@ size_t CBamDb::CollectPileup(SPileupValues& values,
             }
         }
     }
-    if ( count ) {
+    if ( align_count ) {
         //values.update_current_ref_start(graph_range.GetToOpen(), callback);
         if ( callback && graph_range.GetToOpen() != values.m_RefFrom ) {
             TSeqPos flush = graph_range.GetToOpen() - values.m_RefFrom;
@@ -1615,7 +1615,7 @@ size_t CBamDb::CollectPileup(SPileupValues& values,
         }
         values.finalize(callback);
     }
-    return count;
+    return align_count;
 }
 #endif // HAVE_NEW_PILEUP_COLLECTOR
 
@@ -2382,9 +2382,9 @@ void CBamAlignIterator::GetRawCIGAR(vector<Uint4>& raw_cigar) const
                     break;
                 }
             }
-            const char* types = "MIDNSHP=X";
-            const char* ptr = strchr(types, type);
-            unsigned op = ptr? unsigned(ptr-types): 15u;
+            const char* const op_types = "MIDNSHP=X";
+            const char* op_ptr = strchr(op_types, type);
+            unsigned op = op_ptr? unsigned(op_ptr-op_types): 15u;
             raw_cigar.push_back((len<<4)|(op));
         }
     }
