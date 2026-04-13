@@ -173,7 +173,7 @@ void CFastaIdValidate::CheckIDLength(const CSeq_id& id, int lineNum, FReportErro
             id.GetLocal().GetStr().length() > kMaxLocalIDLength) {
             const auto& msg =
                 s_GetIDLengthErrorString(id.GetLocal().GetStr().length(),
-                        "local id",
+                        "local sequence id",
                         kMaxLocalIDLength,
                         lineNum);
             fReportError(eDiag_Error, lineNum, id.GetSeqIdString(), CFastaIdValidate::eIDTooLong, msg);
