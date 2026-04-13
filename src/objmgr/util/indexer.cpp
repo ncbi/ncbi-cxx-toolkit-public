@@ -1697,7 +1697,7 @@ void CBioseqIndex::x_InitDescs (void)
                                 // m_Reconstruct = true;
                                 m_Title.clear();
                                 // fall through
-                                [[fallthrough]];
+                                NCBI_FALLTHROUGH;
                             case NCBI_TECH(htgs_3):
                                 m_HTGTech = true;
                                 m_UseBiosrc = true;
@@ -1880,7 +1880,7 @@ void CBioseqIndex::x_InitDescs (void)
     }
 }
 
-void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, bool onlyNear, [[maybe_unused]] CScope& scope)
+void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, bool onlyNear, NCBI_UNUSED CScope& scope)
 
 {
     bool snpOK = false;

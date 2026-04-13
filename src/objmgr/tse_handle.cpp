@@ -549,7 +549,7 @@ void CScopeInfo_Base::x_AttachTSE(CTSE_ScopeInfo* tse)
 }
 
 
-void CScopeInfo_Base::x_DetachTSE([[maybe_unused]] CTSE_ScopeInfo* tse)
+void CScopeInfo_Base::x_DetachTSE(NCBI_UNUSED CTSE_ScopeInfo* tse)
 {
     _ASSERT(tse);
     _ASSERT(!IsDetached());

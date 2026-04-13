@@ -3508,7 +3508,7 @@ void GetOverlappingFeatures(CScope& scope, const CSeq_loc& loc,
     case eOverlap_CheckIntRev:
         revert_locations = true;
         // there's no break here - proceed to "default"
-        [[fallthrough]];
+        NCBI_FALLTHROUGH;
     default:
         // Require intervals overlap
         annot_overlap_type = SAnnotSelector::eOverlap_Intervals;

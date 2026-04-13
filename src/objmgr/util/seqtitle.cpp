@@ -217,11 +217,11 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         // manufacture all titles for unfinished HTG sequences
         flags |= fGetTitle_Reconstruct;
         // fall through
-        [[fallthrough]];
+        NCBI_FALLTHROUGH;
     case CMolInfo::eTech_htgs_3:
         htg_tech = true;
         // fall through
-        [[fallthrough]];
+        NCBI_FALLTHROUGH;
     case CMolInfo::eTech_est:
     case CMolInfo::eTech_sts:
     case CMolInfo::eTech_survey:
@@ -649,11 +649,11 @@ bool GetTitle(const CBioseq& seq, string* title_ptr, TGetTitleFlags flags)
         // manufacture all titles for unfinished HTG sequences
         flags |= fGetTitle_Reconstruct;
         // fall through
-        [[fallthrough]];
+        NCBI_FALLTHROUGH;
     case CMolInfo::eTech_htgs_3:
         htg_tech = true;
         // fall through
-        [[fallthrough]];
+        NCBI_FALLTHROUGH;
     case CMolInfo::eTech_est:
     case CMolInfo::eTech_sts:
     case CMolInfo::eTech_survey:
