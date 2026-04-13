@@ -1167,7 +1167,7 @@ public:
     /// representing messages in this format; please stick to type-checked
     /// means of formatting such as the above ToString methods and I/O
     /// streams whenever possible.
-    static string FormatVarargs(const char* format, va_list args);
+    static string FormatVarargs(const char* format, va_list args) NCBI_ATTRIBUTE_PRINTF(1, 0);
 
 
     /// Which type of string comparison.
