@@ -813,9 +813,9 @@ CRef<CBioseq> CCSraRefSeqIterator::GetRefBioseq(ELoadData load) const
     TLiterals literals;
     GetRefLiterals(literals, TRange::GetWhole(), load);
     NON_CONST_ITERATE ( TLiterals, it, literals ) {
-        CRef<CDelta_seq> seq(new CDelta_seq);
-        seq->SetLiteral(**it);
-        inst.SetExt().SetDelta().Set().push_back(seq);
+        CRef<CDelta_seq> seg(new CDelta_seq);
+        seg->SetLiteral(**it);
+        inst.SetExt().SetDelta().Set().push_back(seg);
     }
     return seq;
 }
@@ -1584,14 +1584,14 @@ CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
     if ( GetRefMinusStrand() ) {
         CDense_seg::TStrands& strands = denseg.SetStrands();
         strands.reserve(2*segcount);
-        TSeqPos end = GetShortLen();
+        TSeqPos size = GetShortLen();
         for ( size_t i = 0; i < segcount; ++i ) {
             strands.push_back(eNa_strand_plus);
             strands.push_back(eNa_strand_minus);
             TSeqPos pos = starts[i*2+1];
             TSeqPos len = lens[i];
             if ( pos != kInvalidSeqPos ) {
-                starts[i*2+1] = end - (pos + len);
+                starts[i*2+1] = size - (pos + len);
             }
         }
     }
@@ -1643,14 +1643,14 @@ CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
         CRef<CUser_object> obj(new CUser_object);
         obj->SetType(x_GetObject_id("Tracebacks",
                                     cache.m_ObjectIdTracebacks));
-        CTempString cigar = GetCIGARLong();
+        CTempString cigar_long = GetCIGARLong();
         CTempString mismatch = GetMismatchRaw();
-        x_AddField(*obj, "CIGAR", cigar,
+        x_AddField(*obj, "CIGAR", cigar_long,
                    cache.m_ObjectIdCIGAR,
                    cache.m_UserFieldCacheCigar, 8, 8192);
         if ( insert_size == 0 ) {
             // all mismatches are explicit 'X', so there are no '=' to add
-            // use the VDB privided MISMATCHE string without modifications
+            // use the VDB privided MISMATCH string without modifications
             x_AddField(*obj, "MISMATCH", mismatch,
                        cache.m_ObjectIdMISMATCH,
                        cache.m_UserFieldCacheMismatch, 8, 8192);
@@ -1658,7 +1658,7 @@ CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
         else {
             CUser_field& field = x_AddField(*obj, "MISMATCH",
                                             cache.m_ObjectIdMISMATCH);
-            MakeFullMismatch(field.SetData().SetStr(), cigar, mismatch);
+            MakeFullMismatch(field.SetData().SetStr(), cigar_long, mismatch);
         }
         align->SetExt().push_back(obj);
     }
