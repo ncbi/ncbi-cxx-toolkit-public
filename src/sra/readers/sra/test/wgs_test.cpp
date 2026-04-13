@@ -961,16 +961,18 @@ int CWGSTestApp::Run(void)
         else if ( gi_it.GetSeqType() == gi_it.eNuc ) {
             out << "GI "<<gi<<" Nucleotide row: "<<gi_it.GetRowId()
                 << NcbiEndl;
-            if ( check_empty_lookup ) {
-                ++error_count;
-            }
             CWGSSeqIterator it = RETRY(CWGSSeqIterator(wgs_db, gi_it.GetRowId(), include_flags));
             if ( !it ) {
                 out << "No such row: "<< gi_it.GetRowId() << NcbiEndl;
-                ++error_count;
+                if ( check_non_empty_lookup ) {
+                    ++error_count;
+                }
             }
             else {
                 out << "GI "<<gi<<" len: "<<it.GetSeqLength() << NcbiEndl;
+                if ( check_empty_lookup ) {
+                    ++error_count;
+                }
                 if ( print_seq ) {
                     out << MSerial_AsnText << *it.GetBioseq();
                 }
@@ -981,13 +983,12 @@ int CWGSTestApp::Run(void)
         }
         else {
             out << "GI "<<gi<<" Protein row: "<<gi_it.GetRowId() << NcbiEndl;
-            if ( check_empty_lookup ) {
-                ++error_count;
-            }
             CWGSProteinIterator it = RETRY(CWGSProteinIterator(wgs_db, gi_it.GetRowId()));
             if ( !it ) {
                 out << "No such row: "<< gi_it.GetRowId() << NcbiEndl;
-                ++error_count;
+                if ( check_non_empty_lookup ) {
+                    ++error_count;
+                }
             }
             else {
                 out << "GI "<<gi<<" len: "<<it.GetSeqLength();
@@ -995,6 +996,9 @@ int CWGSTestApp::Run(void)
                     out << " comment: \""<<it.GetPublicComment()<<"\"";
                 }
                 out << NcbiEndl;
+                if ( check_empty_lookup ) {
+                    ++error_count;
+                }
                 
                 if ( print_seq ) {
                     out << MSerial_AsnText << *it.GetBioseq();
@@ -1016,18 +1020,20 @@ int CWGSTestApp::Run(void)
             }
         }
         else {
-            if ( check_empty_lookup ) {
-                ++error_count;
-            }
             CWGSSeqIterator it = RETRY(CWGSSeqIterator(wgs_db, row_id, include_flags));
             if ( !it ) {
                 out << "CONTIG: No such row: "<< row_id << NcbiEndl;
-                ++error_count;
+                if ( check_non_empty_lookup ) {
+                    ++error_count;
+                }
             }
             else {
                 out << "CONTIG["<<row_id<<"] len: "<<it.GetSeqLength()
                     << " name: " << it.GetContigName()
                     << NcbiEndl;
+                if ( check_empty_lookup ) {
+                    ++error_count;
+                }
                 if ( !NStr::EqualNocase(it.GetContigName(), name) ) {
                     out << "Name is different!" << NcbiEndl;
                     ++error_count;
@@ -1052,18 +1058,20 @@ int CWGSTestApp::Run(void)
             }
         }
         else {
-            if ( check_empty_lookup ) {
-                ++error_count;
-            }
             CWGSScaffoldIterator it = RETRY(CWGSScaffoldIterator(wgs_db, row_id));
             if ( !it ) {
                 out << "SCAFFOLD: No such row: "<< row_id << NcbiEndl;
-                ++error_count;
+                if ( check_non_empty_lookup ) {
+                    ++error_count;
+                }
             }
             else {
                 out << "SCAFFOLD["<<row_id<<"] len: "<<it.GetSeqLength()
                     << " name: " << it.GetScaffoldName()
                     << NcbiEndl;
+                if ( check_empty_lookup ) {
+                    ++error_count;
+                }
                 if ( !NStr::EqualNocase(it.GetScaffoldName(), name) ) {
                     out << "Name is different!" << NcbiEndl;
                     ++error_count;
@@ -1091,18 +1099,20 @@ int CWGSTestApp::Run(void)
             }
         }
         else {
-            if ( check_empty_lookup ) {
-                ++error_count;
-            }
             CWGSProteinIterator it = RETRY(CWGSProteinIterator(wgs_db, row_id));
             if ( !it ) {
                 out << "PROTEIN: No such row: "<< row_id << NcbiEndl;
-                ++error_count;
+                if ( check_non_empty_lookup ) {
+                    ++error_count;
+                }
             }
             else {
                 out << "PROTEIN["<<row_id<<"] len: "<<it.GetSeqLength()
                     << " name: " << it.GetProteinName()
                     << NcbiEndl;
+                if ( check_empty_lookup ) {
+                    ++error_count;
+                }
                 if ( !NStr::EqualNocase(it.GetProteinName(), name) ) {
                     out << "Name is different!" << NcbiEndl;
                     ++error_count;
@@ -1185,18 +1195,20 @@ int CWGSTestApp::Run(void)
                     }
                 }
                 else {
-                    if ( check_empty_lookup ) {
-                        ++error_count;
-                    }
                     CWGSProteinIterator it = RETRY(CWGSProteinIterator(wgs_db, row_id));
                     if ( !it ) {
                         out << "PROTEIN: No such row: "<< row_id << NcbiEndl;
-                        ++error_count;
+                        if ( check_non_empty_lookup ) {
+                            ++error_count;
+                        }
                     }
                     else {
                         out << "PROTEIN["<<row_id<<"] len: "<<it.GetSeqLength()
                             << " acc: " << it.GetAccession()<<"."<<it.GetAccVersion()
                             << NcbiEndl;
+                        if ( check_empty_lookup ) {
+                            ++error_count;
+                        }
                         if ( !NStr::EqualNocase(it.GetAccession(), acc) ) {
                             out << "Accession is different!" << NcbiEndl;
                             ++error_count;
