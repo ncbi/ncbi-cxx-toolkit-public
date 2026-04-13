@@ -988,7 +988,7 @@ CConstRef<CPsgBlobId> CPSGDataLoader_Impl::GetBlobIdOnce(const CSeq_id_Handle& i
         }
         seq_info = processor->GetBioseqInfoResult();
     }
-    if ( !seq_info->HasBlobId() ) {
+    if ( !seq_info || !seq_info->HasBlobId() ) {
         // no blob
         return null;
     }
