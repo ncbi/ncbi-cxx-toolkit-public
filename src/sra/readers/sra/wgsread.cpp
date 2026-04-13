@@ -206,8 +206,8 @@ static const TSeqPos kMinDataSplitSize = 128<<10;
 #ifdef COLLECT_PROFILE
 struct SProfiler
 {
-    const char* name;
-    size_t count;
+    atomic<const char*> name;
+    atomic<size_t> count;
     CStopWatch sw;
     SProfiler() : name(0), count(0) {}
     ~SProfiler() {
