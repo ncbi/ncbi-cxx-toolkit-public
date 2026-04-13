@@ -711,7 +711,7 @@ EEncodingForm ReadIntoUtf8(
                 memcpy(tmp, buf, n);
             }
             // no break here
-            [[fallthrough]];
+            NCBI_FALLTHROUGH;
         case eEncodingForm_Utf16Native:
             {
                 Uint2* u = us;
@@ -761,7 +761,7 @@ EEncodingForm ReadIntoUtf8(
                 case eEncoding_UTF8:
                     ef = eEncodingForm_Utf8;
                     // no break here
-                    [[fallthrough]];
+                    NCBI_FALLTHROUGH;
                 case eEncoding_Ascii:
                 case eEncoding_ISO8859_1:
                 case eEncoding_Windows_1252:

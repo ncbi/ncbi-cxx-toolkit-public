@@ -123,7 +123,7 @@ bool CRequestRateControl::x_Approve(EThrottleAction action, CTimeSpan *sleeptime
                         return false;
                     }
                     // or throw exception, see ApproveTime()
-                    [[fallthrough]];
+                    NCBI_FALLTHROUGH;
                 case eException:
                     NCBI_THROW(
                         CRequestRateControlException, eNumRequestsMax, 

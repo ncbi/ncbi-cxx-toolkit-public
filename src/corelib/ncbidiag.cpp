@@ -3753,7 +3753,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
             } else {
                 break;
             }
-            [[fallthrough]];
+            NCBI_FALLTHROUGH;
         case eDS_ToStdlog:
         case eDS_Default:
             {
@@ -7087,15 +7087,15 @@ void CFileDiagHandler::SetSubHandler(CStreamDiagHandler_Base* handler,
     case eDiagFile_Err:
         x_SetHandler(&m_Err, &m_OwnErr, handler, own);
         if (file_type != eDiagFile_All) break;
-        [[fallthrough]];
+        NCBI_FALLTHROUGH;
     case eDiagFile_Log:
         x_SetHandler(&m_Log, &m_OwnLog, handler, own);
         if (file_type != eDiagFile_All) break;
-        [[fallthrough]];
+        NCBI_FALLTHROUGH;
     case eDiagFile_Trace:
         x_SetHandler(&m_Trace, &m_OwnTrace, handler, own);
         if (file_type != eDiagFile_All) break;
-        [[fallthrough]];
+        NCBI_FALLTHROUGH;
     case eDiagFile_Perf:
         x_SetHandler(&m_Perf, &m_OwnPerf, handler, own);
         if (file_type != eDiagFile_All) break;

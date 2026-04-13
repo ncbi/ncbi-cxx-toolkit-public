@@ -1474,7 +1474,7 @@ bool CDirEntry::StringToMode(const CTempString& mode,
                     case 't':
                         is_special = true;
                         // fall through
-                        [[fallthrough]];
+                        NCBI_FALLTHROUGH;
                     case 'x':
                         m |= fExecute;
                         break;
@@ -1543,7 +1543,7 @@ bool CDirEntry::StringToMode(const CTempString& mode,
                     case 't':
                         is_special = true;
                         // fall through
-                        [[fallthrough]];
+                        NCBI_FALLTHROUGH;
                     case 'x':
                         m |= fExecute;
                         break;
@@ -4921,7 +4921,7 @@ void s_GetDiskSpace_PANFS(const string& path, CFileUtil::SFileSystemInfo* info)
         case NCBI_PANFS_THROW:
              do_throw = true;
              /*FALLTHRU*/
-             [[fallthrough]];
+             NCBI_FALLTHROUGH;
              
         // Same processing for all errors codes, but could be detailed
         case NCBI_PANFS_ERR:

@@ -341,7 +341,7 @@ static EMatchesMaskResult s_MatchesMask(CTempString str, CTempString mask, bool 
             if (!(m = mask[++mask_pos]))
                 return eMismatch; // mismatch, pattern error
             /*FALLTHRU*/
-            [[fallthrough]];
+            NCBI_FALLTHROUGH;
 
         default:
             // Compare non-pattern character with the string
@@ -795,7 +795,7 @@ Int8 NStr::StringToInt8(const CTempString str, TStringToNumFlags flags, int base
     case '-':
         sign = true;
         /*FALLTHRU*/
-        [[fallthrough]];
+        NCBI_FALLTHROUGH;
     case '+':
         pos++;
         break;
@@ -1811,7 +1811,7 @@ static void s_SignedBase10ToString(string&                 out_str,
                                    unsigned long           value,
                                    long                    svalue,
                                    NStr::TNumToStringFlags flags,
-                                   [[maybe_unused]] int    base)
+                                   NCBI_UNUSED int         base)
 {
     _ASSERT(base == 10);
 
