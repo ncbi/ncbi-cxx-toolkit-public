@@ -399,6 +399,7 @@ TToken ASNLexer::LookupKeyword(void)
     case 9:
         CHECK("AUTOMATIC", K_AUTOMATIC, 9);
         CHECK("UNIVERSAL", K_UNIVERSAL, 9);
+        break;
     case 10:
         CHECK("ENUMERATED", K_ENUMERATED, 10);
         CHECK("UTF8String", K_UTF8String, 10);
