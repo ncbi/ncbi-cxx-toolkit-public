@@ -1343,7 +1343,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         for (int place = 1;  tokens[1][pos] != '+';  --pos, place *= 10) {
             digits += place * (tokens[1][pos] - '0');
         }
-        tmp1.assign(tokens[1], 0, pos - 1);
+        tmp1.assign(tokens[1], 0, pos);
         hints.prev_special_format = s_Key(tmp1.size(), digits);
         hints.special2_name = tokens[2];
         hints.special2_old_name.reset();
