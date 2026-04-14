@@ -418,6 +418,10 @@ void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registr
                 registry.GetInt(kServerSection, "ShutdownIfTooManyOpenFD",
                                 kDefaultShutdownIfTooManyOpenFDforHTTP);
     }
+
+    if (registry.HasEntry(kServerSection, "thp_enable")) {
+        m_ThpEnable = registry.GetBool(kServerSection, "thp_enable", true);
+    }
 }
 
 

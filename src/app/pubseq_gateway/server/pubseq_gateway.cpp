@@ -32,6 +32,7 @@
 
 #include <math.h>
 #include <thread>
+#include <sys/prctl.h>
 
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbidiag.hpp>
@@ -170,6 +171,14 @@ void CPubseqGatewayApp::ParseArgs(void)
 
     // It throws an exception in case of inability to start
     m_Settings.Validate(m_Alerts);
+
+    if (m_Settings.m_ThpEnable.has_value()) {
+        if (m_Settings.m_ThpEnable.value()) {
+            prctl(PR_SET_THP_DISABLE, 0, 0, 0, 0);
+        } else {
+            prctl(PR_SET_THP_DISABLE, 1, 0, 0, 0);
+        }
+    }
 }
 
 

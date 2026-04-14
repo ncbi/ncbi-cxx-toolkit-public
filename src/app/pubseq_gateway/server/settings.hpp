@@ -33,6 +33,8 @@
  */
 
 #include <corelib/ncbireg.hpp>
+#include <optional>
+using namespace std;
 
 USING_NCBI_SCOPE;
 
@@ -86,6 +88,7 @@ struct SPubseqGatewaySettings
 
     double                              m_ProcessorThrottleThresholdPercent;
     double                              m_ProcessorThrottleByIpPercent;
+    optional<bool>                      m_ThpEnable;
 
     // [STATISTICS]
     unsigned long                       m_SmallBlobSize;
