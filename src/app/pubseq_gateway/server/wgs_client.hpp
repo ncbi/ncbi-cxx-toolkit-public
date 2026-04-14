@@ -132,6 +132,21 @@ public:
               m_Version(-1)
             {
             }
+        SWGSSeqInfo(const SWGSSeqInfo& s) // for switching from root seq
+            : m_WGSAcc(s.m_WGSAcc),
+              m_IsWGS(s.m_IsWGS),
+              m_ValidWGS(s.m_ValidWGS),
+              m_NoRootSeq(s.m_NoRootSeq),
+              m_SeqType(s.m_SeqType),
+              m_RowDigits(s.m_RowDigits),
+              m_RowId(s.m_RowId),
+              m_Version(s.m_Version),
+              m_WGSDb(s.m_WGSDb)
+            {
+            }
+        SWGSSeqInfo& operator=(const SWGSSeqInfo&) = delete;
+        SWGSSeqInfo(SWGSSeqInfo&&) = default;
+        SWGSSeqInfo& operator=(SWGSSeqInfo&&) = default;
 
         DECLARE_OPERATOR_BOOL(m_ValidWGS);
 

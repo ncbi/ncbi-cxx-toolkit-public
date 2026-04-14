@@ -597,7 +597,7 @@ shared_ptr<SWGSData> CWGSClient::GetSeqInfoBySeqId(const CSeq_id& seq_id,
     const TBlobIds& excluded)
 {
     shared_ptr<SWGSData> ret;
-    seq = Resolve(seq_id);
+    seq = std::move(Resolve(seq_id));
     if (seq  &&  HasMigrated(seq)  &&  !s_KeepMigrated() ) {
         seq = SWGSSeqInfo();
     }
