@@ -320,7 +320,7 @@ namespace {
     public:
         CDB_Result_Reader(AutoPtr<CDB_RPCCmd> cmd,
                           AutoPtr<CDB_Result> db_result)
-            : m_DB_RPCCmd(cmd), m_DB_Result(db_result)
+            : m_DB_RPCCmd(std::move(cmd)), m_DB_Result(std::move(db_result))
             {
             }
 
@@ -413,7 +413,7 @@ void CId2FetchApp::x_SendRequestPacket(CID2_Request_Packet& packet)
             }
             if ( sx_FetchNextItem(*dbr, "asnout") ) {
                 AutoPtr<CDB_Result_Reader> reader
-                    (new CDB_Result_Reader(cmd, dbr));
+                    (new CDB_Result_Reader(std::move(cmd), std::move(dbr)));
                 m_PubSeqOSReply.reset(new CRStream(reader.release(),
                                                    0, 0,
                                                    CRWStreambuf::fOwnAll));
