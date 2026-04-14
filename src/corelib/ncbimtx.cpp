@@ -773,91 +773,68 @@ CWin32MutexHandleGuard::~CWin32MutexHandleGuard(void)
 // locking the mutex. Most of the functions check a condition
 // and return false if it's not met before the new value is set.
 
-inline void interlocked_set(volatile long* val, long new_val)
-{
-#if defined(NCBI_WIN32_THREADS)
-    for (long old_val = *val; ; old_val = *val) {
-        long cur_val = InterlockedCompareExchange(val, new_val, old_val);
-        if (cur_val == old_val) {
-            break;
-        }
-    }
+#if NCBI_SRWLOCK_USE_NEW
+
 #else
-    *val = new_val;
-#endif
+
+inline void interlocked_set(atomic<long>* val, long new_val)
+{
+    val->store(new_val, std::memory_order_release);
 }
 
-
-inline bool interlocked_inc_min(volatile long* val, long min)
+inline bool interlocked_inc_min(atomic<long>* val, long min)
 {
-#if defined(NCBI_WIN32_THREADS)
-    for (long old_val = *val; old_val > min; old_val = *val) {
-        long new_val = old_val + 1;
-        long cur_val = InterlockedCompareExchange(val, new_val, old_val);
-        if (cur_val == old_val) {
+    long old_val = val->load(std::memory_order_relaxed);
+    while (old_val > min) {
+        if (val->compare_exchange_weak(old_val, old_val + 1,
+            std::memory_order_acq_rel,
+            std::memory_order_relaxed)) {
             return true;
         }
     }
     return false;
-#else
-    (*val)++;
-    return true;
-#endif
 }
 
-
-inline bool interlocked_inc_max(volatile long* val, long max)
+inline bool interlocked_inc_max(atomic<long>* val, long max)
 {
-#if defined(NCBI_WIN32_THREADS)
-    for (long old_val = *val; old_val < max; old_val = *val) {
-        long new_val = old_val + 1;
-        long cur_val = InterlockedCompareExchange(val, new_val, old_val);
-        if (cur_val == old_val) {
+    long old_val = val->load(std::memory_order_relaxed);
+    while (old_val < max) {
+        if (val->compare_exchange_weak(old_val, old_val + 1,
+            std::memory_order_acq_rel,
+            std::memory_order_relaxed)) {
             return true;
         }
     }
     return false;
-#else
-    (*val)++;
-    return true;
-#endif
 }
 
-
-inline bool interlocked_dec_max(volatile long* val, long max)
+inline bool interlocked_dec_max(atomic<long>* val, long max)
 {
-#if defined(NCBI_WIN32_THREADS)
-    for (long old_val = *val; old_val < max; old_val = *val) {
-        long new_val = old_val - 1;
-        long cur_val = InterlockedCompareExchange(val, new_val, old_val);
-        if (cur_val == old_val) {
+    long old_val = val->load(std::memory_order_relaxed);
+    while (old_val < max) {
+        if (val->compare_exchange_weak(old_val, old_val - 1,
+            std::memory_order_acq_rel,
+            std::memory_order_relaxed)) {
             return true;
         }
     }
     return false;
-#else
-    (*val)--;
-    return true;
-#endif
 }
 
-
-inline bool interlocked_dec_min(volatile long* val, long min)
+inline bool interlocked_dec_min(atomic<long>* val, long min)
 {
-#if defined(NCBI_WIN32_THREADS)
-    for (long old_val = *val; old_val > min; old_val = *val) {
-        long new_val = old_val - 1;
-        long cur_val = InterlockedCompareExchange(val, new_val, old_val);
-        if (cur_val == old_val) {
+    long old_val = val->load(std::memory_order_relaxed);
+    while (old_val > min) {
+        if (val->compare_exchange_weak(old_val, old_val - 1,
+            std::memory_order_acq_rel,
+            std::memory_order_relaxed)) {
             return true;
         }
     }
     return false;
-#else
-    (*val)--;
-    return true;
-#endif
 }
+
+#endif // NCBI_SRWLOCK_USE_NEW
 
 
 void CRWLock::ReadLock(void)

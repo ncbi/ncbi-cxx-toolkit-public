@@ -63,6 +63,7 @@
 #include <corelib/guard.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbitime.hpp>
+# include <atomic>
 #include <memory>
 #include <deque>
 #ifdef NCBI_COMPILER_MSVC
@@ -76,7 +77,6 @@
 #endif
 
 #if NCBI_SRWLOCK_USE_NEW || NCBI_SEMAPHORE_USE_NEW
-# include <atomic>
 # include <mutex>
 # include <condition_variable>
 #endif
@@ -1042,9 +1042,9 @@ private:
     };
     TFlags                      m_Flags;   ///< Configuration flags
     unique_ptr<CInternalRWLock> m_RW;      ///< Platform-dependent RW-lock data
-    volatile TThreadSystemID    m_Owner;   ///< Writer ID, one of the readers ID
-    volatile long               m_Count;   ///< Number of readers (if >0) or writers (if <0)
-    volatile unsigned int       m_WaitingWriters; ///< Number of writers waiting; zero if not keeping track
+    atomic<TThreadSystemID>     m_Owner;   ///< Writer ID, one of the readers ID
+    atomic<long>                m_Count;   ///< Number of readers (if >0) or writers (if <0)
+    atomic<unsigned int>        m_WaitingWriters; ///< Number of writers waiting; zero if not keeping track
     vector<TThreadSystemID>     m_Readers; ///< List of all readers or writers
 
     bool x_MayAcquireForReading(TThreadSystemID self_id);
