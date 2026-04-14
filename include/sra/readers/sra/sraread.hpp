@@ -54,14 +54,6 @@ BEGIN_SCOPE(objects)
 
 class CSeq_entry;
 
-
-template<>
-struct CSraRefTraits<SRAPath>
-{
-    static rc_t x_Release(const SRAPath* t) { return 0; }
-    static rc_t x_AddRef (const SRAPath* t) { return 0; }
-};
-
 DECLARE_SRA_REF_TRAITS(SRAMgr, const);
 DECLARE_SRA_REF_TRAITS(SRAColumn, const);
 DECLARE_SRA_REF_TRAITS(SRATable, const);
@@ -72,7 +64,6 @@ class CSraRun;
 class CSraColumn;
 
 class NCBI_SRAREAD_EXPORT CSraPath
-    : public CSraRef<SRAPath>
 {
 public:
     explicit CSraPath(ENull /*null*/)

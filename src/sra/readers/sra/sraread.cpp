@@ -269,12 +269,12 @@ string CSraPath::GetDefaultVolPath(void)
 DEFINE_STATIC_FAST_MUTEX(sx_PathMutex);
 
 
-void CSraPath::AddRepPath(const string& rep_path)
+void CSraPath::AddRepPath(const string& /*rep_path*/)
 {
 }
 
 
-void CSraPath::AddVolPath(const string& vol_path)
+void CSraPath::AddVolPath(const string& /*vol_path*/)
 {
 }
 
@@ -370,12 +370,6 @@ void CSraMgr::x_Init(void)
 
 CSraPath& CSraMgr::GetPath(void) const
 {
-    if ( !m_Path ) {
-        CFastMutexGuard guard(sx_PathMutex);
-        if ( !m_Path ) {
-            m_Path = CSraPath();
-        }
-    }
     return m_Path;
 }
 
