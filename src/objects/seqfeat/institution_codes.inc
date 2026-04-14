@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Thu Apr  9 05:33:04 EDT 2026; formally
+/* time_t value corresponding to Tue Apr 14 05:33:06 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1775727184UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1776159186UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -363,7 +363,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ARC<ARG>\ts\tUniversidad Nacional del Comahue, Facultad de Ciencias Agrarias\t\t\t",
 "ARC<CAN>\ts\tAtlantic Reference Centre\tARCM\t\t",
 "ARC<USA-NC>\tc\tAlgal Resources Collection\t\t\t",
-"ARCC\ts\tAnthony Ross ?\t\t\t",
+"ARCC\ts\tAnthony Ross Personal Collection\t\t\t",
 "ARCH\ts\tArchbold Biological Station\t\t\t",
 "ARCM\ts\tAtlantic Reference Centre\tARC\t\t",
 "ARD\ts\tSchool of Pharmacy, Ardabil University of Medical Science\t\t\t",
@@ -1305,7 +1305,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CGG\ts\tCambridge University Botanic Garden\t\t\t",
 "CGH\ts\tNational Museum of Prague\t\t\t",
 "CGMC\ts\tChristopher C. Majka\t\t\t",
-"CGMCC\tc\tChina General Microbiological Culture Collection Center\tAS\thttp://www.cgmcc.net/english/cata.php?stn=CGMCC%20\t",
+"CGMCC\tc\tChina General Microbiological Culture Collection Center\t\thttp://www.cgmcc.net/english/cata.php?stn=CGMCC%20\t",
 "CGMS\ts\tUniversidade Federal de Mato Grosso do Sul, Departamento de Biologia\t\t\t",
 "CGN\ts\tCentre for Genetic Resources, The Netherlands\t\t\t",
 "CGNZ\ts\tC. J. Green\t\t\t",
