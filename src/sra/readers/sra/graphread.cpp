@@ -526,6 +526,12 @@ CVDBGraphSeqIterator::x_MakeTable(const string& annot_name,
     CRef<CSeq_table> table(new CSeq_table);
     table->SetFeat_type(0);
 
+    if ( !annot_name.empty() ) {
+        CRef<CSeqTable_column> col_id(new CSeqTable_column);
+        table->SetColumns().push_back(col_id);
+        col_id->SetHeader().SetField_id(CSeqTable_column_info::eField_id_title);
+        col_id->SetDefault().SetString(annot_name);
+    }
     { // Seq-table location
         CRef<CSeqTable_column> col_id(new CSeqTable_column);
         table->SetColumns().push_back(col_id);
