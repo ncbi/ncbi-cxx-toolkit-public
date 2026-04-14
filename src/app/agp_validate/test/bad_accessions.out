@@ -4,11 +4,95 @@
 2:chr22	11330001	13570000	2	N	2240000	centromere	no
 	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
 
+433:chr22	15022004	15034802	433	W	ABGA01087238.1	1	12799	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+557:chr22	15507614	15515650	557	W	ABGA01244687.1	1	8037	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+845:chr22	16699385	16701222	845	W	ABGA01409238.1.1	1	1838	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+913:chr22	16969995	16970654	913	W	ABGA01410067.1.1	1	660	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+1109:chr22	17911981	17921558	1109	W	ABGA01263084.1	1	9578	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+1117:chr22	17931425	17932416	1117	W	ABGA01409386.1.1	1	992	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
 1304:chr22	18718881	18718887	1304	N	7	contig	no
 	NOTE: gap shorter than 10 bp
 
+1305:chr22	18718888	18720012	1305	W	ABGA01409306.1.1	1	1125	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+1899:chr22	21014859	21025431	1899	W	ABGA01279547.1	1	10573	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+2173:chr22	22265920	22274058	2173	W	ABGA01363192.1	1	8139	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
 2178:chr22	22290994	22291002	2178	N	9	contig	no
 	NOTE: gap shorter than 10 bp
+
+3357:chr22	27263623	27270079	3357	W	ABGA01132176.1	1	6457	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+4055:chr22	30685910	30699382	4055	W	ABGA01087198.1	1	13473	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+4315:chr22	31700473	31711621	4315	W	ABGA01402860.1	1	11149	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+4495:chr22	32259985	32261406	4495	W	ABGA01410017.1.1	1	1422	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+5175:chr22	34244009	34248845	5175	W	ABGA01050881.1	1	4837	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+6375:chr22	38803552	38808439	6375	W	ABGA01103404.1	1	4888	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+6385:chr22	38842719	38843853	6385	W	ABGA01409474.1.1	1	1135	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+7313:chr22	43121100	43143156	7313	W	ABGA01317545.1	1	22057	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+7317:chr22	43144636	43145833	7317	W	ABGA01410041.1.1	1	1198	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+7319:chr22	43148466	43149302	7319	W	ABGA01410146.1.1	1	837	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+7471:chr22	44051001	44052178	7471	W	ABGA01409726.1.1	1	1178	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+7473:chr22	44053526	44055305	7473	W	ABGA01410143.1.1	1	1780	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+7515:chr22	44187963	44195181	7515	W	ABGA01178108.1	1	7219	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+7517:chr22	44195380	44196691	7517	W	ABGA01409835.1.1	1	1312	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+7555:chr22	44401929	44410575	7555	W	ABGA01266943.1	1	8647	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+7667:chr22	45023468	45025597	7667	W	ABGA01364796.1	1	2130	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+7669:chr22	45028678	45052245	7669	W	ABGA01116196.1	1	23568	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+7877:chr22	45695623	45708853	7877	W	ABGA01282043.1	1	13231	-
+	WARNING: component orientation is not "+" in a single component scaffold
+
+7977:chr22	46029725	46031418	7977	W	ABGA01409457.1.1	1	1694	-
+	WARNING: component orientation is not "+" in a single component scaffold
 
 8082:chr22	46284893	46284901	8082	N	9	contig	no
 	NOTE: gap shorter than 10 bp
@@ -31,11 +115,12 @@
 8189:
 	ERROR, line skipped: empty line
 
-2 errors, 5 warnings, 4 notes.
+2 errors, 33 warnings, 4 notes.
   Count Code  Description
       1  e03  empty line
       1  e25  invalid use of "|" character
       1  w33  two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
+     28  w51  component orientation is not "+" in a single component scaffold
       3  w52  gap shorter than 10 bp
          (Use -show w52 to print lines with short gaps.)
       1  w58  assuming AGP version X

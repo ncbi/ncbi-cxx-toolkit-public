@@ -1,10 +1,20 @@
 ===== Reading Chromosome from scaffold AGP =====
 
+9:chrY	1	3043	1	W	EG1_scaffold1	1	3043	0
+	WARNING: component orientation is not "+" in a single component scaffold
+
 10:chrY	3044	53043	2	N	50000	contig	no	
 	NOTE: assuming AGP version 1.1 since linkage evidence (column 9) is empty
 
-No errors, no warnings, 1 note.
+27:chrY	7050632	7053381	19	W	EG1_scaffold10	1	2750	0
+	WARNING: component orientation is not "+" in a single component scaffold
+
+43:chrY	9766129	9771185	35	W	EG1_scaffold18	1	5057	0
+	WARNING: component orientation is not "+" in a single component scaffold
+
+No errors, 3 warnings, 1 note.
   Count Code  Description
+      3  w51  component orientation is not "+" in a single component scaffold
       1  w58  assuming AGP version X
 
 

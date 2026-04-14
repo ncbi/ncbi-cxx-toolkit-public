@@ -34,7 +34,19 @@ Component names             :  95
 
 ===== Reading Chromosome from scaffold AGP =====
 
-No errors, no warnings.
+./test/chr_from_scaffold_WGS.agp2.0:11:chrY	10001	13043	2	W	EG1_scaffold1	1	3043	?
+	WARNING: component orientation is not "+" in a single component scaffold
+
+./test/chr_from_scaffold_WGS.agp2.0:29:chrY	7061253	7064002	20	W	EG1_scaffold10	1	2750	?
+	WARNING: component orientation is not "+" in a single component scaffold
+
+./test/chr_from_scaffold_WGS.agp2.0:45:chrY	10689298	10694354	36	W	EG1_scaffold18	1	5057	?
+	WARNING: component orientation is not "+" in a single component scaffold
+
+No errors, 3 warnings.
+  Count Code  Description
+      3  w51  component orientation is not "+" in a single component scaffold
+
 
 Objects                :  1
 - with single component:  0

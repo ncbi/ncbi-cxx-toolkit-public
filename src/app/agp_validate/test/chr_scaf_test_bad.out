@@ -1,5 +1,8 @@
 ===== Reading Scaffold from component AGP =====
 
+9:chrY	1	3043	1	W	EG1_scaffold1	1	3043	0
+	WARNING: component orientation is not "+" in a single component scaffold
+
 10:chrY	3044	53043	2	N	50000	contig	no	
 	NOTE: assuming AGP version 1.1 since linkage evidence (column 9) is empty
 	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
@@ -28,6 +31,9 @@
 26:chrY	7000632	7050631	18	N	50000	contig	no	
 	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
 
+27:chrY	7050632	7053381	19	W	EG1_scaffold10	1	2750	0
+	WARNING: component orientation is not "+" in a single component scaffold
+
 28:chrY	7053382	7103381	20	N	50000	contig	no	
 	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
 
@@ -52,6 +58,9 @@
 42:chrY	9716129	9766128	34	N	50000	contig	no	
 	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
 
+43:chrY	9766129	9771185	35	W	EG1_scaffold18	1	5057	0
+	WARNING: component orientation is not "+" in a single component scaffold
+
 44:chrY	9771186	9821185	36	N	50000	contig	no	
 	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
 
@@ -67,9 +76,10 @@
 52:chrY	10955352	11005351	44	N	50000	contig	no	
 	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
 
-22 errors, no warnings, 1 note.
+22 errors, 3 warnings, 1 note.
   Count Code  Description
      22  e20  in "Scaffold from component" file, invalid scaffold-breaking gap
+      3  w51  component orientation is not "+" in a single component scaffold
       1  w58  assuming AGP version X
 
 
