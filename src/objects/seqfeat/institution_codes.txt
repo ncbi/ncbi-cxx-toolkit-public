@@ -327,7 +327,7 @@ ARBH	s	Arbroath Scientific and Natural History Society
 ARC<ARG>	s	Universidad Nacional del Comahue, Facultad de Ciencias Agrarias			
 ARC<CAN>	s	Atlantic Reference Centre	ARCM		
 ARC<USA-NC>	c	Algal Resources Collection			
-ARCC	s	Anthony Ross ?			
+ARCC	s	Anthony Ross Personal Collection			
 ARCH	s	Archbold Biological Station			
 ARCM	s	Atlantic Reference Centre	ARC		
 ARD	s	School of Pharmacy, Ardabil University of Medical Science			
@@ -1269,7 +1269,7 @@ CGEC	s	China Entomological Research Institute
 CGG	s	Cambridge University Botanic Garden			
 CGH	s	National Museum of Prague			
 CGMC	s	Christopher C. Majka			
-CGMCC	c	China General Microbiological Culture Collection Center	AS	http://www.cgmcc.net/english/cata.php?stn=CGMCC%20	
+CGMCC	c	China General Microbiological Culture Collection Center		http://www.cgmcc.net/english/cata.php?stn=CGMCC%20	
 CGMS	s	Universidade Federal de Mato Grosso do Sul, Departamento de Biologia			
 CGN	s	Centre for Genetic Resources, The Netherlands			
 CGNZ	s	C. J. Green			
