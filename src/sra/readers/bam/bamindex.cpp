@@ -1761,7 +1761,7 @@ void CBamFileRangeSet::AddRanges(const CBamIndex& index,
                                  size_t ref_index,
                                  COpenRange<TSeqPos> ref_range,
                                  TIndexLevel min_index_level,
-                                 TIndexLevel max_index_level,
+                                 TIndexLevel /*max_index_level - alignment may be moved up */,
                                  ESearchMode search_mode,
                                  const CBGZFPos* file_pos)
 {
