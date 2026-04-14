@@ -33,12 +33,12 @@
 	WARNING: in unplaced singleton scaffold, component is not used in full
 
 28:LACBIscaffold_2	1	1103	1	W	LACBIscaffold_2_Cont1	1	1103	-
-	WARNING: in unplaced singleton scaffold, component orientation is not "+"
+	ERROR: component orientation is not "+" in a single component scaffold
 
 30:LACBIscaffold_3	1	1103	1	W	LACBIscaffold_3_Cont1	1	1103	-
-	WARNING: in unplaced singleton scaffold, component orientation is not "+"
+	ERROR: component orientation is not "+" in a single component scaffold
 
-1 error, 12 warnings, 1 note.
+3 errors, 10 warnings, 1 note.
   Count Code  Description
       1  e20  in "Scaffold from component" file, invalid scaffold-breaking gap
       1  w37  duplicate component with non-draft type
@@ -46,7 +46,7 @@
       1  w48  gap length (column 6) is not 100 for a gap of unknown size (an INSDC standard)
       1  w49  same component_id found on different scaffolds
       1  w50  in unplaced singleton scaffold, component is not used in full
-      2  w51  in unplaced singleton scaffold, component orientation is not "+"
+      2  e51  component orientation is not "+" in a single component scaffold
       1  w58  assuming AGP version X
 
 
