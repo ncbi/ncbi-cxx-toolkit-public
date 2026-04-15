@@ -242,7 +242,7 @@ CMultiAligner::SetQueries(const vector< CRef<objects::CBioseq> >& queries)
         try {
             seq_loc->SetId(*it->GetSeqId());
         }
-        catch (objects::CObjMgrException e) {
+        catch (const objects::CObjMgrException& e) {
             NCBI_THROW(CMultiAlignerException, eInvalidInput,
                        (string)"Missing seq-id in bioseq. " + e.GetMsg());
         }
@@ -687,7 +687,7 @@ CMultiAligner::TStatus CMultiAligner::Run()
     try {
         x_Run();
     }
-    catch (CMultiAlignerException e) {
+    catch (const CMultiAlignerException& e) {
         CMultiAlignerException::EErrCode err_code
             = (CMultiAlignerException::EErrCode)e.GetErrCode();
 
@@ -715,7 +715,7 @@ CMultiAligner::TStatus CMultiAligner::Run()
 
         m_Messages.push_back(e.GetMsg());
     }
-    catch (blast::CBlastException e) {
+    catch (const blast::CBlastException& e) {
         blast::CBlastException::EErrCode err_code
             = (blast::CBlastException::EErrCode)e.GetErrCode();
 
@@ -724,11 +724,11 @@ CMultiAligner::TStatus CMultiAligner::Run()
 
         m_Messages.push_back(e.GetMsg());
     }
-    catch (CException e) {
+    catch (const CException& e) {
         status = eInternalError;
         m_Messages.push_back(e.GetMsg());
     }
-    catch (std::exception e) {
+    catch (const std::exception& e) {
         status = eInternalError;
         m_Messages.push_back((string)e.what());
     }
@@ -766,7 +766,7 @@ CMultiAligner::x_FindQueryClusters()
     // fast alignment built based mostly on constraints from local hits.
     if (m_Options->GetCentralSeq() >= 0) {
         int center = m_Options->GetCentralSeq();
-        for (size_t i=0;i < dmat->GetRows();i++) {
+        for (int i=0;i < static_cast<int>(dmat->GetRows());i++) {
             if (i == center) {
                 continue;
             }
@@ -929,10 +929,10 @@ CMultiAligner::x_FindQueryClusters()
         }
      
         size_t gain = m_QueryData.size() - clusters.size();
-        printf("\nNumber of queries in clusters: %lu (%.0f%%)\n", 
+        printf("\nNumber of queries in clusters: %zu (%.0f%%)\n", 
                num_in_clusters,
                (double)num_in_clusters / m_QueryData.size() * 100.0);
-        printf("Number of domain searches reduced by: %lu (%.0f%%)\n\n", gain, 
+        printf("Number of domain searches reduced by: %zu (%.0f%%)\n\n", gain, 
                (double) gain / m_QueryData.size() * 100.0);
 
         const CClusterer::TDistMatrix& d = m_Clusterer.GetDistMatrix();
