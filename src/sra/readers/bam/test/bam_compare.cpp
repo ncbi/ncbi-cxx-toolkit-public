@@ -302,8 +302,8 @@ int CBAMCompareApp::Run(void)
     TRefSeqIndex ref_seq_index;
     {
         int index = 0;
-        CBamDb bam_db(mgr, path);
-        for ( CBamRefSeqIterator it(bam_db); it; ++it ) {
+        CBamDb bam_db3(mgr, path);
+        for ( CBamRefSeqIterator it(bam_db3); it; ++it ) {
             ref_seq_index[it.GetRefSeqId()] = index++;
         }
     }
@@ -778,15 +778,15 @@ int CBAMCompareApp::Run(void)
             out << "Range: " << ref_min << "-" << ref_max-1 << NcbiEndl;
         }
         else {
-            NON_CONST_ITERATE ( TRefIds, it, ref_ids ) {
-                if ( it->first.empty() ) {
-                    out << "Unmapped alignments: " << it->second.size() << NcbiEndl;
+            NON_CONST_ITERATE ( TRefIds, ref_it, ref_ids ) {
+                if ( ref_it->first.empty() ) {
+                    out << "Unmapped alignments: " << ref_it->second.size() << NcbiEndl;
                 }
                 else {
-                    out << "Ref " << it->first << ": " << it->second.size() << NcbiFlush;
-                    sort(it->second.begin(), it->second.end());
-                    out << "    " << it->second[0].GetFrom() << "-"
-                        << it->second.back().GetToOpen()-1 << NcbiEndl;
+                    out << "Ref " << ref_it->first << ": " << ref_it->second.size() << NcbiFlush;
+                    sort(ref_it->second.begin(), ref_it->second.end());
+                    out << "    " << ref_it->second[0].GetFrom() << "-"
+                        << ref_it->second.back().GetToOpen()-1 << NcbiEndl;
                 }
             }
             if ( collect_short && !short_ids.empty() ) {
@@ -811,7 +811,7 @@ int CBAMCompareApp::Run(void)
                           alns2, limit_count);
             }
             else {
-                ITERATE ( TRefSeqIndex, it, ref_seq_index ) {
+                ITERATE ( TRefSeqIndex, ref_it, ref_seq_index ) {
                     vector<samtools::SBamAlignment> alns2t;
                     size_t cur_limit = 0;
                     if ( limit_count ) {
@@ -820,7 +820,7 @@ int CBAMCompareApp::Run(void)
                         }
                         cur_limit = limit_count-alns2.size();
                     }
-                    bam.Fetch(it->first, 0, kInvalidSeqPos, alns2t, cur_limit);
+                    bam.Fetch(ref_it->first, 0, kInvalidSeqPos, alns2t, cur_limit);
                     alns2.insert(alns2.end(), alns2t.begin(), alns2t.end());
                 }
             }
@@ -895,8 +895,8 @@ int CBAMCompareApp::Run(void)
             if ( !alnsout1.empty() ) {
                 out << "SRA SDK returned "<<alnsout1.size()
                     << " non-overlapping alignments." << NcbiEndl;
-                ITERATE ( vector<samtools::SBamAlignment>, it, alnsout1 ) {
-                    out << " OUT: " << *it << NcbiEndl;
+                ITERATE ( vector<samtools::SBamAlignment>, aln_it, alnsout1 ) {
+                    out << " OUT: " << *aln_it << NcbiEndl;
                 }
                 ret_code = 1;
             }
@@ -920,9 +920,9 @@ int CBAMCompareApp::Run(void)
         }
         if ( short_id_conflicts ) {
             int conflict_count = 0;
-            ITERATE ( TConflicts, it, conflicts ) {
-                if ( it->second > 1 ) {
-                    out << "Conflict id: " << it->first << NcbiEndl;
+            ITERATE ( TConflicts, conf_it, conflicts ) {
+                if ( conf_it->second > 1 ) {
+                    out << "Conflict id: " << conf_it->first << NcbiEndl;
                     ++conflict_count;
                 }
             }
