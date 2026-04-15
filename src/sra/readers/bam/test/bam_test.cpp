@@ -935,15 +935,15 @@ int CBAMTestApp::Run(void)
                 out << "Range: " << ref_min << "-" << ref_max-1 << NcbiEndl;
             }
             else {
-                NON_CONST_ITERATE ( TRefIds, it, ref_ids ) {
-                    if ( it->first.empty() ) {
-                        out << "Unmapped alignments: " << it->second.size() << NcbiEndl;
+                NON_CONST_ITERATE ( TRefIds, ref_it, ref_ids ) {
+                    if ( ref_it->first.empty() ) {
+                        out << "Unmapped alignments: " << ref_it->second.size() << NcbiEndl;
                     }
                     else {
-                        out << "Ref " << it->first << ": " << it->second.size() << NcbiFlush;
-                        sort(it->second.begin(), it->second.end());
-                        out << "    " << it->second[0].GetFrom() << "-"
-                            << it->second.back().GetToOpen()-1 << NcbiEndl;
+                        out << "Ref " << ref_it->first << ": " << ref_it->second.size() << NcbiFlush;
+                        sort(ref_it->second.begin(), ref_it->second.end());
+                        out << "    " << ref_it->second[0].GetFrom() << "-"
+                            << ref_it->second.back().GetToOpen()-1 << NcbiEndl;
                     }
                 }
                 if ( collect_short && !short_ids.empty() ) {
@@ -975,12 +975,12 @@ int CBAMTestApp::Run(void)
             }
             //SleepMilliSec(3000);
             int conflict_count = 0, dup_count = 0;
-            ITERATE ( TConflicts, it, conflicts ) {
-                if ( it->second.size() > 1 ) {
-                    out << "Conflict id: " << it->first << NcbiEndl;
+            ITERATE ( TConflicts, conf_it, conflicts ) {
+                if ( conf_it->second.size() > 1 ) {
+                    out << "Conflict id: " << conf_it->first << NcbiEndl;
                     ++conflict_count;
                     if ( verbose ) {
-                        ITERATE ( TSeqDupMap, it2, it->second ) {
+                        ITERATE ( TSeqDupMap, it2, conf_it->second ) {
                             CObjectIStreamAsnBinary str(it2->first.data(),
                                                         it2->first.size());
                             CRef<CBioseq> seq(new CBioseq);
@@ -989,7 +989,7 @@ int CBAMTestApp::Run(void)
                         }
                     }
                 }
-                ITERATE ( TSeqDupMap, it2, it->second ) {
+                ITERATE ( TSeqDupMap, it2, conf_it->second ) {
                     dup_count += it2->second - 1;
                 }
             }
