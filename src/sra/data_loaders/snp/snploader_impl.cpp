@@ -810,9 +810,9 @@ CTSE_LoadLock CSNPDataLoader_Impl::GetBlobByIdOnce(CDataSource* data_source,
 
 
 CDataLoader::TTSE_LockSet
-CSNPDataLoader_Impl::GetRecords(CDataSource* data_source,
-                                 const CSeq_id_Handle& idh,
-                                 CDataLoader::EChoice choice)
+CSNPDataLoader_Impl::GetRecords(CDataSource* /*data_source*/,
+                                const CSeq_id_Handle& /*idh*/,
+                                CDataLoader::EChoice /*choice*/)
 {
     CDataLoader::TTSE_LockSet locks;
     // SNPs are available by NA accession only, see GetOrphanAnnotRecords()
