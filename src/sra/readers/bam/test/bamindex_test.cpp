@@ -923,7 +923,7 @@ int CBamIndexTestApp::Run(void)
                         ERR_POST("Run("<<q.refseq_id<<"): Exception: "<<exc.what());
                     }
                     {
-                        CMutexGuard guard(s_Mutex);
+                        CMutexGuard guard2(s_Mutex);
                         LOG_POST("Run("<<q.refseq_id<<"): count "<<align_count);
                         if ( wrong_level_count ) {
                             LOG_POST("Run("<<q.refseq_id<<"): wrong level count "<<wrong_level_count);
