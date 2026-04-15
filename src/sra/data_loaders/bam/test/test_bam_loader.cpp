@@ -109,9 +109,9 @@ string sx_GetPath(const string& dir, const string& path = "traces02:traces04")
     vector<string> reps;
     NStr::Split(path, ":", reps);
     ITERATE ( vector<string>, it, reps ) {
-        string path = CFile::MakePath(CFile::MakePath(NCBI_GetTestDataPath(), *it), dir);
-        if ( CDirEntry(path).Exists() ) {
-            return path;
+        string test_path = CFile::MakePath(CFile::MakePath(NCBI_GetTestDataPath(), *it), dir);
+        if ( CDirEntry(test_path).Exists() ) {
+            return test_path;
         }
     }
     return dir;
@@ -727,9 +727,11 @@ BOOST_AUTO_TEST_CASE(FetchSeq5)
     SAnnotSelector sel;
     sel.SetSearchUnresolved();
 
-    CGraph_CI git(scope, *loc, sel);
-    BOOST_CHECK(git.GetSize() % 5 <= 1u); // no 'match' graph in this file
-    BOOST_CHECK(git.GetSize());
+    if ( 1 ) {
+        CGraph_CI git(scope, *loc, sel);
+        BOOST_CHECK(git.GetSize() % 5 <= 1u); // no 'match' graph in this file
+        BOOST_CHECK(git.GetSize());
+    }
 
     CAlign_CI it(scope, *loc, sel);
     if ( it ) {
@@ -1522,10 +1524,10 @@ BOOST_AUTO_TEST_CASE(MemoryTest)
         if ( ait ) {
             cout << "Loaded "<<ait.GetSize()<<" alignments"<<endl;
             tseh = ait.GetAnnot().GetTSE_Handle();
-            for ( int i = 0; ait && i < 2; ++i, ++ait ) {
-                auto& id = ait->GetSeq_id(1);
-                LOG_POST("Short read: " << id.AsFastaString());
-                auto bsh = scope.GetBioseqHandle(id);
+            for ( int ai = 0; ait && ai < 2; ++ai, ++ait ) {
+                auto& read_id = ait->GetSeq_id(1);
+                LOG_POST("Short read: " << read_id.AsFastaString());
+                auto bsh = scope.GetBioseqHandle(read_id);
                 BOOST_CHECK(bsh);
             }
         }
@@ -1967,8 +1969,8 @@ BOOST_AUTO_TEST_CASE(FetchSeqMT3)
     };
     string loader_name[BAM_COUNT];
     vector<thread> init_tt(BAM_COUNT);
-    for ( size_t i = 0; i < BAM_COUNT; ++i ) {
-        init_tt[i] =
+    for ( size_t t = 0; t < BAM_COUNT; ++t ) {
+        init_tt[t] =
             thread([&](size_t i)
                    {
                        CBAMDataLoader::SLoaderParams params;
@@ -1977,11 +1979,11 @@ BOOST_AUTO_TEST_CASE(FetchSeqMT3)
                        CBAMDataLoader::RegisterInObjectManager(*om, params,
                                                                CObjectManager::eDefault)
                        .GetLoader()->GetName();
-                   }, i);
+                   }, t);
     }
-    for ( size_t i = 0; i < BAM_COUNT; ++i ) {
-        init_tt[i].join();
-        sx_ReportBamLoaderName(loader_name[i]);
+    for ( size_t t = 0; t < BAM_COUNT; ++t ) {
+        init_tt[t].join();
+        sx_ReportBamLoaderName(loader_name[t]);
     }
     CScope scope(*om);
     scope.AddDefaults();
@@ -1998,8 +2000,8 @@ BOOST_AUTO_TEST_CASE(FetchSeqMT3)
         NQ = queries.size();
     
         vector<thread> tt(NQ);
-        for ( size_t i = 0; i < NQ; ++i ) {
-            tt[i] =
+        for ( size_t t = 0; t < NQ; ++t ) {
+            tt[t] =
                 thread([&]
                        (const TQuery& query)
                        {
@@ -2033,10 +2035,10 @@ BOOST_AUTO_TEST_CASE(FetchSeqMT3)
                            if ( count != get<4>(query) ) {
                                BOOST_CHECK_EQUAL_MT_SAFE(count, get<3>(query));
                            }
-                       }, queries[i]);
+                       }, queries[t]);
         }
-        for ( size_t i = 0; i < NQ; ++i ) {
-            tt[i].join();
+        for ( size_t t = 0; t < NQ; ++t ) {
+            tt[t].join();
         }
     }
 }
@@ -2071,8 +2073,8 @@ BOOST_AUTO_TEST_CASE(FetchSeqMT4)
     const size_t NQ = queries.size();
     
     vector<thread> tt(NQ);
-    for ( size_t i = 0; i < NQ; ++i ) {
-        tt[i] =
+    for ( size_t t = 0; t < NQ; ++t ) {
+        tt[t] =
             thread([&]
                    (const TQuery& query)
                    {
@@ -2099,10 +2101,10 @@ BOOST_AUTO_TEST_CASE(FetchSeqMT4)
                        if ( !get<4>(query) || count != get<4>(query) ) {
                            BOOST_CHECK_EQUAL_MT_SAFE(count, get<3>(query));
                        }
-                   }, queries[i]);
+                   }, queries[t]);
     }
-    for ( size_t i = 0; i < NQ; ++i ) {
-        tt[i].join();
+    for ( size_t t = 0; t < NQ; ++t ) {
+        tt[t].join();
     }
 }
 
@@ -2231,8 +2233,8 @@ BOOST_AUTO_TEST_CASE(CheckBAMUserAgent)
     }
     for ( int pass = 0; pass < 2; ++pass ) {
         vector<thread> tt(BAM_COUNT);
-        for ( size_t i = 0; i < BAM_COUNT; ++i ) {
-            tt[i] =
+        for ( size_t t = 0; t < BAM_COUNT; ++t ) {
+            tt[t] =
                 thread([&]
                        (size_t i)
                     {
@@ -2293,10 +2295,10 @@ BOOST_AUTO_TEST_CASE(CheckBAMUserAgent)
                             ERR_POST("MT4["<<i<<"]: "<<exc);
                             BOOST_CHECK_EQUAL_MT_SAFE(exc.what(), "---");
                         }
-                    }, i);
+                    }, t);
         }
-        for ( size_t i = 0; i < BAM_COUNT; ++i ) {
-            tt[i].join();
+        for ( size_t t = 0; t < BAM_COUNT; ++t ) {
+            tt[t].join();
         }
         CVDBUserAgentMonitor::ReportErrors();
         BOOST_CHECK_MT_SAFE(!CVDBUserAgentMonitor::GetErrorFlags());
@@ -2463,8 +2465,8 @@ static void s_FetchHugeBin(const string& type,
     vector<CBioseq_Handle> reads;
     if ( 1 ) {
         sw.Restart();
-        for ( auto& id : read_ids ) {
-            if ( auto bh = scope.GetBioseqHandle(id) ) {
+        for ( auto& read_id : read_ids ) {
+            if ( auto bh = scope.GetBioseqHandle(read_id) ) {
                 reads.push_back(bh);
             }
         }
