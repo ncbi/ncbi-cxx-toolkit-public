@@ -1722,18 +1722,18 @@ void CCSRARefSeqInfo::LoadAnnotMainSplit(CTSE_LoadLock& load_lock)
 
     if ( separate_spot_groups ) {
         ITERATE ( vector<string>, it, m_File->GetSeparateSpotGroups() ) {
-            string align_name = m_File->GetAlignAnnotName(*it);
-            chunk->x_AddAnnotType(align_name,
+            string align_group_name = m_File->GetAlignAnnotName(*it);
+            chunk->x_AddAnnotType(align_group_name,
                                   SAnnotTypeSelector(CSeq_annot::C_Data::e_Graph),
                                   GetRefSeqId(),
                                   whole_range);
-            chunk->x_AddAnnotType(align_name,
+            chunk->x_AddAnnotType(align_group_name,
                                   SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
                                   GetRefSeqId(),
                                   whole_range);
             if ( has_pileup ) {
-                string align_name = m_File->GetPileupAnnotName(*it);
-                chunk->x_AddAnnotType(pileup_name,
+                string pileup_group_name = m_File->GetPileupAnnotName(*it);
+                chunk->x_AddAnnotType(pileup_group_name,
                                       SAnnotTypeSelector(CSeq_annot::C_Data::e_Graph),
                                       GetRefSeqId(),
                                       whole_range);
@@ -1791,11 +1791,11 @@ void CCSRARefSeqInfo::LoadAnnotMainChunk(CTSE_Chunk_Info& chunk_info)
     if ( separate_spot_groups ) {
         // duplucate coverage graph for all spot groups
         ITERATE ( vector<string>, it, m_File->GetSeparateSpotGroups() ) {
-            string align_name = m_File->GetAlignAnnotName(*it);
+            string align_group_name = m_File->GetAlignAnnotName(*it);
             CRef<CSeq_annot> annot(new CSeq_annot);
             annot->SetData().SetGraph() = m_CovAnnot->GetData().GetGraph();
             CRef<CAnnotdesc> desc(new CAnnotdesc);
-            desc->SetName(align_name);
+            desc->SetName(align_group_name);
             annot->SetDesc().Set().push_back(desc);
             new_annots.push_back(annot);
         }
@@ -2039,7 +2039,7 @@ struct SBaseStats
         {
             x_size = len;
         }
-    bool x_empty(EBaseStat stat) const
+    bool x_empty(EBaseStat /*stat*/) const
         {
             return false;
         }
@@ -2277,13 +2277,13 @@ void CCSRARefSeqInfo::LoadAnnotPileupChunk(CTSE_Chunk_Info& chunk_info)
         TSeqPos read_pos = ait.GetShortPos();
         CTempString read = ait.GetMismatchRead();
         CTempString cigar = ait.GetCIGARLong();
-        const char* ptr = cigar.data();
-        const char* end = cigar.end();
-        while ( ptr != end ) {
+        const char* cigar_ptr = cigar.data();
+        const char* cigar_end = cigar.end();
+        while ( cigar_ptr != cigar_end ) {
             char type = 0;
             int seglen = 0;
-            for ( ; ptr != end; ) {
-                char c = *ptr++;
+            for ( ; cigar_ptr != cigar_end; ) {
+                char c = *cigar_ptr++;
                 if ( c >= '0' && c <= '9' ) {
                     seglen = seglen*10+(c-'0');
                 }
