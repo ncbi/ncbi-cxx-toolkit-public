@@ -828,7 +828,7 @@ Uint8 CSNPDbSeqIterator::GetSNPCount(void) const
 }
 
 
-Uint8 CSNPDbSeqIterator::GetSNPCount(CRange<TSeqPos> range) const
+Uint8 CSNPDbSeqIterator::GetSNPCount(CRange<TSeqPos> /*range - range lookup not implemented*/) const
 {
     return GetSNPCount();
 }
@@ -1219,7 +1219,7 @@ CSNPDbSeqIterator::GetCoverageGraph(CRange<TSeqPos> range) const
 CRef<CSeq_annot>
 CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range,
                                     const string& annot_name,
-                                    TFlags flags) const
+                                    TFlags /*flags*/) const
 {
     SGraphMaker g;
     x_CollectCoverageGraph(g, *this, range, g.eMultipleGraphs);
@@ -1240,7 +1240,7 @@ CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range,
 CRef<CSeq_annot>
 CSNPDbSeqIterator::GetFeatAnnot(CRange<TSeqPos> range,
                                 const SFilter& filter,
-                                TFlags flags) const
+                                TFlags /*flags*/) const
 {
     CRef<CSeq_annot> annot = x_NewAnnot();
     x_AdjustRange(range, *this);
@@ -1300,18 +1300,18 @@ struct SColumn
         {
         }
     explicit
-    SColumn(CSeqTable_column_info::EField_id id,
-            const char* name = 0)
-        : id(id),
-          name(name)
+    SColumn(CSeqTable_column_info::EField_id id_arg,
+            const char* name_arg = 0)
+        : id(id_arg),
+          name(name_arg)
         {
         }
 
-    void Init(CSeqTable_column_info::EField_id id,
-              const char* name = 0)
+    void Init(CSeqTable_column_info::EField_id id_arg,
+              const char* name_arg = 0)
         {
-            this->id = id;
-            this->name = name;
+            id = id_arg;
+            name = name_arg;
         }
 
     CSeqTable_column* x_GetColumn(void)
@@ -1343,8 +1343,8 @@ struct SIntColumn : public SColumn
     CSeqTable_multi_data::TInt* values;
 
     explicit
-    SIntColumn(CSeqTable_column_info::EField_id id, const char* name = 0)
-        : SColumn(id, name),
+    SIntColumn(CSeqTable_column_info::EField_id id_arg, const char* name_arg = 0)
+        : SColumn(id_arg, name_arg),
           values(0)
         {
         }
@@ -1364,8 +1364,8 @@ struct SInt8Column : public SIntColumn
     CSeqTable_multi_data::TInt8* values8;
 
     explicit
-    SInt8Column(CSeqTable_column_info::EField_id id, const char* name = 0)
-        : SIntColumn(id, name),
+    SInt8Column(CSeqTable_column_info::EField_id id_arg, const char* name_arg = 0)
+        : SIntColumn(id_arg, name_arg),
           values8(0)
         {
         }
@@ -1391,12 +1391,12 @@ struct SInt8Column : public SIntColumn
 
 struct SSparseIndex
 {
-    SColumn& column;
+    SColumn& column_base;
     CSeqTable_sparse_index::TIndexes* indexes;
     int size;
 
     SSparseIndex(SColumn& column)
-        : column(column),
+        : column_base(column),
           indexes(0),
           size(0)
         {
@@ -1405,7 +1405,7 @@ struct SSparseIndex
     void Add(int index)
         {
             if ( index != size && !indexes ) {
-                indexes = &column.x_GetColumn()->SetSparse().SetIndexes();
+                indexes = &column_base.x_GetColumn()->SetSparse().SetIndexes();
                 for ( int i = 0; i < size; ++i ) {
                     indexes->push_back(i);
                 }
@@ -1418,7 +1418,7 @@ struct SSparseIndex
 
     void Optimize(SIntColumn& column, const SIntColumn& backup_column)
         {
-            _ASSERT(&column == &this->column);
+            _ASSERT(&column == &column_base);
             if ( !indexes ) {
                 return;
             }
@@ -1463,9 +1463,9 @@ struct SCommonStrings : public SColumn
         {
         }
     explicit
-    SCommonStrings(CSeqTable_column_info::EField_id id,
-                   const char* name = 0)
-        : SColumn(id, name),
+    SCommonStrings(CSeqTable_column_info::EField_id id_arg,
+                   const char* name_arg = 0)
+        : SColumn(id_arg, name_arg),
           values(0),
           indexes(0)
         {
@@ -1515,9 +1515,9 @@ struct SCommon8Bytes : public SColumn
     TIndex index;
 
     explicit
-    SCommon8Bytes(CSeqTable_column_info::EField_id id,
-                  const char* name = 0)
-        : SColumn(id, name),
+    SCommon8Bytes(CSeqTable_column_info::EField_id id_arg,
+                  const char* name_arg = 0)
+        : SColumn(id_arg, name_arg),
           values(0),
           indexes(0)
         {
@@ -1813,7 +1813,7 @@ CSNPDbSeqIterator::TAnnotSet
 CSNPDbSeqIterator::GetTableFeatAnnots(CRange<TSeqPos> range,
                                       const string& annot_name,
                                       const SFilter& filter,
-                                      TFlags flags) const
+                                      TFlags /*flags*/) const
 {
     CVDBMgr::CRequestContextUpdater ctx_updater;
     x_AdjustRange(range, *this);
