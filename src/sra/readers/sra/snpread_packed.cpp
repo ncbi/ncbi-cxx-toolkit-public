@@ -153,7 +153,7 @@ END_LOCAL_NAMESPACE;
 TPackedAnnot GetPackedFeatAnnot(const CSNPDbSeqIterator& seq,
                                 CRange<TSeqPos> range,
                                 const CSNPDbSeqIterator::SFilter& filter,
-                                CSNPDbSeqIterator::TFlags flags)
+                                CSNPDbSeqIterator::TFlags /*flags*/)
 {
     x_AdjustRange(range, seq);
     CRef<CSeq_annot> annot = x_NewAnnot();
