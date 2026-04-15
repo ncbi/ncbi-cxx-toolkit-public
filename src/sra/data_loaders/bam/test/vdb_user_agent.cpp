@@ -280,7 +280,7 @@ CVDBUserAgentMonitor& CVDBUserAgentMonitor::GetInstance()
 
 
 #if HAVE_DEBUG_VDB_CALL
-static rc_t CC s_VDBOutWriter(void* self, const char* buffer, size_t bufsize, size_t* num_writ)
+static rc_t CC s_VDBOutWriter(void* /*self*/, const char* buffer, size_t bufsize, size_t* num_writ)
 {
     CVDBUserAgentMonitor::GetInstance().Append(buffer, bufsize);
     *num_writ = bufsize;
