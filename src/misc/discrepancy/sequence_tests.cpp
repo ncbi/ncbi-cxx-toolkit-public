@@ -1476,10 +1476,19 @@ DISCREPANCY_AUTOFIX(SEQ_SHORTER_THAN_200bp)
 }
 
 
-// SEQUENCES_SHORTER_THAN_1000bp
+// SEQUENCES_SHORTER_THAN_1000nt
 
-DISCREPANCY_CASE(SEQUENCES_SHORTER_THAN_1000bp, SEQUENCE, eDisc | eSubmitter | eSmart | eBig, "Short Genome")
+DISCREPANCY_CASE(SEQUENCES_SHORTER_THAN_1000nt, SEQUENCE, eSubmitter | eSmart, "Short Genome")
 {
+    /*
+    const CSeqdesc* biosrc = context.GetBiosource();
+    if (biosrc && biosrc->GetSource().IsSetOrg() && biosrc->GetSource().IsSetGenome()) {
+        if (biosrc->GetSource().GetGenome() != CBioSource::eGenome_genomic) {
+            return;
+        }
+    }
+    */
+
     const CBioseq& bioseq = context.CurrentBioseq();
     if (bioseq.CanGetInst() && bioseq.GetInst().IsNa() && bioseq.IsSetLength() && bioseq.GetLength() < 1000) {
         if (context.InGenProdSet() && bioseq.IsSetInst() && bioseq.GetInst().IsSetMol() && bioseq.GetInst().GetMol() == objects::CSeq_inst::eMol_rna) {
@@ -1501,7 +1510,7 @@ DISCREPANCY_CASE(SEQUENCES_SHORTER_THAN_1000bp, SEQUENCE, eDisc | eSubmitter | e
 }
 
 
-DISCREPANCY_SUMMARIZE(SEQUENCES_SHORTER_THAN_1000bp)
+DISCREPANCY_SUMMARIZE(SEQUENCES_SHORTER_THAN_1000nt)
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
