@@ -312,11 +312,11 @@ void CWGSResolverTestApp::CloseResolver()
              m_UpdateThread->m_UpdateCount<<" times");
     if ( m_UpdateThread->m_ReopenCount ) {
         LOG_POST("Average reopen time: "<<
-                 (m_UpdateThread->m_ReopenTime/m_UpdateThread->m_ReopenCount*1e3)<<" ms");
+                 (m_UpdateThread->m_ReopenTime/double(m_UpdateThread->m_ReopenCount)*1e3)<<" ms");
     }
     if ( m_UpdateThread->m_ReuseCount ) {
         LOG_POST("Average reuse time: "<<
-                 (m_UpdateThread->m_ReuseTime/m_UpdateThread->m_ReuseCount*1e3)<<" ms");
+                 (m_UpdateThread->m_ReuseTime/double(m_UpdateThread->m_ReuseCount)*1e3)<<" ms");
     }
     m_UpdateThread = null;
     m_Resolver = null;
@@ -428,14 +428,14 @@ void CWGSResolverTestApp::PrintStats()
     }
     if ( gi_resolve_count ) {
         LOG_POST("Resolved "<<gi_resolve_count<<" gis "
-                 "average time: "<<(gi_resolve_time/gi_resolve_count*1e3)<<" ms");
+                 "average time: "<<(gi_resolve_time/double(gi_resolve_count)*1e3)<<" ms");
     }
     else {
         LOG_POST("No gis resolved yet");
     }
     if ( acc_resolve_count ) {
         LOG_POST("Resolved "<<acc_resolve_count<<" accs "
-                 "average time: "<<(acc_resolve_time/acc_resolve_count*1e3)<<" ms");
+                 "average time: "<<(acc_resolve_time/double(acc_resolve_count)*1e3)<<" ms");
     }
     else {
         LOG_POST("No accs resolved yet");
