@@ -178,12 +178,12 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
         "BASR01",
         "BASS01",
     };
-    vector<vector<string>> ids(NQ);
+    vector<vector<string>> query_ids(NQ);
     for ( size_t k = 0; k < NQ; ++k ) {
         for ( size_t i = 0; i < NS; ++i ) {
             size_t index = r.GetRandIndexSize_t(ArraySize(accs));
             string id = s_MakeContigAcc(accs[index], r.GetRand(1, 100));
-            ids[k].push_back(id);
+            query_ids[k].push_back(id);
         }
     }
     thread_extra extra = get_thread_extra();
@@ -248,7 +248,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
                             ERR_POST("MT1["<<i<<"]: "<<exc.what());
                             BOOST_CHECK_EQUAL_MT_SAFE(exc.what(), "---");
                         }
-                    }, ids[i]));
+                    }, query_ids[i]));
         }
         for ( size_t i = 0; i < NQ; ++i ) {
             tt[i].join();
@@ -338,11 +338,11 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescrProt)
         "BASR01",
         "BASS01",
     };
-    vector<vector<string>> ids(NQ);
+    vector<vector<string>> query_ids(NQ);
     {{
         for ( size_t k = 0; k < NQ; ++k ) {
-            ids[k] = s_LoadProteinAccs(accs[k], NS);
-            LOG_POST("WGS "<<accs[k]<<" testing "<<ids[k].size()<<" proteins");
+            query_ids[k] = s_LoadProteinAccs(accs[k], NS);
+            LOG_POST("WGS "<<accs[k]<<" testing "<<query_ids[k].size()<<" proteins");
         }
     }}
     for ( size_t test = 0; test < NT; ++test ) {
@@ -407,7 +407,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescrProt)
                             ERR_POST("MT2["<<i<<"]: "<<exc.what());
                             BOOST_CHECK_EQUAL_MT_SAFE(exc.what(), "---");
                         }
-                    }, ids[i]));
+                    }, query_ids[i]));
         }
         for ( size_t i = 0; i < NQ; ++i ) {
             tt[i].join();
@@ -472,14 +472,14 @@ BOOST_AUTO_TEST_CASE(CheckWGSUserAgent)
     const size_t NT = 10;
     const size_t NQ = sizeof(accs)/sizeof(accs[0]);
     const size_t NS = 20;
-    vector<vector<string>> ids(NQ);
-    map<string, size_t> id2index;
+    vector<vector<string>> query_ids(NQ);
+    map<string, size_t> id2wgs_index;
     for ( size_t k = 0; k < NQ; ++k ) {
         for ( size_t i = 0; i < NS; ++i ) {
-            size_t index = r.GetRandIndexSize_t(ArraySize(accs));
-            string id = s_MakeContigAcc(accs[index], r.GetRand(1, 100));
-            ids[k].push_back(id);
-            id2index[id] = index;
+            size_t wgs_index = r.GetRandIndexSize_t(ArraySize(accs));
+            string id = s_MakeContigAcc(accs[wgs_index], r.GetRand(1, 100));
+            query_ids[k].push_back(id);
+            id2wgs_index[id] = wgs_index;
         }
     }
     CVDBUserAgentMonitor::Initialize();
@@ -500,25 +500,25 @@ BOOST_AUTO_TEST_CASE(CheckWGSUserAgent)
         vector<thread_type> tt(NQ);
         for ( size_t i = 0; i < NQ; ++i ) {
             tt[i] =
-                get_thread(extra, bind([&](size_t index, const vector<string>& ids)
+                get_thread(extra, bind([&](const vector<string>& ids)
                     {
                         try {
                             CScope scope(*CObjectManager::GetInstance());
                             scope.AddDefaults();
-                            size_t last_index = size_t(-1);
+                            size_t last_wgs_index = size_t(-1);
                             for ( auto& id : ids ) {
                                 try {
-                                    auto index_iter = id2index.find(id);
-                                    BOOST_REQUIRE_MT_SAFE(index_iter != id2index.end());
-                                    size_t index = index_iter->second;
-                                    if ( index != last_index ) {
-                                        _TRACE("index="<<index<<" wgs="<<accs[index]);
+                                    auto wgs_index_iter = id2wgs_index.find(id);
+                                    BOOST_REQUIRE_MT_SAFE(wgs_index_iter != id2wgs_index.end());
+                                    size_t wgs_index = wgs_index_iter->second;
+                                    if ( wgs_index != last_wgs_index ) {
+                                        _TRACE("wgs_index="<<wgs_index<<" wgs="<<accs[wgs_index]);
                                     }
                                     {
                                         auto& ctx = CDiagContext::GetRequestContext();
-                                        ctx.SetClientIP(get_cip(index));
-                                        ctx.SetSessionID(get_sid(index));
-                                        ctx.SetHitID(get_hid(index));
+                                        ctx.SetClientIP(get_cip(wgs_index));
+                                        ctx.SetSessionID(get_sid(wgs_index));
+                                        ctx.SetHitID(get_hid(wgs_index));
                                     }
                                 
                                     CBioseq_Handle bh =
@@ -572,7 +572,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSUserAgent)
                             ERR_POST("MT4["<<i<<"]: "<<exc.what());
                             BOOST_CHECK_EQUAL_MT_SAFE(exc.what(), "---");
                         }
-                    }, i, ids[i]));
+                    }, query_ids[i]));
         }
         for ( size_t i = 0; i < NQ; ++i ) {
             tt[i].join();
