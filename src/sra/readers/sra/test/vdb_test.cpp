@@ -975,8 +975,8 @@ int CCSRATestApp::Run(void)
                         CRef<CBioseq> seq = it.GetShortBioseq();
                         seq->SetAnnot().push_back(it.GetMatchAnnot());
                         CRef<CBioseq> seq2(SerialClone(*seq));
-                        for ( CTypeIterator<CSeq_id> it(Begin(*seq2)); it; ++it ) {
-                            CSeq_id& id = *it;
+                        for ( CTypeIterator<CSeq_id> id_it(Begin(*seq2)); id_it; ++id_it ) {
+                            CSeq_id& id = *id_it;
                             if ( id.IsLocal() ) {
                                 id.Set("gnl|SRA|SRR389414.136780466.1");
                                 break;
@@ -1352,8 +1352,8 @@ int CCSRATestApp::Run(void)
                 if ( !--count ) break;
             }
             if ( spot_id ) {
-                CCSraShortReadIterator it(csra_db, spot_id, read_id);
-                CRef<CBioseq> seq = it.GetShortBioseq(flags);
+                CCSraShortReadIterator id_it(csra_db, spot_id, read_id);
+                CRef<CBioseq> seq = id_it.GetShortBioseq(flags);
                 out << "First: " << MSerial_AsnText << *seq;
             }
             out << "Clipped: "<<clipped<<"/"<<scanned<<" = "<<100.*clipped/scanned<<"%" << endl;
