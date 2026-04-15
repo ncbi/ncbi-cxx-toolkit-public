@@ -76,7 +76,7 @@ if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
     endif()
 endif()
 
-if(NCBI_PTBCFG_PACKAGING OR NCBI_PTBCFG_USECONAN)
+if(NCBI_PTBCFG_USECONAN)
     include(${NCBI_TREE_CMAKECFG}/CMake.NCBIpkg.setup.cmake)
 endif()
 
