@@ -480,7 +480,7 @@ struct PStateFlags
 {
     CBioseq_Handle::TBioseqStateFlags state;
     
-    explicit PStateFlags(CBioseq_Handle::TBioseqStateFlags state) : state(state) {}
+    explicit PStateFlags(CBioseq_Handle::TBioseqStateFlags state_arg) : state(state_arg) {}
 };
 ostream& operator<<(ostream& out, PStateFlags p_state)
 {
