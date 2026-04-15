@@ -670,10 +670,8 @@ int CWGSTestApp::Run(void)
     CNcbiOstream& out = args["o"].AsOutputFile();
 
     CVDBMgr mgr;
-    CStopWatch sw;
+    CStopWatch sw_open(CStopWatch::eStart);
     
-    sw.Restart();
-
     if ( verbose ) {
         try {
             string acc = CWGSDb_Impl::NormalizePathOrAccession(path);
@@ -687,7 +685,7 @@ int CWGSTestApp::Run(void)
     }
 
     bool is_component = false, is_scaffold = false, is_protein = false;
-    uint64_t row = 0;
+    uint64_t query_row = 0;
     int contig_version = -1;
     if ( args["contig_version"] ) {
         contig_version = args["contig_version"].AsInteger();
@@ -701,39 +699,39 @@ int CWGSTestApp::Run(void)
     }
     if ( args["contig_row"] || args["scaffold_row"] || args["protein_row"] ) {
         if ( args["contig_row"] ) {
-            row = args["contig_row"].AsInt8();
+            query_row = args["contig_row"].AsInt8();
             is_component = true;
         }
         else if ( args["scaffold_row"] ) {
-            row = args["scaffold_row"].AsInt8();
+            query_row = args["scaffold_row"].AsInt8();
             is_scaffold = true;
         }
         else if ( args["protein_row"] ) {
-            row = args["protein_row"].AsInt8();
+            query_row = args["protein_row"].AsInt8();
             is_protein = true;
         }
     }
     else {
-        if ( !row && (row = CWGSDb::ParseContigRow(path)) ) {
+        if ( !query_row && (query_row = CWGSDb::ParseContigRow(path)) ) {
             is_component = true;
             path = CWGSDb_Impl::NormalizePathOrAccession(path);
         }
-        if ( !row && (row = CWGSDb::ParseScaffoldRow(path)) ) {
+        if ( !query_row && (query_row = CWGSDb::ParseScaffoldRow(path)) ) {
             is_scaffold = true;
             path = CWGSDb_Impl::NormalizePathOrAccession(path);
         }
-        if ( !row && (row = CWGSDb::ParseProteinRow(path)) ) {
+        if ( !query_row && (query_row = CWGSDb::ParseProteinRow(path)) ) {
             is_protein = true;
             path = CWGSDb_Impl::NormalizePathOrAccession(path);
         }
     }
-    if ( row && !args["limit_count"] ) {
+    if ( query_row && !args["limit_count"] ) {
         limit_count = 1;
     }
 
     CWGSDb wgs_db = RETRY(CWGSDb(mgr, path));
     if ( verbose ) {
-        out << "Opened WGS in "<<sw.Restart()
+        out << "Opened WGS in "<<sw_open.Elapsed()
             << NcbiEndl;
     }
     if ( wgs_db->GetProjectGBState() ) {
@@ -781,17 +779,17 @@ int CWGSTestApp::Run(void)
     if ( 1 ) {
         CWGSSeqIterator it;
         // try accession
-        if ( row ) {
+        if ( query_row ) {
             // print only one accession
             if ( is_component ) {
                 if ( !args["limit_count"] ) {
-                    it = RETRY(CWGSSeqIterator(wgs_db, row, include_flags));
+                    it = RETRY(CWGSSeqIterator(wgs_db, query_row, include_flags));
                 }
-                else if ( row + limit_count < row ) {
-                    it = RETRY(CWGSSeqIterator(wgs_db, row, kMax_UI8, include_flags));
+                else if ( query_row + limit_count < query_row ) { // overflow
+                    it = RETRY(CWGSSeqIterator(wgs_db, query_row, kMax_UI8, include_flags));
                 }
                 else {
-                    it = RETRY(CWGSSeqIterator(wgs_db, row, row+limit_count-1, include_flags));
+                    it = RETRY(CWGSSeqIterator(wgs_db, query_row, query_row+limit_count-1, include_flags));
                 }
                 if ( !it ) {
                     out << "No such row: "<<path
@@ -1232,9 +1230,9 @@ int CWGSTestApp::Run(void)
 
     if ( 1 ) {
         CWGSScaffoldIterator it;
-        if ( row ) {
+        if ( query_row ) {
             if ( is_scaffold ) {
-                it = RETRY(CWGSScaffoldIterator(wgs_db, row));
+                it = RETRY(CWGSScaffoldIterator(wgs_db, query_row));
                 if ( !it ) {
                     out << "No such scaffold row: "<<path
                         << NcbiEndl;
@@ -1258,9 +1256,9 @@ int CWGSTestApp::Run(void)
 
     if ( 1 ) {
         CWGSProteinIterator it;
-        if ( row ) {
+        if ( query_row ) {
             if ( is_protein ) {
-                it = RETRY(CWGSProteinIterator(wgs_db, row));
+                it = RETRY(CWGSProteinIterator(wgs_db, query_row));
                 if ( !it ) {
                     out << "No such protein row: "<<path
                         << NcbiEndl;
