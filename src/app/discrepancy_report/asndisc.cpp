@@ -218,14 +218,10 @@ static unique_ptr<CObjectIStream> OpenUncompressedStream(const string& fname, bo
     }
 
     unique_ptr<CObjectIStream> objectStream;
-    switch (format)
-    {
-        case CFormatGuess::eBinaryASN:
-        case CFormatGuess::eTextASN:
-            objectStream.reset(CObjectIStream::Open(format==CFormatGuess::eBinaryASN ? eSerial_AsnBinary : eSerial_AsnText, *InputStream.release(), eTakeOwnership));
-            break;
-        default:
-            break;
+    if (format == CFormatGuess::eBinaryASN || format == CFormatGuess::eTextASN) {
+        objectStream.reset(CObjectIStream::Open(format==CFormatGuess::eBinaryASN ? eSerial_AsnBinary : eSerial_AsnText, *InputStream.release(), eTakeOwnership));
+    } else {
+        NCBI_THROW(CException, eUnknown, "Input is not valid ASN.1");
     }
     return objectStream;
 }
