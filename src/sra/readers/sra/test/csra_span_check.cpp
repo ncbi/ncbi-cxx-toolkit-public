@@ -321,8 +321,8 @@ int CSpanCheckApp::Run(void)
 }
 
 
-CSpanCheckApp::SDB::SDB(const CVDBMgr& mgr, const string& file)
-    : file(file)
+CSpanCheckApp::SDB::SDB(const CVDBMgr& mgr, const string& file_arg)
+    : file(file_arg)
 {
     // open VDB
     try {
