@@ -184,9 +184,9 @@ void CBam2GraphApp::ProcessFile(const string& file)
             vector<string> reps;
             NStr::Split("traces02:traces04", ":", reps);
             ITERATE ( vector<string>, it, reps ) {
-                string path = CFile::MakePath(CFile::MakePath(NCBI_GetTestDataPath(), *it), dir);
-                if ( !CDirEntry(dir).Exists() ) {
-                    dir = path;
+                string test_dir = CFile::MakePath(CFile::MakePath(NCBI_GetTestDataPath(), *it), dir);
+                if ( CDirEntry(test_dir).Exists() ) {
+                    dir = test_dir;
                     break;
                 }
             }
