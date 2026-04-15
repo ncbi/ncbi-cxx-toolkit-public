@@ -383,8 +383,8 @@ public:
     typedef const CSeq_annot::TData::TFtable* TKey;
     typedef CWGSAsnBinData::SFtableInfo TInfo;
     typedef map<TKey, TInfo> TInfoMap;
-    CFtableWriteHook(const TInfoMap& info_map)
-        : info_map(info_map)
+    CFtableWriteHook(const TInfoMap& info_map_arg)
+        : info_map(info_map_arg)
         {
         }
 
@@ -417,8 +417,8 @@ public:
     typedef const CBioseq* TKey;
     typedef CWGSAsnBinData::TDescrInfo TInfo;
     typedef map<TKey, TInfo> TInfoMap;
-    CDescrWriteHook(const TInfoMap& info_map)
-        : info_map(info_map)
+    CDescrWriteHook(const TInfoMap& info_map_arg)
+        : info_map(info_map_arg)
         {
         }
 
@@ -439,7 +439,7 @@ public:
                     while ( cont.GetTypeFamily() == eTypeFamilyPointer ) {
                         cont = cont.GetPointedType();
                     }
-                    COStreamContainer mem(out, cont);
+                    COStreamContainer mem2(out, cont);
                     out.Write(info.data(), info.size());
                 }
             }
@@ -1071,7 +1071,7 @@ struct CWGSDb_Impl::SAmbiguityInfo : public CObject
 
     size_t GetUsedMemory() const;
 
-    vector<Uint1> GetAmbiguityBytes(SSeqTableCursor& cur) {
+    vector<Uint1> GetAmbiguityBytes() {
         return m_AmbiguityMask;
     }
 
@@ -1082,12 +1082,12 @@ struct CWGSDb_Impl::SAmbiguityInfo : public CObject
     TSeqPos Get4naLengthBlock(TSeqPos pos, TSeqPos len) const;
 
     TSeqPos Get2naLengthExact(TSeqPos pos, TSeqPos len,
-                              CWGSDb_Impl& db, SSeqTableCursor& cur) const;
+                              CWGSDb_Impl& db) const;
     TSeqPos Get4naLengthExact(TSeqPos pos, TSeqPos len,
                               TSeqPos stop_2na_len, TSeqPos stop_gap_len,
-                              CWGSDb_Impl& db, SSeqTableCursor& cur) const;
+                              CWGSDb_Impl& db) const;
     TSeqPos GetGapLengthExact(TSeqPos pos, TSeqPos len,
-                              CWGSDb_Impl& db, SSeqTableCursor& cur) const;
+                              CWGSDb_Impl& db) const;
     
     CRef<CSeq_data> Get2na(TSeqPos pos, TSeqPos len,
                            SSeqTableCursor& cur) const;
@@ -1153,7 +1153,7 @@ struct CWGSDb_Impl::SAmbiguityInfo : public CObject
         T4naBlocks::const_iterator m_4naBlocksIter;
     };
     bool x_IsValid(const S4naReader& reader) const;
-    S4naReader Get4naReader(TSeqPos pos, CWGSDb_Impl& db, SSeqTableCursor& cur) const;
+    S4naReader Get4naReader(TSeqPos pos, CWGSDb_Impl& db) const;
     enum EBaseType {
         eBase_2na,
         eBase_4na,
@@ -1643,8 +1643,8 @@ void s_SetAmbiguitiesBlocks(vector<char>& dst_4na_vec,
                             const CWGSDb_Impl::SAmbiguityInfo::T4naBlocks& blocks)
 {
     TSeqPos end = pos+len;
-    TSeqPos block_pos = pos - pos%kAmbiguityBlockSize;
-    for ( auto iter = blocks.lower_bound(block_pos);
+    TSeqPos first_block_pos = pos - pos%kAmbiguityBlockSize;
+    for ( auto iter = blocks.lower_bound(first_block_pos);
           iter != blocks.end() && iter->first < end;
           ++iter ) {
         TSeqPos block_pos = iter->first;
@@ -1894,7 +1894,7 @@ void CWGSDb_Impl::SAmbiguityInfo::x_Calculate4na(CWGSDb_Impl& db) const
     if ( s_GetDebugLevel() >= 6 ) {
         guard.Release();
         size_t memory = GetUsedMemory();
-        CFastMutexGuard guard(m_Mutex);
+        guard.Guard(m_Mutex);
         LOG_POST("SAmbiguityInfo("<<m_Prefix<<"/"<<m_RowId<<") "
                  <<"calculated 4na, "
                  <<NStr::NumericToString(read_length,NStr::fWithCommas)<<" bases, "
@@ -1912,7 +1912,7 @@ void CWGSDb_Impl::SAmbiguityInfo::x_Calculate4na(CWGSDb_Impl& db) const
 }
 
 
-bool CWGSDb_Impl::SAmbiguityInfo::x_IsValid(const S4naReader& reader) const
+bool CWGSDb_Impl::SAmbiguityInfo::x_IsValid(NCBI_UNUSED const S4naReader& reader) const
 {
     if ( m_HasAmbiguityPos ) {
         // use explicit ambiguities list
@@ -1931,7 +1931,7 @@ bool CWGSDb_Impl::SAmbiguityInfo::x_IsValid(const S4naReader& reader) const
 
 CWGSDb_Impl::SAmbiguityInfo::S4naReader
 CWGSDb_Impl::SAmbiguityInfo::Get4naReader(TSeqPos pos,
-                                          CWGSDb_Impl& db, SSeqTableCursor& cur) const
+                                          CWGSDb_Impl& db) const
 {
     x_Need4na(db);
     S4naReader reader;
@@ -2023,7 +2023,7 @@ void CWGSDb_Impl::SAmbiguityInfo::Advance(S4naReader& reader) const
 
 
 TSeqPos CWGSDb_Impl::SAmbiguityInfo::Get2naLengthExact(TSeqPos pos, TSeqPos len,
-                                                       CWGSDb_Impl& db, SSeqTableCursor& cur) const
+                                                       CWGSDb_Impl& db) const
 {
     x_Need4na(db);
     PROFILE(sw____Get2naLen);
@@ -2058,13 +2058,13 @@ TSeqPos CWGSDb_Impl::SAmbiguityInfo::Get2naLengthExact(TSeqPos pos, TSeqPos len,
 TSeqPos CWGSDb_Impl::SAmbiguityInfo::Get4naLengthExact(TSeqPos pos, TSeqPos len,
                                                        TSeqPos stop_2na_len,
                                                        TSeqPos stop_gap_len,
-                                                       CWGSDb_Impl& db, SSeqTableCursor& cur) const
+                                                       CWGSDb_Impl& db) const
 {
     PROFILE(sw____Get4naLen);
     if ( len < stop_2na_len ) {
         return len;
     }
-    S4naReader reader = Get4naReader(pos, db, cur);
+    S4naReader reader = Get4naReader(pos, db);
     TSeqPos rem_len = len, len2na = 0, gap_len = 0;
     // |-------------------- len -----------------|
     // |- 4na -|- len2na -|- gap_len -$- rem_len -|
@@ -2099,10 +2099,10 @@ TSeqPos CWGSDb_Impl::SAmbiguityInfo::Get4naLengthExact(TSeqPos pos, TSeqPos len,
 
 
 TSeqPos CWGSDb_Impl::SAmbiguityInfo::GetGapLengthExact(TSeqPos pos, TSeqPos len,
-                                                       CWGSDb_Impl& db, SSeqTableCursor& cur) const
+                                                       CWGSDb_Impl& db) const
 {
     PROFILE(sw____GetGapLen);
-    S4naReader reader = Get4naReader(pos, db, cur);
+    S4naReader reader = Get4naReader(pos, db);
     TSeqPos rem_len = len;
     for ( ; rem_len; --rem_len, Advance(reader) ) {
         // check both bases
@@ -2301,7 +2301,7 @@ void CWGSDb_Impl::x_InitIdParams(void)
         if ( CKMDataNode node = CKMDataNode(meta, "SEQ_ID_TYPE", CKMDataNode::eMissing_Allow) ) {
             m_SeqIdType = CSeq_id::E_Choice(node.GetUint8());
         }
-        if ( CKMDataNode node = CKMDataNode(meta, "EXTRA_TAXIDS", CKMDataNode::eMissing_Allow) ) {
+        if ( CKMDataNode(meta, "EXTRA_TAXIDS", CKMDataNode::eMissing_Allow) ) {
             // all tax ids are separate
         }
         else if ( CKMDataNode node = CKMDataNode(meta, "TAXID", CKMDataNode::eMissing_Allow) ) {
@@ -2830,7 +2830,7 @@ CRef<CSeq_id> CWGSDb_Impl::GetPatentSeq_id(int id) const
 
 CRef<CSeq_id>
 CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
-                                      TVDBRowId row,
+                                      TVDBRowId /*row*/,
                                       TGnlIdFlags gnl_id_flags) const
 {
     if ( str.empty() ) {
@@ -2850,7 +2850,7 @@ CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
 CRef<CSeq_id>
 CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
                                       const SSeq0TableCursor& cur,
-                                      TVDBRowId row) const
+                                      TVDBRowId /*row*/) const
 {
     if ( str.empty() ) {
         return null;
@@ -2871,7 +2871,7 @@ CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
 CRef<CSeq_id>
 CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
                                       const SScfTableCursor& cur,
-                                      TVDBRowId row) const
+                                      TVDBRowId /*row*/) const
 {
     if ( str.empty() ) {
         return null;
@@ -2892,7 +2892,7 @@ CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
 CRef<CSeq_id>
 CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
                                       const SProt0TableCursor& cur,
-                                      TVDBRowId row) const
+                                      TVDBRowId /*row*/) const
 {
     if ( str.empty() ) {
         return null;
@@ -3805,8 +3805,8 @@ enum EFromSplitVersion {
 struct SWGSCreateInfo : SWGSDb_Defs
 {
     explicit
-    SWGSCreateInfo(const CWGSDb& db)
-        : db(db),
+    SWGSCreateInfo(const CWGSDb& db_arg)
+        : db(db_arg),
           flags(fDefaultFlags),
           split_prod(false),
           split_data(false),
@@ -3816,19 +3816,19 @@ struct SWGSCreateInfo : SWGSDb_Defs
         {
         }
         
-    SWGSCreateInfo(const CWGSDb& db, EFromFlags, TFlags flags)
-        : SWGSCreateInfo(db)
+    SWGSCreateInfo(const CWGSDb& db_arg, EFromFlags, TFlags flags_arg)
+        : SWGSCreateInfo(db_arg)
         {
-            if ( flags != fDefaultFlags ) {
-                x_SetFlags(flags);
+            if ( flags_arg != fDefaultFlags ) {
+                x_SetFlags(flags_arg);
             }
         }
 
-    SWGSCreateInfo(const CWGSDb& db, EFromSplitVersion, TSplitVersion split_version)
-        : SWGSCreateInfo(db)
+    SWGSCreateInfo(const CWGSDb& db_arg, EFromSplitVersion, TSplitVersion split_version_arg)
+        : SWGSCreateInfo(db_arg)
         {
-            if ( split_version != kDefaultSplitVersion ) {
-                x_SetSplitVersion(split_version);
+            if ( split_version_arg != kDefaultSplitVersion ) {
+                x_SetSplitVersion(split_version_arg);
             }
         }
 
@@ -4915,24 +4915,24 @@ struct CWGSSeqIterator::SAmbiguityAccess {
 
     vector<Uint1> GetAmbiguityBytes() const
         {
-            return operator->()->GetAmbiguityBytes(m_Seq.GetNCObject());
+            return operator->()->GetAmbiguityBytes();
         }
 
     TSeqPos Get2naLengthExact(TSeqPos pos, TSeqPos len) const
         {
             return operator->()->Get2naLengthExact(pos, len,
-                                                   m_Db.GetNCObject(), m_Seq.GetNCObject());
+                                                   m_Db.GetNCObject());
         }
     TSeqPos Get4naLengthExact(TSeqPos pos, TSeqPos len,
                               TSeqPos stop_2na_len, TSeqPos stop_gap_len) const
         {
             return operator->()->Get4naLengthExact(pos, len, stop_2na_len, stop_gap_len,
-                                                   m_Db.GetNCObject(), m_Seq.GetNCObject());
+                                                   m_Db.GetNCObject());
         }
     TSeqPos GetGapLengthExact(TSeqPos pos, TSeqPos len) const
         {
             return operator->()->GetGapLengthExact(pos, len,
-                                                   m_Db.GetNCObject(), m_Seq.GetNCObject());
+                                                   m_Db.GetNCObject());
         }
 
     CRef<CSeq_data> Get2na(TSeqPos pos, TSeqPos len) const
@@ -5435,27 +5435,27 @@ CRef<CSeq_inst> CWGSSeqIterator::GetSeq_inst(TFlags flags) const
 }
 
 
-void SWGSCreateInfo::x_SetFlags(TFlags flags)
+void SWGSCreateInfo::x_SetFlags(TFlags flags_arg)
 {
-    this->flags = flags;
+    flags = flags_arg;
     split_version = kAssignedDefaultSplitVersion;
 }
     
 
-void SWGSCreateInfo::x_SetSplitVersion(TSplitVersion split_version)
+void SWGSCreateInfo::x_SetSplitVersion(TSplitVersion split_version_arg)
 {
-    if ( split_version == kDefaultSplitVersion ) {
+    if ( split_version_arg == kDefaultSplitVersion ) {
         flags = fDefaultFlags;
     }
-    else if ( split_version == kAssignedDefaultSplitVersion ) {
+    else if ( split_version_arg == kAssignedDefaultSplitVersion ) {
         flags = fDefaultFlags;
     }
     else {
         NCBI_THROW_FMT(CSraException, eInvalidArg,
-                       "SWGSCreateInfo::SetSplitVersion("<<split_version<<"): "
+                       "SWGSCreateInfo::SetSplitVersion("<<split_version_arg<<"): "
                        "unknown split version");
     }
-    this->split_version = split_version;
+    split_version = split_version_arg;
 }
 
 
@@ -5604,12 +5604,12 @@ struct SWGSFeatChunkInfo : public SWGSDb_Defs {
     };
     SFeatureSet features[2]; // w/o and w/ product
 
-    SWGSFeatChunkInfo(CSeq_id& main_id, CSeq_id& feat_id)
-        : main_id(&main_id),
-          feat_id(&feat_id),
+    SWGSFeatChunkInfo(CSeq_id& main_id_arg, CSeq_id& feat_id_arg)
+        : main_id(&main_id_arg),
+          feat_id(&feat_id_arg),
           seq_place(new CID2S_Bioseq_Ids::C_E)
         {
-            sx_SetSplitId(*seq_place, main_id);
+            sx_SetSplitId(*seq_place, main_id_arg);
             Reset();
         }
     
@@ -5712,10 +5712,10 @@ CRef<CID2S_Chunk_Info> SWGSFeatChunkInfo::CreateChunkInfo(int index,
                 }
             }
             s_AddGiRange(loc_set, gi_range_start, gi_range_stop);
-            CRef<CSeq_id> feat_id = prot_it.GetId(fIds_acc|fIds_gnl);
-            //LOG_POST("Feat info for "<<feat_id->AsFastaString());
+            CRef<CSeq_id> prot_id = prot_it.GetId(fIds_acc|fIds_gnl);
+            //LOG_POST("Feat info for "<<prot_id->AsFastaString());
             CRef<CID2S_Seq_loc> loc(new CID2S_Seq_loc);
-            loc->SetWhole_seq_id(*feat_id);
+            loc->SetWhole_seq_id(*prot_id);
             loc_set.push_back(loc);
         }
         s_AddGiRange(loc_set, gi_range_start, gi_range_stop);
@@ -5957,9 +5957,9 @@ void SWGSCreateInfo::x_AddProducts(const vector<TVDBRowId>& product_row_ids)
         x_ResetSeq();
         prot_it.x_CreateBioseq(*this);
         if ( entries ) {
-            CRef<CSeq_entry> entry(new CSeq_entry);
-            entry->SetSeq(*main_seq);
-            entries->push_back(entry);
+            CRef<CSeq_entry> seq_entry(new CSeq_entry);
+            seq_entry->SetSeq(*main_seq);
+            entries->push_back(seq_entry);
         }
         else {
             bioseqs->push_back(main_seq);
@@ -5992,19 +5992,19 @@ void SWGSCreateInfo::x_CreateProtSet(TVDBRowIdRange range)
             CWGSProteinIterator prot_it(db);
             ITERATE ( vector<TVDBRowId>, it, product_row_ids ) {
                 if ( !ids || prod_count == kProdPerChunk ) {
-                    CRef<CID2S_Chunk_Info> chunk(new CID2S_Chunk_Info);
-                    split->SetChunks().push_back(chunk);
-                    chunk->SetId().Set(chunk_index*kChunkIdStep + eChunk_prod);
+                    CRef<CID2S_Chunk_Info> chunk_info(new CID2S_Chunk_Info);
+                    split->SetChunks().push_back(chunk_info);
+                    chunk_info->SetId().Set(chunk_index*kChunkIdStep + eChunk_prod);
                     prod_count = 0;
                     ++chunk_index;
 
                     CRef<CID2S_Chunk_Content> content;
                     content = new CID2S_Chunk_Content;
-                    chunk->SetContent().push_back(content);
+                    chunk_info->SetContent().push_back(content);
                     content->SetFeat_ids();
 
                     content = new CID2S_Chunk_Content;
-                    chunk->SetContent().push_back(content);
+                    chunk_info->SetContent().push_back(content);
                     CRef<CID2S_Bioseq_place_Info> place_info(new CID2S_Bioseq_place_Info);
                     content->SetBioseq_place().push_back(place_info);
                     place_info->SetBioseq_set(kMainEntryId);
@@ -6715,7 +6715,7 @@ TVDBRowIdRange CWGSScaffoldIterator::GetLocFeatRowIdRange(void) const
 }
 
 
-CRef<CSeq_inst> CWGSScaffoldIterator::GetSeq_inst(TFlags flags) const
+CRef<CSeq_inst> CWGSScaffoldIterator::GetSeq_inst(TFlags /*flags*/) const
 {
     CVDBMgr::CRequestContextUpdater ctx_updater;
     x_CheckValid("CWGSScaffoldIterator::GetSeq_inst");
@@ -7604,7 +7604,7 @@ void CWGSProteinIterator::GetAnnotSet(TAnnotSet& annot_set, TFlags flags) const
 }
 
 
-CRef<CSeq_inst> CWGSProteinIterator::GetSeq_inst(TFlags flags) const
+CRef<CSeq_inst> CWGSProteinIterator::GetSeq_inst(TFlags /*flags*/) const
 {
     PROFILE(sw___GetProtInst);
     x_CheckValid("CWGSProteinIterator::GetSeq_inst");
