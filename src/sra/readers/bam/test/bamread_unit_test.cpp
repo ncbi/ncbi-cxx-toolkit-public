@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE(BamQuery1Overlap)
     BOOST_CHECK(s_TestAllAPI("lookup of alignments crossing bin border",
                              "bam/hs108_sra.fil_sort.chr1.bam", "NC_000001.11",
                              CBamAlignIterator::eSearchByOverlap,
-                             { 16398, 32768, 2, 1 }));
+                             { 16398, 32768, 2, 1, 0 }));
 }
 
 
@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE(BamQuery1Start)
     BOOST_CHECK(s_TestAllAPI("lookup of alignments crossing bin border",
                              "bam/hs108_sra.fil_sort.chr1.bam", "NC_000001.11",
                              CBamAlignIterator::eSearchByStart,
-                             { 16398, 32768, 2, 0 }));
+                             { 16398, 32768, 2, 0, 0 }));
 }
 
 
