@@ -723,16 +723,16 @@ bool CBAMDataLoader_Impl::IsShortSeq(const CSeq_id_Handle& idh)
 
 CBamFileInfo::CBamFileInfo(const CBAMDataLoader_Impl& impl,
                            const CBAMDataLoader::SBamFileName& bam,
-                           const string& refseq_label,
-                           const CSeq_id_Handle& seq_id)
+                           const string& single_refseq_label,
+                           const CSeq_id_Handle& single_seq_id)
 {
     CStopWatch sw;
     if ( GetDebugLevel() >= 1 ) {
         sw.Start();
     }
     x_Initialize(impl, bam);
-    if ( seq_id ) {
-        AddRefSeq(refseq_label, seq_id);
+    if ( single_seq_id ) {
+        AddRefSeq(single_refseq_label, single_seq_id);
     }
     else {
         for ( CBamRefSeqIterator rit(m_BamDb); rit; ++rit ) {
@@ -1001,9 +1001,9 @@ void CBamRefSeqInfo::LoadRanges(void)
 }
 
 
-static const CUser_field& GetIdField(const CUser_field& field, int id)
+static const CUser_field& GetIdField(const CUser_field& from_field, int id)
 {
-    ITERATE ( CUser_field::TData::TFields, it, field.GetData().GetFields() ) {
+    ITERATE ( CUser_field::TData::TFields, it, from_field.GetData().GetFields() ) {
         const CUser_field& field = **it;
         if ( field.IsSetLabel() &&
              field.GetLabel().IsId() &&
@@ -1299,13 +1299,13 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
                                " (.."<<ref_end<<")"<<
                                " size: "<<cur_data_size);
                 }
-                for ( int i = 0; i < sub_chunk_count; ++i ) {
+                for ( int sub_i = 0; sub_i < sub_chunk_count; ++sub_i ) {
                     CBamRefSeqChunkInfo info;
                     info.m_DataSize = sub_chunk_data_size;
-                    info.m_RefSeqRange.SetFrom(last_pos+i*sub_chunk_len);
-                    info.m_MaxRefSeqFrom = pos+(i+1)*sub_chunk_len-1;
-                    info.m_RefSeqRange.SetTo(i==0? ref_end: info.m_MaxRefSeqFrom);
-                    info.m_PileupChunkCount = i==0? sub_chunk_count: 0;
+                    info.m_RefSeqRange.SetFrom(last_pos+sub_i*sub_chunk_len);
+                    info.m_MaxRefSeqFrom = pos+(sub_i+1)*sub_chunk_len-1;
+                    info.m_RefSeqRange.SetTo(sub_i==0? ref_end: info.m_MaxRefSeqFrom);
+                    info.m_PileupChunkCount = sub_i==0? sub_chunk_count: 0;
                     if ( GetDebugLevel() >= 3 ) {
                         LOG_POST_X(28, Info << "CBAMDataLoader:"
                                    " Huge Chunk "<<m_Chunks.size()<<
@@ -1457,7 +1457,6 @@ void CBamRefSeqInfo::x_LoadRangesStat(void)
 
 void CBamRefSeqInfo::x_LoadRangesScan(void)
 {
-    typedef CBamRefSeqInfo::TRange TRange;
     vector<TRange> rr;
     int min_quality = m_MinMapQuality;
     TSeqPos ref_len = m_File->GetRefSeqLength(GetRefSeqId());
@@ -1664,19 +1663,19 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
                 if ( Uint8 bytes = CBamFileRangeSet(raw_db->GetIndex(), refseq_index, pileup_range,
                                                     CBamIndex::kLevel1, CBamIndex::kMaxLevel,
                                                     CBamIndex::eSearchByStart).GetFileSize() ) {
-                    CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_align2));
-                    chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
-                    //chunk->x_SetLoadSeconds(bytes*align_seconds);
-                    chunk->x_AddAnnotType(name,
+                    CRef<CTSE_Chunk_Info> chunk_info(new CTSE_Chunk_Info(base_id+eChunk_align2));
+                    chunk_info->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
+                    //chunk_info->x_SetLoadSeconds(bytes*align_seconds);
+                    chunk_info->x_AddAnnotType(name,
                                           CSeq_annot::C_Data::e_Align,
                                           GetRefSeq_id(),
                                           wide_range);
                     if ( GetDebugLevel() >= 2 ) {
                         LOG_POST_X(12, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
-                                   "Align Chunk id="<<chunk->GetChunkId()<<": "<<wide_range<<
+                                   "Align Chunk id="<<chunk_info->GetChunkId()<<": "<<wide_range<<
                                    " with "<<bytes<<" bytes");
                     }
-                    split_info.AddChunk(*chunk);
+                    split_info.AddChunk(*chunk_info);
                 }
             }
         }
@@ -1773,7 +1772,7 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
 }
 
 
-double CBamRefSeqInfo::EstimateAlignLoadSeconds(const CTSE_Chunk_Info& chunk,
+double CBamRefSeqInfo::EstimateAlignLoadSeconds(const CTSE_Chunk_Info& /*chunk*/,
                                                 Uint4 bytes) const
 {
     CBamRawDb* raw_db = 0;
@@ -1785,7 +1784,7 @@ double CBamRefSeqInfo::EstimateAlignLoadSeconds(const CTSE_Chunk_Info& chunk,
 }
 
 
-double CBamRefSeqInfo::EstimatePileupLoadSeconds(const CTSE_Chunk_Info& chunk,
+double CBamRefSeqInfo::EstimatePileupLoadSeconds(const CTSE_Chunk_Info& /*chunk*/,
                                                  Uint4 bytes) const
 {
     CBamRawDb* raw_db = 0;
@@ -1797,7 +1796,7 @@ double CBamRefSeqInfo::EstimatePileupLoadSeconds(const CTSE_Chunk_Info& chunk,
 }
 
 
-double CBamRefSeqInfo::EstimateSeqLoadSeconds(const CTSE_Chunk_Info& chunk,
+double CBamRefSeqInfo::EstimateSeqLoadSeconds(const CTSE_Chunk_Info& /*chunk*/,
                                               Uint4 bytes) const
 {
     CBamRawDb* raw_db = 0;
@@ -2217,8 +2216,8 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
     };
     SGraph graphs[kNumStat];
     struct SSplit {
-        SSplit(TSeqPos seq_pos)
-            : seq_pos(seq_pos),
+        SSplit(TSeqPos seq_pos_arg)
+            : seq_pos(seq_pos_arg),
               file_pos_first_crossing(),
               file_pos_first_starting()
             {
@@ -2246,14 +2245,14 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
     list<CRef<CBioseq>> bioseqs;
 #endif
     
-    SPileupGraphCreator(const string& annot_name,
-                        const CSeq_id_Handle& ref_id,
-                        CRange<TSeqPos> ref_range,
-                        int min_quality)
-        : annot_name(annot_name),
-          ref_id(SerialClone(*ref_id.GetSeqId())),
-          ref_range(ref_range),
-          min_quality(min_quality),
+    SPileupGraphCreator(const string& annot_name_arg,
+                        const CSeq_id_Handle& ref_id_arg,
+                        CRange<TSeqPos> ref_range_arg,
+                        int min_quality_arg)
+        : annot_name(annot_name_arg),
+          ref_id(SerialClone(*ref_id_arg.GetSeqId())),
+          ref_range(ref_range_arg),
+          min_quality(min_quality_arg),
           make_intron(s_GetMakeIntronGraph()),
           cur_split(splits.begin())
         {
