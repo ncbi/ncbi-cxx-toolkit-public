@@ -905,16 +905,16 @@ CWGSDataLoader_Impl::GetFileInfoByGeneral(const CDbtag& dbtag)
     else {
         tag = NStr::NumericToString(object_id.GetId());
     }
-    if ( TVDBRowId row = wgs_db.GetContigNameRowId(tag) ) {
-        ret.row_id = row;
+    if ( TVDBRowId contig_row = wgs_db.GetContigNameRowId(tag) ) {
+        ret.row_id = contig_row;
     }
-    else if ( TVDBRowId row = wgs_db.GetScaffoldNameRowId(tag) ) {
+    else if ( TVDBRowId scaffold_row = wgs_db.GetScaffoldNameRowId(tag) ) {
         ret.seq_type = 'S';
-        ret.row_id = row;
+        ret.row_id = scaffold_row;
     }
-    else if ( TVDBRowId row = wgs_db.GetProteinNameRowId(tag) ) {
+    else if ( TVDBRowId protein_row = wgs_db.GetProteinNameRowId(tag) ) {
         ret.seq_type = 'P';
-        ret.row_id = row;
+        ret.row_id = protein_row;
     }
     if ( ret.row_id ) {
         ret.file = info;
