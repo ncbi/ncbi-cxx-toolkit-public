@@ -244,8 +244,7 @@ string s_GuessType(CNcbiIstream& in, ESerialDataFormat format)
     in.clear();
     CStreamUtils::Pushback(in, buf, size);
 
-    istrstream test_str(buf, size);
-    unique_ptr<CObjectIStream> test_in(CObjectIStream::Open(format, test_str));
+    unique_ptr<CObjectIStream> test_in(CObjectIStream::CreateFromBuffer(format, buf, size));
     if ( format == eSerial_AsnText || format == eSerial_Xml ) {
         return test_in->ReadFileHeader();
     }
