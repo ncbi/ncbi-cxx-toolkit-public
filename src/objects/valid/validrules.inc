@@ -30,8 +30,7 @@
  *
  */
 
-/* time_t value corresponding to Tue Sep  9 15:14:25 EDT 2025
-; formally
+/* time_t value corresponding to Fri Apr 10 14:30:08 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
 static const unsigned long s_Defaultvalidrules_Timestamp = 1775845808UL;
 static const char* const s_Defaultvalidrules[] = {
