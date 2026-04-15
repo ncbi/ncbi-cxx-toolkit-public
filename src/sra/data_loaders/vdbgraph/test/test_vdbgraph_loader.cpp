@@ -118,9 +118,8 @@ static void s_CheckFast(CScope& scope, const CSeq_id& id, TSeqPos seq_len,
     typedef map<string, CRange<TSeqPos> > TRanges;
     TRanges all, tables, graphs;
     for ( ; table_it; ++table_it ) {
-        const string& name = table_it.GetAnnot().GetName();
-        const CSeq_loc& loc = table_it.GetMappedLocation();
-        CRange<TSeqPos> range = loc.GetTotalRange();
+        string name = table_it.GetAnnot().GetName();
+        CRange<TSeqPos> range = table_it.GetMappedLocation().GetTotalRange();
         if ( tables.count(name) == 0 ) {
             tables[name] = range;
         }
@@ -200,9 +199,8 @@ static void s_CheckFast(CScope& scope, const CSeq_id& id, TSeqPos seq_len,
         typedef map<string, CRange<TSeqPos> > TRanges;
         TRanges tables, graphs;
         for ( ; table_it; ++table_it ) {
-            const string& name = table_it.GetAnnot().GetName();
-            const CSeq_loc& loc = table_it.GetMappedLocation();
-            CRange<TSeqPos> range = loc.GetTotalRange();
+            string name = table_it.GetAnnot().GetName();
+            CRange<TSeqPos> range = table_it.GetMappedLocation().GetTotalRange();
             if ( tables.count(name) == 0 ) {
                 tables[name] = range;
             }
@@ -239,8 +237,8 @@ static void s_CheckFast(CScope& scope, const CSeq_id& id, TSeqPos seq_len,
 }
 
 
-static void s_VerifyGraphs(CScope& scope, const CSeq_id& id, TSeqPos seq_len,
-                           const string& nacc)
+static void s_VerifyGraphs(CScope& /*scope*/, const CSeq_id& /*id*/, TSeqPos /*seq_len*/,
+                           const string& /*nacc*/)
 {
 }
 
@@ -303,9 +301,8 @@ BOOST_AUTO_TEST_CASE(FetchSeq2)
         typedef map<string, CRange<TSeqPos> > TRanges;
         TRanges all, tables, graphs;
         for ( ; table_it; ++table_it ) {
-            const string& name = table_it.GetAnnot().GetName();
-            const CSeq_loc& loc = table_it.GetMappedLocation();
-            CRange<TSeqPos> range = loc.GetTotalRange();
+            string name = table_it.GetAnnot().GetName();
+            CRange<TSeqPos> range = table_it.GetMappedLocation().GetTotalRange();
             if ( tables.count(name) == 0 ) {
                 tables[name] = range;
             }
