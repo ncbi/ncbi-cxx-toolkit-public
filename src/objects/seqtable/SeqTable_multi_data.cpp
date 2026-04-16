@@ -1011,8 +1011,8 @@ void CSeqTable_multi_data::ChangeToInt_scaled(int mul, int add)
             if ( value % mul != 0 ) {
                 // restore already scaled values
                 while ( it != arr.begin() ) {
-                    TInt::value_type value = *--it;
-                    *it = value*mul+add;
+                    TInt::value_type prev_value = *--it;
+                    *it = prev_value*mul+add;
                 }
                 swap(arr, SetInt());
                 NCBI_THROW(CSeqTableException, eIncompatibleValueType,
