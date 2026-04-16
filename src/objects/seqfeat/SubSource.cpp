@@ -1968,9 +1968,9 @@ string CSubSource::MakeLatLon(double lat_value, double lon_value, int lat_precis
 }
 
 
-CLatLonCountryId *CSubSource::x_CalculateLatLonId(float lat_value, float lon_value, string country, string province)
+CLatLonCountryId *CSubSource::x_CalculateLatLonId(double lat_value, double lon_value, string country, string province)
 {
-    CLatLonCountryId *id = new CLatLonCountryId(lat_value, lon_value);
+    CLatLonCountryId *id = new CLatLonCountryId(float(lat_value), float(lon_value));
 
     bool goodmatch = false;
 

@@ -247,7 +247,7 @@ private:
 
     static string x_ParseDateRangeWithDelimiter(const string& orig_date, CTempString delim);
     static vector<string> x_GetDateTokens(const string& orig_date);
-    static CLatLonCountryId * x_CalculateLatLonId(float lat_value, float lon_value, string country, string province);
+    static CLatLonCountryId * x_CalculateLatLonId(double lat_value, double lon_value, string country, string province);
     static bool x_IsFixableIsoDate(const string& orig_date);
     static string x_RemoveIsoTime(const string& orig_date);
 
