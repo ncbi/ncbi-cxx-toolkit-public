@@ -64,6 +64,7 @@ void CDate_std::SetToTime(const CTime& time, CDate::EPrecision prec)
         SetMinute(time.Minute());
         SetHour  (time.Hour());
         // fall through
+        NCBI_FALLTHROUGH;
     case CDate::ePrecision_day:
         SetDay   (time.Day());
         SetMonth (time.Month());
