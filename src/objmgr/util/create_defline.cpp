@@ -773,6 +773,7 @@ void CDeflineGenerator::x_SetFlags (
             case NCBI_SEQID(Tpd):
                 m_ThirdParty = true;
                 // fall through
+                NCBI_FALLTHROUGH;
             case NCBI_SEQID(Other):
             case NCBI_SEQID(Genbank):
             case NCBI_SEQID(Embl):
@@ -920,6 +921,7 @@ void CDeflineGenerator::x_SetFlags (
                     needed_desc_choices &= ~fTitle;
                     m_MainTitle.clear();
                     // fall through
+                    NCBI_FALLTHROUGH;
                 case NCBI_TECH(htgs_3):
                     m_HTGTech = true;
                     m_UseBiosrc = true;
