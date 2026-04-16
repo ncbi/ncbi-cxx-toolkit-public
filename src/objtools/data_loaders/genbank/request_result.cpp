@@ -858,7 +858,7 @@ void CReaderRequestResult::SetRequestedId(const CSeq_id_Handle& requested_id)
 }
 
 
-CTSE_LoadLock CReaderRequestResult::GetBlobLoadLock(const CBlob_id& blob_id)
+CTSE_LoadLock CReaderRequestResult::GetBlobLoadLock(const CBlob_id& /*blob_id*/)
 {
     return CTSE_LoadLock();
 }
