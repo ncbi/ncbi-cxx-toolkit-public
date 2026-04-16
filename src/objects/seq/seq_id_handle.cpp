@@ -92,7 +92,7 @@ void CSeq_id_Info::x_RemoveLastLock(void) const
 }
 
 
-int CSeq_id_Info::CompareOrdered(const CSeq_id_Info& other, const CSeq_id_Handle& h_this, const CSeq_id_Handle& h_other) const
+int CSeq_id_Info::CompareOrdered(const CSeq_id_Info& /*other*/, const CSeq_id_Handle& h_this, const CSeq_id_Handle& h_other) const
 {
     return h_this.GetSeqId()->CompareOrdered(*h_other.GetSeqId());
 }
