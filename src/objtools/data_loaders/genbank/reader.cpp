@@ -1064,7 +1064,7 @@ bool CReader::LoadBlobs(CReaderRequestResult& result,
 
 void CReader::SetAndSaveNoBlob(CReaderRequestResult& result,
                                const TBlobId& blob_id,
-                               TChunkId chunk_id,
+                               TChunkId /*chunk_id*/,
                                TBlobState blob_state)
 {
     blob_state |=
@@ -1398,14 +1398,14 @@ void CReader::ResetCache(void)
 }
 
 
-void CReader::SetIncludeHUP(bool include_hup, const string& web_cookie)
+void CReader::SetIncludeHUP(bool /*include_hup*/, const string& /*web_cookie*/)
 {
     NCBI_THROW(CObjMgrException, eRegisterError,
                "HUP is supported only by pubseqos or pubseqos2 readers");
 }
 
 
-void CReader::SetParams(const CReaderParams& params)
+void CReader::SetParams(const CReaderParams& /*params*/)
 {
 }
 
