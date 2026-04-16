@@ -4563,7 +4563,7 @@ CCountries::EStateCleanup s_DoUSAStateCleanup ( string& country ) {
 
     // bool any_modified = false;
     int num_states = 0;
-    int match = -1;
+    ssize_t match = -1;
 
     // string* first = 0;
     // string* last = 0;
@@ -4578,9 +4578,9 @@ CCountries::EStateCleanup s_DoUSAStateCleanup ( string& country ) {
                 any_modified = true;
             }
             */
-            if ( match < 0 ) {
+            if ( match == -1 ) {
                 // record position of first s_IsState match
-                match = j;
+                match = ssize_t(j);
             }
             // count successful matches
             num_states++;
