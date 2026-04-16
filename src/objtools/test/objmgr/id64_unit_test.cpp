@@ -321,8 +321,8 @@ void s_CheckIds(const SBioseqInfo& info, CScope* scope)
         vector<string> req_ids_str;
         NStr::Split(info.m_RequiredIds, ";", req_ids_str);
         ITERATE ( vector<string>, it, req_ids_str ) {
-            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*it);
-            req_ids.push_back(idh);
+            CSeq_id_Handle req_idh = CSeq_id_Handle::GetHandle(*it);
+            req_ids.push_back(req_idh);
         }
     }
 
