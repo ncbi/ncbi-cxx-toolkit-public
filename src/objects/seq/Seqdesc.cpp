@@ -145,6 +145,7 @@ void CSeqdesc::GetLabel(string* const label, ELabelType label_type) const
     switch (label_type) {
     case eBoth:
         (*label) += name + ": ";
+        NCBI_FALLTHROUGH;
     case eContent:
         s_GetContentLabel(*this, label);
         return;
