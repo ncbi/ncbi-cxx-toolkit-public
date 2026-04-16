@@ -126,6 +126,7 @@ void CBioseq::x_SeqLoc_To_DeltaExt(const CSeq_loc& loc, CDelta_ext& ext)
                 dseq->SetLoc(*pnt_loc);
                 ext.Set().push_back(CRef<CDelta_seq>(dseq));
             }
+            break;
         }
     case CSeq_loc::e_Mix:
         {
@@ -133,7 +134,7 @@ void CBioseq::x_SeqLoc_To_DeltaExt(const CSeq_loc& loc, CDelta_ext& ext)
             ITERATE ( CSeq_loc_mix::Tdata, li, loc.GetMix().Get() ) {
                 x_SeqLoc_To_DeltaExt(**li, ext);
             }
-            return;
+            break;
         }
     default:
         {
@@ -143,6 +144,7 @@ void CBioseq::x_SeqLoc_To_DeltaExt(const CSeq_loc& loc, CDelta_ext& ext)
             SerialAssign<CSeq_loc>(*cp_loc, loc);
             dseq->SetLoc(*cp_loc);
             ext.Set().push_back(CRef<CDelta_seq>(dseq));
+            break;
         }
     }
 }
