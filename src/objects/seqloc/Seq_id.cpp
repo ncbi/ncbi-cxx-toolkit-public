@@ -71,7 +71,7 @@
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <corelib/ncbistre.hpp>
 
-#include "accguide2.inc"
+#include "accguide3.inc"
 
 
 #define NCBI_USE_ERRCODE_X   Objects_SeqId
