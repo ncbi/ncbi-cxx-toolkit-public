@@ -1494,7 +1494,7 @@ NCBI_PARAM_DECL(bool, OBJECTS, DENSE_SEG_RESERVE);
 NCBI_PARAM_DEF_EX(bool, OBJECTS, DENSE_SEG_RESERVE, true,
                   eParam_NoThread, OBJECTS_DENSE_SEG_RESERVE);
 
-void CDense_seg::CReserveHook::PreReadClassMember(CObjectIStream& in,
+void CDense_seg::CReserveHook::PreReadClassMember(CObjectIStream& /*in*/,
                                                   const CObjectInfoMI& member)
 {
     static CSafeStatic<NCBI_PARAM_TYPE(OBJECTS, DENSE_SEG_RESERVE)> s_Reserve;
