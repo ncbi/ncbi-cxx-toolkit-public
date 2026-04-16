@@ -145,6 +145,7 @@ GetReverseComplement(const CSeq_loc& loc, CReverseComplementHelper* helper)
         if ( loc.GetBond().CanGetB() ) {
             bond.SetA(*s_SeqPntRevCmp(loc.GetBond().GetB()));
         }
+        break;
     }
         
     // -- not supported
