@@ -345,7 +345,7 @@ unsigned read_unsigned(CNcbiIstream& stream, const char* name)
 
 
 static inline
-void write_gi(CNcbiOstream& stream, TGi gi, const char* name)
+void write_gi(CNcbiOstream& stream, TGi gi, const char* /*name*/)
 {
     TIntId n = GI_TO(TIntId, gi);
     char c[8];
