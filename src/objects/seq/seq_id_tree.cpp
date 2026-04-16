@@ -1019,7 +1019,8 @@ CSeq_id_Textseq_PlainInfo::ParseCaseVariant(const CTextseq_id& id) const
 }
 
 
-CConstRef<CSeq_id> CSeq_id_Textseq_PlainInfo::GetPackedSeqId(TPacked packed, TVariant variant) const
+CConstRef<CSeq_id> CSeq_id_Textseq_PlainInfo::GetPackedSeqId(NCBI_UNUSED TPacked packed,
+                                                             TVariant variant) const
 {
     _ASSERT(!packed);
     _ASSERT(variant);
@@ -1931,8 +1932,10 @@ CSeq_id_Local_Info::ParseCaseVariant(const CObject_id& oid) const
 }
 
 
-CConstRef<CSeq_id> CSeq_id_Local_Info::GetPackedSeqId(TPacked packed, TVariant variant) const
+CConstRef<CSeq_id> CSeq_id_Local_Info::GetPackedSeqId(NCBI_UNUSED TPacked packed,
+                                                      TVariant variant) const
 {
+    _ASSERT(!packed);
     if ( !variant ) {
         return m_Seq_id;
     }
@@ -2463,8 +2466,10 @@ CSeq_id_Handle::TVariant CSeq_id_General_PlainInfo::ParseCaseVariant(const CDbta
 }
 
 
-CConstRef<CSeq_id> CSeq_id_General_PlainInfo::GetPackedSeqId(TPacked packed, TVariant variant) const
+CConstRef<CSeq_id> CSeq_id_General_PlainInfo::GetPackedSeqId(NCBI_UNUSED TPacked packed,
+                                                             TVariant variant) const
 {
+    _ASSERT(!packed);
     if ( !variant ) {
         return m_Seq_id;
     }
