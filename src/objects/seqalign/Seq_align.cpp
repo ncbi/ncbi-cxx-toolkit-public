@@ -1537,8 +1537,8 @@ s_GetGapCount(const CSeq_align& align, CSeq_align::TDim row,
                     }
                 }
             }
-            break;
         }
+        break;
 
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
