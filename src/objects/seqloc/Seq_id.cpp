@@ -998,7 +998,8 @@ struct SAccGuide : public CObject
               prev_special_format(0),
               prev_special_type(CSeq_id::eAcc_unknown),
               prev_special_base_type(CSeq_id::eAcc_unknown),
-              specialN_submap(nullptr), version(1)
+              specialN_submap(nullptr), specialN_end_pos(0),
+              specialN_version(0), version(1)
             {}
 
         TAccInfo FindAccInfo(CTempString name);
@@ -1025,7 +1026,9 @@ struct SAccGuide : public CObject
         string                specialN_name;
         unique_ptr<string>    specialN_old_name;
         SSubMap*              specialN_submap;
+        SIZE_TYPE             specialN_end_pos;
         TAccInfo              specialN_type;
+        unsigned int          specialN_version;
         unsigned int          version;
     };
     
@@ -1042,6 +1045,10 @@ struct SAccGuide : public CObject
                          string* key_used = NULL) const;
     static TFormatCode s_Key(unsigned short letters, unsigned short digits)
         { return TFormatCode(letters) << 16 | digits; }
+    static unsigned short s_Letters(TFormatCode fmt)
+        { return fmt >> 16; }
+    static unsigned short s_Digits(TFormatCode fmt)
+        { return fmt & 0xFFFFU; }
 
     unsigned int count;
     TMainMap     rules;
@@ -1189,7 +1196,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                &&  NStr::EqualNocase(tokens[0], "version")) {
         hints.specialN_submap = nullptr;
         hints.version = NStr::StringToUInt(tokens[1], NStr::fConvErr_NoThrow);
-        if (hints.version > 2  ||  hints.version < 1) {
+        if (hints.version > 3  ||  hints.version < 1) {
             ERR_POST_X(2, "SAccGuide::AddRule: " << count
                           << ": Unsupported version " << tokens[1]);
             return;
@@ -1331,39 +1338,63 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
             hints.deferred_special_type      = value;
             hints.deferred_special_type_name = tokens[2];
         }
-    } else if (tokens.size() >= 3
-               &&  NStr::EqualNocase(tokens[0], "special2")) {
-        if (hints.version < 2) {
-            ERR_POST_X(18,
-                       Warning << "SAccGuide::AddRule: " << count
-                       << ": special2 valid only in version 2+ guides");
+    } else if (tokens.size() >= 3  &&  tokens[0].size() == 8
+               &&  NStr::StartsWith(tokens[0], "special")
+               &&  (tokens[0][7] == '2'  ||  tokens[0][7] == '3')) {
+        string why;
+        TAccInfo old = kUnrecognized;
+        hints.specialN_version = tokens[0][7] - '0';
+        if (hints.specialN_version == 2) {
+            if (hints.version < 2) {
+                ERR_POST_X(18,
+                           Warning << "SAccGuide::AddRule: " << count
+                           << ": special2 valid only in version 2+ guides");
+            }
+            int digits = 0;
+            pos = tokens[1].size() - 1;
+            for (int place = 1;  tokens[1][pos] != '+';  --pos, place *= 10) {
+                digits += place * (tokens[1][pos] - '0');
+            }
+            tmp1.assign(tokens[1], 0, pos);
+            hints.prev_special_format = s_Key(tmp1.size(), digits);
+            hints.prev_specialN_acc = tmp1 + string(digits, '0');
+            hints.specialN_end_pos = hints.prev_specialN_acc.size();
+            old = hints.FindSpecial(*this, hints.prev_special_format,
+                                    hints.prev_specialN_acc);
+            if ((old & CSeq_id::fAcc_specials) != 0) {
+                old = TAccInfo(old & ~CSeq_id::fAcc_specials);
+            } else {
+                Find(hints.prev_special_format, hints.prev_specialN_acc, &why);
+                if ( !why.empty() ) {
+                    ERR_POST_X(13,
+                               Warning << "SAccGuide::AddRule: Main listing"
+                               << " for special " << tokens[1] << " doesn't"
+                               << " indicate that specials are present.");
+                }
+            }
+        } else if (hints.specialN_version == 3) {
+            if (hints.version < 3) {
+                ERR_POST_X(22,
+                           Warning << "SAccGuide::AddRule: " << count
+                           << ": special3 valid only in version 3+ guides");
+            }
+            pos = tokens[1].find('+');
+            tmp1.assign(tokens[1], 0, pos);
+            tmp2.assign(tokens[1], pos + 1, NPOS);
+            unsigned int letters
+                = NStr::StringToUInt(tmp1, NStr::fConvErr_NoThrow);
+            unsigned int digits
+                = NStr::StringToUInt(tmp2, NStr::fConvErr_NoThrow);
+            hints.prev_special_format = s_Key(letters, digits);
+            hints.prev_specialN_acc.resize(letters + digits);
+            memset(hints.prev_specialN_acc.data(), '_', letters);
+            memset(hints.prev_specialN_acc.data() + letters, '9', digits);
+            hints.specialN_end_pos = letters;
         }
-        int digits = 0;
-        pos = tokens[1].size() - 1;
-        for (int place = 1;  tokens[1][pos] != '+';  --pos, place *= 10) {
-            digits += place * (tokens[1][pos] - '0');
-        }
-        tmp1.assign(tokens[1], 0, pos);
-        hints.prev_special_format = s_Key(tmp1.size(), digits);
         hints.specialN_name = tokens[2];
         hints.specialN_old_name.reset();
         hints.specialN_submap
             = &hints.FindSubMap(rules, hints.prev_special_format);
-        hints.prev_specialN_acc = tmp1 + string(digits, '0');
-        TAccInfo old = hints.FindSpecial(*this, hints.prev_special_format,
-                                         hints.prev_specialN_acc);
-        string why;
-        if ((old & CSeq_id::fAcc_specials) != 0) {
-            old = TAccInfo(old & ~CSeq_id::fAcc_specials);
-        } else {
-            Find(hints.prev_special_format, hints.prev_specialN_acc, &why);
-            if ( !why.empty() ) {
-                ERR_POST_X(13, Warning
-                           << "SAccGuide::AddRule: Main listing for special "
-                           << tokens[1]
-                           << " doesn't indicate that specials are present.");
-            }
-        }
         for (size_t i = 2;  i < tokens.size();  ++i) {
             hints.specialN_type = hints.FindAccInfo(tokens[i]);
             if (hints.specialN_type != kUnrecognized) {
@@ -1421,19 +1452,19 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         if (hints.version < 2) {
             ERR_POST_X(19,
                        Warning << "SAccGuide::AddRule: " << count
-                       << ": special2 continuation lines valid only in"
+                       << ": specialN continuation lines valid only in"
                        " version 2+ guides");
         }
         if (hints.specialN_submap == nullptr) {
             ERR_POST_X(20,
                        Warning <<
                        "SAccGuide::AddRule: " << count
-                       << ": ignoring misplaced special2 ranges line.");
+                       << ": ignoring misplaced specialN ranges line.");
             return;
         }
         string s;
         CTempString from;
-        char *p = &hints.prev_specialN_acc[hints.prev_specialN_acc.size()];
+        char *p = &hints.prev_specialN_acc[hints.specialN_end_pos];
         for (size_t i = 1;  i < tokens.size();  ++i) {
             pos = tokens[i].find('-');
             if (pos == NPOS) {
@@ -1447,6 +1478,15 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                 memcpy(p + pos + 1 - tokens[i].size(),
                        tokens[i].data() + pos + 1,
                        tokens[i].size() - pos - 1);
+            }
+            if (hints.specialN_version == 3) {
+                if (pos == NPOS) {
+                    s = hints.prev_specialN_acc;
+                    from = s;
+                }
+                memset(s.data() + hints.specialN_end_pos, '0',
+                       s_Digits(hints.prev_special_format));
+                _ASSERT(NStr::EndsWith(hints.prev_specialN_acc, "9"));
             }
             x_AddSpecial(*hints.specialN_submap, hints,
                          hints.prev_special_format, from,
