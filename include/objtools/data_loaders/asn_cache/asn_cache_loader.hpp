@@ -67,6 +67,8 @@ public:
 
     virtual ~CAsnCache_DataLoader(void);
 
+    virtual CObjectManager::TPriority GetDefaultPriority(void) const;
+
     /// @name CDataLoader interface methods
     /// @{
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
@@ -130,7 +132,7 @@ void NCBI_EntryPoint_DataLoader_AsnCache(
     CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
     CPluginManager<objects::CDataLoader>::EEntryPointRequest method);
 
-void NCBI_EntryPoint_xloader_asncache(
+void NCBI_EntryPoint_xloader_asn_cache(
     CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
     CPluginManager<objects::CDataLoader>::EEntryPointRequest method);
 

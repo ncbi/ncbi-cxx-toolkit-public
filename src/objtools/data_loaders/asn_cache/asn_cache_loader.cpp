@@ -129,6 +129,12 @@ CAsnCache_DataLoader::~CAsnCache_DataLoader()
 }
 
 
+CObjectManager::TPriority CAsnCache_DataLoader::GetDefaultPriority(void) const
+{
+    return CObjectManager::kPriority_Replace;
+}
+
+
 CAsnCache_DataLoader::TBlobId
 CAsnCache_DataLoader::GetBlobId(const CSeq_id_Handle& idh)
 {
@@ -140,7 +146,7 @@ CAsnCache_DataLoader::GetBlobId(const CSeq_id_Handle& idh)
     if (index.cache->GetIndexEntry(idh, info)) {
         blob_id = new CBlobIdSeq_id(idh);
     }
-    //LOG_POST(Error << "CAsnCache_DataLoader::GetBlobId(): " << idh);
+    //LOG_POST("CAsnCache_DataLoader::GetBlobId(): " << idh);
     return blob_id;
 }
 
@@ -261,6 +267,7 @@ CAsnCache_DataLoader::GetBlobById(const TBlobId& blob_id)
         CFastMutexGuard LOCK(index.cache_mtx);
 
         CRef<CSeq_entry> entry = index.cache->GetEntry(idh);
+        //LOG_POST("CAsnCache_DataLoader::GetBlobById(): " << idh<<": "<<MSerial_AsnText<<*entry);
         ++index.requests;
 
         if (entry) {
@@ -339,7 +346,7 @@ void DataLoaders_Register_AsnCache(void)
 }
 
 
-const string kDataLoader_AsnCache_DriverName("asncache");
+const string kDataLoader_AsnCache_DriverName("asn_cache");
 
 class CAsnCache_DataLoaderCF : public CDataLoaderFactory
 {
@@ -376,7 +383,7 @@ void NCBI_EntryPoint_DataLoader_AsnCache(
 }
 
 
-void NCBI_EntryPoint_xloader_asncache(
+void NCBI_EntryPoint_xloader_asn_cache(
     CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
     CPluginManager<objects::CDataLoader>::EEntryPointRequest method)
 {
