@@ -274,7 +274,7 @@ bool CInfoManager::x_WaitForOtherLoader(TMainMutex::TWriteLockGuard& guard,
     guard.Release();
     {{
         // wait for other loading thread
-        CLoadMutex::TWriteLockGuard guard(*mutex);
+        CLoadMutex::TWriteLockGuard guard2(*mutex);
     }}
     if ( lock.IsLoaded() ) {
         // no need to load, leave immediately
