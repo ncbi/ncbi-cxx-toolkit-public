@@ -998,7 +998,7 @@ struct SAccGuide : public CObject
               prev_special_format(0),
               prev_special_type(CSeq_id::eAcc_unknown),
               prev_special_base_type(CSeq_id::eAcc_unknown),
-              special2_submap(nullptr), version(1)
+              specialN_submap(nullptr), version(1)
             {}
 
         TAccInfo FindAccInfo(CTempString name);
@@ -1017,15 +1017,15 @@ struct SAccGuide : public CObject
         string                prev_special_base_key;
         TAccInfo              prev_special_type;
         TAccInfo              prev_special_base_type;
-        string                prev_special2_acc;
+        string                prev_specialN_acc;
         string                deferred_special_key;
         string                deferred_special_type_name;
         TAccInfo              deferred_special_type;
         unordered_map<string, CTempString> default_fallbacks;
-        string                special2_name;
-        unique_ptr<string>    special2_old_name;
-        SSubMap*              special2_submap;
-        TAccInfo              special2_type;
+        string                specialN_name;
+        unique_ptr<string>    specialN_old_name;
+        SSubMap*              specialN_submap;
+        TAccInfo              specialN_type;
         unsigned int          version;
     };
     
@@ -1147,7 +1147,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                 old_name = &hints.deferred_special_type_name;
             }
             const auto& key = hints.deferred_special_key;
-            hints.special2_submap = nullptr;
+            hints.specialN_submap = nullptr;
             pos  = key.find_first_of(kDigits);
             pos2 = key.size() / 2;
             if ((key.size() & 1) != 1  ||  key[pos2] != '-') {
@@ -1187,7 +1187,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
 
     if (tokens.size() == 2
                &&  NStr::EqualNocase(tokens[0], "version")) {
-        hints.special2_submap = nullptr;
+        hints.specialN_submap = nullptr;
         hints.version = NStr::StringToUInt(tokens[1], NStr::fConvErr_NoThrow);
         if (hints.version > 2  ||  hints.version < 1) {
             ERR_POST_X(2, "SAccGuide::AddRule: " << count
@@ -1197,7 +1197,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
     } else if ((pos = tokens[0].find('+')) != NPOS
                &&  (tokens.size() == 3
                     ||  (tokens.size() == 4  &&  tokens[3] == "*"))) {
-        hints.special2_submap = nullptr;
+        hints.specialN_submap = nullptr;
         // _VERIFY(NStr::SplitInTwo(tokens[0], "+", tmp1, tmp2));
         tmp1.assign(tokens[0], 0, pos);
         tmp2.assign(tokens[0], pos + 1, NPOS);
@@ -1274,7 +1274,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
             }
         }
     } else if (tokens.size() == 3 && NStr::EqualNocase(tokens[0], "special")) {
-        hints.special2_submap = nullptr;
+        hints.specialN_submap = nullptr;
         TAccInfo value = hints.FindAccInfo(tokens[2]);
         if (value == kUnrecognized) {
             pos  = tokens[1].find_first_of(kDigits);
@@ -1345,18 +1345,18 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         }
         tmp1.assign(tokens[1], 0, pos);
         hints.prev_special_format = s_Key(tmp1.size(), digits);
-        hints.special2_name = tokens[2];
-        hints.special2_old_name.reset();
-        hints.special2_submap
+        hints.specialN_name = tokens[2];
+        hints.specialN_old_name.reset();
+        hints.specialN_submap
             = &hints.FindSubMap(rules, hints.prev_special_format);
-        hints.prev_special2_acc = tmp1 + string(digits, '0');
+        hints.prev_specialN_acc = tmp1 + string(digits, '0');
         TAccInfo old = hints.FindSpecial(*this, hints.prev_special_format,
-                                         hints.prev_special2_acc);
+                                         hints.prev_specialN_acc);
         string why;
         if ((old & CSeq_id::fAcc_specials) != 0) {
             old = TAccInfo(old & ~CSeq_id::fAcc_specials);
         } else {
-            Find(hints.prev_special_format, hints.prev_special2_acc, &why);
+            Find(hints.prev_special_format, hints.prev_specialN_acc, &why);
             if ( !why.empty() ) {
                 ERR_POST_X(13, Warning
                            << "SAccGuide::AddRule: Main listing for special "
@@ -1365,54 +1365,54 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
             }
         }
         for (size_t i = 2;  i < tokens.size();  ++i) {
-            hints.special2_type = hints.FindAccInfo(tokens[i]);
-            if (hints.special2_type != kUnrecognized) {
+            hints.specialN_type = hints.FindAccInfo(tokens[i]);
+            if (hints.specialN_type != kUnrecognized) {
                 if (i > 2) {
-                    hints.special2_old_name.reset(new string(tokens[i]));
+                    hints.specialN_old_name.reset(new string(tokens[i]));
                 }
                 break;
             }
         }
-        if (hints.special2_type == kUnrecognized) {
+        if (hints.specialN_type == kUnrecognized) {
             for (size_t i = 2;  i < tokens.size();  ++i) {
                 auto it = hints.default_fallbacks.find(tokens[i]);
                 if (it != hints.default_fallbacks.end()) {
-                    hints.special2_type = hints.FindAccInfo(it->second);
-                    _ASSERT(hints.special2_type != kUnrecognized);
-                    hints.special2_old_name.reset(new string(it->second));
+                    hints.specialN_type = hints.FindAccInfo(it->second);
+                    _ASSERT(hints.specialN_type != kUnrecognized);
+                    hints.specialN_old_name.reset(new string(it->second));
                     why = " (per default fallback for " + tokens[i] + ')';
                     break;
                 }
             }
-            if (hints.special2_type == kUnrecognized) {
-                hints.special2_old_name.reset(new string);
+            if (hints.specialN_type == kUnrecognized) {
+                hints.specialN_old_name.reset(new string);
                 if (old != kUnrecognized) {
-                    hints.special2_type = old;
+                    hints.specialN_type = old;
                     if (old == hints.prev_type) {
-                        *hints.special2_old_name = hints.prev_type_name;
+                        *hints.specialN_old_name = hints.prev_type_name;
                     } else {
-                        *hints.special2_old_name
+                        *hints.specialN_old_name
                             = "0x" + NStr::UIntToString(old, 0, 16);
                     }
                     if ( !why.empty() ) {
                         why = " (per " + why + ')';
                     }
                 } else {
-                    *hints.special2_old_name = "unknown";
+                    *hints.specialN_old_name = "unknown";
                     ERR_POST_X(9, Warning << "SAccGuide::AddRule: " << count
                                << ": unrecognized accession type " << tokens[2]
                                << " for stray(!) special case " << tokens[1]);
                 }
             }
         }
-        if (hints.special2_old_name.get() != nullptr) {
-            hints.special2_type
-                = TAccInfo(hints.special2_type | CSeq_id::fAcc_fallback);
+        if (hints.specialN_old_name.get() != nullptr) {
+            hints.specialN_type
+                = TAccInfo(hints.specialN_type | CSeq_id::fAcc_fallback);
             ERR_POST_X(4,
                        Info << "SAccGuide::AddRule: " << count
                        << ": unrecognized accession type " << tokens[2]
                        << " for special case " << tokens[1]
-                       << "; falling back to " << *hints.special2_old_name
+                       << "; falling back to " << *hints.specialN_old_name
                        << why);
         }
         hints.prev_special_type_name.clear();
@@ -1424,7 +1424,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                        << ": special2 continuation lines valid only in"
                        " version 2+ guides");
         }
-        if (hints.special2_submap == nullptr) {
+        if (hints.specialN_submap == nullptr) {
             ERR_POST_X(20,
                        Warning <<
                        "SAccGuide::AddRule: " << count
@@ -1433,28 +1433,28 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         }
         string s;
         CTempString from;
-        char *p = &hints.prev_special2_acc[hints.prev_special2_acc.size()];
+        char *p = &hints.prev_specialN_acc[hints.prev_specialN_acc.size()];
         for (size_t i = 1;  i < tokens.size();  ++i) {
             pos = tokens[i].find('-');
             if (pos == NPOS) {
                 pos = tokens[i].size();
                 memcpy(p - pos, tokens[i].data(), pos);
-                from = hints.prev_special2_acc;
+                from = hints.prev_specialN_acc;
             } else {
                 memcpy(p - pos, tokens[i].data(), pos);
-                s = hints.prev_special2_acc;
+                s = hints.prev_specialN_acc;
                 from = s;
                 memcpy(p + pos + 1 - tokens[i].size(),
                        tokens[i].data() + pos + 1,
                        tokens[i].size() - pos - 1);
             }
-            x_AddSpecial(*hints.special2_submap, hints,
+            x_AddSpecial(*hints.specialN_submap, hints,
                          hints.prev_special_format, from,
-                         hints.prev_special2_acc, hints.special2_type,
-                         hints.special2_old_name.get(), hints.special2_name);
+                         hints.prev_specialN_acc, hints.specialN_type,
+                         hints.specialN_old_name.get(), hints.specialN_name);
         }
     } else if (tokens.size() == 3 && NStr::EqualNocase(tokens[0], "gnl")) {
-        hints.special2_submap = nullptr;
+        hints.specialN_submap = nullptr;
         string key(tokens[1]);
         NStr::ToUpper(key);
         TAccInfo value = hints.FindAccInfo(tokens[2]);
@@ -1483,7 +1483,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         }
     } else if (tokens.size() == 3
                &&  NStr::EqualNocase(tokens[0], "fallback")) {
-        hints.special2_submap = nullptr;
+        hints.specialN_submap = nullptr;
         if (hints.version < 2) {
             ERR_POST_X(21,
                        Warning << "SAccGuide::AddRule: " << count
