@@ -191,22 +191,19 @@ TTaxId GetTaxIdForProduct(const CBioseq_Handle& bsh)
     return bioSource.GetOrg().GetTaxId();
 }
 
-void GetOrg_refForProduct(const CBioseq_Handle& bsh, const COrg_ref* pOrgRef)
+const COrg_ref* GetOrg_refForProduct(const CBioseq_Handle& bsh)
 {
-    pOrgRef = nullptr;
-
     if (bsh.IsAa()) {
         auto pSourceFeat = GetSourceFeatForProduct(bsh);
         if (pSourceFeat) {
             const auto& bioSource = pSourceFeat->GetData().GetBiosrc();
             if (bioSource.CanGetOrg()) {
-                pOrgRef = &bioSource.GetOrg();
-                return;
+                return &bioSource.GetOrg();
             }
         }
     }
+    return nullptr;
 }
-
 
 const COrg_ref* GetOrg_refForBioseq(const CBioseq_Handle& bsh)
 {
@@ -967,6 +964,7 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
     case eOverlap_CheckIntRev:
         revert_locations = true;
         // there's no break here - proceed to "default"
+        NCBI_FALLTHROUGH;
     default:
         // Require intervals overlap
         annot_overlap_type = SAnnotSelector::eOverlap_Intervals;
@@ -2475,7 +2473,7 @@ GetBestGeneForMrna(const CSeq_feat& mrna_feat,
     CConstRef<CSeq_feat> ret =
         x_GetFeatById(CSeqFeatData::eSubtype_gene, mrna_feat, tse);
     if ( !ret ) {
-        ret = GetBestGeneForMrna(mrna_feat, tse.GetScope(), opts);
+        ret = GetBestGeneForMrna(mrna_feat, tse.GetScope(), opts, plugin);
     }
     return ret;
 }
@@ -2490,7 +2488,7 @@ GetBestGeneForCds(const CSeq_feat& cds_feat,
     CConstRef<CSeq_feat> ret =
         x_GetFeatById(CSeqFeatData::eSubtype_gene, cds_feat, tse);
     if ( !ret ) {
-        ret = GetBestGeneForCds(cds_feat, tse.GetScope(), opts);
+        ret = GetBestGeneForCds(cds_feat, tse.GetScope(), opts, plugin);
     }
     return ret;
 }
@@ -2505,7 +2503,7 @@ GetBestMrnaForCds(const CSeq_feat& cds_feat,
     CConstRef<CSeq_feat> ret =
         x_GetFeatById(CSeqFeatData::eSubtype_mRNA, cds_feat, tse);
     if ( !ret ) {
-        ret = GetBestMrnaForCds(cds_feat, tse.GetScope(), opts);
+        ret = GetBestMrnaForCds(cds_feat, tse.GetScope(), opts, plugin);
     }
     return ret;
 }
@@ -2520,7 +2518,7 @@ GetBestCdsForMrna(const CSeq_feat& mrna_feat,
     CConstRef<CSeq_feat> ret =
         x_GetFeatById(CSeqFeatData::eSubtype_cdregion, mrna_feat, tse);
     if ( !ret ) {
-        ret = GetBestCdsForMrna(mrna_feat, tse.GetScope(), opts);
+        ret = GetBestCdsForMrna(mrna_feat, tse.GetScope(), opts, plugin);
     }
     return ret;
 }
@@ -2532,7 +2530,7 @@ void GetMrnasForGene(const CSeq_feat& gene_feat,
                      CGetOverlappingFeaturesPlugin *plugin)
 {
     _ASSERT(gene_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene);
-    GetMrnasForGene(gene_feat, tse.GetScope(), mrna_feats, opts);
+    GetMrnasForGene(gene_feat, tse.GetScope(), mrna_feats, opts, plugin);
 }
 
 void GetCdssForGene(const CSeq_feat& gene_feat,
@@ -2542,7 +2540,7 @@ void GetCdssForGene(const CSeq_feat& gene_feat,
                     CGetOverlappingFeaturesPlugin *plugin)
 {
     _ASSERT(gene_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene);
-    GetCdssForGene(gene_feat, tse.GetScope(), cds_feats, opts);
+    GetCdssForGene(gene_feat, tse.GetScope(), cds_feats, opts, plugin);
 }
 
 // Get the encoding CDS feature of a given protein sequence.

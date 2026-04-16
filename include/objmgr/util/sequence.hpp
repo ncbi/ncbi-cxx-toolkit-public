@@ -723,7 +723,13 @@ NCBI_XOBJUTIL_EXPORT
 TTaxId GetTaxIdForProduct(const CBioseq_Handle& bsh);
 
 NCBI_XOBJUTIL_EXPORT
-void GetOrg_refForProduct(const CBioseq_Handle& bsh, const COrg_ref*);
+const COrg_ref* GetOrg_refForProduct(const CBioseq_Handle& bsh);
+
+NCBI_DEPRECATED // use GetOrg_refForProduct(bsh)
+inline void GetOrg_refForProduct(const CBioseq_Handle& bsh, const COrg_ref*& pOrgRef)
+{
+    pOrgRef = GetOrg_refForProduct(bsh);
+}
 
 /// Find an Org-ref for the given Bioseq:
 ///  If it's a protein then look on the source feature of the product.
