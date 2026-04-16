@@ -402,11 +402,11 @@ void s_CheckIds(const SBioseqInfo& info, CScope* scope)
         NStr::Split(info.m_RequiredIds, ";", req_ids_str);
         TIntId gi_offset = GetGiOffset();
         ITERATE ( vector<string>, it, req_ids_str ) {
-            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*it);
-            if ( gi_offset && idh.IsGi() ) {
-                idh = CSeq_id_Handle::GetGiHandle(idh.GetGi() + GI_FROM(TIntId, gi_offset));
+            CSeq_id_Handle req_idh = CSeq_id_Handle::GetHandle(*it);
+            if ( gi_offset && req_idh.IsGi() ) {
+                req_idh = CSeq_id_Handle::GetGiHandle(req_idh.GetGi() + GI_FROM(TIntId, gi_offset));
             }
-            req_ids.push_back(idh);
+            req_ids.push_back(req_idh);
         }
     }
 
@@ -733,7 +733,7 @@ void s_CheckFeatData(const SAnnotSelector& sel,
                      CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole())
 {
     CRef<CScope> scope = s_InitScope(false);
-    CRef<CSeq_id> seq_id(new CSeq_id("NC_000001.10"));
+    CRef<CSeq_id> seq_id(new CSeq_id(str_id));
     CBioseq_Handle bh = scope->GetBioseqHandle(*seq_id);
     BOOST_REQUIRE(bh);
 
@@ -2715,12 +2715,12 @@ BOOST_AUTO_TEST_CASE(TestRevoke)
             const int NB = 10;
             const int NQ = NB*NP;
             vector<future<bool>> res;
-            for ( int i = 0; i < NQ; ++i ) {
+            for ( int t = 0; t < NQ; ++t ) {
                 res.emplace_back(async(launch::async, [&](int add_sat_key)->bool {
                     int sat_key = sat_key_0 + add_sat_key;
                     CSeq_entry_Handle seh = scope->GetSeq_entryHandle(loader, s_MakeBlobId(sat, sat_key));
                     return seh;
-                }, i/NP));
+                }, t/NP));
             }
             bool all_is_good = all_of(res.begin(), res.end(), [](future<bool>& f) {
                 return f.get();
