@@ -242,6 +242,7 @@ namespace {
                     id = new CSeq_id( token_list[0]->GetString() );
                     token_list.erase( token_list.begin() ); // inefficient
                     // !!!!!FALL-THROUGH!!!!!
+                    NCBI_FALLTHROUGH;
                 case CLexToken::e_Int:
                     if (token_list.size() == 1) {
                         // note - subtract one from the int read, because display is 1-based
