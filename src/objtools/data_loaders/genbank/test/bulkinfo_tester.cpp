@@ -58,10 +58,10 @@ IBulkTester::~IBulkTester(void)
 }
 
 
-void IBulkTester::SetParams(const TIds& ids, CScope::TGetFlags get_flags)
+void IBulkTester::SetParams(const TIds& ids_, CScope::TGetFlags get_flags_)
 {
-    this->ids = ids;
-    this->get_flags = get_flags;
+    ids = ids_;
+    get_flags = get_flags_;
 }
 
 
@@ -299,9 +299,9 @@ public:
         {
             return "gnl";
         }
-    CSeq_id_Handle GetGeneral(const vector<CSeq_id_Handle>& ids) const
+    CSeq_id_Handle GetGeneral(const vector<CSeq_id_Handle>& seq_ids) const
         {
-            for ( auto& id : ids ) {
+            for ( auto& id : seq_ids ) {
                 if ( id.Which() == CSeq_id::e_General ) {
                     return id;
                 }
@@ -383,11 +383,11 @@ public:
         {
             CNcbiOstrstream s;
             if ( bh ) {
-                set<CSeq_id_Handle, CSeq_id_Handle::PLessOrdered> ids;
+                set<CSeq_id_Handle, CSeq_id_Handle::PLessOrdered> seq_ids;
                 for ( auto& id : bh.GetId() ) {
-                    ids.insert(id);
+                    seq_ids.insert(id);
                 }
-                for ( auto& id : ids ) {
+                for ( auto& id : seq_ids ) {
                     if ( id.Which() == CSeq_id::e_General ) continue;
                     s << id << ' ';
                 }
@@ -447,7 +447,7 @@ public:
         {
             out << data_verify[i];
         }
-    void VerifyWhatShouldBeNotLoaded(CScope& scope) const
+    void VerifyWhatShouldBeNotLoaded(CScope& /*scope*/) const
         {
             // CBioseq_Handle are loaded
         }
@@ -1063,7 +1063,7 @@ public:
         {
             out << data_verify[i];
         }
-    void VerifyWhatShouldBeNotLoaded(CScope& scope) const
+    void VerifyWhatShouldBeNotLoaded(CScope& /*scope*/) const
         {
             // CBioseq_Handle are loaded
         }
