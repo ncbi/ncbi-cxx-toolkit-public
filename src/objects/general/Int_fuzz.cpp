@@ -174,6 +174,7 @@ void CInt_fuzz::Add(const CInt_fuzz& f2, TSeqPos& n1, TSeqPos n2,
                 hit_unk   = (!hit_unk  ||  mode != eReduce);
                 min_delta = -kInfinity;
                 // fall through
+                NCBI_FALLTHROUGH;
             case eLim_gt:
                 max_delta = kInfinity;
                 break;
