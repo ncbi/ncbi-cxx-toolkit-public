@@ -116,7 +116,7 @@ CGenomicCollectionsService::~CGenomicCollectionsService()
 
 
 template<typename TReq>
-void LogRequest(const TReq& req)
+void LogRequest(NCBI_UNUSED const TReq& req)
 {
 #ifdef _DEBUG
     ostringstream ostrstrm;
