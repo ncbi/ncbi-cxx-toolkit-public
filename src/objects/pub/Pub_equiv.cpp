@@ -80,6 +80,7 @@ bool CPub_equiv::GetLabel(string* label, TLabelFlags flags,
                 break;
             }
             // otherwise fall through
+            NCBI_FALLTHROUGH;
         default:
             if (i < 5) {
                 if (!pubs[i]) {
