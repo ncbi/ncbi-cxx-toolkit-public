@@ -98,10 +98,10 @@ ID2-Request-Get-Blob-Id ::= SEQUENCE {
         -- id can be supplied by inner request
         seq-id          ID2-Request-Get-Seq-id,
 
-        -- return id of blob with sequence
+        -- return Blob-Ids with optional external annotations, like NA accessions
         sources         SEQUENCE OF VisibleString OPTIONAL,
 
-        -- return Blob-Ids with external features on this Seq-id
+        -- return Blob-Ids with external annotations
         external        NULL OPTIONAL
 }
 
