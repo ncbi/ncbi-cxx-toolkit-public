@@ -29,7 +29,7 @@ ABDC	s	Aba Institute for Drug Control
 ABDF	s	University of Aberdeen, Forestry Department			
 ABDH	s	United Arab Emirates University, Department of Biology			
 ABDM	s	Marischal College, University of Aberdeen			
-ABE	s	Personal collection of T. Abe.			
+ABE	s	T. Abe. Personal collection			
 ABFM	s	The Barnes Foundation Arboretum			
 ABG	s	Altai Botanical Garden			
 ABGI	s	Amur Branch of Botanical Garden-Institute of the Far East Branch of the Russian Academy of Sciences			
@@ -4364,7 +4364,6 @@ KUZ<JPN>	s	Zoological Collection of the Kyoto University
 KUZC	s	Kyushu University, Zoological Collection			
 KVCH	s	Kivach Nature Reserve			
 KW	s	National Academy of Sciences of Ukraine			
-KW-A	sc	Phycological herbarium (Algotheca)			
 KWBC	s	Kirby W. Brown Personal Collection			
 KWHA	s	Ukrainian National Academy of Sciences			
 KWHU	s	O. V. Fomin Botanical Garden of National Taras Schevchenko University of Kiev			
@@ -5778,7 +5777,6 @@ NEGI	s	Herbarium Cepullae Sinicae
 NEHAR	s	Central Ayurveda Research Institute, Guwahati (Assam)			
 NEHU	s	North Eastern Hills University			
 NEM	c	Faculte de Medecine Necker-Enfants Malades			
-Nem	s	Nematode collection			
 NEMO	s	Truman State University			
 NEMSU	s	Truman State University			
 NEMU	s	Newark Museum			
@@ -5945,7 +5943,7 @@ NMCI<JPN>:P	s	Noto Marine Center Ishikawa Prefecture, Pisces and Coelenterata	NM
 NMCI<JPN>:S	s	Noto Marine Center Ishikawa Prefecture, Sea weed	NMCI:S,NMCI<JPN>S		
 NMCL	s	Naturkunde-Museum			
 NMCR	s	New Mexico State University, Department of Animal and Range Sciences			
-NMDC	s	N. M. Downie			
+NMDC	s	N. M. Downie Personal Collection			
 NME	s	Sammlung des Naturkundemseum Erfurt			
 NMED	s	New Mexico Environment Department			
 NMEG	s	Naturkundesmuseum			
@@ -5966,7 +5964,7 @@ NMLU	s	Natur-Museum Luzern, Botany Department
 NMMA	s	Nantucket Maria Mitchell Association, Natural Sciences Department			
 NMMBP	s	National Museum of Marine Biology and Aquarium	MNNB-P		
 NMMH	s	North Manchurian Museum			
-NMML	s	National Marine Mammal Laboratory			
+NMML	s	Marine Mammal Laboratory			
 NMMNH	s	New Mexico Museum of Natural History and Science			
 NMMNH:Mamm	s	New Mexico Museum of Natural History and Science, Mammal collection			
 NMMTB	s	National Marine Mammal Tissue Bank			
@@ -6065,7 +6063,7 @@ NNMB	s	New Natural Material Bank
 NNMN	s	Nationaal Natuurhistorisch Museum Naturalis			
 NNSU	s	N. I. Lobachevsky Nizhni Novgorod State University, Department of Botany			
 NO	s	Tulane University, Department of Ecology and Evolutionary Biology			
-NOAA 	s	National Oceanic and Atmospeheric Administration	NOAA		
+NOAA 	s	National Oceanic and Atmospeheric Administration			
 NOAA:MarFor	s	National Oceanic and Atmospeheric Administration , Marine Forensics			
 NOAS	s	New Orleans Academy of Science			
 NOCA	s	North Cascades National Park Service Complex			
@@ -6094,7 +6092,7 @@ NPSC	s	Northern Prairie Science Center
 NPT	s	Newport Museum and Art Gallery			
 NPWRC	s	Northern Prairie Research Center			
 NR	s	Institute of Forest Ecology Slovak Academy of Sciences			
-NRBC	s	N. Rae Brown and Sandra L. Brown			
+NRBC	s	N. Rae Brown and Sandra L. Brown Personal Collection			
 NRC	c	Division of Biological Sciences, National Research Council of Canada			
 NRC<EGY>	s	National Research Centre			
 NRCC	s	National Research Council of Canada			
@@ -6339,7 +6337,7 @@ OSTR	s	University of Ostrava
 OSU<USA-OK>	s	Oklahoma State University, Collection of Vertebrates			
 OSUF	s	Oregon State University, Department of Wood Science and Engineering			
 OSUFW	s	Oregon State University, Department of Fisheries and Wildlife Mammal Collection			
-OSUMZ	s	Ohio State University Museum	OSU,OSUM		
+OSUMZ	s	Ohio State University Museum			
 OSUMZ:Amphibian	s	Ohio State University Museum, Amphibian collection	OSUM:Amphibian		
 OSUMZ:Bird	s	Ohio State University Museum, Bird Collection	OSUM:Bird		
 OSUMZ:Fish	s	Ohio State University Museum, Fish collection	OSUM:Fish		
@@ -6426,17 +6424,17 @@ PCM<POL>	c	Polish Collection of Microorganisms
 PCMB	b	The Pacific Center for Molecular Biodiversity	BPBM:PCMB		
 PCNZ	s	Lincoln Plant Health Station			
 PCPR	s	Societe botanique d'Occitanie			
-PCSC	s	Paul C. Schroeder			
+PCSC	s	Paul C. Schroeder Personal Collection			
 PCU	c	Department of Microbiology, Faculty of Pharmaceutical Sciences			
 PCYU	s	The Packer Collection at York University			
 PD	c	Dutch Plant Protection Service, Culture Collection of Plant Pathogenic Bacteria			
 PDA	s	Royal Botanic Gardens, Department of Agriculture			
 PDBK	b	Plant DNA Bank in Korea			
 PDD	s	New Zealand Fungarium	LCR:PDD	http://scd.landcareresearch.co.nz/Specimen/PDD_&spec;	
-PDMC	s	Paul DuMerle			
+PDMC	s	Paul DuMerle Personal Collection			
 PDTFAU	s	Paleoantropoloji Dil ve Tarih Cografya Facueltesi			
 PE	s	Institute of Botany, Chinese Academy of Sciences			
-PEBC	s	Paul E. Blom			
+PEBC	s	Paul E. Blom Personal Collection			
 PECA	s	Pratt Education Center and Aquarium			
 PECS	s	Janus Pannonius Museum, Natural History Department			
 PEFO	s	Petrified Forest			
@@ -6456,7 +6454,7 @@ PERTH	s	Western Australian Herbarium
 PERU	s	Universita di Perugia, Dipartimento di Biologia Vegetale			
 PES	s	University of Peshawar, Natural Drug Division			
 PESA	s	Centro Ricerche Floristiche Marche			
-PESC	s	Paul E. Slabaugh ?			
+PESC	s	Paul E. Slabaugh Personal Collection			
 PET	s	National University of Peking Teachers' College			
 PEU	s	University of Port Elizabeth, Botany Department			
 PEUFR	s	Universidade Federal Rural de Pernambuco, Departamento de Biologia			
@@ -6464,7 +6462,7 @@ PEY	s	Peking University, Biology Department
 PFC	s	Pfeiffer University, Biology Department			
 PFCA	s	Pacific Forestry Centre Arthropod Reference Collection			
 PFES	s	Petawawa National Forestry Institute, Canadian Forest Service			
-PFI	s	Percy FitzPatrick Institute of African Ornithology	PFIAO		
+PFI	s	Percy FitzPatrick Institute of African Ornithology			
 PFRA	s	Tree Nursery			
 PFRS	s	Pacific Southwest Forest and Range Experiment Station			
 PFSS	s	Petrified Forest National Park			
@@ -6481,11 +6479,11 @@ PGRC:CN	b	Plant Gene Resources of Canada, Canadian National Plant Germplasm Syst
 PGSC	c	Pseudomonas Genetic Stock Center			
 PH	s	Academy of Natural Sciences, Botany Department			
 PHA	s	Pharmaceutical Society of Great Britain			
-PHAC	s	Peter H. Adler			
+PHAC	s	Peter H. Adler Personal Collection			
 PHARB	s	The Polly Hill Arboretum			
 PHARM	s	Southern Cross University			
 PHBL	c	Philip Harris Biological Ltd.			
-PHCC	s	Paul H. Carlson			
+PHCC	s	Paul H. Carlson Personal Collection			
 PHEL	s	Plant Health and Environment Laboratory			
 PHEO	s	Karadag Natural Reserve			
 PHG	s	Peper Harow			
@@ -6509,7 +6507,7 @@ PINN	s	Pinnacles National Monument
 PIR	c	Bulgarian Research Culture Collection			
 PISR	s	Pechora-Ilych State Reserve, Russia			
 PIUU	s	Paleontological Institut, University of Uppsala			
-PJJC	s	Paul J. Johnson			
+PJJC	s	Paul J. Johnson Personal Collection			
 PJLC	s	Peter J. Landolt			
 PKDC	s	Divisao de Museu de Historia Natural			
 PKM	s	V. G. Belinsk Pedagogical Institute of Penza			
@@ -6652,7 +6650,6 @@ PSK	s	Pskov State University
 PSM	s	Puget Sound Museum of Natural History			
 PSO	s	Universidad de Narino			
 PSP	s	Parasitic Seed Plants			
-PSPC	s	Paul Speiser [deceased] (collection destroyed in WWII)			
 PSS<GBR>	s	Philosophical Society of Southampton			
 PSS<MNG>	s	Paleontology and Stratigraphic Section of the Geological Institute of the Mongolian Academy of Sciences			
 PSU<THA>	s	Prince of Songkla University, Biology Department			
@@ -6698,7 +6695,7 @@ PV	s	Centro Universitario de la Costa, Universidad de Guadalajara
 PVB	s	Institute of Ecology of the Volga River Basin, Russian Academy of Science			
 PVF	c	Pusat Veterinaria Farma			
 PVGB	c	Plant Virus GenBank			
-PVGH	s	Pedro Vidal G.H.			
+PVGH	s	Pedro Vidal G.H. Personal Collection			
 PVHR	s	Universite Paris VI			
 PVL	s	Paleontologia de Vertebrados Lillo			
 PVNH	s	ORSTOM			
@@ -6816,7 +6813,6 @@ RCAT	c	Regional Collection of Animal Viruses and Tissue Cultures
 RCB	c	RIKEN Cell Bank			
 RCC	c	Roscoff Culture Collection			
 RCDM	c	Republican Centre for Deposition of Microorganisms of the National Academy of Sciences and Ministry of Education and Science of Armenia			
-RCDM<P>	s	R. C. de Mordaigle			
 RCGC	s	Robert C. Graves			
 RCHM	s	Rochdale Museum Service			
 RCHP	s	Rochdale Equitable Pioneers' Memorial Museum			
@@ -6982,7 +6978,6 @@ ROPV	s	Istituto Sperimentale per la Patologia Vegetale
 ROST	s	Universitaet Rostock			
 ROV	s	Museo Civico di Rovereto			
 ROZ	s	Stredoceske muzeum			
-ROZ1	s	private collection of Roy Oosthuizen			
 RPM	s	Reading Public Museum			
 RPMH	s	Roemer Pelizaeus Museum Hildesheim			
 RPN	s	Ripon Mechanics Institute			
