@@ -1537,8 +1537,10 @@ s_GetGapCount(const CSeq_align& align, CSeq_align::TDim row,
                     }
                 }
             }
+            break;
         }
-        break;
+        // otherwise we cannot calculate the gap count and falltrhough to throw an exception
+        NCBI_FALLTHROUGH;
 
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
