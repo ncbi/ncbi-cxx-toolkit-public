@@ -1750,7 +1750,7 @@ CUMZ<CMR>	s	Cameroon University, Museum of Zoology
 CUMZ<THA>	s	Chulalongkorn University Museum of Natural History			
 CUMZ<THA>:R	s	Chulalongkorn University Museum of Natural History, Reptile Collection	CUMZ:R,CUMZ<THA>R,CUMZR		
 CUMZ<UK>	s	Cambridge University, Museum of Zoology			
-CUNRC	s	Universidad Nacional de Rio Cuarto, Coleccion de Mamiferos (Argentina)			
+CUNRC	s	Universidad Nacional de Rio Cuarto, Coleccion de Mamiferos			
 CUP	s	Cornell University, Plant Pathology Herbarium			
 CUP<CHN>	s	Catholic University of Peking			
 CUP<CZE>	s	Charles University			
@@ -1790,10 +1790,10 @@ CZACC	s	Coleccion Zoologia, Academia de Ciencias de Cuba
 CZCEN 	s	Coleccion Zoologica de la Facultad de Ciencias Exactas y Naturales	CZCEN		
 CZEUM	c	Collection of Zoosporic Eufungi at University of Michigan			
 CZH	s	Hanshan Normal University			
-CZIP	s	Universidad de Magallanes, Instituto de la Patagonia (Chile)			
+CZIP	s	Universidad de Magallanes, Instituto de la Patagonia			
 CZL	s	Centro de Zoologia			
 CZRMA	s	Coleccion Zoologica Regional (Mammalia) del Instituto de Historia Natural y Ecologia			
-CZUAA	s	Universidad Autonoma de Aguascalientes (Mexico)			
+CZUAA	s	Universidad Autonoma de Aguascalientes			
 CZUG	s	Universidad de Guadalajara,Centro de Estudios en Zoologia, Entomologia			
 CZUT	s	Coleccion Zoologica de la Universidad del Tolima			
 D	s	Chaharmahal and Bakhtiari Agricultural and Natural Resources Research and Education Center			
@@ -2610,7 +2610,7 @@ GAFS	s	Ganzhou Forestry School
 GAGC	s	Glenn A. Gorelick Personal Collection			
 GAI	s	Folk Museum			
 GALW	s	National University of Ireland, Galway, Botany Department			
-GAM<USA-GA>	s	University of Georgia			
+GAM<USA-GA>	s	University of Georgia herbarium			
 GAM<VEN>	c	Grupo Actinomicetales Merida Facultad de Medicina			
 GAP	s	Conservatoire Botanique National Alpin			
 GARIN	s	I. N. Garin Society for Studying of the Flora of the Yaroslavl oblast			
@@ -3749,7 +3749,7 @@ IOPM	s	Izu Oceanic Park Museum
 IORD	s	Takai University, Institute of Oceanic Research and Development			
 IOS	s	Institute of Oceanographic Sciences			
 IOUSP	c	Marine Microalgae Culture Collection			
-IOWA	s	University of Iowa, Museum of Natural History	SUI		
+IOWA	s	University of Iowa, Museum of Natural History			
 IP	c	Department of Insect Pathology, Institute of Entomology			
 IP	c	Institut Pasteur (Virus)			
 IPA	s	Empresa Pernambucana de Pesquisa Agropecuaria, IPA			
@@ -5055,7 +5055,7 @@ MGUP	s	Museo Geologico della Universita Pisa
 MGUV	s	Museo del Departamento de Geologia, Universidad de Valencia			
 MGUWR	s	Institute of Geological Sciences, University of Wroclaw			
 MH<CHE>	s	Naturhistorisches Museum, Basel			
-MH<IND>	s	Tamil Nadu Agricultural University			
+MH<IND>	s	Tamil Nadu Agricultural University Herbarium			
 MHA	sc	Main Botanical Garden of the Russian Academy of Sciences			
 MHC	s	Mount Holyoke College			
 MHES	s	Museo de Historia Natural de El Salvador			
@@ -6847,7 +6847,6 @@ REN	s	Campus Scientifique de Beaulieu, Laboratoire de Botanique
 RENO	s	University of Nevada, Environmental and Resource Sciences Department			
 RENZ	s	Universitaet Basel, The Swiss Orchid Foundation			
 REP	s	Desert Experiment Station of the W.I.R.			
-Rep	s	Reptile collection			
 RESC	s	Shasta College			
 RESC<P>	s	Ronald E. Somerby			
 RET	s	Herbarium Amanitarum Rooseveltensis			
@@ -6973,7 +6972,6 @@ ROML	s	National University of Lesotho, Biology Department
 ROMO	s	Rocky Mountain National Park			
 RON	s	Universidade Federal de Rondonia			
 ROO	s	Agricultural Research Council-Range and Forage Institute			
-ROPA	s	Sonoma State University, Biology Department			
 ROPV	s	Istituto Sperimentale per la Patologia Vegetale			
 ROST	s	Universitaet Rostock			
 ROV	s	Museo Civico di Rovereto			
@@ -7065,7 +7063,7 @@ SAF	s	Department of Agricultural and Forest Sciences
 SAFB	s	University of Saskatchewan, Forestry Department			
 SAFC	s	Sergio Augusto Fragoso			
 SAFU	s	University of San Francisco			
-SAG	cs	Sammlung von Algenkulturen at Universitat Gottingen		http://sagdb.uni-goettingen.de/detailedList.php?str_number=	
+SAG	cs	Sammlung von Algenkulturen at Universitat Gottingen		not specified	
 SAG<CHL>	cs	Coleccion de Micoligica Laboratorio Regional, Servicio Agricola y Ganadero			
 SAIAB	sb	South African Institute of Aquatic Biodiversity			
 SAIM	s	South African Institute for Medical Research	SAIMR		
@@ -7375,7 +7373,7 @@ SJNM	s	San Juan College
 SJPC	s	Sergei J. Paramonov personal collection -- destroyed			
 SJRP	sc	UNESP, Campus Sao Jose Rio Preto, Departamento Zoologia e Botanica			
 SJSC	s	San Jose State University, J. Gordon Edwards Museum of Entomology			
-SJSU	s	San Jose State University, Biological Sciences Department			
+SJSU	s	San Jose State University, Carl W. Sharsmith Herbarium			
 SJUBC	s	Saint John's University, Biology Collections			
 SK	s	Katedralskolan			
 SKK	s	Sung Kyun Kwan University, Biological Sciences Department			
@@ -7599,7 +7597,7 @@ SOMF	s	Bulgarian Academy of Sciences (Mycological Collection)
 SORO	s	Universidade Federal de Sao Carlos, campus Sorocaba			
 SOSCMVNH	s	Southern Oregon State College, Museum of Vertebrate Natural History			
 SOSN	s	Silesian Medical School in Katowice, Department of Pharmaceutical Botany			
-SOSSRC 	s	Save Our Seas Shark Research Center, Nova Southeastern University	SOSSRC		
+SOSSRC 	s	Save Our Seas Shark Research Center, Nova Southeastern University			
 SOTO	s	College of the Ozarks, Biology Department			
 SOTON	s	Southampton University			
 SOUT	s	Long Island University			
@@ -7740,7 +7738,7 @@ SUCEA	s	The University at Albany
 SUCH	s	Sukhumi Botanical Garden of Georgian Academy of Sciences			
 SUCN	s	State University of California			
 SUCO	s	State University of New York, College at Oneonta, Biology Department			
-SUD	s	Stroud and District Museum			
+SUD	s	Stroud and District Museum Herbarium			
 SUEL	s	Natural History Museum of Bakony Mountains			
 SUF	s	Shimonoseki University of Fisheries			
 SUFA	s	Sulaimania University			
@@ -8192,7 +8190,7 @@ UAAH	s	Herbarium, Department of Biological Sciences, University of Alaska Anchor
 UAAM	s	The Arthropod Museum, University of Arkansas			
 UAB	s	Universidad Autonoma de Barcelona			
 UABC	s	Universidad Autonoma de Baja California			
-UABCS	s	Universidad Nacional Autonoma de Baja California Sur (Mexico)			
+UABCS	s	Universidad Nacional Autonoma de Baja California Sur			
 UABD	s	University of Alabama			
 UAC	s	University of Calgary, Department of Biological Sciences			
 UAC<PRT>	s	University of the Azores			
@@ -8231,7 +8229,7 @@ UAM<USA-AR>	s	University of Arkansas at Monticello
 UAMb	s	Cryptogam collection of University of Alaska Museum of the North			
 UAMb:Herb	s	Cryptogam collection of University of Alaska Museum of the North , Herbarium collection			
 UAMH	scb	Centre for Global Microfungal Biodiversity		https://www.uamh.ca/details.php?id=	
-UAMI	s	Universidad Autonoma Metropolitana, Unidad Iztapalapa (Mexico)			
+UAMI	s	Universidad Autonoma Metropolitana, Unidad Iztapalapa			
 UAMIZ	s	Universidad Autonoma Metropolitana, Iztapalapa, Departamento de Biologia			
 UAMM	s	Universidad de los Andes			
 UAMZ	s	University of Alberta Museum of Zoology			
@@ -8246,7 +8244,7 @@ UASB	s	University of Agricultural Sciences, Bangalore
 UASK	s	Ukrainian Academy of Science			
 UASM	s	University of Alberta, E.H. Strickland Entomological Museum			
 UAT	s	Universidad Autonoma de Tamaulipas			
-UAVP	s	University of Alberta, Laboratory for Vertebrate Paleontology	UALVP		
+UAVP	s	University of Alberta, Laboratory for Vertebrate Paleontology			
 UAWC<WBK>	b	Union of Agricultural Work Committees			
 UAY	s	Universidad Autonoma de Yucatan, Facultad de Medicina Veterinaria y Zootecnia			
 UAZ	s	University of Arizona			
@@ -8318,8 +8316,7 @@ UCOB	s	Universidad Centroccidental Lisandro Alvarado, Departamento de Ciencias B
 UCOCV	s	University of Central Oklahoma, Collection of Vertebrates			
 UCOL	s	Universidad de Colima			
 UCONN	s	University of Connecticut			
-UCP	s	Universidad del Cauca	MHNUC		
-UCPC	s	Universidad del Cauca			
+UCP	s	Universidad del Cauca			
 UCR<CRI>	s	Universidad de Costa Rica, Museo de Zoologia	MZUCR		
 UCR<USA-CA>	s	University of California, Riverside	UCRC		
 UCR<USA-CA>:ENT	s	University of California, Riverside, Entomology Collection	UCR:ENT,UCR<USA-CA>ENT		
@@ -8533,7 +8530,7 @@ UNAB	s	Universidad Nacional, Facultad de Agronomia
 UNAC	s	Universidad Nacional Agraria			
 UNAD	s	Universidad Nacional Agraria			
 UNAF	s	University of North Alabama, Department of Biology			
-UNAH 	s	Universidad Nacional Autonoma de Honduras	UNAH		
+UNAH 	s	Universidad Nacional Autonoma de Honduras			
 UNAM	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia	IBUNAM		
 UNAM:CNAC	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Acaros			
 UNAM:CNAN	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Aracnidos			
@@ -8852,7 +8849,6 @@ UWI	s	University of the West Indies (Trinidad and Tobago)
 UWIC	s	University of the West Indies, Trinidad and Tobago			
 UWIJ	s	University of the West Indies, Jamaica			
 UWIZM	s	The University of the West Indies Zoology Museum			
-UWJ	s	University of Wisconsin, Biology Department			
 UWL	s	University of Wisconsin, Biology Department			
 UWM	s	University of Wisconsin, Biological Sciences Department			
 UWM<POL>	s	University of Warmia and Mazury in Olsztyn			
@@ -9043,7 +9039,6 @@ WB<DEU>	s	Universitat Wurzburg
 WB<USA-WI>	c	Department of Bacteriology, University of Wisconsin			
 WBCH	s	Wisbech and Fenland Museum			
 WBG	s	Waimea Botanical Garden			
-WBM	s	Universitat Wurzburg			
 WBMC	s	William B. Muchmore			
 WBR	s	Laboratoire de Paleontologie, Unversite de Montpellier			
 WBS	s	Landbouwuniversiteit			
@@ -9193,7 +9188,7 @@ WSCO	s	Weber State University, Botany Department
 WSF	c	Wisconsin Soil Fungi Collection			
 WSFA	s	Wilmington College, Biology Department			
 WSL	b	Swiss Federal Institute for Forest, Snow and Landscape Research			
-WSLC 	c	Research collection of Listeria (Weihenstephan Microbial Strain Collection)	WSLC		
+WSLC 	c	Research collection of Listeria (Weihenstephan Microbial Strain Collection)			
 WSM	s	Weston-super-Mare Museum and Art Gallery			
 WSM<AUS>	c	Western Australian Soil Microbiology culture collection, Murdoch. University			
 WSNM	s	White Sands National Monument			
