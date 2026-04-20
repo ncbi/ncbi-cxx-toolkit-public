@@ -38,15 +38,11 @@
 
 USING_NCBI_SCOPE;
 
-static atomic<bool>     s_RequestIdLock(false);
-static size_t           s_NextRequestId = 0;
-
+static std::atomic<size_t> s_NextRequestId{1};
 
 size_t  GetNextRequestId(void)
 {
-    CSpinlockGuard      guard(&s_RequestIdLock);
-    auto request_id = ++s_NextRequestId;
-    return request_id;
+    return s_NextRequestId.fetch_add(1, memory_order_relaxed);
 }
 
 
