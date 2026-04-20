@@ -7,5 +7,5 @@ NCBI_begin_app(agp_validate)
     taxon1 xobjutil
   )
   NCBI_optional_toolkit_libraries(VDB ncbi_xloader_wgs)
-  NCBI_project_watchers(sapojnik)
+  NCBI_project_watchers(sapojnik foleyjp)
 NCBI_end_app()
