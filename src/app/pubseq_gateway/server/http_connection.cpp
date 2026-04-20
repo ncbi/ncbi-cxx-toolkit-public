@@ -108,14 +108,15 @@ SConnectionRunTimeProperties::PrepareForUsage(int64_t  conn_cnt_at_open,
 
 // The update of some fields in the connection properties may happen at the
 // same time when serialization is requested. Thus a lock is required.
-static atomic<bool>     s_ConnPropsLock(false);
+mutex    s_ConnPropsLock;
+
 
 // This method is purposed for serving the /hello request
 void
 SConnectionRunTimeProperties::UpdatePeerIdAndUserAgent(const string &  peer_id,
                                                        const string &  peer_user_agent)
 {
-    CSpinlockGuard      guard(&s_ConnPropsLock);
+    lock_guard<mutex>   guard(s_ConnPropsLock);
 
     if (!m_PeerIdMutated) {
         if (m_PeerId.has_value()) {
@@ -147,7 +148,7 @@ SConnectionRunTimeProperties::UpdatePeerIdAndUserAgent(const string &  peer_id,
 
 void SConnectionRunTimeProperties::UpdatePeerUserAgent(const string &  peer_user_agent)
 {
-    CSpinlockGuard      guard(&s_ConnPropsLock);
+    lock_guard<mutex>   guard(s_ConnPropsLock);
 
     if (m_PeerUserAgentMutated) {
         // The stored value has already mutated. Most probably because the
@@ -172,7 +173,7 @@ void SConnectionRunTimeProperties::UpdatePeerUserAgent(const string &  peer_user
 
 void SConnectionRunTimeProperties::UpdatePeerId(const string &  peer_id)
 {
-    CSpinlockGuard      guard(&s_ConnPropsLock);
+    lock_guard<mutex>   guard(s_ConnPropsLock);
 
     if (m_PeerIdMutated) {
         // The stored value has already mutated. Most probably because the
@@ -197,7 +198,7 @@ void SConnectionRunTimeProperties::UpdatePeerId(const string &  peer_id)
 
 void SConnectionRunTimeProperties::UpdateLastRequestTimestamp(void)
 {
-    CSpinlockGuard      guard(&s_ConnPropsLock);
+    lock_guard<mutex>   guard(s_ConnPropsLock);
     m_LastRequestTimestamp = system_clock::now();
 }
 
@@ -221,7 +222,7 @@ SConnectionRunTimeProperties::SConnectionRunTimeProperties(
     m_ExceedSoftLimitFlag = other.m_ExceedSoftLimitFlag;
     m_MovedFromBadToGood = other.m_MovedFromBadToGood;
 
-    CSpinlockGuard      guard(&s_ConnPropsLock);
+    lock_guard<mutex>   guard(s_ConnPropsLock);
     m_LastRequestTimestamp = other.m_LastRequestTimestamp;
     m_PeerId = other.m_PeerId;
     m_PeerIdMutated = other.m_PeerIdMutated;
