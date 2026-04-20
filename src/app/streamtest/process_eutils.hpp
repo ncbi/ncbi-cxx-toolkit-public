@@ -162,7 +162,8 @@ protected:
 
         bool empty_text = true;
         int i;
-        for (i = 0; i < contents.length(); i++) {
+        int len = (int) contents.length();
+        for (i = 0; i < len; i++) {
           if (contents [i] != ' ' &&
               contents [i] != '\n' &&
               contents [i] != '\r' &&
