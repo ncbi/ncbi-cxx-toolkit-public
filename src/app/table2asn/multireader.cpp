@@ -85,16 +85,6 @@
 #include <common/ncbi_revision.h>
 #include "utils.hpp"
 
-#ifndef NCBI_SC_VERSION
-#   define FLATFILE_PARSER_ENABLED
-#elif (NCBI_SC_VERSION == 0)
-#   define FLATFILE_PARSER_ENABLED
-#endif
-
-#ifdef FLATFILE_PARSER_ENABLED
-#   include <objtools/flatfile/flatfile_parser.hpp>
-#endif
-
 #include <common/test_assert.h> /* This header must go last */
 
 
@@ -427,11 +417,6 @@ void CMultiReader::xAnnotGetFormat(objects::edit::CHugeFile& file) const
     //  the features
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGtf);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFiveColFeatureTable);
-#ifdef FLATFILE_PARSER_ENABLED
-    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFlatFileGenbank);
-    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFlatFileEna);
-    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFlatFileUniProt);
-#endif
     FG.GetFormatHints().DisableAllNonpreferred();
 
     file.m_format = FG.GuessFormat();
@@ -1128,17 +1113,6 @@ unique_ptr<IIndexedFeatureReader> CMultiReader::LoadIndexedAnnot(const string& f
     case CFormatGuess::eGffAugustus:
         annots = xReadGTF(*in);
         break;
-#ifdef FLATFILE_PARSER_ENABLED
-    case CFormatGuess::eFlatFileGenbank:
-    case CFormatGuess::eFlatFileEna:
-    case CFormatGuess::eFlatFileUniProt: {
-        auto pEntry = xReadFlatfile(uFormat, filename, *in);
-        if (pEntry && pEntry->IsSetAnnot()) {
-            annots = pEntry->GetAnnot();
-        }
-    } break;
-#endif
-
     default:
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "Annotation file format not recognized. Run format validator on your annotation file", 1);
@@ -1219,56 +1193,6 @@ CMultiReader::TAnnots CMultiReader::xReadGTF(CNcbiIstream& instream) const
 
     return annots;
 }
-
-#ifdef FLATFILE_PARSER_ENABLED
-CRef<CSeq_entry> CMultiReader::xReadFlatfile(CFormatGuess::EFormat format, const string& filename, CNcbiIstream& instream)
-{
-    unique_ptr<Parser> pp(new Parser);
-    switch (format)
-    {
-    case CFormatGuess::eFlatFileGenbank:
-        pp->format = Parser::EFormat::GenBank;
-        pp->source = Parser::ESource::GenBank;
-        pp->seqtype = CSeq_id::e_Genbank;
-        break;
-    case CFormatGuess::eFlatFileEna:
-        pp->format = Parser::EFormat::EMBL;
-        pp->source = Parser::ESource::EMBL;
-        pp->acprefix = ParFlat_EMBL_AC;
-        pp->seqtype = CSeq_id::e_Embl;
-        break;
-    case CFormatGuess::eFlatFileUniProt:
-        pp->format = Parser::EFormat::SPROT;
-        pp->source = Parser::ESource::SPROT;
-        pp->seqtype = CSeq_id::e_Swissprot;
-        break;
-    default:
-        NCBI_THROW2(CObjReaderParseException, eFormat,
-            "This flat file format is not supported: " + filename, 0);
-        break;
-    }
-
-    pp->output_format = Parser::EOutput::BioseqSet;
-
-    CFlatFileParser ffparser(m_context.m_logger);
-    auto obj = ffparser.Parse(*pp, instream);
-    if (obj.NotEmpty()) {
-        if (obj->GetThisTypeInfo() == CBioseq_set::GetTypeInfo()) {
-            auto bioseq_set = Ref(CTypeConverter<CBioseq_set>::SafeCast(obj.GetPointerOrNull()));
-            auto entry = Ref(new CSeq_entry);
-            entry->SetSeq();
-            auto& annot = entry->SetAnnot();
-            for (auto& bioseq : bioseq_set->SetSeq_set()) {
-                if (bioseq->IsSetAnnot())
-                    annot.splice(annot.end(), bioseq->SetAnnot());
-            }
-            if (entry->IsSetAnnot())
-                return entry;
-        }
-    }
-    return {};
-}
-#endif
 
 void CMultiReader::GetIndexedAnnot(std::unique_ptr<IIndexedFeatureReader>& reader, TAnnots& annots)
 {

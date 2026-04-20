@@ -13,7 +13,7 @@ NCBI_begin_app(table2asn)
   )
   NCBI_requires(-Cygwin)
   NCBI_uses_toolkit_libraries(
-    data_loaders_util prosplign xdiscrepancy xflatfile
+    data_loaders_util prosplign xdiscrepancy
     xmlwrapp xvalidate xobjwrite
   )
   NCBI_project_watchers(stakhovv gotvyans foleyjp)

@@ -80,7 +80,6 @@ private:
     CRef<CSerialObject> xReadASN1Binary(CObjectIStream& pObjIstrm, const string& content_type) const;
     TAnnots xReadGFF3(CNcbiIstream& instream, bool post_process);
     TAnnots xReadGTF(CNcbiIstream& instream) const;
-    CRef<objects::CSeq_entry> xReadFlatfile(CFormatGuess::EFormat format, const string& filename, CNcbiIstream& instream);
     void x_PostProcessAnnots(TAnnots& annots, CFormatGuess::EFormat format=CFormatGuess::eUnknown) const;
 
     unique_ptr<CObjectIStream> xCreateASNStream(const string& filename) const;
