@@ -2003,13 +2003,15 @@ const CSeq_entry *ctx)
         bool has_isolate = false;
         vector<string> vouchers;
 
+        /*
         bool empty_orgmod = true;
         if (! orgname.IsSetMod()) {
             empty_orgmod = false;
         }
+        */
         FOR_EACH_ORGMOD_ON_ORGNAME(omd_itr, orgname)
         {
-            empty_orgmod = false;
+            // empty_orgmod = false;
 
             const COrgMod& omd = **omd_itr;
             COrgMod::TSubtype subtype = omd.GetSubtype();

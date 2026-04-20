@@ -676,7 +676,7 @@ DISCREPANCY_CASE(SP_NOT_UNCULTURED, BIOSRC, eOncaller, "Organism ending in sp. n
 DISCREPANCY_CASE(FIND_STRAND_TRNAS, SEQUENCE, eDisc, "Find tRNAs on the same strand")
 {
     const CSeqdesc* biosrc = context.GetBiosource();
-    if (biosrc && biosrc->GetSource().IsSetGenome() && (biosrc->GetSource().GetGenome() == CBioSource::eGenome_mitochondrion || biosrc->GetSource().GetGenome() == CBioSource::eGenome_chloroplast || biosrc->GetSource().GetGenome() == CBioSource::eGenome_plastid) || biosrc->GetSource().GetGenome() == CBioSource::eGenome_nitroplast) {
+    if (biosrc && biosrc->GetSource().IsSetGenome() && (biosrc->GetSource().GetGenome() == CBioSource::eGenome_mitochondrion || biosrc->GetSource().GetGenome() == CBioSource::eGenome_chloroplast || biosrc->GetSource().GetGenome() == CBioSource::eGenome_plastid || biosrc->GetSource().GetGenome() == CBioSource::eGenome_nitroplast)) {
         bool strand_plus = false;
         bool strand_minus = false;
         for (const auto& feat : context.FeatTRNAs()) {
