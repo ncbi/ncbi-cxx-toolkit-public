@@ -62,13 +62,17 @@ CBlastInputSourceConfig::CBlastInputSourceConfig
   m_RetrieveSeqData(retrieve_seq_data),
   m_LocalIdCounter(local_id_counter),
   m_SeqLenThreshold2Guess(seqlen_thresh2guess),
-  m_GapsToNs(false)
+  m_GapsToNs(false),
+  m_MaxSeqLength(kDefaultMaxSeqLength)
 {
     // Set an appropriate default for the strand
     if (m_Strand == eNa_strand_other) {
         m_Strand = (m_DLConfig.m_IsLoadingProteins)
             ? eNa_strand_unknown
             : eNa_strand_both;
+    }
+    if (m_Strand == eNa_strand_both) {
+    	m_MaxSeqLength /=2;
     }
     SetQueryLocalIdMode();
 }
@@ -150,8 +154,12 @@ CBlastInput::GetNextSeqBatch(CScope& scope)
             }
             throw; 
         }
+        catch (const CInputException & e) {
+        		LOG_POST(Warning << e.GetMsg());
+        		continue;
+        }
         catch (const exception&) {
-            continue; //SB-2307. ignore well formed, not found accession
+        	continue; //SB-2307. ignore well formed, not found accession
         }
 
         CConstRef<CSeq_loc> loc = q->GetQuerySeqLoc();
