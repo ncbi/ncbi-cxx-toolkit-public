@@ -291,6 +291,7 @@ int CDeltaBlastApp::Run(void)
         for (; !input.End(); formatter.ResetScopeHistory(), QueryBatchCleanup()) {
 
             CRef<CBlastQueryVector> query_batch(input.GetNextSeqBatch(*scope));
+            if (query_batch->Empty())  continue;
             CRef<blast::IQueryFactory> queries(
                                      new CObjMgr_QueryFactory(*query_batch));
 
