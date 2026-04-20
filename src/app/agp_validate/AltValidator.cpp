@@ -73,7 +73,7 @@ static CRef<CObjectManager> m_ObjectManager;
 static CRef<CScope> m_Scope;
 
 
-void CAltValidator::Init(void)
+bool CAltValidator::Init(void)
 {
   m_TaxidComponentTotal = 0;
   m_SpeciesLevelTaxonCheck = false;
@@ -91,8 +91,8 @@ void CAltValidator::Init(void)
   CGBDataLoader::TRegisterLoaderInfo inf =
     CGBDataLoader::RegisterInObjectManager(*m_ObjectManager);
   if( ! inf.IsCreated() ) {
-    cerr << "FATAL: cannot connect to GenBank!\n";
-    exit(1);
+      cerr << "FATAL: cannot connect to GenBank!\n";
+      return false;
   }
 
 #ifdef HAVE_NCBI_VDB
@@ -100,8 +100,8 @@ void CAltValidator::Init(void)
           *m_ObjectManager, CObjectManager::eDefault);
 
   if (!wgsInfo.IsCreated()) {
-    cerr << "FATAL: cannot connect to VDB!\n";
-    exit(1);
+      cerr << "FATAL: cannot connect to VDB!\n";
+      return false;
    }
 #endif
 
@@ -109,6 +109,7 @@ void CAltValidator::Init(void)
   m_Scope.Reset(new CScope(*m_ObjectManager));
   // Add default loaders (GB loader in this demo) to the scope.
   m_Scope->AddDefaults();
+  return true;
 }
 
 // Returns GI // int* missing_ver

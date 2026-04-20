@@ -61,9 +61,9 @@ public:
     m_SpeciesLevelTaxonCheck = check;
   }
 
-  void Init();
+  [[nodiscard]] bool Init(); // RW-2670 returns false if cannot connect to Genbank or VDB
   // true - no problems, false - found bad taxids
-  bool CheckTaxids(CNcbiOstream& out, bool use_xml);
+  [[nodiscard]] bool CheckTaxids(CNcbiOstream& out, bool use_xml);
   void PrintTotals(CNcbiOstream& out, bool use_xml);
 
   /// missing_ver: assign 0 if not missing, else the latest version

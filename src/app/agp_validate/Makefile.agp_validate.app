@@ -13,7 +13,7 @@ LIBS = $(DATA_LOADERS_UTIL_LIBS) \
 	   $(CMPRS_LIBS) $(NETWORK_LIBS) \
        $(DL_LIBS) $(ORIG_LIBS)
 
-REQUIRES = BerkeleyDB objects -Cygwin SQLITE3
+REQUIRES = BerkeleyDB objects -Cygwin SQLITE3 Cxx2020_format_api
 CXXFLAGS = $(ORIG_CXXFLAGS)
 # -Wno-parentheses
 
