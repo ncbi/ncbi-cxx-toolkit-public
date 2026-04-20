@@ -70,6 +70,8 @@ public:
     */
     static const unsigned int kSeqLenThreshold2Guess = 25;
 
+    static const unsigned int kDefaultMaxSeqLength = 0x7FFFFFFF;
+
     /// Constructor
     /// @param dlconfig Configuration object for the data loaders used in
     /// CBlastScopeSource [in]
@@ -209,6 +211,10 @@ public:
         m_GapsToNs = val;
     }
 
+    unsigned int GetMaxSeqLength() const {
+    	return m_MaxSeqLength;
+    }
+
 private:
     /// Strand to assign to sequences
     objects::ENa_strand m_Strand;  
@@ -232,6 +238,7 @@ private:
     string m_LocalIdPrefix;
     /// Convert gaps to Ns in FASTA sequences
     bool m_GapsToNs;
+    unsigned int m_MaxSeqLength;
 };
 
 
@@ -247,7 +254,8 @@ public:
         eEmptyUserInput,    ///< No input was provided
         eInvalidRange,      ///< Invalid range specification
         eSequenceMismatch,  ///< Expected sequence type isn't what was expected
-        eInvalidInput       ///< Invalid input data
+        eInvalidInput,      ///< Invalid input data
+        eLengthLimit        ///< Input exceeds suported seq length limit
     };
 
     /// Translate from the error code value to its string representation
@@ -259,6 +267,7 @@ public:
         case eInvalidRange:         return "eInvalidRange";
         case eSequenceMismatch:     return "eSequenceMismatch";
         case eInvalidInput:         return "eInvalidInput";
+        case eLengthLimit:          return "eLengthLimit";
         default:                    return CException::GetErrCodeString();
         }
     }

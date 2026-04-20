@@ -458,10 +458,10 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask,
 
     // Get the sequence length
     const TSeqPos seqlen = seq_entry->GetSeq().GetInst().GetLength();
-    //if (seqlen == 0) {
-    //    NCBI_THROW(CInputException, eEmptyUserInput,
-    //               "Query contains no sequence data");
-    //}
+    if (seqlen > m_Config.GetMaxSeqLength()) {
+        NCBI_THROW(CInputException, eLengthLimit,
+                   "Input sequence length exceeds limit: " + NStr::UIntToString(m_Config.GetMaxSeqLength()));
+    }
     _ASSERT(seqlen != numeric_limits<TSeqPos>::max());
     if (to > 0 && to < from) {
         NCBI_THROW(CInputException, eInvalidRange, 
@@ -495,6 +495,7 @@ CBlastFastaInputSource::GetNextSSeqLoc(CScope& scope)
     SSeqLoc retval(seqloc, &scope);
     if (m_Config.GetLowercaseMask()) {
         retval.mask = lcase_mask;
+
     }
 
     return retval;
