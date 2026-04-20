@@ -191,6 +191,7 @@ int CRPSTBlastnApp::x_RunMTBySplitDB(void)
         for (; !input.End(); formatter.ResetScopeHistory(), QueryBatchCleanup()) {
 
             CRef<CBlastQueryVector> query_batch(input.GetNextSeqBatch(*scope));
+            if (query_batch->Empty())  continue;
             CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(*query_batch));
 
             SaveSearchStrategy(args, m_CmdLineArgs, queries, opts_hndl);
