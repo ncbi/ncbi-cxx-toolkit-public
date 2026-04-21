@@ -543,6 +543,12 @@ void CCSRATestMTApp::RunTestThread(void)
     }
 }
 
+#ifdef UNUSED
+#undef UNUSED
+#endif
+// Hide 'unused but set variable' warnings.
+#define UNUSED(x) (void)(x)
+
 void CCSRATestMTApp::RunTest(void)
 {
     CVDBMgr mgr;
@@ -601,11 +607,14 @@ void CCSRATestMTApp::RunTest(void)
                 ref_name = *name;
                 ref_seq_id = *seq_id;
                 total_slot_size += *seq_len;
-                
+
                 CVDBValueFor<uint64_t> aln_ids(ref_curs, aln_ids_col);
                 slot_count = 1;
                 aln_count = aln_ids.size();
             }
+            UNUSED(total_slot_size);
+            UNUSED(slot_count);
+            UNUSED(aln_count);
         }
     }
     else {
@@ -686,6 +695,7 @@ void CCSRATestMTApp::RunTest(void)
             for ( TSeqPos p = m_Query_range.GetFrom(); p < end; p += step ) {
                 count += ref_it.GetAlignCountAtPos(p, align_type);
             }
+            UNUSED(count);
         }
 
         if ( m_Make_graphs ) {
@@ -713,6 +723,8 @@ void CCSRATestMTApp::RunTest(void)
                         k_max = min(k_max, (b+.5)/a);
                     }
                 }
+                UNUSED(total_count_a);
+                UNUSED(total_count_b);
             }
         }
 
@@ -761,6 +773,7 @@ void CCSRATestMTApp::RunTest(void)
                         break;
                     }
                 }
+                UNUSED(skipped);
             }
             if ( m_Make_stat_graph ) {
                 size_t count = 0, skipped = 0;
@@ -846,6 +859,8 @@ void CCSRATestMTApp::RunTest(void)
                                            "Bad CIGAR char: " <<type<< " in " <<cigar);
                         }
                     }
+                    UNUSED(count);
+                    UNUSED(skipped);
                 }
 
                 CRef<CSeq_annot> obj(new CSeq_annot);
@@ -949,6 +964,11 @@ void CCSRATestMTApp::RunTest(void)
                 CCSraShortReadIterator it2(csra_db, spot_id, read_id);
                 CRef<CBioseq> seq = it2.GetShortBioseq(flags);
             }
+            UNUSED(scanned);
+            UNUSED(clipped);
+            UNUSED(rejected);
+            UNUSED(duplicate);
+            UNUSED(hidden);
         }
     }
 }
