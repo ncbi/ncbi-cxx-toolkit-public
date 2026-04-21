@@ -174,8 +174,8 @@ public:
     /// Extend this function to look up and invoke functions that appear
     /// in the query
     ///
-    virtual void CallFunction(const string& name,                            
-                              CQueryParseTree::TNode &node) {}
+    virtual void CallFunction(const string& /*name*/,                            
+                              CQueryParseTree::TNode &/*node*/) {}
         
     /// Run query tree evaluation
     ///
