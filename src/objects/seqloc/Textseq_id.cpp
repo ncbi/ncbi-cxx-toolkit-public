@@ -39,13 +39,31 @@
 // generated includes
 #include <ncbi_pch.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
-#include <objects/seqloc/Seq_id.hpp>
 
+#define NCBI_USE_ERRCODE_X   Objects_TextSeqId
 
 // generated classes
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+
+// This name has an otherwise redundant suffix so searching for _X
+// still finds all subcode usage.
+#define REJECT_X(subcode, flags, msg) \
+    x_Reject(DIAG_COMPILE_INFO, NCBI_ERR_SUBCODE_X(subcode), flags, msg)
+
+void CTextseq_id::x_Reject(const CDiagCompileInfo& info, int subcode,
+                           CSeq_id::TParseFlags flags, const CTempString& msg)
+{
+    if ((flags & CSeq_id::fParse_NoThrow) == 0) {
+        throw CSeqIdException(info, nullptr, CSeqIdException::eFormat, msg);
+    } else {
+        CNcbiDiag(info).GetRef() << ErrCode(NCBI_ERRCODE_X, subcode) << Warning
+                                 << msg << Endm;
+        Reset();
+    }
+}
 
 
 // destructor
@@ -60,13 +78,14 @@ CTextseq_id& CTextseq_id::Set
  const CTempString& name_in,
  int                version,
  const CTempString& release_in,
- bool               allow_dot_version)
+ bool               allow_dot_version,
+ CSeq_id::TParseFlags flags)
 {
     // Perform general sanity checks up front.
     if (version < 0) {
-        NCBI_THROW(CSeqIdException, eFormat,
-                   "Unexpected negative version " + NStr::IntToString(version)
-                   + " for accession " + string(acc_in));
+        REJECT_X(1, flags,
+                 "Unexpected negative version " + NStr::IntToString(version)
+                 + " for accession " + string(acc_in));
     }
 
     CTempString acc     =
@@ -105,13 +124,13 @@ CTextseq_id& CTextseq_id::Set
             int         ver       = NStr::StringToNonNegativeInt(acc_ver);
  
             if (ver <= 0) {
-                NCBI_THROW(CSeqIdException, eFormat,
-                           "Version embedded in accession " + string(acc)
-                           + " is not a positive integer");
+                REJECT_X(2, flags,
+                         "Version embedded in accession " + string(acc)
+                         + " is not a positive integer");
             } else if (version > 0  &&  ver != version) {
-                NCBI_THROW(CSeqIdException, eFormat,
-                           "Incompatible version " + NStr::IntToString(version)
-                           + " supplied for accession " + string(acc));
+                REJECT_X(3, flags,
+                         "Incompatible version " + NStr::IntToString(version)
+                         + " supplied for accession " + string(acc));
             }
  
             SetAccession(accession);
@@ -126,10 +145,10 @@ CTextseq_id& CTextseq_id::Set
     }
 
     if (acc.empty()  &&  name.empty()) {
-        NCBI_THROW(CSeqIdException, eFormat,
-                   "Accession and name missing for Textseq-id (but got"
-                   " version " + NStr::IntToString(version) + ", release "
-                   + string(release) + ')');
+        REJECT_X(4, flags,
+                 "Accession and name missing for Textseq-id (but got version "
+                 + NStr::IntToString(version) + ", release " + string(release)
+                 + ')');
     } else if (release.empty()) {
         ResetRelease();
     } else {

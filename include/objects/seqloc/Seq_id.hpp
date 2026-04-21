@@ -45,7 +45,6 @@
 #include <serial/serializable.hpp>
 
 #include <objects/seq/Bioseq.hpp>
-#include <objects/seqloc/Textseq_id.hpp>
 
 #include <set>
 
@@ -104,6 +103,10 @@ public:
         /// accessions are ambiguous as to specific INSDC type.
         fParse_Cautiously = 0x80,
 
+        /// On failure, leave as e_not_set rather than throwing
+        /// CSeqIdException.
+        fParse_NoThrow    = 0x100,
+
         /// By default in ParseIDs and IsValid, allow raw parsable
         /// non-numeric accessions and plausible local accessions.
         /// (The string-based constructor and Set method have a
@@ -150,18 +153,18 @@ public:
     /// @param set_as_general
     ///   Whether to store tags from unrecognized databases as is in
     ///   Seq-ids of type general rather than rejecting them altogether.
-    explicit CSeq_id(const CDbtag& tag, bool set_as_general = true);
+    explicit CSeq_id(const CDbtag& tag, bool set_as_general = true,
+                     TParseFlags flags = 0);
+    CSeq_id(const CDbtag& tag, TParseFlags flags);
 
     /// Construct a numeric Seq-id.
     /// @param the_type
     ///   Type of Seq-id (normally e_Gi)
     /// @param int_seq_id
     ///   Numeric value.
-    CSeq_id(E_Choice the_type,
-            TIntId   int_seq_id);
+    CSeq_id(E_Choice the_type, TIntId int_seq_id, TParseFlags flags = 0);
 #ifdef NCBI_STRICT_GI
-    CSeq_id(E_Choice the_type,
-            TGi      gi);
+    CSeq_id(E_Choice the_type, TGi gi, TParseFlags flags = 0);
 #endif
 
     /// Construct a Seq-id from a flat representation.
@@ -186,7 +189,10 @@ public:
             const CTempString& acc_in,
             const CTempString& name_in    = kEmptyStr,
             int                version    = 0,
-            const CTempString& release_in = kEmptyStr);
+            const CTempString& release_in = kEmptyStr,
+            TParseFlags        flags      = 0);
+
+    CSeq_id(E_Choice the_type, const CTempString& acc_in, TParseFlags flags);
 
     /// Construct a Seq-id from a FASTA string with the leading (type)
     /// component already parsed out.
@@ -195,26 +201,32 @@ public:
     /// @param the_content
     ///   FASTA-style content, with embedded vertical bars as appropriate.
     CSeq_id(EFastaAsTypeAndContent, E_Choice the_type,
-            const CTempString& the_content);
+            const CTempString& the_content, TParseFlags flags = 0);
 
     /// Reassign based on flat specifications; arguments interpreted
     /// as with constructors.  (Returns a reference to self.)
 
     CSeq_id& Set(const CTempString& the_id, TParseFlags flags = fParse_AnyRaw);
 
-    CSeq_id& Set(const CDbtag& tag, bool set_as_general = true);
+    CSeq_id& Set(const CDbtag& tag, bool set_as_general = true,
+                 TParseFlags flags = 0);
 
-    CSeq_id& Set(E_Choice the_type,
-                 TIntId   int_seq_id);
+    CSeq_id& Set(const CDbtag& tag, TParseFlags flags);
+
+    CSeq_id& Set(E_Choice the_type, TIntId int_seq_id, TParseFlags flags = 0);
 
     CSeq_id& Set(E_Choice           the_type,
                  const CTempString& acc_in,
                  const CTempString& name_in    = kEmptyStr,
                  int                version    = 0,
-                 const CTempString& release_in = kEmptyStr);
+                 const CTempString& release_in = kEmptyStr,
+                 TParseFlags        flags      = 0);
+
+    CSeq_id& Set(E_Choice the_type, const CTempString& acc_in,
+                 TParseFlags flags);
 
     CSeq_id& Set(EFastaAsTypeAndContent, E_Choice the_type,
-                 const CTempString& the_content);
+                 const CTempString& the_content, TParseFlags flags = 0);
 
     /// Destructor
     virtual ~CSeq_id(void);
@@ -891,12 +903,15 @@ private:
         eTV_pgp // variant of pat
     };
 
+    void x_Reject(const CDiagCompileInfo& info, int subcode, TParseFlags flags,
+                  const CTempString& msg);
+
     static ETypeVariant x_IdentifyTypeVariant(E_Choice type,
                                               const CTempString& str);
 
     // returns next type if determined along the way
     E_Choice x_Init(list<CTempString>& fasta_pieces, E_Choice type,
-                    ETypeVariant tv);
+                    ETypeVariant tv, TParseFlags flags);
 
     // Prohibit copy constructor & assignment operator
     CSeq_id(const CSeq_id&);
@@ -1105,3 +1120,10 @@ END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
 #endif // OBJECTS_SEQ
+
+// Textseq_id.hpp now needs Seq_id.hpp for TParseFlags.  However,
+// Seq_id.hpp has historically included Textseq_id.hpp even though a
+// (generated) forward declaration is sufficient here, and some things
+// have come to rely on that.  Moving the #include directive down here
+// should satisfy everyone.
+#include <objects/seqloc/Textseq_id.hpp>

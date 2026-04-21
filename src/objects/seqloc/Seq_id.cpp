@@ -235,8 +235,33 @@ CSeq_id::~CSeq_id(void)
 }
 
 
-static void s_SplitVersion(const CTempString& acc_in, CTempString& acc,
-                           int& ver)
+// This name has an otherwise redundant suffix so searching for _X
+// still finds all subcode usage.
+#define REJECT_X(subcode, flags, msg) \
+    x_Reject(DIAG_COMPILE_INFO, NCBI_ERR_SUBCODE_X(subcode), flags, msg)
+
+static
+void x_Reject(const CDiagCompileInfo& info, int subcode,
+              CSeq_id::TParseFlags flags, const CTempString& msg)
+{
+    if ((flags & CSeq_id::fParse_NoThrow) == 0) {
+        throw CSeqIdException(info, nullptr, CSeqIdException::eFormat, msg);
+    } else {
+        CNcbiDiag(info).GetRef() << ErrCode(NCBI_ERRCODE_X, subcode) << Warning
+                                 << msg << Endm;
+    }
+}
+
+void CSeq_id::x_Reject(const CDiagCompileInfo& info, int subcode,
+                       TParseFlags flags, const CTempString& msg)
+{
+    ncbi::objects::x_Reject(info, subcode, flags, msg);
+    ResetSelection();
+}
+
+
+static bool s_SplitVersion(const CTempString& acc_in, CTempString& acc,
+                           int& ver, CSeq_id::TParseFlags flags)
 {
     CTempString verstr;
     NStr::SplitInTwo(acc_in, ".", acc, verstr);
@@ -245,11 +270,13 @@ static void s_SplitVersion(const CTempString& acc_in, CTempString& acc,
     } else {
         ver = NStr::StringToNonNegativeInt(verstr);
         if (ver <= 0) {
-            NCBI_THROW(CSeqIdException, eFormat,
-                       "Version embedded in accession " + string(acc_in)
-                       + " is not a positive integer");
+            REJECT_X(23, flags,
+                     "Version embedded in accession " + string(acc_in)
+                     + " is not a positive integer");
+            return false;
         }
     }
+    return true;
 }
 
 
@@ -2658,12 +2685,23 @@ CNcbiOstream& CSeq_id::WriteAsFasta(CNcbiOstream& ostr, const CBioseq& bioseq)
 }
 
 
-CSeq_id::CSeq_id(const CDbtag& dbtag, bool set_as_general)
+CSeq_id::CSeq_id(const CDbtag& dbtag, bool set_as_general, TParseFlags flags)
 {
-    Set(dbtag, set_as_general);
+    Set(dbtag, set_as_general, flags);
 }
 
-CSeq_id& CSeq_id::Set(const CDbtag& dbtag, bool set_as_general)
+CSeq_id::CSeq_id(const CDbtag& dbtag, TParseFlags flags)
+{
+    Set(dbtag, true, flags);
+}
+
+CSeq_id& CSeq_id::Set(const CDbtag& dbtag, TParseFlags flags)
+{
+    return Set(dbtag, true, flags);
+}
+
+CSeq_id& CSeq_id::Set(const CDbtag& dbtag, bool set_as_general,
+                      TParseFlags flags)
 {
     int         version = -1;
     CTempString acc;
@@ -2672,16 +2710,19 @@ CSeq_id& CSeq_id::Set(const CDbtag& dbtag, bool set_as_general)
     switch (dbtag.GetTag().Which()) {
     case CObject_id::e_Str:
         accver = dbtag.GetTag().GetStr();
-        s_SplitVersion(accver, acc, version);
+        if ( !s_SplitVersion(accver, acc, version, flags) ) {
+            ResetSelection();
+            return *this;
+        }
         break;
     case CObject_id::e_Id:
         acc = accver = NStr::IntToString(dbtag.GetTag().GetId());
         break;
     default:
-        NCBI_THROW(CSeqIdException, eFormat,
-                   "Bad CDbtag tag type "
-                   + CObject_id::SelectionName(dbtag.GetTag().Which()));
-        break;
+        REJECT_X(24, flags,
+                 "Bad CDbtag tag type "
+                 + CObject_id::SelectionName(dbtag.GetTag().Which()));
+        return *this;
     }
 
     CDbtag::EDbtagType type = dbtag.GetType();
@@ -2696,7 +2737,7 @@ CSeq_id& CSeq_id::Set(const CDbtag& dbtag, bool set_as_general)
 
     case CDbtag::eDbtagType_GI:
         if (dbtag.GetTag().IsStr()) {
-            Set(e_Gi, dbtag.GetTag().GetStr());
+            Set(e_Gi, dbtag.GetTag().GetStr(), flags);
         } else {
             SetGi(GI_FROM(CObject_id::TId, dbtag.GetTag().GetId()));
         }
@@ -2708,8 +2749,7 @@ CSeq_id& CSeq_id::Set(const CDbtag& dbtag, bool set_as_general)
         if (set_as_general) {
             SetGeneral().Assign(dbtag);
         } else {
-            NCBI_THROW(CSeqIdException, eFormat,
-                       "Unrecognized Dbtag DB " + dbtag.GetDb());
+            REJECT_X(25, flags, "Unrecognized Dbtag DB " + dbtag.GetDb());
         }
         break;
     }
@@ -2747,8 +2787,8 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
     }
     if (type == e_not_set) {
         if (the_id.empty()) {
-            NCBI_THROW(CSeqIdException, eFormat,
-                       "Empty bare accession supplied");
+            REJECT_X(26, flags, "Empty bare accession supplied");
+            return *this;
         }
         the_id.erase(the_id.find_last_not_of("|") + 1);
         // If no (attempt at a) valid tag, tries to interpret the string
@@ -2759,7 +2799,7 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
         }
         switch (type) {
         case e_Gi:
-            return Set(type, the_id);
+            return Set(type, the_id, flags);
         case e_not_set:
         {
             // Check for general IDs, albeit only with well-known
@@ -2773,22 +2813,22 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
                 if (whitelist.find(db) != whitelist.end()) {
                     // Reextract prefix to preserve case.
                     return Set(e_General, the_id.substr(0, colon_pos),
-                               the_id.substr(colon_pos + 1));
+                               the_id.substr(colon_pos + 1), flags);
                 }                
             }
             if ((flags & fParse_ValidLocal) != 0
                 &&  ((flags & fParse_AnyLocal) == fParse_AnyLocal
                      ||  IsValidLocalID(the_id))) {
-                return Set(e_Local, the_id);
+                return Set(e_Local, the_id, flags);
             } else {
-                NCBI_THROW(CSeqIdException, eFormat,
-                           "Malformatted ID " + string(the_id));
+                REJECT_X(27, flags, "Malformatted ID " + string(the_id));
+                return *this;
             }
         }
         case e_Pir:
         case e_Prf:
             // technically a name/locus, not an accession!
-            return Set(type, kEmptyStr, the_id);
+            return Set(type, kEmptyStr, the_id, 0, kEmptyStr, flags);
         case e_Pdb:
         {
             string mol(the_id, 0, 4), chain;
@@ -2798,14 +2838,17 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
             } else if (the_id.size() == 5  &&  the_id[4] != '|') {
                 chain = the_id[4];
             }
-            return Set(type, mol, chain);
+            return Set(type, mol, chain, flags);
         }
         default:
         {
             CTempString acc;
             int         ver;
-            s_SplitVersion(the_id, acc, ver);
-            return Set(type, acc, kEmptyStr, ver);
+            if ( !s_SplitVersion(the_id, acc, ver, flags) ) {
+                ResetSelection();
+                return *this;
+            }
+            return Set(type, acc, kEmptyStr, ver, kEmptyStr, flags);
         }
         }
     } else {
@@ -2813,7 +2856,7 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
         NStr::Split(the_id, "|", fasta_pieces);
         ETypeVariant tv = x_IdentifyTypeVariant(type, fasta_pieces.front());
         fasta_pieces.pop_front();
-        x_Init(fasta_pieces, type, tv);
+        x_Init(fasta_pieces, type, tv, flags);
         if ( !fasta_pieces.empty() ) {
             // tolerate trailing parts if they're all empty.
             ITERATE(list<CTempString>, it, fasta_pieces) {
@@ -2823,9 +2866,10 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
                                    " (synonyms?) in FASTA-style ID "
                                    << the_id);
                     } else {
-                        NCBI_THROW(CSeqIdException, eFormat,
-                                   "FASTA-style ID " + string(the_id)
-                                   + " has too many parts.");
+                        REJECT_X(28, flags,
+                                 "FASTA-style ID " + string(the_id)
+                                 + " has too many parts.");
+                        return *this;
                     }
                 }
             }
@@ -2836,13 +2880,13 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
 
 
 CSeq_id::CSeq_id(EFastaAsTypeAndContent f, E_Choice the_type,
-                 const CTempString& the_content)
+                 const CTempString& the_content, TParseFlags flags)
 {
-    Set(f, the_type, the_content);
+    Set(f, the_type, the_content, flags);
 }
 
 CSeq_id& CSeq_id::Set(EFastaAsTypeAndContent f, E_Choice the_type,
-                      const CTempString& the_content)
+                      const CTempString& the_content, TParseFlags flags)
 {
     list<CTempString> fasta_pieces;
     ETypeVariant tv = eTV_plain; // default assumption
@@ -2852,7 +2896,7 @@ CSeq_id& CSeq_id::Set(EFastaAsTypeAndContent f, E_Choice the_type,
         tv = x_IdentifyTypeVariant(the_type, fasta_pieces.front());
         fasta_pieces.pop_front();
     }
-    x_Init(fasta_pieces, the_type, tv);
+    x_Init(fasta_pieces, the_type, tv, flags);
     return *this;
 }
 
@@ -2905,6 +2949,9 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
     // first simple check to make it faster
     if (!s_HasFastaTag(ss)) {
         CRef<CSeq_id> id(new CSeq_id(ss, flags | fParse_NoFASTA));
+        if (id->Which() == CSeq_id::e_not_set) {
+            return 0;
+        }
         ids.push_back(id);
         return 1;
     }
@@ -2916,6 +2963,9 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
     if (fasta_pieces.size() == 1)
     {
         CRef<CSeq_id> id(new CSeq_id(ss, flags | fParse_NoFASTA));
+        if (id->Which() == CSeq_id::e_not_set) {
+            return 0;
+        }
         ids.push_back(id);
         count = 1;
     }
@@ -2937,15 +2987,24 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
             try {
                 CRef<CSeq_id> id(new CSeq_id);
                 if (type != e_not_set) {
-                    type = id->x_Init(fasta_pieces, type, tv);
+                    type = id->x_Init(fasta_pieces, type, tv, flags);
+                    if (id->Which() == CSeq_id::e_not_set) {
+                        break;
+                    }
+                    ids.push_back(id);
+                    ++count;
                 }
                 if (type == e_not_set  &&  !fasta_pieces.empty() ) {
                     type = WhichInverseSeqId(fasta_pieces.front());
                     if (type == e_not_set) {
                         CTempString typestr = fasta_pieces.front();
                         fasta_pieces.pop_front();
-                        NCBI_THROW(CSeqIdException, eFormat,
-                                   "Unsupported ID type " + typestr);
+                        ncbi::objects::REJECT_X(29, flags,
+                                                "Unsupported ID type "
+                                                + typestr);
+                        // Don't attempt to recover -- it's unclear how many
+                        // further pieces to discard.
+                        break;
                     }
                 }
                 if (type != e_not_set) {
@@ -2953,11 +3012,10 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
                     tv = x_IdentifyTypeVariant(type, fasta_pieces.front());
                     fasta_pieces.pop_front();
                 }
-                ids.push_back(id);
-                ++count;
             } catch (std::exception& e) {
                 if (fasta_pieces.empty()) {
-                    throw;
+                    ncbi::objects::REJECT_X(30, flags, e.what());
+                    break;
                 }
                 if ((flags & fParse_PartialOK) != 0) {
                     ERR_POST_X(7, Warning << e.what());
@@ -2970,7 +3028,8 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
                         }
                     } while ( !fasta_pieces.empty() );
                 } else {
-                    throw;
+                    ncbi::objects::REJECT_X(30, flags, e.what());
+                    break;
                 }
             }
         }
@@ -2980,7 +3039,8 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
 
 
 CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
-                                  E_Choice type, ETypeVariant tv)
+                                  E_Choice type, ETypeVariant tv,
+                                  TParseFlags flags)
 {
     _ASSERT(!fasta_pieces.empty());
     _ASSERT(type != e_not_set);
@@ -3019,9 +3079,10 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
             if (i >= min_fields) {
                 break;
             } else {
-                NCBI_THROW(CSeqIdException, eFormat,
-                           "Not enough fields for ID of type "
+                REJECT_X(31, flags,
+                         "Not enough fields for ID of type "
                            + string(s_TextId[type]));
+                return next_type;
             }
         } else {
             if (i >= min_fields  &&  fasta_pieces.size() > 1
@@ -3080,9 +3141,10 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
         // "version" actually sequence number within patent, but whatever...
         ver = NStr::StringToNonNegativeInt(fields[2]);
         if (ver < 0) {
-            NCBI_THROW(CSeqIdException, eFormat,
-                       "Bad sequence number " + string(fields[2]) + " for "
-                       + string(fields[0]) + " patent " + string(fields[1]));
+            REJECT_X(32, flags,
+                     "Bad sequence number " + string(fields[2]) + " for "
+                     + string(fields[0]) + " patent " + string(fields[1]));
+            return next_type;
         }
         // to distinguish applications from granted patents; the numeric
         // content has already made its way into ver.
@@ -3094,8 +3156,8 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
             ||  (fields[0].size() > 5
                  &&  ( !fields[1].empty()
                        ||  strchr("|-_", fields[0][4]) == NULL))) {
-            NCBI_THROW(CSeqIdException, eFormat,
-                       "Malformatted PDB ID " + string(fields[0]));
+            REJECT_X(33, flags, "Malformatted PDB ID " + string(fields[0]));
+            return next_type;
         }
         if (fields[0].size() > 4  &&  fields[1].empty()) { // misdelimited
             if (fields[0].size() > 5) {
@@ -3113,30 +3175,31 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
     }
 
     Set(type, fields[0] /* acc */, fields[1] /* name */, ver,
-        fields[2] /* rel */);
+        fields[2] /* rel */, flags);
 
     return next_type;
 }
 
 
-CSeq_id::CSeq_id(E_Choice the_type, TIntId the_id)
+CSeq_id::CSeq_id(E_Choice the_type, TIntId the_id, TParseFlags flags)
 {
-    Set(the_type, the_id);
+    Set(the_type, the_id, flags);
 }
 
 #ifdef NCBI_STRICT_GI
-CSeq_id::CSeq_id(E_Choice the_type, TGi gi)
+CSeq_id::CSeq_id(E_Choice the_type, TGi gi, TParseFlags flags)
 {
-    Set(the_type, GI_TO(TIntId, gi));
+    Set(the_type, GI_TO(TIntId, gi), flags);
 }
 #endif
 
-CSeq_id& CSeq_id::Set(E_Choice the_type, TIntId the_id)
+CSeq_id& CSeq_id::Set(E_Choice the_type, TIntId the_id, TParseFlags flags)
 {
 // see CSeq_id::Set below, it prohibits lcl|0, but allows gi|0
     if ((the_id < 0) || (the_type == e_Local && the_id == 0)) {
-        NCBI_THROW(CSeqIdException, eFormat,
-                   "Non-positive numeric ID " + NStr::NumericToString(the_id));
+        REJECT_X(34, flags,
+                 "Non-positive numeric ID " + NStr::NumericToString(the_id));
+        return *this;
     }
 
     switch (the_type) {
@@ -3161,8 +3224,8 @@ CSeq_id& CSeq_id::Set(E_Choice the_type, TIntId the_id)
         SetGi(GI_FROM(TIntId, the_id));
         break;
     default:
-        NCBI_THROW(CSeqIdException, eFormat,
-                   "Invalid numeric ID type" + SelectionName(the_type));
+        REJECT_X(35, flags,
+                 "Invalid numeric ID type" + SelectionName(the_type));
     }
     return *this;
 }
@@ -3172,9 +3235,22 @@ CSeq_id::CSeq_id(E_Choice           the_type,
                  const CTempString& acc_in,
                  const CTempString& name_in,
                  int                version,
-                 const CTempString& release_in)
+                 const CTempString& release_in,
+                 TParseFlags        flags)
 {
-    Set(the_type, acc_in, name_in, version, release_in);
+    Set(the_type, acc_in, name_in, version, release_in, flags);
+}
+
+CSeq_id::CSeq_id(E_Choice the_type, const CTempString& acc_in,
+                 TParseFlags flags)
+{
+    Set(the_type, acc_in, kEmptyStr, 0, kEmptyStr, flags);
+}
+
+CSeq_id& CSeq_id::Set(E_Choice the_type, const CTempString& acc_in,
+                      TParseFlags flags)
+{
+    return Set(the_type, acc_in, kEmptyStr, 0, kEmptyStr, flags);
 }
 
 // Karl Sirotkin 7/2001
@@ -3183,7 +3259,8 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
                       const CTempString& acc_in,
                       const CTempString& name_in,
                       int                version,
-                      const CTempString& release_in)
+                      const CTempString& release_in,
+                      TParseFlags        flags)
 {
     CTempString  acc       = NStr::TruncateSpaces_Unsafe(acc_in,
                                                          NStr::eTrunc_Both);
@@ -3220,12 +3297,12 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
         }
 #endif
         if ( (the_id = NStr::StringToNonNegativeInt (acc)) >= 0 ) {
-            return Set(the_type, the_id);
+            return Set(the_type, the_id, flags);
         } else {
-            NCBI_THROW(CSeqIdException, eFormat,
-                       "Negative, excessively large, or non-numeric "
-                       + SelectionName(the_type)
-                       + " ID " + string(acc));
+            REJECT_X(36, flags,
+                     "Negative, excessively large, or non-numeric "
+                     + SelectionName(the_type) + " ID " + string(acc));
+            return *this;
         }
         break;
 
@@ -3307,13 +3384,16 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
         }
 
     default:
-        NCBI_THROW(CSeqIdException, eFormat,
-                   "Unsupported Seq-id type " + SelectionName(the_type));
+        REJECT_X(37, flags,
+                 "Unsupported Seq-id type " + SelectionName(the_type));
     }
 
     if (tsid) {
         // CTextseq_id::Set will take care of truncating any spaces.
-        tsid->Set(acc, name_in, version, release_in, allow_dot);
+        tsid->Set(acc, name_in, version, release_in, allow_dot, flags);
+        if ( !tsid->IsSetAccession()  &&  !tsid->IsSetName() ) {
+            ResetSelection();
+        }
     }
 
     return *this;

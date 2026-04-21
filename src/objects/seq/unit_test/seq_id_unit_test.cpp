@@ -63,6 +63,8 @@ USING_SCOPE(objects);
 
 static const auto kCautious =
     CSeq_id::fParse_RawText | CSeq_id::fParse_Cautiously;
+static const auto kRawNoThrow =
+    CSeq_id::fParse_AnyRaw | CSeq_id::fParse_NoThrow;
 
 NCBITEST_AUTO_INIT()
 {
@@ -185,7 +187,13 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromJunk)
     CRef<CSeq_id> id;
 
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id(kEmptyStr)));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(kEmptyStr, kRawNoThrow)));
+    BOOST_CHECK_EQUAL(id->Which(), CSeq_id::e_not_set);
+    
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("JUNK")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("JUNK", kRawNoThrow)));
+    BOOST_CHECK_EQUAL(id->Which(), CSeq_id::e_not_set);
+
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("?!?!")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("4[ip]")));
 }
@@ -236,6 +244,8 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromNAcc)
     BOOST_CHECK( !id->GetGenbank().IsSetRelease() );
 
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("N20001.1.1")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("N20001.1.1", kRawNoThrow)));
+    BOOST_CHECK_EQUAL(id->Which(), CSeq_id::e_not_set);
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("N20001.1a")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("N20001.-1")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("N20001.x")));
@@ -249,6 +259,10 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromStdAcc)
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("A12345")));
     BOOST_CHECK(id->IsEmbl());
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("A12345", kCautious)));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("A12345",
+                                              kCautious
+                                              | CSeq_id::fParse_NoThrow)));
+    BOOST_CHECK_EQUAL(id->Which(), CSeq_id::e_not_set);
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("J12345", kCautious)));
     BOOST_CHECK(id->IsGenbank());
 
@@ -525,6 +539,8 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaLocal)
     CRef<CSeq_id> id;
 
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("asd|fgh|jkl")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("asd|fgh|jkl", kRawNoThrow)));
+    BOOST_CHECK_EQUAL(id->Which(), CSeq_id::e_not_set);
 
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("lcl|0")));
     BOOST_CHECK(id->IsLocal());
@@ -556,6 +572,9 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaLocal)
     BOOST_CHECK(id->GetLocal().IsStr());
     BOOST_CHECK_EQUAL(id->GetLocal().GetStr(), string("NM_002020"));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("lcl|NM_002020|junk")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("lcl|NM_002020|junk",
+                                              kRawNoThrow)));
+    BOOST_CHECK_EQUAL(id->Which(), CSeq_id::e_not_set);
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaObsolete)
@@ -568,6 +587,8 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaObsolete)
 //    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|0")));
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("bbs|0")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|123.4")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("bbs|123.4", kRawNoThrow)));
+    BOOST_CHECK_EQUAL(id->Which(), CSeq_id::e_not_set);
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|123Z")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|xyz")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("bbs|9876543210")));
@@ -585,6 +606,8 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaGenbank)
     CRef<CSeq_id> id;
 
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("gb|")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("gb|", kRawNoThrow)));
+    BOOST_CHECK_EQUAL(id->Which(), CSeq_id::e_not_set);
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("gb|U12345.1|AMU12345")));
     BOOST_CHECK(id->IsGenbank());
     BOOST_CHECK_EQUAL(id->GetGenbank().GetAccession(), string("U12345"));
@@ -650,6 +673,9 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromPatent)
                 string("RE33188"));
 
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188|1.5")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pat|US|RE33188|1.5",
+                                              kRawNoThrow)));
+    BOOST_CHECK_EQUAL(id->Which(), CSeq_id::e_not_set);
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188|1b")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188|9876543210")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188|-1")));
@@ -804,21 +830,23 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaNat)
 
 
 static CSeq_id* s_NewDbtagId(const string& db, const string& tag,
-                             bool set_as_general = false)
+                             bool set_as_general = false,
+                             CSeq_id::TParseFlags flags = 0)
 {
     CDbtag dbtag;
     dbtag.SetDb(db);
     dbtag.SetTag().SetStr(tag);
-    return new CSeq_id(dbtag, set_as_general);
+    return new CSeq_id(dbtag, set_as_general, flags);
 }
 
 static CSeq_id* s_NewDbtagId(const string& db, int tag,
-                             bool set_as_general = false)
+                             bool set_as_general = false,
+                             CSeq_id::TParseFlags flags = 0)
 {
     CDbtag dbtag;
     dbtag.SetDb(db);
     dbtag.SetTag().SetId(tag);
-    return new CSeq_id(dbtag, set_as_general);
+    return new CSeq_id(dbtag, set_as_general, flags);
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromDbtag)
@@ -827,9 +855,15 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromDbtag)
     CDbtag        dbtag;
 
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id(dbtag)));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(dbtag,
+                                              CSeq_id::fParse_NoThrow)));
+    BOOST_CHECK_EQUAL(id->Which(), CSeq_id::e_not_set);
 
     // No longer supported.
     NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GenBank", "N20001.1")));
+    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("GenBank", "N20001.1", false,
+                                               CSeq_id::fParse_NoThrow)));
+    BOOST_CHECK_EQUAL(id->Which(), CSeq_id::e_not_set);
     NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GI", "12345")));
     NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GI", 12345)));
 
@@ -860,6 +894,9 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromDbtag)
     BOOST_CHECK_EQUAL(id->GetGeneral().GetTag().GetId(), 12345);
 
     NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("taxon", 9606)));
+    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("taxon", 9606, false,
+                                               CSeq_id::fParse_NoThrow)));
+    BOOST_CHECK_EQUAL(id->Which(), CSeq_id::e_not_set);
     BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("taxon", 9606, true)));
     BOOST_CHECK_EQUAL(id->IdentifyAccession(), CSeq_id::eAcc_general);
 
@@ -878,7 +915,13 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromInt)
 //    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id(CSeq_id::e_Gi, 0)));
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Gi, 0)));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id(CSeq_id::e_Gi, -1)));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Gi, -1,
+                                              CSeq_id::fParse_NoThrow)));
+    BOOST_CHECK_EQUAL(id->Which(), CSeq_id::e_not_set);    
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id(CSeq_id::e_Pdb, 1234)));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Pdb, 1234,
+                                              CSeq_id::fParse_NoThrow)));
+    BOOST_CHECK_EQUAL(id->Which(), CSeq_id::e_not_set);    
 
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Local, 1234)));
     BOOST_CHECK(id->IsLocal());
@@ -1036,6 +1079,12 @@ BOOST_AUTO_TEST_CASE(s_TestListOps)
     */
     NCBI_CHECK_THROW_SEQID
         (CSeq_id::ParseFastaIds(ids, "gi|1234|junk|pdb|1GAV"));
+    BOOST_CHECK_EQUAL
+        (CSeq_id::ParseIDs(ids, "gi|1234|junk|pdb|1GAV",
+                           CSeq_id::fParse_RawText | CSeq_id::fParse_AnyLocal
+                           | CSeq_id::fParse_NoThrow),
+         size_t(1));
+    BOOST_CHECK_EQUAL(ids.back()->GetGi(), GI_CONST(1234));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestSeq_locAssign)
