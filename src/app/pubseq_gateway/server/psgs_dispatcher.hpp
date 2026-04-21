@@ -349,31 +349,26 @@ private:
 
     struct SProcessorConcurrency
     {
-        size_t                  m_Limit;
-        size_t                  m_CurrentCount;
-        mutable atomic<bool>    m_CountLock;
+        size_t              m_Limit;
+        atomic<size_t>      m_CurrentCount;
 
         SProcessorConcurrency() :
-            m_Limit(0), m_CurrentCount(0),
-            m_CountLock(false)
+            m_Limit(0), m_CurrentCount(0)
         {}
 
         size_t GetCurrentCount(void) const
         {
-            CSpinlockGuard      guard(&m_CountLock);
-            return m_CurrentCount;
+            return m_CurrentCount.load(memory_order_relaxed);
         }
 
         void IncrementCurrentCount(void)
         {
-            CSpinlockGuard      guard(&m_CountLock);
-            ++m_CurrentCount;
+            m_CurrentCount.fetch_add(1, memory_order_relaxed);
         }
 
         void DecrementCurrentCount(void)
         {
-            CSpinlockGuard      guard(&m_CountLock);
-            --m_CurrentCount;
+            m_CurrentCount.fetch_sub(1, memory_order_relaxed);
         }
     };
 
@@ -387,13 +382,13 @@ private:
         size_t                  m_Threshold;    // 0: special value to switch off throttling
         size_t                  m_LimitByIp;
         size_t                  m_ThrottledCounter;
-        mutable atomic<bool>    m_ProcCountPerIpLock;
+        mutex                   m_ProcCountPerIpLock;
 
         // ip -> processors taken
         map<string, size_t>     m_ProcCountPerIp;
 
         SProcessorThrottling() :
-            m_Threshold(0), m_LimitByIp(0), m_ProcCountPerIpLock(false)
+            m_Threshold(0), m_LimitByIp(0)
         {}
 
         bool ShouldThrottle(shared_ptr<CPSGS_Request> request,
@@ -407,7 +402,7 @@ private:
                 return false;
 
             map<string, size_t>::iterator   it;
-            CSpinlockGuard                  guard(&m_ProcCountPerIpLock);
+            lock_guard<mutex>               guard(m_ProcCountPerIpLock);
 
             it = m_ProcCountPerIp.find(client_end_ip);
             if (it == m_ProcCountPerIp.end()) {
@@ -441,7 +436,7 @@ private:
                 return;
 
             map<string, size_t>::iterator   it;
-            CSpinlockGuard                  guard(&m_ProcCountPerIpLock);
+            lock_guard<mutex>               guard(m_ProcCountPerIpLock);
 
             it = m_ProcCountPerIp.find(client_end_ip);
             if (it == m_ProcCountPerIp.end())
