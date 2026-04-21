@@ -30,6 +30,8 @@
  * ===========================================================================
  */
 
+#define NCBI_TEST_APPLICATION
+
 #include <ncbi_pch.hpp>
 #include <corelib/test_boost.hpp>
 #include <objects/general/general__.hpp>
