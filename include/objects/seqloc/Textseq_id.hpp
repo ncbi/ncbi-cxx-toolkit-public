@@ -41,6 +41,8 @@
 // generated includes
 #include <objects/seqloc/Textseq_id_.hpp>
 
+#include <objects/seqloc/Seq_id.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -75,7 +77,8 @@ public:
                      const CTempString& name_in           = kEmptyStr,
                      int                version           = 0,
                      const CTempString& release_in        = kEmptyStr,
-                     bool               allow_dot_version = true);
+                     bool               allow_dot_version = true,
+                     CSeq_id::TParseFlags flags           = 0);
 
     /// Comparison functions.
     bool Match(const CTextseq_id& tsip2) const;
@@ -86,6 +89,9 @@ public:
     ostream& AsFastaString(ostream& s, bool allow_version = true) const;
 
 private:
+    void x_Reject(const CDiagCompileInfo& info, int subcode,
+                  CSeq_id::TParseFlags flags, const CTempString& msg);
+
     // Prohibit copy constructor & assignment operator.
     CTextseq_id(const CTextseq_id&);
     CTextseq_id& operator= (const CTextseq_id&);
