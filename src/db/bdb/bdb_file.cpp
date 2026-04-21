@@ -555,6 +555,11 @@ void CBDB_RawFile::CompactEx(FContinueCompact compact_callback,
                << pages_freed << " pages freed / "
                << levels_removed << " levels removed / "
                << pages_truncated << " pages truncated");
+#else
+    // arguments aren't used
+    (void)compact_callback;
+    (void)compact_type;
+    (void)target_fill_pct;
 #endif
 }
 
