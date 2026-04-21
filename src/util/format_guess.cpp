@@ -249,6 +249,7 @@ static bool s_IsTokenDouble(
 static void init_symbol_type_table(void)
 {
     if ( symbol_type_table[0] == 0 ) {
+        // plain int index is good here because we are processing ASCII symbols only
         for ( const char* s = "ACGNTU"; *s; ++s ) {
             int c = *s;
             symbol_type_table[c] |= fDNA_Main_Alphabet;
@@ -347,6 +348,7 @@ CFormatGuess::SequenceType(const char* str, unsigned length,
         if (prot_content > 0.7) {
             return eProtein;
         }
+        break;
     }
 
     case eST_Default:
@@ -360,6 +362,7 @@ CFormatGuess::SequenceType(const char* str, unsigned length,
             // >=90% relatively standard protein residues.  (JOU don't count.)
             return eProtein;
         }
+        break;
 
     case eST_Strict: // Must be 100% encodable
         if (bad_nuc_content == 0  &&  ambig_content <= main_nuc_content / 3) {
@@ -368,6 +371,7 @@ CFormatGuess::SequenceType(const char* str, unsigned length,
                    &&  exotic_aa_content <= amino_acid_content / 9) {
             return eProtein;
         }
+        break;
     }
 
     return eUndefined;
@@ -779,22 +783,22 @@ static bool s_LooksLikeNucSeqData(const string& line, size_t minLength=10) {
         return false;
     }
 
-    int nucCount=0;
+    size_t nucCount=0;
     for (auto c : line) {
-        if (isalpha(c)) {
-            auto index = static_cast<int>(c);
-            if (symbol_type_table[index] & fDNA_Main_Alphabet) {
+        auto type = symbol_type_table[static_cast<unsigned char>(c)];
+        if ( type & fAlpha ) {
+            if ( type & fDNA_Main_Alphabet ) {
                 ++nucCount;
             }
             continue;
         }
 
-        if (!isspace(c)) {
+        if ( !(type & fSpace) ) {
             return false;
         }
     }
 
-    return (nucCount/line.size() > 0.9);
+    return (double(nucCount) > double(line.size())*0.9);
 }
 
 
@@ -1116,7 +1120,7 @@ CFormatGuess::TestFormatNewick(
                 }
                 // copy end of buffer to beginning in case string
                 // spans two buffers:
-                strncpy(test_buf, test_buf + num_read, check_size);
+                memmove(test_buf, test_buf + num_read, check_size);
             }
 
             if (m_Stream.eof() || m_Stream.fail()) {
@@ -2062,7 +2066,7 @@ bool CFormatGuess::TestFormatSra(EMode /* not used */ )
     }
 }
 
-bool CFormatGuess::TestFormatBam(EMode mode)
+bool CFormatGuess::TestFormatBam(EMode /*mode*/)
 {
     //rw-9:
     // the original heuristic to "guess" at the content of a gzip archive
@@ -2082,7 +2086,7 @@ bool CFormatGuess::TestFormatBam(EMode mode)
 }
 
 
-bool CFormatGuess::TestFormatPsl(EMode mode)
+bool CFormatGuess::TestFormatPsl(EMode /*mode*/)
 {
     // for the most part, following https://genome.ucsc.edu/FAQ/FAQformat.html#format2.
     // note that UCSC downloads often include one extra column, right at the start
@@ -3757,7 +3761,7 @@ CFormatGuess::IsAsciiText()
             ++count_print;
         }
     }
-    if (count_print < (double)count * REQUIRED_ASCII_RATIO) {
+    if (double(count_print) < double(count) * REQUIRED_ASCII_RATIO) {
         return false;
     }
     return true;
