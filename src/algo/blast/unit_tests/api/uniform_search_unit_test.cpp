@@ -31,6 +31,7 @@
  * Unit tests for the uniform search API
  */
 
+#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 #include <corelib/test_boost.hpp>
 
