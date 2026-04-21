@@ -357,7 +357,7 @@ bool CMMapByteSourceReader::EndOfData(void) const
     return m_CurOffset >= m_FileSize;
 }
 
-bool CMMapByteSourceReader::Pushback(const char* data, size_t size)
+bool CMMapByteSourceReader::Pushback(const char* /*data*/, size_t size)
 {
     if (m_Ptr && (m_CurOffset >= m_ChunkOffset + size)) {
         m_CurOffset -= size;
