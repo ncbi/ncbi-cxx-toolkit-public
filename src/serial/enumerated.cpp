@@ -218,7 +218,7 @@ CEnumeratedTypeValues::TValueFlags
 CEnumeratedTypeValues::GetValueFlags(TEnumValueType value) const
 {
     map<TEnumValueType, TValueFlags>::const_iterator i = m_ValueFlags.find(value);
-    return i != m_ValueFlags.end() ? i->second : eNone;
+    return i != m_ValueFlags.end() ? i->second : TValueFlags(eNone);
 }
 
 DEFINE_STATIC_FAST_MUTEX(s_EnumValuesMutex);
