@@ -3315,6 +3315,7 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
             return; // No - just ignore it.
         }
         // Yes - proceed to seq-loc duplication
+        NCBI_FALLTHROUGH;
     case CSeq_loc::e_not_set:
     case CSeq_loc::e_Feat:
     {
