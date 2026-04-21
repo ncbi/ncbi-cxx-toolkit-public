@@ -160,10 +160,11 @@ protected:
             return true;
         }
 
+        bool empty_text = contents.find_first_not_of(" \n\r\t") == string::npos;
+        /*
         bool empty_text = true;
-        int i;
-        int len = (int) contents.length();
-        for (i = 0; i < len; i++) {
+        size_t len = contents.length();
+        for (size_t i = 0; i < len; i++) {
           if (contents [i] != ' ' &&
               contents [i] != '\n' &&
               contents [i] != '\r' &&
@@ -171,6 +172,7 @@ protected:
               empty_text = false;
           }
         }
+        */
         if (empty_text) {
             return true;
         }
