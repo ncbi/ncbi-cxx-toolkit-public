@@ -621,7 +621,7 @@ TLoadScopeMethod LoadScope(string arg_path, CScope& scope, ESerialDataFormat ser
     TLoadScopeMethod method = eLoadScope_Failed;
 
     ITERATE(CDir::TEntries, it, dir_entries) {
-        AutoPtr<CDirEntry> ent = *it;
+        const auto& ent = *it;
         string path = ent->GetPath();
 
 
