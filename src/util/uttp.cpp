@@ -70,6 +70,7 @@ CUTTPReader::EStreamParsingEvent CUTTPReader::GetNextEvent()
             return eEndOfBuffer;
         ++m_Buffer;
         /* FALL THROUGH */
+        NCBI_FALLTHROUGH;
 
     case eReadNumber:
         while ((digit = (unsigned) *m_Buffer - '0') <= 9) {
@@ -90,6 +91,7 @@ CUTTPReader::EStreamParsingEvent CUTTPReader::GetNextEvent()
         case '-':
             m_LengthAcc = -m_LengthAcc;
             /* FALL THROUGH */
+            NCBI_FALLTHROUGH;
         case '=':
             ++m_Offset;
             ++m_Buffer;
@@ -108,6 +110,8 @@ CUTTPReader::EStreamParsingEvent CUTTPReader::GetNextEvent()
         if (--m_BufferSize == 0 && m_LengthAcc > 0)
             return eEndOfBuffer;
         ++m_Buffer;
+        /* FALL THROUGH */
+        NCBI_FALLTHROUGH;
 
     default: /* case eReadChunk: */
         m_ChunkPart = m_Buffer;
