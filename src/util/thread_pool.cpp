@@ -944,6 +944,7 @@ CThreadPool_Task::CThreadPool_Task(unsigned int priority)
 }
 
 CThreadPool_Task::CThreadPool_Task(const CThreadPool_Task& other)
+    : CObject()
 {
     x_Init(other.m_Priority);
 }
