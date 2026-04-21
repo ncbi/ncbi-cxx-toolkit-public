@@ -107,6 +107,10 @@ public:
         /// CSeqIdException.
         fParse_NoThrow    = 0x100,
 
+        /// Suppress warnings fParse_NoThrow would normally substitute
+        /// for exceptions.
+        fParse_NoWarn     = 0x200,
+
         /// By default in ParseIDs and IsValid, allow raw parsable
         /// non-numeric accessions and plausible local accessions.
         /// (The string-based constructor and Set method have a
