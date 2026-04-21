@@ -247,11 +247,16 @@ string CRequestContext::x_GetHitID(CDiagContext::EDefaultHitIDFlags flag) const
 
 const string& CRequestContext::SetSessionID(void)
 {
-    CNcbiOstrstream oss;
     CDiagContext& ctx = GetDiagContext();
-    oss << ctx.GetStringUID(ctx.UpdateUID()) << '_' << setw(4) << setfill('0')
-        << GetRequestID() << "SID";
-    SetSessionID(CNcbiOstrstreamToString(oss));
+    string sid = ctx.GetStringUID(ctx.UpdateUID());
+    sid.append("_");
+    auto rid = std::to_string(GetRequestID());
+    if (rid.size() < 4) {
+        sid.append(string(4 - rid.size(), '0'));
+    }
+    sid.append(rid);
+    sid.append("SID");
+    SetSessionID(sid);
     return m_SessionID.GetOriginalString();
 }
 
