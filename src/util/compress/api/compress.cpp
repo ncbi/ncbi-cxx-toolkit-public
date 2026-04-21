@@ -314,6 +314,7 @@ CCompressionDictionary::CCompressionDictionary(const string& filename)
         }
     }
     catch (const string& s) {
+        Free();
         NCBI_THROW(CCompressionException, eCompression,
             "CCompressionDictionary:: unable to load dictionary from file '" + 
             filename + "': " + s);
@@ -324,10 +325,18 @@ CCompressionDictionary::CCompressionDictionary(const string& filename)
 CCompressionDictionary::CCompressionDictionary(istream& stream, size_t size)
     : m_Data(NULL), m_Size(0), m_Own(eNoOwnership)
 {
-    size_t m_Size = LoadFromStream(stream, size);
-    if (!m_Size) {
+    try {
+        m_Size = LoadFromStream(stream, size);
+        if (!m_Size) {
+            Free();
+            NCBI_THROW(CCompressionException, eCompression,
+                       "CCompressionDictionary:: unable to load dictionary from stream");
+        }
+    }
+    catch (const string& s) {
+        Free();
         NCBI_THROW(CCompressionException, eCompression,
-            "CCompressionDictionary:: unable to load dictionary from stream");
+            "CCompressionDictionary:: unable to load dictionary from stream: " + s);
     }
 }
 
