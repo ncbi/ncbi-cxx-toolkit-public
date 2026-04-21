@@ -140,8 +140,8 @@ BOOST_AUTO_TEST_CASE(TestUtf8)
         vector<string> str_in  =  {"\316\224 = delta"};
         vector<string> str_out =  {"Delta = delta"};
         for (size_t i = 0; i < str_in.size(); ++i) {
-            string res = utf8::UTF8ToAsciiString(str_in[i].c_str(), &default_translation);
-            BOOST_CHECK_EQUAL(res, str_out[i]);
+            string res2 = utf8::UTF8ToAsciiString(str_in[i].c_str(), &default_translation);
+            BOOST_CHECK_EQUAL(res2, str_out[i]);
         }
     }
     {
