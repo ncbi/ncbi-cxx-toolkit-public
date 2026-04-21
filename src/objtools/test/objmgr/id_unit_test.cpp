@@ -1327,7 +1327,8 @@ BOOST_AUTO_TEST_CASE(Test_HUP)
 
     CSeq_id_Handle id_main = CSeq_id_Handle::GetHandle("NT_077402");
     //CSeq_id_Handle id_hup = CSeq_id_Handle::GetHandle("AY263392");
-    CSeq_id_Handle id_hup = CSeq_id_Handle::GetHandle("PP445004");
+    //CSeq_id_Handle id_hup = CSeq_id_Handle::GetHandle("PP445004");
+    CSeq_id_Handle id_hup = CSeq_id_Handle::GetHandle("MF358689");
     {{
         CScope scope(*objmgr);
         scope.AddDataLoader(gb_hup);
