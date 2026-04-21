@@ -560,10 +560,6 @@ template <typename KeyValueGetter, typename KeyCompare>
 class CStaticArraySearchBase
 {
 public:
-    enum {
-        eNpos = -1
-    };
-
     typedef KeyValueGetter      getter;
     typedef typename getter::value_type   value_type;
     typedef typename getter::key_type     key_type;
@@ -574,6 +570,7 @@ public:
     typedef const value_type*   const_iterator;
     typedef size_t              size_type;
     typedef ssize_t             difference_type;
+    static constexpr difference_type eNpos = -1;
 
     /// Default constructor.  This will build a set around a given array; the
     /// storage of the end pointer is based on the supplied array size.  In
