@@ -61,8 +61,8 @@ void CTextseq_id::x_Reject(const CDiagCompileInfo& info, int subcode,
     } else if ((flags & CSeq_id::fParse_NoWarn) == 0) {
         CNcbiDiag(info).GetRef() << ErrCode(NCBI_ERRCODE_X, subcode) << Warning
                                  << msg << Endm;
-        Reset();
     }
+    Reset();
 }
 
 
