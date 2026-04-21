@@ -1677,7 +1677,7 @@ CRef<CSeqportUtil_implementation::CFast_4_1> CSeqportUtil_implementation::InitFa
     auto start_at = m_IupacnaNcbi2na->m_StartAt;
     auto size = m_IupacnaNcbi2na->m_Size;
     CRef<CFast_4_1> fastTable(new CFast_4_1(4,0,256,0));
-    for(int ch = 0; ch < 256; ch++) {
+    for(size_t ch = 0; ch < 256; ch++) {
         if((ch >= start_at) && (ch < (start_at + size)))
             {
                 unsigned char uch = m_IupacnaNcbi2na->m_Table[ch];
@@ -1700,7 +1700,7 @@ CRef<CSeqportUtil_implementation::CFast_2_1> CSeqportUtil_implementation::InitFa
     auto start_at = m_IupacnaNcbi4na->m_StartAt;
     auto size = m_IupacnaNcbi4na->m_Size;
     CRef<CFast_2_1> fastTable(new CFast_2_1(2,0,256,0));
-    for(int ch = 0; ch < 256; ch++) {
+    for(size_t ch = 0; ch < 256; ch++) {
         if((ch >= start_at) && (ch < (start_at + size)))
             {
                 unsigned char uch = m_IupacnaNcbi4na->m_Table[ch];
@@ -1724,9 +1724,9 @@ CRef<CSeqportUtil_implementation::CFast_2_1> CSeqportUtil_implementation::InitFa
     auto start_at = m_Ncbi4naNcbi2na->m_StartAt;
     auto size = m_Ncbi4naNcbi2na->m_Size;
     CRef<CFast_2_1> fastTable(new CFast_2_1(2,0,256,0));
-    for(int n1 = 0; n1 < 16; n1++)
-        for(int n2 = 0; n2 < 16; n2++) {
-            int nIdx = 16*n1 + n2;
+    for(size_t n1 = 0; n1 < 16; n1++)
+        for(size_t n2 = 0; n2 < 16; n2++) {
+            size_t nIdx = 16*n1 + n2;
             unsigned char u1, u2;
             if((n1 >= start_at) && (n1 < start_at + size))
                 u1 = m_Ncbi4naNcbi2na->m_Table[n1] & 3;
