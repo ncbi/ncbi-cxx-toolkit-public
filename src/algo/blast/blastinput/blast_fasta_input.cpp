@@ -459,8 +459,10 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask,
     // Get the sequence length
     const TSeqPos seqlen = seq_entry->GetSeq().GetInst().GetLength();
     if (seqlen > m_Config.GetMaxSeqLength()) {
+    	const CRef<CSeq_id>  & err_sid = FindBestChoice(itr->GetId(), CSeq_id::Score);
+    	const string err_q_id = err_sid->GetSeqIdString(true);
         NCBI_THROW(CInputException, eLengthLimit,
-                   "Input sequence length exceeds limit: " + NStr::UIntToString(m_Config.GetMaxSeqLength()));
+                  "Sequence length exceeds limit (" + NStr::UIntToString(m_Config.GetMaxSeqLength()) + ") : " + err_q_id);
     }
     _ASSERT(seqlen != numeric_limits<TSeqPos>::max());
     if (to > 0 && to < from) {
