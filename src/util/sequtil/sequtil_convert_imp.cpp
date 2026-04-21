@@ -438,6 +438,7 @@ SIZE_TYPE CSeqConvert_imp::x_Convert2naTo4na
         }}
 
         // intentional fall through
+        NCBI_FALLTHROUGH;
     case 0:
         {{
             // "trick" the compiler so that each assignment will
@@ -482,6 +483,7 @@ SIZE_TYPE CSeqConvert_imp::x_Convert2naTo4na
             }
         }}
         // intentional fall through
+        NCBI_FALLTHROUGH;
     case 1:
         {{
             for ( size_t i = size / 4; i; --i, ++iter ) {
