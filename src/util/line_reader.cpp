@@ -642,6 +642,7 @@ bool CBufferedLineReader::x_ReadBuffer()
         case eRW_Eof:
             m_Eof = true;
             // fall through
+            NCBI_FALLTHROUGH;
         case eRW_Success:
             m_End = m_Pos + size;
             return (result == eRW_Success  ||  size > 0);
