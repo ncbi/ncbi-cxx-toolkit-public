@@ -1573,8 +1573,8 @@ size_t CObjectIStreamAsn::ReadChars(CharBlock& block,
                                 }
 #endif
                                 if (valid == 0) {
-                                     char c = ReplaceVisibleChar(dst[i], fix_method, this, CTempString(dst, count), x_FixCharsSubst());
-                                     dst[i] = c == '\0' ? '#' : c;
+                                     char nc = ReplaceVisibleChar(dst[i], fix_method, this, CTempString(dst, count), x_FixCharsSubst());
+                                     dst[i] = nc == '\0' ? '#' : nc;
                                 }
                             }
                             if (valid != 0) {
