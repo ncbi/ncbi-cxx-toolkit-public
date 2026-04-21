@@ -240,7 +240,7 @@ bool CPrimitiveTypeFunctions<long double>::Equals(TConstObjectPtr obj1,
         return false;
     }
     // We use DBL_EPSILON because I/O is double-based anyway.
-    return (x == y  ||  fabs(x - y) < fabs(x + y) * DBL_EPSILON || x_Practically_Equal<double, Uint8>(x,y));
+    return (x == y  ||  fabs(x - y) < fabs(x + y) * DBL_EPSILON || x_Practically_Equal<double, Uint8>(double(x),double(y)));
 }
 #endif
 
