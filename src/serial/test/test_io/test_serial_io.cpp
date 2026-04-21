@@ -100,7 +100,7 @@ public:
         }
     }
 
-    void DoSelect(E_Choice index, NCBI_NS_NCBI::CObjectMemoryPool* pool)
+    void DoSelect(E_Choice index, NCBI_NS_NCBI::CObjectMemoryPool* /*pool*/)
     {
         m_choice = index;
     }
@@ -207,7 +207,7 @@ public:
         }
     }
 
-    void DoSelect(E_Choice index, NCBI_NS_NCBI::CObjectMemoryPool* pool)
+    void DoSelect(E_Choice index, NCBI_NS_NCBI::CObjectMemoryPool* /*pool*/)
     {
         m_choice = index;
     }
