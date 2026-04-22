@@ -8433,7 +8433,7 @@ UTAI	s	Tel Aviv University
 UTAL	s	Universidad de Talca			
 UTC	s	Utah State University, Biology Department			
 UTCEC	s	Universidad Tecnica de Cotopaxi (Herbario de Botanica Aplicada UTCEC, CAREN (Agriculture Farming and Natural Resources, Facultad de Ciencias Agropecuarias y Recursos Naturales)			
-UTCI 	s	University of Tennessee at Chattanooga Insect Collection	UTCI		
+UTCI 	s	University of Tennessee at Chattanooga Insect Collection			
 UTD	s	University of Texas, Plant Resources Center			
 UTE	s	University of Tartu			
 UTEP	s	University of Texas at El Paso Biodiversity Collections			
