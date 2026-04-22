@@ -103,7 +103,7 @@ int CSubfuseApp::Run(void)
     entries.sort(CmpEntry);
 
     CSubmissionCollector collector(*out);
-    for (auto entry : entries) {
+    for (const auto& entry : entries) {
 
         LOG_POST_EX(0, 0, "[subfuse] Processing: " << entry->GetBase());
         collector.ProcessFile(entry->GetPath());
