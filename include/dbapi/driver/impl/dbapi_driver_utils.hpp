@@ -104,6 +104,8 @@ class NCBI_DBAPIDRIVER_EXPORT CDBBindedParams : public CDBParams
 public:
     CDBBindedParams(impl::CDB_Params& bindings,
                     EOwnership ownership = eNoOwnership);
+    CDBBindedParams(CDBBindedParams&&) = default;
+    CDBBindedParams& operator=(CDBBindedParams&& that) = default;
 
 public:
     virtual unsigned int GetNum(void) const;
@@ -141,7 +143,9 @@ class NCBI_DBAPIDRIVER_EXPORT CCachedRowInfo : public CDBBindedParams
 {
 public:
     CCachedRowInfo(impl::CDB_Params& bindings);
+    CCachedRowInfo(CCachedRowInfo&&) = default;
     virtual ~CCachedRowInfo(void);
+    CCachedRowInfo& operator=(CCachedRowInfo&& that) = default;
 
 public:
     virtual unsigned int GetNum(void) const;

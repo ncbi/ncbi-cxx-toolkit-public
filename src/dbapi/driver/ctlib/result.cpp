@@ -1281,9 +1281,6 @@ bool CTL_CursorResultExpl::Fetch()
         if (!fetch_succeeded)
             return false;
 
-        m_CachedRowInfo = static_cast<const impl::CCachedRowInfo&>
-                                                   (m_Res->GetDefineParams());
-
         int col_cnt = m_Res->GetColumnNum();
         bool need_textptrs = false;
         m_Fields.resize(col_cnt, NULL);
@@ -1301,6 +1298,10 @@ bool CTL_CursorResultExpl::Fetch()
             }
             m_Fields[i] = m_Res->GetItem();
         }
+
+        m_CachedRowInfo
+            = static_cast<impl::CCachedRowInfo&&>(
+                const_cast<CDBParams&>(m_Res->GetDefineParams()));
 
         m_CurItemNo = 0;
         m_ReadBytes = 0;
