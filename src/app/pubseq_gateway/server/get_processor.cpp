@@ -182,19 +182,16 @@ CPSGS_GetProcessor::x_OnSeqIdResolveFinished(
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
-    try {
-        // Base class may need the resolved seq id so memorize it
-        auto &  bioseq_info_record = bioseq_resolution.GetBioseqInfo();
-        m_ResolvedSeqID.Set(CSeq_id_Base::E_Choice(bioseq_info_record.GetSeqIdType()),
+    // Base class may need the resolved seq id so memorize it
+    auto &  bioseq_info_record = bioseq_resolution.GetBioseqInfo();
+    m_ResolvedSeqID.Set(CSeq_id_Base::E_Choice(bioseq_info_record.GetSeqIdType()),
                             bioseq_info_record.GetAccession(),
                             bioseq_info_record.GetName(),
-                            bioseq_info_record.GetVersion());
-    } catch (const exception &  exc) {
-        PSG_WARNING("Cannot build CSeq_id out of the resolved input seq_id "
-                    "due to: " + string(exc.what()));
-    } catch (...) {
-        PSG_WARNING("Cannot build CSeq_id out of the resolved input seq_id "
-                    "due to unknown reason");
+                            bioseq_info_record.GetVersion(),
+                            kEmptyStr,
+                            CSeq_id::fParse_NoThrow | CSeq_id::fParse_NoWarn);
+    if (m_ResolvedSeqID.Which() == CSeq_id::e_not_set) {
+        PSG_WARNING("Cannot build CSeq_id out of the resolved input seq_id");
     }
 
     x_SendBioseqInfo(bioseq_resolution);
