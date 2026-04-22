@@ -306,7 +306,7 @@ enum EAlligSeqType {
 typedef int TAllowSeqType;
 
 static bool IsWGSAccession(const string& acc,
-                           const CTextseq_id& id,
+                           const CTextseq_id& /*id*/,
                            TAllowSeqType allow_seq_type)
 {
     if ( acc.size() < kPrefixLenV1 + kMinRowDigitsV1 ||
@@ -1646,12 +1646,13 @@ bool CWGSClient::GetCompress(
 
 void CWGSClient::SetSeqId(CSeq_id& id, int seq_id_type, const string& seq_id)
 {
+    constexpr CSeq_id::TParseFlags fail_flags = CSeq_id::fParse_NoThrow|CSeq_id::fParse_NoWarn;
     if (seq_id_type <= 0) {
         // no type check
-        id.Set(seq_id);
+        id.Set(seq_id, CSeq_id::fParse_AnyRaw|fail_flags);
     }
     else {
-        id.Set(CSeq_id::eFasta_AsTypeAndContent, CSeq_id::E_Choice(seq_id_type), seq_id);
+        id.Set(CSeq_id::eFasta_AsTypeAndContent, CSeq_id::E_Choice(seq_id_type), seq_id, fail_flags);
     }
 }
 
