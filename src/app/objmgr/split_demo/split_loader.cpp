@@ -81,7 +81,7 @@ CSplitDataLoader::~CSplitDataLoader(void)
 }
 
 
-void CSplitDataLoader::DropTSE(CRef<CTSE_Info> tse_info)
+void CSplitDataLoader::DropTSE(CRef<CTSE_Info> /*tse_info*/)
 {
     // Release loaded data, reset chunk mappings
     m_TSE.Reset();
@@ -95,7 +95,7 @@ void CSplitDataLoader::DropTSE(CRef<CTSE_Info> tse_info)
 
 CSplitDataLoader::TTSE_LockSet
 CSplitDataLoader::GetRecords(const CSeq_id_Handle& idh,
-                             EChoice choice)
+                             EChoice /*choice*/)
 {
     TTSE_LockSet locks;
     TBlobId blob_id = GetBlobId(idh);
@@ -145,7 +145,7 @@ void CSplitDataLoader::GetChunk(TChunk chunk)
 
 
 CSplitDataLoader::TBlobId
-CSplitDataLoader::GetBlobId(const CSeq_id_Handle& idh)
+CSplitDataLoader::GetBlobId(const CSeq_id_Handle& /*idh*/)
 {
     TBlobId blob_id;
     blob_id = new CBlobIdString(m_DataFile);
