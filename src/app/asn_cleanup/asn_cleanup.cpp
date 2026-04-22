@@ -595,7 +595,7 @@ void CCleanupApp::x_ProcessOneDirectory(const string& dirname, const string& suf
     size_t num_files = 0;
 
     CDir::TEntries files(dir.GetEntries(mask, CDir::eFile));
-    for (CDir::TEntry ii : files) {
+    for (const CDir::TEntry& ii : files) {
         if (ii->IsFile()) {
             string fname = CDirEntry::MakePath(dirname, ii->GetName());
             x_ProcessOneFile(fname);
