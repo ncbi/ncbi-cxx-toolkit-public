@@ -30,8 +30,8 @@
  *   Tar archive API.
  *
  *   Supports subsets of POSIX.1-1988 (ustar), POSIX 1003.1-2001 (posix), old
- *   GNU (POSIX 1003.1), and V7 formats (all partially but reasonably).  New
- *   archives are created using POSIX (genuine ustar) format, using GNU
+ *   GNU (pre POSIX 1003.1), and V7 formats (all partially but reasonably).
+ *   New archives are created using POSIX (genuine ustar) format, using GNU
  *   extensions for long names/links only when unavoidable.  It cannot,
  *   however, handle all the exotics like sparse files (except for GNU/1.0
  *   sparse PAX extension) and contiguous files (yet still can work around both
@@ -111,6 +111,12 @@ static bool s_NumToOctal(Uint8 val, char* ptr, size_t len)
 }
 
 
+static inline bool s_IsOctal(char c)
+{
+    return '0' <= c  &&  c <= '7' ? true : false;
+}
+
+
 // Convert an octal number (possibly preceded by spaces) to numeric form.
 // Stop either at the end of the field or at first '\0' (if any).
 static bool s_OctalToNum(Uint8& val, const char* ptr, size_t len)
@@ -124,7 +130,7 @@ static bool s_OctalToNum(Uint8& val, const char* ptr, size_t len)
     }
     val = 0;
     bool okay = false;
-    while (i < len  &&  '0' <= ptr[i]  &&  ptr[i] <= '7') {
+    while (i < len  &&  s_IsOctal(ptr[i])) {
         okay  = true;
         val <<= 3;
         val  |= ptr[i++] - '0';
@@ -382,9 +388,9 @@ enum ETar_Format {
     eTar_Unknown = 0,
     eTar_Legacy  = 1,
     eTar_OldGNU  = 2,
-    eTar_Ustar   = 4,
-    eTar_Posix   = 5,  // |= eTar_Ustar
-    eTar_Star    = 6   // |= eTar_Ustar
+    eTar_Ustar   = 4,                    // POSIX  
+    eTar_Posix   = 5,  // |= eTar_Ustar  // PAX extensions
+    eTar_Star    = 6   // |= eTar_Ustar  // "star" extensions
 };
 
 
@@ -768,13 +774,14 @@ static string s_DumpSparseMap(const STarHeader* h, const char* sparse,
                 int ok_len = s_DecodeUint8(len, sparse + 12, 12);
                 if (ok_off & ok_len) {
                     dump += region;
-                    region = ':' + string(sizeof(TAR_GNU_REGION) - 2, ' ');
+                    if (region[0] == '[')
+                        region = ':' + string(sizeof(TAR_GNU_REGION) - 2, ' ');
                     if (ok_off > 0) {
                         dump += '"';
                         dump += s_Printable(sparse, 12, excpt);
                         dump += "\" ";
                     } else {
-                        dump += string(14, ' ');
+                        dump += string(15, ' ');
                     }
                     sparse += 12;
                     if (ok_len > 0) {
@@ -782,7 +789,7 @@ static string s_DumpSparseMap(const STarHeader* h, const char* sparse,
                         dump += s_Printable(sparse, 12, excpt);
                         dump += "\" ";
                     } else {
-                        dump += string(14, ' ');
+                        dump += string(15, ' ');
                     }
                     sparse += 12;
                     dump += "[@";
@@ -1956,7 +1963,7 @@ CTar::EStatus CTar::x_ParsePAXData(const string& data)
         { "GNU.sparse.minor",    &minor,  nodot, fPAXSparse },
         { "GNU.sparse.size",     &dummy,  nodot, fPAXSparse },
         { "GNU.sparse.name",     0,       &name, fPAXNone   },
-        // Other
+        // Other (star)
         { "SCHILY.realsize",     &sparse, nodot, fPAXSparse }
     };
     const char* s = data.c_str();
@@ -2129,9 +2136,14 @@ static void s_DumpZero(const string& file, Uint8 pos, size_t recsize,
 }
 
 
-static inline bool s_IsOctal(char c)
+static inline bool s_IsOctal(const char* s, size_t n)
 {
-    return '0' <= c  &&  c <= '7' ? true : false;
+    _ASSERT(n);
+    while (n--) {
+        if (!s_IsOctal(*s++))
+            return false;
+    }
+    return true;
 }
 
 
@@ -2153,21 +2165,25 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
     // Check header format
     ETar_Format fmt = eTar_Unknown;
     if (memcmp(h->magic, "ustar", 6) == 0) {
-        if ((h->star.prefix[sizeof(h->star.prefix) - 1] == '\0'
-             &&  s_IsOctal(h->star.atime[0])  &&  h->star.atime[0] == ' '
-             &&  s_IsOctal(h->star.ctime[0])  &&  h->star.ctime[0] == ' ')
-            ||  strcmp(block->buffer + BLOCK_SIZE - 4, "tar") == 0) {
-            fmt = eTar_Star;
-        } else {
+        if (strcmp(block->buffer + BLOCK_SIZE - 4, "tar") != 0) {
             fmt = pax ? eTar_Posix : eTar_Ustar;
+        } else if (h->star.prefix[sizeof(h->star.prefix) - 1] == '\0'
+                   &&  s_IsOctal(h->star.atime, sizeof(h->star.atime) - 1)
+                   &&  (h->star.atime[sizeof(h->star.atime) - 1] == ' '
+                        ||  !h->star.atime[sizeof(h->star.atime) - 1])
+                   &&  s_IsOctal(h->star.ctime, sizeof(h->star.ctime) - 1)
+                   &&  (h->star.ctime[sizeof(h->star.ctime) - 1] == ' '
+                        ||  !h->star.ctime[sizeof(h->star.ctime) - 1])) {
+            fmt = eTar_Star;
         }
     } else if (memcmp(h->magic, "ustar  ", 8) == 0) {
-        // Here the magic is protruded into the adjacent version field
+        // NB: Here the magic is protruded into the adjacent version field
         fmt = eTar_OldGNU;
     } else if (memcmp(h->magic, "\0\0\0\0\0", 6) == 0) {
         // We'll use this also to speedup corruption checks w/checksum
         fmt = eTar_Legacy;
-    } else {
+    }
+    if (fmt == eTar_Unknown) {
         TAR_THROW_EX(this, eUnsupportedTarFormat,
                      "Unrecognized header format", h, fmt);
     }
@@ -2197,7 +2213,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
     }
     int checksum = int(val);
 
-    // Compute both signed and unsigned checksums (for compatibility)
+    // Compute both signed (for compatibility) and unsigned checksums
     int ssum = 0;
     unsigned int usum = 0;
     const char* p = block->buffer;

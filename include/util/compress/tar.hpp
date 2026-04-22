@@ -37,8 +37,8 @@
 ///  Tar archive API.
 ///
 ///  Supports subsets of POSIX.1-1988 (ustar), POSIX 1003.1-2001 (posix), old
-///  GNU (POSIX 1003.1), and V7 formats (all partially but reasonably).  New
-///  archives are created using POSIX (genuine ustar) format, using GNU
+///  GNU (pre POSIX 1003.1), and V7 formats (all partially but reasonably).
+///  New archives are created using POSIX (genuine ustar) format, using GNU
 ///  extensions for long names/links only when unavoidable.  It cannot,
 ///  however, handle all the exotics like sparse files (except for GNU/1.0
 ///  sparse PAX extension) and contiguous files (yet still can work around both
