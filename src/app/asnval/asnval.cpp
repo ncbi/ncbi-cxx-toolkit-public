@@ -364,7 +364,7 @@ size_t CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse, CAsyncMes
     }
 
     if (separate_outputs) {
-        for (CDir::TEntry ii : files) {
+        for (const CDir::TEntry& ii : files) {
             string fname = ii->GetName();
             if (ii->IsFile() &&
                 (!args["f"] || NStr::Find(fname, args["f"].AsString()) != NPOS)) {
@@ -379,7 +379,7 @@ size_t CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse, CAsyncMes
             }
         }
     } else {
-        for (CDir::TEntry ii : files) {
+        for (const CDir::TEntry& ii : files) {
             string fname = ii->GetName();
             if (ii->IsFile() &&
                 (!args["f"] || NStr::Find(fname, args["f"].AsString()) != NPOS)) {
@@ -397,7 +397,7 @@ size_t CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse, CAsyncMes
 
     if (recurse) {
         CDir::TEntries subdirs(dir.GetEntries("", CDir::eDir));
-        for (CDir::TEntry ii : subdirs) {
+        for (const CDir::TEntry& ii : subdirs) {
             string subdir = ii->GetName();
             if (ii->IsDir() && !NStr::Equal(subdir, ".") && !NStr::Equal(subdir, "..")) {
                 string subname = CDirEntry::MakePath(dir_name, subdir);
