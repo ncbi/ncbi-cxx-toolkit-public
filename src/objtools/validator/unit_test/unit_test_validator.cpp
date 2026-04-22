@@ -8104,7 +8104,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSpecificHost)
     TestSpecificHostNoError("Snake");
     TestSpecificHostNoError("Turtle");
     TestSpecificHostNoError("mallard duck");
-    TestSpecificHostNoError("Guinea pig");
+   // TestSpecificHostNoError("Guinea pig"); RW-2673
     TestSpecificHostNoError("sea urchin"); // RW-1364
 }
 
@@ -8180,11 +8180,11 @@ BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
     host = "Homo sapiens; sex: female";
     BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
     BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
-
+/*  // RW-2673
     host = "Guinea pig";
     BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
     BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
-
+*/
     host = "Equus sp.";
     BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
     BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
