@@ -88,7 +88,7 @@ namespace {
     }
 
     template<typename THandle>
-    bool s_IsHandleABioseqSet( const THandle & data_h )
+    bool s_IsHandleABioseqSet( const THandle & /*data_h*/ )
     {
         const string & sTypeName = THandle::TObject::GetTypeInfo()->GetName();
         if( sTypeName == "Bioseq-set" ) {
