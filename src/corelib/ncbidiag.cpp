@@ -2398,8 +2398,10 @@ void CDiagContext_Extra::Flush(void)
         return;
     }
 
+    bool is_disabled_event = s_IsDisabledAppLogEvent(CDiagContext::GetRequestContext(), m_EventType);
+
     // Add ncbi-role and ncbi-location just before setting m_Flushed flag.
-    if (m_EventType == SDiagMessage::eEvent_RequestStart) {
+    if (!is_disabled_event && m_EventType == SDiagMessage::eEvent_RequestStart) {
         PrintNcbiRoleAndLocation().PrintNcbiAppInfoOnRequest();
     }
     // Prevent double-flush
@@ -2438,7 +2440,7 @@ void CDiagContext_Extra::Flush(void)
             .append(NStr::DoubleToString(m_PerfTime, -1, NStr::fDoubleFixed));
     }
 
-    if (!s_IsDisabledAppLogEvent(CDiagContext::GetRequestContext(), m_EventType)) {
+    if (!is_disabled_event) {
         SDiagMessage mess(eDiag_Info,
                           s.data(), s.size(),
                           0, 0, // file, line
