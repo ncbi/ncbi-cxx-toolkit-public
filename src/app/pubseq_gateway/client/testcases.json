@@ -28832,8 +28832,8 @@
                 }
             ]
         },
-        "HUP biodata of gb|PP445004| (bad cookie)": {
-            "description": "HUP biodata of gb|PP445004| (bad cookie)",
+        "HUP biodata of gb|XXN32607| (bad cookie)": {
+            "description": "HUP biodata of gb|XXN32607| (bad cookie)",
             "tags": ["id-get", "cassandra", "400", "hup-bad-cookie"],
             "env": {"NCBI_PSG_AUTH_TOKEN": "No-HUP-Allowed"},
             "requests": [
@@ -28843,7 +28843,7 @@
                         "method": "biodata",
                         "params": {
                             "bio_id": [
-                                "gb|PP445004|",
+                                "gb|XXN32607|",
                                 "5"
                             ],
                             "request_flags": [
@@ -28862,26 +28862,26 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "gi|2695360147",
+                            "id": "gi|3021103303",
                             "type": 12
                         },
                         "other_ids": [
                             {
-                                "id": "gb|PP445004",
+                                "id": "gb|XXN32607",
                                 "type": 5
                             }
                         ],
-                        "molecule_type": "rna",
-                        "length": 6680,
+                        "molecule_type": "aa",
+                        "length": 482,
                         "seq_state": 10,
                         "state": 10,
                         "blob_id": {
-                            "id": "20.37823530"
+                            "id": "20.39689094"
                         },
                         "tax_id": 0,
-                        "hash": 195649713,
+                        "hash": 905942975,
                         "date_changed": null,
-                        "gi": 2695360147
+                        "gi": 3021103303
                     }
                 },
                 {
@@ -28918,8 +28918,8 @@
                 }
             ]
         },
-        "HUP biodata of 2695360147 (bad cookie)": {
-            "description": "HUP biodata of 2695360147 (bad cookie)",
+        "HUP biodata of 3021103303 (bad cookie)": {
+            "description": "HUP biodata of 3021103303 (bad cookie)",
             "tags": ["id-get", "cassandra", "400", "hup-bad-cookie"],
             "env": {"NCBI_PSG_AUTH_TOKEN": "No-HUP-Allowed"},
             "requests": [
@@ -28929,7 +28929,7 @@
                         "method": "biodata",
                         "params": {
                             "bio_id": [
-                                "2695360147",
+                                "3021103303",
                                 "12"
                             ],
                             "request_flags": [
@@ -28948,26 +28948,26 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "gi|2695360147",
+                            "id": "gi|3021103303",
                             "type": 12
                         },
                         "other_ids": [
                             {
-                                "id": "gb|PP445004",
+                                "id": "gb|XXN32607",
                                 "type": 5
                             }
                         ],
-                        "molecule_type": "rna",
-                        "length": 6680,
+                        "molecule_type": "aa",
+                        "length": 482,
                         "seq_state": 10,
                         "state": 10,
                         "blob_id": {
-                            "id": "20.37823530"
+                            "id": "20.39689094"
                         },
                         "tax_id": 0,
-                        "hash": 195649713,
+                        "hash": 905942975,
                         "date_changed": null,
-                        "gi": 2695360147
+                        "gi": 3021103303
                     }
                 },
                 {
@@ -29116,8 +29116,8 @@
                 }
             ]
         },
-        "HUP biodata of gb|PP445004| (no cookie)": {
-            "description": "HUP biodata of gb|PP445004| (no cookie)",
+        "HUP biodata of gb|XXN32607| (no cookie)": {
+            "description": "HUP biodata of gb|XXN32607| (no cookie)",
             "tags": ["id-get", "cassandra", "400", "hup-no-cookie"],
             "env": {"HTTP_COOKIE": ""},
             "requests": [
@@ -29127,7 +29127,7 @@
                         "method": "biodata",
                         "params": {
                             "bio_id": [
-                                "gb|PP445004|",
+                                "gb|XXN32607|",
                                 "5"
                             ],
                             "request_flags": [
@@ -29146,26 +29146,26 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "gi|2695360147",
+                            "id": "gi|3021103303",
                             "type": 12
                         },
                         "other_ids": [
                             {
-                                "id": "gb|PP445004",
+                                "id": "gb|XXN32607",
                                 "type": 5
                             }
                         ],
-                        "molecule_type": "rna",
-                        "length": 6680,
+                        "molecule_type": "aa",
+                        "length": 482,
                         "seq_state": 10,
                         "state": 10,
                         "blob_id": {
-                            "id": "20.37823530"
+                            "id": "20.39689094"
                         },
                         "tax_id": 0,
-                        "hash": 195649713,
+                        "hash": 905942975,
                         "date_changed": null,
-                        "gi": 2695360147
+                        "gi": 3021103303
                     }
                 },
                 {
@@ -29202,8 +29202,8 @@
                 }
             ]
         },
-        "HUP biodata of 2695360147 (no cookie)": {
-            "description": "HUP biodata of 2695360147 (no cookie)",
+        "HUP biodata of 3021103303 (no cookie)": {
+            "description": "HUP biodata of 3021103303 (no cookie)",
             "tags": ["id-get", "cassandra", "400", "hup-no-cookie"],
             "env": {"HTTP_COOKIE": ""},
             "requests": [
@@ -29213,7 +29213,7 @@
                         "method": "biodata",
                         "params": {
                             "bio_id": [
-                                "2695360147",
+                                "3021103303",
                                 "12"
                             ],
                             "request_flags": [
@@ -29232,26 +29232,26 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "gi|2695360147",
+                            "id": "gi|3021103303",
                             "type": 12
                         },
                         "other_ids": [
                             {
-                                "id": "gb|PP445004",
+                                "id": "gb|XXN32607",
                                 "type": 5
                             }
                         ],
-                        "molecule_type": "rna",
-                        "length": 6680,
+                        "molecule_type": "aa",
+                        "length": 482,
                         "seq_state": 10,
                         "state": 10,
                         "blob_id": {
-                            "id": "20.37823530"
+                            "id": "20.39689094"
                         },
                         "tax_id": 0,
-                        "hash": 195649713,
+                        "hash": 905942975,
                         "date_changed": null,
-                        "gi": 2695360147
+                        "gi": 3021103303
                     }
                 },
                 {
