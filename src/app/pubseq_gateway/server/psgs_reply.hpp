@@ -61,8 +61,7 @@ public:
     CPSGS_Reply(unique_ptr<CHttpReply>  low_level_reply) :
         m_Reply(low_level_reply.release()),
         m_ReplyOwned(true),
-        m_NextItemIdLock(false),
-        m_NextItemId(0),
+        m_NextItemId(1),
         m_TotalSentReplyChunks(0),
         m_ConnectionCanceled(false),
         m_RequestId(0),
@@ -77,8 +76,7 @@ public:
     CPSGS_Reply(CHttpReply *  low_level_reply) :
         m_Reply(low_level_reply),
         m_ReplyOwned(false),
-        m_NextItemIdLock(false),
-        m_NextItemId(0),
+        m_NextItemId(1),
         m_TotalSentReplyChunks(0),
         m_ConnectionCanceled(false),
         m_RequestId(0),
@@ -134,9 +132,7 @@ public:
 
     size_t  GetItemId(void)
     {
-        CSpinlockGuard      guard(&m_NextItemIdLock);
-        auto    ret = ++m_NextItemId;
-        return ret;
+        return m_NextItemId.fetch_add(1, memory_order_relaxed);
     }
 
     void SetRequestId(size_t  request_id);
@@ -389,8 +385,7 @@ private:
 private:
     CHttpReply *            m_Reply;
     bool                    m_ReplyOwned;
-    atomic<bool>            m_NextItemIdLock;
-    size_t                  m_NextItemId;
+    atomic<size_t>          m_NextItemId;
     int32_t                 m_TotalSentReplyChunks;
     mutex                   m_ChunksLock;
     vector<h2o_iovec_t>     m_Chunks;
