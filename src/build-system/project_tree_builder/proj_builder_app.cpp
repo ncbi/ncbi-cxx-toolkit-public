@@ -407,7 +407,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(4,13,0) );
+    SetVersion( CVersionInfo(4,14,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
