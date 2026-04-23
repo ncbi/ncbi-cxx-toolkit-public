@@ -3129,6 +3129,13 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
 
     int ver = 0;
     switch (type) {
+    case e_Local:
+        if (fields[0].empty()) {
+            REJECT_X(38, flags, "Empty local ID supplied");
+            return next_type;
+        }
+        break;
+
     case e_Swissprot:
         if (tv == eTV_tr) {
             fields[2] = "unreviewed";
