@@ -198,6 +198,20 @@ protected:
     void x_ProcessPacket(CReaderRequestResult& result,
                          CID2_Request_Packet& packet,
                          const SAnnotSelector* sel);
+    enum class EBulkState {
+        initial,
+        after_reply
+    };
+    void x_ProcessPacket(CReaderRequestResult& result,
+                         CID2_Request_Packet& packet,
+                         size_t packet_start,
+                         size_t packet_end,
+                         function<bool(size_t, EBulkState)> process);
+    bool x_ProcessBulk(CReaderRequestResult& result,
+                       size_t count,
+                       size_t max_request_size,
+                       function<bool(size_t, EBulkState)> process,
+                       function<CRef<CID2_Request>(size_t)> create_request);
 
     enum EErrorFlags {
         fError_warning              = 1 << 0,

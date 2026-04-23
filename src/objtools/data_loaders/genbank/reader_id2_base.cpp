@@ -552,6 +552,56 @@ bool CId2ReaderBase::LoadSequenceType(CReaderRequestResult& result,
 }
 
 
+void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
+                                     CID2_Request_Packet& packet,
+                                     size_t packet_start,
+                                     size_t packet_end,
+                                     function<bool(size_t, EBulkState)> process)
+{
+    if ( !packet.Set().empty() ) {
+        x_ProcessPacket(result, packet, 0);
+        for ( size_t i = packet_start; i < packet_end; ++i ) {
+            process(i, EBulkState::after_reply);
+        }
+        packet.Set().clear();
+    }
+}
+
+
+bool CId2ReaderBase::x_ProcessBulk(CReaderRequestResult& result,
+                                   size_t count,
+                                   size_t max_request_size,
+                                   function<bool(size_t, EBulkState)> process,
+                                   function<CRef<CID2_Request>(size_t)> create_request)
+{
+    CID2_Request_Packet packet;
+    size_t packet_start = 0;
+    
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( process(i, EBulkState::initial) ) {
+            continue;
+        }
+        auto req = create_request(i);
+        if ( !req ) {
+            // switch to non bulk processing
+            return false;
+        }
+        if ( packet.Set().empty() ) {
+            packet_start = i;
+        }
+        packet.Set().push_back(req);
+        
+        if ( packet.Set().size() == max_request_size ) {
+            x_ProcessPacket(result, packet, packet_start, i+1, process);
+        }
+    }
+
+    x_ProcessPacket(result, packet, packet_start, count, process);
+    
+    return true;
+}
+
+
 bool CId2ReaderBase::LoadBulkIds(CReaderRequestResult& result,
                                  const TIds& ids, TLoaded& loaded, TBulkIds& ret)
 {
@@ -560,13 +610,9 @@ bool CId2ReaderBase::LoadBulkIds(CReaderRequestResult& result,
         return CReader::LoadBulkIds(result, ids, loaded, ret);
     }
 
-    size_t count = ids.size();
-    CID2_Request_Packet packet;
-    size_t packet_start = 0;
-    
-    for ( size_t i = 0; i < count; ++i ) {
+    auto process = [&](size_t i, EBulkState) {
         if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-            continue;
+            return true;
         }
         CLoadLockSeqIds lock(result, ids[i]);
         if ( lock.IsLoaded() ) {
@@ -575,58 +621,21 @@ bool CId2ReaderBase::LoadBulkIds(CReaderRequestResult& result,
                 ret[i] = data.Get();
                 loaded[i] = true;
             }
-            continue;
+            return true;
         }
-        
+        return false;
+    };
+    auto create_request = [&](size_t i) {
         CRef<CID2_Request> req(new CID2_Request);
         CID2_Request::C_Request::TGet_seq_id& get_id =
             req->SetRequest().SetGet_seq_id();
         get_id.SetSeq_id().SetSeq_id().Assign(*ids[i].GetSeqId());
         get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_all);
-        if ( packet.Set().empty() ) {
-            packet_start = i;
-        }
-        packet.Set().push_back(req);
-        if ( packet.Set().size() == max_request_size ) {
-            x_ProcessPacket(result, packet, 0);
-            size_t count = i+1;
-            for ( size_t i = packet_start; i < count; ++i ) {
-                if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-                    continue;
-                }
-                CLoadLockSeqIds lock(result, ids[i]);
-                if ( lock.IsLoaded() ) {
-                    CFixedSeq_ids data = lock.GetSeq_ids();
-                    if ( data.IsFound() ) {
-                        ret[i] = data.Get();
-                        loaded[i] = true;
-                    }
-                    continue;
-                }
-            }
-            packet.Set().clear();
-        }
-    }
+        return req;
+    };
 
-    if ( !packet.Set().empty() ) {
-        x_ProcessPacket(result, packet, 0);
-
-        for ( size_t i = packet_start; i < count; ++i ) {
-            if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-                continue;
-            }
-            CLoadLockSeqIds lock(result, ids[i]);
-            if ( lock.IsLoaded() ) {
-                CFixedSeq_ids data = lock.GetSeq_ids();
-                if ( data.IsFound() ) {
-                    ret[i] = data.Get();
-                    loaded[i] = true;
-                }
-                continue;
-            }
-        }
-    }
-
+    x_ProcessBulk(result, ids.size(), max_request_size, process, create_request);
+    
     return true;
 }
 
@@ -639,13 +648,9 @@ bool CId2ReaderBase::LoadAccVers(CReaderRequestResult& result,
         return CReader::LoadAccVers(result, ids, loaded, ret);
     }
 
-    size_t count = ids.size();
-    CID2_Request_Packet packet;
-    size_t packet_start = 0;
-    
-    for ( size_t i = 0; i < count; ++i ) {
+    auto process = [&](size_t i, EBulkState) {
         if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-            continue;
+            return true;
         }
         CLoadLockAcc lock(result, ids[i]);
         if ( lock.IsLoadedAccVer() ) {
@@ -654,58 +659,21 @@ bool CId2ReaderBase::LoadAccVers(CReaderRequestResult& result,
                 ret[i] = lock.GetAcc(data);
                 loaded[i] = true;
             }
-            continue;
+            return true;
         }
-        
+        return false;
+    };
+    auto create_request = [&](size_t i) {
         CRef<CID2_Request> req(new CID2_Request);
         CID2_Request::C_Request::TGet_seq_id& get_id =
             req->SetRequest().SetGet_seq_id();
         get_id.SetSeq_id().SetSeq_id().Assign(*ids[i].GetSeqId());
         get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_all);
-        if ( packet.Set().empty() ) {
-            packet_start = i;
-        }
-        packet.Set().push_back(req);
-        if ( packet.Set().size() == max_request_size ) {
-            x_ProcessPacket(result, packet, 0);
-            size_t count = i+1;
-            for ( size_t i = packet_start; i < count; ++i ) {
-                if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-                    continue;
-                }
-                CLoadLockAcc lock(result, ids[i]);
-                if ( lock.IsLoadedAccVer() ) {
-                    TSequenceAcc data = lock.GetAccVer();
-                    if ( lock.IsFound(data) ) {
-                        ret[i] = lock.GetAcc(data);
-                        loaded[i] = true;
-                    }
-                    continue;
-                }
-            }
-            packet.Set().clear();
-        }
-    }
+        return req;
+    };
 
-    if ( !packet.Set().empty() ) {
-        x_ProcessPacket(result, packet, 0);
-
-        for ( size_t i = packet_start; i < count; ++i ) {
-            if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-                continue;
-            }
-            CLoadLockAcc lock(result, ids[i]);
-            if ( lock.IsLoadedAccVer() ) {
-                TSequenceAcc data = lock.GetAccVer();
-                if ( lock.IsFound(data) ) {
-                    ret[i] = lock.GetAcc(data);
-                    loaded[i] = true;
-                }
-                continue;
-            }
-        }
-    }
-
+    x_ProcessBulk(result, ids.size(), max_request_size, process, create_request);
+    
     return true;
 }
 
@@ -718,13 +686,9 @@ bool CId2ReaderBase::LoadGis(CReaderRequestResult& result,
         return CReader::LoadGis(result, ids, loaded, ret);
     }
 
-    size_t count = ids.size();
-    CID2_Request_Packet packet;
-    size_t packet_start = 0;
-    
-    for ( size_t i = 0; i < count; ++i ) {
+    auto process = [&](size_t i, EBulkState) {
         if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-            continue;
+            return true;
         }
         CLoadLockGi lock(result, ids[i]);
         if ( lock.IsLoadedGi() ) {
@@ -733,58 +697,21 @@ bool CId2ReaderBase::LoadGis(CReaderRequestResult& result,
                 ret[i] = lock.GetGi(data);
                 loaded[i] = true;
             }
-            continue;
+            return true;
         }
-        
+        return false;
+    };
+    auto create_request = [&](size_t i) {
         CRef<CID2_Request> req(new CID2_Request);
         CID2_Request::C_Request::TGet_seq_id& get_id =
             req->SetRequest().SetGet_seq_id();
         get_id.SetSeq_id().SetSeq_id().Assign(*ids[i].GetSeqId());
         get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_all);
-        if ( packet.Set().empty() ) {
-            packet_start = i;
-        }
-        packet.Set().push_back(req);
-        if ( packet.Set().size() == max_request_size ) {
-            x_ProcessPacket(result, packet, 0);
-            size_t count = i+1;
-            for ( size_t i = packet_start; i < count; ++i ) {
-                if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-                    continue;
-                }
-                CLoadLockGi lock(result, ids[i]);
-                if ( lock.IsLoadedGi() ) {
-                    TSequenceGi data = lock.GetGi();
-                    if ( lock.IsFound(data) ) {
-                        ret[i] = lock.GetGi(data);
-                        loaded[i] = true;
-                    }
-                    continue;
-                }
-            }
-            packet.Set().clear();
-        }
-    }
+        return req;
+    };
 
-    if ( !packet.Set().empty() ) {
-        x_ProcessPacket(result, packet, 0);
-
-        for ( size_t i = packet_start; i < count; ++i ) {
-            if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-                continue;
-            }
-            CLoadLockGi lock(result, ids[i]);
-            if ( lock.IsLoadedGi() ) {
-                TSequenceGi data = lock.GetGi();
-                if ( lock.IsFound(data) ) {
-                    ret[i] = lock.GetGi(data);
-                    loaded[i] = true;
-                }
-                continue;
-            }
-        }
-    }
-
+    x_ProcessBulk(result, ids.size(), max_request_size, process, create_request);
+    
     return true;
 }
 
@@ -797,21 +724,31 @@ bool CId2ReaderBase::LoadLabels(CReaderRequestResult& result,
         return CReader::LoadLabels(result, ids, loaded, ret);
     }
 
-    size_t count = ids.size();
-    CID2_Request_Packet packet;
-    size_t packet_start = 0;
-    
-    for ( size_t i = 0; i < count; ++i ) {
+    auto process = [&](size_t i, EBulkState state) {
         if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-            continue;
+            return true;
         }
         CLoadLockLabel lock(result, ids[i]);
         if ( lock.IsLoadedLabel() ) {
             ret[i] = lock.GetLabel();
             loaded[i] = true;
-            continue;
+            return true;
         }
-        
+        if ( state == EBulkState::after_reply ) {
+            m_AvoidRequest |= fAvoidRequest_for_Seq_id_label;
+            CLoadLockSeqIds ids_lock(result, ids[i]);
+            if ( ids_lock.IsLoaded() ) {
+                string label = ids_lock.GetSeq_ids().FindLabel();
+                lock.SetLoadedLabel(label,
+                                    ids_lock.GetExpirationTime());
+                ret[i] = label;
+                loaded[i] = true;
+                return true;
+            }
+        }
+        return false;
+    };
+    auto create_request = [&](size_t i) {
         CRef<CID2_Request> req(new CID2_Request);
         CID2_Request::C_Request::TGet_seq_id& get_id =
             req->SetRequest().SetGet_seq_id();
@@ -822,65 +759,10 @@ bool CId2ReaderBase::LoadLabels(CReaderRequestResult& result,
         else {
             get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_label);
         }
-        if ( packet.Set().empty() ) {
-            packet_start = i;
-        }
-        packet.Set().push_back(req);
-        if ( packet.Set().size() == max_request_size ) {
-            x_ProcessPacket(result, packet, 0);
-            size_t count = i+1;
-            for ( size_t i = packet_start; i < count; ++i ) {
-                if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-                    continue;
-                }
-                CLoadLockLabel lock(result, ids[i]);
-                if ( lock.IsLoadedLabel() ) {
-                    ret[i] = lock.GetLabel();
-                    loaded[i] = true;
-                    continue;
-                }
-                else {
-                    m_AvoidRequest |= fAvoidRequest_for_Seq_id_label;
-                    CLoadLockSeqIds ids_lock(result, ids[i]);
-                    if ( ids_lock.IsLoaded() ) {
-                        string label = ids_lock.GetSeq_ids().FindLabel();
-                        lock.SetLoadedLabel(label,
-                                            ids_lock.GetExpirationTime());
-                        ret[i] = label;
-                        loaded[i] = true;
-                    }
-                }
-            }
-            packet.Set().clear();
-        }
-    }
+        return req;
+    };
 
-    if ( !packet.Set().empty() ) {
-        x_ProcessPacket(result, packet, 0);
-
-        for ( size_t i = packet_start; i < count; ++i ) {
-            if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-                continue;
-            }
-            CLoadLockLabel lock(result, ids[i]);
-            if ( lock.IsLoadedLabel() ) {
-                ret[i] = lock.GetLabel();
-                loaded[i] = true;
-                continue;
-            }
-            else {
-                m_AvoidRequest |= fAvoidRequest_for_Seq_id_label;
-                CLoadLockSeqIds ids_lock(result, ids[i]);
-                if ( ids_lock.IsLoaded() ) {
-                    string label = ids_lock.GetSeq_ids().FindLabel();
-                    lock.SetLoadedLabel(label,
-                                        ids_lock.GetExpirationTime());
-                    ret[i] = label;
-                    loaded[i] = true;
-                }
-            }
-        }
-    }
+    x_ProcessBulk(result, ids.size(), max_request_size, process, create_request);
 
     return true;
 }
@@ -895,71 +777,37 @@ bool CId2ReaderBase::LoadTaxIds(CReaderRequestResult& result,
         return CReader::LoadTaxIds(result, ids, loaded, ret);
     }
 
-    size_t count = ids.size();
-    CID2_Request_Packet packet;
-    size_t packet_start = 0;
-    
-    for ( size_t i = 0; i < count; ++i ) {
+    auto process = [&](size_t i, EBulkState state) {
         if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-            continue;
-        }
-        if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_taxid ) {
-            return CReader::LoadTaxIds(result, ids, loaded, ret);
+            return true;
         }
         CLoadLockTaxId lock(result, ids[i]);
         if ( lock.IsLoadedTaxId() ) {
             ret[i] = lock.GetTaxId();
             loaded[i] = true;
-            continue;
+            return true;
         }
-        
+        if ( state == EBulkState::after_reply ) {
+            m_AvoidRequest |= fAvoidRequest_for_Seq_id_taxid;
+        }
+        return false;
+    };
+    auto create_request = [&](size_t i) {
         CRef<CID2_Request> req(new CID2_Request);
-        CID2_Request::C_Request::TGet_seq_id& get_id =
-            req->SetRequest().SetGet_seq_id();
-        get_id.SetSeq_id().SetSeq_id().Assign(*ids[i].GetSeqId());
-        get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_taxid);
-        if ( packet.Set().empty() ) {
-            packet_start = i;
+        if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_taxid ) {
+            req = null;
         }
-        packet.Set().push_back(req);
-        if ( packet.Set().size() == max_request_size ) {
-            x_ProcessPacket(result, packet, 0);
-            size_t count = i+1;
-            for ( size_t i = packet_start; i < count; ++i ) {
-                if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-                    continue;
-                }
-                CLoadLockTaxId lock(result, ids[i]);
-                if ( lock.IsLoadedTaxId() ) {
-                    ret[i] = lock.GetTaxId();
-                    loaded[i] = true;
-                    continue;
-                }
-                else {
-                    m_AvoidRequest |= fAvoidRequest_for_Seq_id_taxid;
-                }
-            }
-            packet.Set().clear();
+        else {
+            CID2_Request::C_Request::TGet_seq_id& get_id =
+                req->SetRequest().SetGet_seq_id();
+            get_id.SetSeq_id().SetSeq_id().Assign(*ids[i].GetSeqId());
+            get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_taxid);
         }
-    }
+        return req;
+    };
 
-    if ( !packet.Set().empty() ) {
-        x_ProcessPacket(result, packet, 0);
-
-        for ( size_t i = packet_start; i < count; ++i ) {
-            if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-                continue;
-            }
-            CLoadLockTaxId lock(result, ids[i]);
-            if ( lock.IsLoadedTaxId() ) {
-                ret[i] = lock.GetTaxId();
-                loaded[i] = true;
-                continue;
-            }
-            else {
-                m_AvoidRequest |= fAvoidRequest_for_Seq_id_taxid;
-            }
-        }
+    if ( !x_ProcessBulk(result, ids.size(), max_request_size, process, create_request) ) {
+        return CReader::LoadTaxIds(result, ids, loaded, ret);
     }
 
     return true;
@@ -976,16 +824,9 @@ bool CId2ReaderBase::LoadHashes(CReaderRequestResult& result,
         return CReader::LoadHashes(result, ids, loaded, ret, known);
     }
 
-    size_t count = ids.size();
-    CID2_Request_Packet packet;
-    size_t packet_start = 0;
-    
-    for ( size_t i = 0; i < count; ++i ) {
+    auto process = [&](size_t i, EBulkState state) {
         if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-            continue;
-        }
-        if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_hash ) {
-            return CReader::LoadHashes(result, ids, loaded, ret, known);
+            return true;
         }
         CLoadLockHash lock(result, ids[i]);
         if ( lock.IsLoadedHash() ) {
@@ -994,75 +835,34 @@ bool CId2ReaderBase::LoadHashes(CReaderRequestResult& result,
                 ret[i] = hash.hash;
                 loaded[i] = true;
                 known[i] = true;
-                continue;
+                return true;
             }
             else if ( !hash.sequence_found ) {
                 // no sequence at all
-                continue;
+                return true;
             }
         }
-        
+        if ( state == EBulkState::after_reply ) {
+            m_AvoidRequest |= fAvoidRequest_for_Seq_id_hash;
+        }
+        return false;
+    };
+    auto create_request = [&](size_t i) {
         CRef<CID2_Request> req(new CID2_Request);
-        CID2_Request::C_Request::TGet_seq_id& get_id =
-            req->SetRequest().SetGet_seq_id();
-        get_id.SetSeq_id().SetSeq_id().Assign(*ids[i].GetSeqId());
-        get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_hash);
-        if ( packet.Set().empty() ) {
-            packet_start = i;
+        if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_hash ) {
+            req = null;
         }
-        packet.Set().push_back(req);
-        if ( packet.Set().size() == max_request_size ) {
-            x_ProcessPacket(result, packet, 0);
-            size_t count = i+1;
-            for ( size_t i = packet_start; i < count; ++i ) {
-                if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-                    continue;
-                }
-                CLoadLockHash lock(result, ids[i]);
-                if ( lock.IsLoadedHash() ) {
-                    TSequenceHash hash = lock.GetHash();
-                    if ( hash.hash_known ) {
-                        ret[i] = hash.hash;
-                        loaded[i] = true;
-                        known[i] = true;
-                        continue;
-                    }
-                    else if ( !hash.sequence_found ) {
-                        // no sequence at all
-                        continue;
-                    }
-                }
-                else {
-                    m_AvoidRequest |= fAvoidRequest_for_Seq_id_hash;
-                }
-            }
-            packet.Set().clear();
+        else {
+            CID2_Request::C_Request::TGet_seq_id& get_id =
+                req->SetRequest().SetGet_seq_id();
+            get_id.SetSeq_id().SetSeq_id().Assign(*ids[i].GetSeqId());
+            get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_hash);
         }
-    }
+        return req;
+    };
 
-    if ( !packet.Set().empty() ) {
-        x_ProcessPacket(result, packet, 0);
-
-        for ( size_t i = packet_start; i < count; ++i ) {
-            if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-                continue;
-            }
-            CLoadLockHash lock(result, ids[i]);
-            TSequenceHash hash = lock.GetHash();
-            if ( hash.hash_known ) {
-                ret[i] = hash.hash;
-                loaded[i] = true;
-                known[i] = true;
-                continue;
-            }
-            else if ( !hash.sequence_found ) {
-                // no sequence at all
-                continue;
-            }
-            else {
-                m_AvoidRequest |= fAvoidRequest_for_Seq_id_hash;
-            }
-        }
+    if ( !x_ProcessBulk(result, ids.size(), max_request_size, process, create_request) ) {
+        return CReader::LoadHashes(result, ids, loaded, ret, known);
     }
 
     return true;
@@ -1078,72 +878,38 @@ bool CId2ReaderBase::LoadLengths(CReaderRequestResult& result,
         return CReader::LoadLengths(result, ids, loaded, ret);
     }
 
-    size_t count = ids.size();
-    CID2_Request_Packet packet;
-    size_t packet_start = 0;
-    
-    for ( size_t i = 0; i < count; ++i ) {
+    auto process = [&](size_t i, EBulkState state) {
         if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-            continue;
-        }
-        if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_length ) {
-            return CReader::LoadLengths(result, ids, loaded, ret);
+            return true;
         }
         CLoadLockLength lock(result, ids[i]);
         if ( lock.IsLoadedLength() ) {
             ret[i] = lock.GetLength();
             loaded[i] = true;
-            continue;
+            return true;
         }
-        
+        if ( state == EBulkState::after_reply ) {
+            m_AvoidRequest |= fAvoidRequest_for_Seq_id_length;
+        }
+        return false;
+    };
+    auto create_request = [&](size_t i) {
         CRef<CID2_Request> req(new CID2_Request);
-        CID2_Request::C_Request::TGet_seq_id& get_id =
-            req->SetRequest().SetGet_seq_id();
-        get_id.SetSeq_id().SetSeq_id().Assign(*ids[i].GetSeqId());
-        get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_all |
-                              CID2_Request_Get_Seq_id::eSeq_id_type_seq_length);
-        if ( packet.Set().empty() ) {
-            packet_start = i;
+        if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_length ) {
+            req = null;
         }
-        packet.Set().push_back(req);
-        if ( packet.Set().size() == max_request_size ) {
-            x_ProcessPacket(result, packet, 0);
-            size_t count = i+1;
-            for ( size_t i = packet_start; i < count; ++i ) {
-                if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-                    continue;
-                }
-                CLoadLockLength lock(result, ids[i]);
-                if ( lock.IsLoadedLength() ) {
-                    ret[i] = lock.GetLength();
-                    loaded[i] = true;
-                    continue;
-                }
-                else {
-                    m_AvoidRequest |= fAvoidRequest_for_Seq_id_length;
-                }
-            }
-            packet.Set().clear();
+        else {
+            CID2_Request::C_Request::TGet_seq_id& get_id =
+                req->SetRequest().SetGet_seq_id();
+            get_id.SetSeq_id().SetSeq_id().Assign(*ids[i].GetSeqId());
+            get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_all |
+                                  CID2_Request_Get_Seq_id::eSeq_id_type_seq_length);
         }
-    }
+        return req;
+    };
 
-    if ( !packet.Set().empty() ) {
-        x_ProcessPacket(result, packet, 0);
-
-        for ( size_t i = packet_start; i < count; ++i ) {
-            if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-                continue;
-            }
-            CLoadLockLength lock(result, ids[i]);
-            if ( lock.IsLoadedLength() ) {
-                ret[i] = lock.GetLength();
-                loaded[i] = true;
-                continue;
-            }
-            else {
-                m_AvoidRequest |= fAvoidRequest_for_Seq_id_length;
-            }
-        }
+    if ( !x_ProcessBulk(result, ids.size(), max_request_size, process, create_request) ) {
+        return CReader::LoadLengths(result, ids, loaded, ret);
     }
 
     return true;
@@ -1159,16 +925,9 @@ bool CId2ReaderBase::LoadTypes(CReaderRequestResult& result,
         return CReader::LoadTypes(result, ids, loaded, ret);
     }
 
-    size_t count = ids.size();
-    CID2_Request_Packet packet;
-    size_t packet_start = 0;
-    
-    for ( size_t i = 0; i < count; ++i ) {
+    auto process = [&](size_t i, EBulkState state) {
         if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-            continue;
-        }
-        if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_type ) {
-            return CReader::LoadTypes(result, ids, loaded, ret);
+            return true;
         }
         CLoadLockType lock(result, ids[i]);
         if ( lock.IsLoadedType() ) {
@@ -1177,63 +936,30 @@ bool CId2ReaderBase::LoadTypes(CReaderRequestResult& result,
                 ret[i] = lock.GetType(data);
                 loaded[i] = true;
             }
-            continue;
+            return true;
         }
-        
+        if ( state == EBulkState::after_reply ) {
+            m_AvoidRequest |= fAvoidRequest_for_Seq_id_type;
+        }
+        return false;
+    };
+    auto create_request = [&](size_t i) {
         CRef<CID2_Request> req(new CID2_Request);
-        CID2_Request::C_Request::TGet_seq_id& get_id =
-            req->SetRequest().SetGet_seq_id();
-        get_id.SetSeq_id().SetSeq_id().Assign(*ids[i].GetSeqId());
-        get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_all |
-                              CID2_Request_Get_Seq_id::eSeq_id_type_seq_mol);
-        if ( packet.Set().empty() ) {
-            packet_start = i;
+        if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_type ) {
+            req = null;
         }
-        packet.Set().push_back(req);
-        if ( packet.Set().size() == max_request_size ) {
-            x_ProcessPacket(result, packet, 0);
-            size_t count = i+1;
-            for ( size_t i = packet_start; i < count; ++i ) {
-                if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-                    continue;
-                }
-                CLoadLockType lock(result, ids[i]);
-                if ( lock.IsLoadedType() ) {
-                    TSequenceType data = lock.GetType();
-                    if ( lock.IsFound(data) ) {
-                        ret[i] = lock.GetType(data);
-                        loaded[i] = true;
-                    }
-                    continue;
-                }
-                else {
-                    m_AvoidRequest |= fAvoidRequest_for_Seq_id_type;
-                }
-            }
-            packet.Set().clear();
+        else {
+            CID2_Request::C_Request::TGet_seq_id& get_id =
+                req->SetRequest().SetGet_seq_id();
+            get_id.SetSeq_id().SetSeq_id().Assign(*ids[i].GetSeqId());
+            get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_all |
+                                  CID2_Request_Get_Seq_id::eSeq_id_type_seq_mol);
         }
-    }
+        return req;
+    };
 
-    if ( !packet.Set().empty() ) {
-        x_ProcessPacket(result, packet, 0);
-
-        for ( size_t i = packet_start; i < count; ++i ) {
-            if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-                continue;
-            }
-            CLoadLockType lock(result, ids[i]);
-            if ( lock.IsLoadedType() ) {
-                TSequenceType data = lock.GetType();
-                if ( lock.IsFound(data) ) {
-                    ret[i] = lock.GetType(data);
-                    loaded[i] = true;
-                }
-                continue;
-            }
-            else {
-                m_AvoidRequest |= fAvoidRequest_for_Seq_id_type;
-            }
-        }
+    if ( !x_ProcessBulk(result, ids.size(), max_request_size, process, create_request) ) {
+        return CReader::LoadTypes(result, ids, loaded, ret);
     }
 
     return true;
@@ -1248,38 +974,19 @@ bool CId2ReaderBase::LoadStates(CReaderRequestResult& result,
         return CReader::LoadStates(result, ids, loaded, ret);
     }
 
-    size_t count = ids.size();
-    CID2_Request_Packet packet;
-    size_t packet_start = 0;
-    
-    for ( size_t i = 0; i < count; ++i ) {
+    auto process = [&](size_t i, EBulkState) {
         if ( CReadDispatcher::SetBlobState(i, result, ids, loaded, ret) ) {
-            continue;
+            return true;
         }
-        
+        return false;
+    };
+    auto create_request = [&](size_t i) {
         CRef<CID2_Request> req(new CID2_Request);
         x_SetResolve(req->SetRequest().SetGet_blob_id(), *ids[i].GetSeqId());
-        if ( packet.Set().empty() ) {
-            packet_start = i;
-        }
-        packet.Set().push_back(req);
-        if ( packet.Set().size() == max_request_size ) {
-            x_ProcessPacket(result, packet, 0);
-            size_t count = i+1;
-            for ( size_t i = packet_start; i < count; ++i ) {
-                CReadDispatcher::SetBlobState(i, result, ids, loaded, ret);
-            }
-            packet.Set().clear();
-        }
-    }
+        return req;
+    };
 
-    if ( !packet.Set().empty() ) {
-        x_ProcessPacket(result, packet, 0);
-
-        for ( size_t i = packet_start; i < count; ++i ) {
-            CReadDispatcher::SetBlobState(i, result, ids, loaded, ret);
-        }
-    }
+    x_ProcessBulk(result, ids.size(), max_request_size, process, create_request);
 
     return true;
 }
@@ -1921,11 +1628,13 @@ void CId2ReaderBase::SetParams(const CReaderParams& params)
 void CId2ReaderBase::x_SetContextData(CID2_Request& request)
 {
     if ( request.GetRequest().IsInit() ) {
-        CRef<CID2_Param> param(new CID2_Param);
-        param->SetName("log:client_name");
-        param->SetValue().push_back(GetDiagContext().GetAppName());
-        request.SetParams().Set().push_back(param);
-        if ( 1 ) {
+        if ( true ) {
+            CRef<CID2_Param> param(new CID2_Param);
+            param->SetName("log:client_name");
+            param->SetValue().push_back(GetDiagContext().GetAppName());
+            request.SetParams().Set().push_back(param);
+        }
+        if ( true ) {
             CRef<CID2_Param> param(new CID2_Param);
             param->SetName("id2:allow");
             // allow new blob-state field in several ID2 replies
