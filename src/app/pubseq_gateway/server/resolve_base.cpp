@@ -653,19 +653,26 @@ CPSGS_ResolveBase::x_OnSeqIdResolveError(
                         EPSGS_LoggingFlag  loging_flag)
 {
     auto    app = CPubseqGatewayApp::GetInstance();
+    bool    valid = true;
+    auto    start_timestamp = GetProcessInvokeTimestamp(valid);
+
+    if (!valid) {
+        start_timestamp = m_Request->GetStartTimestamp();
+    }
+
     if (status == CRequestStatus::e404_NotFound) {
         app->GetTiming().Register(this, eResolutionNotFound, eOpStatusNotFound,
-                                  m_Request->GetStartTimestamp());
+                                  start_timestamp);
         if (m_AsyncStarted)
             app->GetTiming().Register(this, eResolutionCass, eOpStatusNotFound,
                                       GetAsyncResolutionStartTimestamp());
         else
             app->GetTiming().Register(this, eResolutionLmdb, eOpStatusNotFound,
-                                      m_Request->GetStartTimestamp());
+                                      start_timestamp);
     }
     else {
         app->GetTiming().Register(this, eResolutionError, eOpStatusNotFound,
-                                  m_Request->GetStartTimestamp());
+                                  start_timestamp);
     }
 
     m_FinalErrorCB(status, code, severity, message, loging_flag);
@@ -774,10 +781,16 @@ CPSGS_ResolveBase::x_RegisterSuccessTiming(
                                 const SBioseqResolution &  bioseq_resolution)
 {
     auto    app = CPubseqGatewayApp::GetInstance();
+    bool    valid = true;
+    auto    start_timestamp = GetProcessInvokeTimestamp(valid);
+
+    if (!valid) {
+        start_timestamp = m_Request->GetStartTimestamp();
+    }
 
     // Overall timing, regardless how it was done
     app->GetTiming().Register(this, eResolutionFound, eOpStatusFound,
-                              m_Request->GetStartTimestamp());
+                              start_timestamp);
 
     if (bioseq_resolution.m_CassQueryCount > 0) {
         // Regardless how many requests
@@ -791,7 +804,7 @@ CPSGS_ResolveBase::x_RegisterSuccessTiming(
                                   bioseq_resolution.m_CassQueryCount);
     } else {
         app->GetTiming().Register(this, eResolutionLmdb, eOpStatusFound,
-                                  m_Request->GetStartTimestamp());
+                                  start_timestamp);
     }
 }
 
