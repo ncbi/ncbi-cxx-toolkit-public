@@ -542,6 +542,10 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaLocal)
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("asd|fgh|jkl", kRawNoThrow)));
     BOOST_CHECK_EQUAL(id->Which(), CSeq_id::e_not_set);
 
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("lcl|")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("lcl|", kRawNoThrow)));
+    BOOST_CHECK_EQUAL(id->Which(), CSeq_id::e_not_set);
+    
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("lcl|0")));
     BOOST_CHECK(id->IsLocal());
     BOOST_CHECK(id->GetLocal().IsStr());
@@ -1084,6 +1088,7 @@ BOOST_AUTO_TEST_CASE(s_TestListOps)
                            CSeq_id::fParse_RawText | CSeq_id::fParse_AnyLocal
                            | CSeq_id::fParse_NoThrow),
          size_t(1));
+    NCBI_CHECK_THROW_SEQID(CSeq_id::ParseFastaIds(ids, "lcl||123"));
     BOOST_CHECK_EQUAL(ids.back()->GetGi(), GI_CONST(1234));
 }
 
