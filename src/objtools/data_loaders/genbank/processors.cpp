@@ -723,8 +723,8 @@ void CProcessor_ID1::ProcessObjStream(CReaderRequestResult& result,
 
 
 CProcessor_ID1::TSeqEntryInfo
-CProcessor_ID1::GetSeq_entry(CReaderRequestResult& result,
-                             const TBlobId& blob_id,
+CProcessor_ID1::GetSeq_entry(CReaderRequestResult& /*result*/,
+                             const TBlobId& /*blob_id*/,
                              CID1server_back& reply) const
 {
     TSeqEntryInfo entry;
@@ -2394,8 +2394,8 @@ void CProcessor_AnnotInfo::LoadBlob(CReaderRequestResult& result,
             types.push_back(SAnnotTypeSelector(CSeq_annot::C_Data::e_Graph));
         }
         if ( annot_info.IsSetFeat() ) {
-            ITERATE ( CID2S_Seq_annot_Info::TFeat, it, annot_info.GetFeat() ) {
-                const CID2S_Feat_type_Info& finfo = **it;
+            ITERATE ( CID2S_Seq_annot_Info::TFeat, feat_info_it, annot_info.GetFeat() ) {
+                const CID2S_Feat_type_Info& finfo = **feat_info_it;
                 int feat_type = finfo.GetType();
                 if ( feat_type == 0 ) {
                     types.push_back(SAnnotTypeSelector
@@ -2407,9 +2407,9 @@ void CProcessor_AnnotInfo::LoadBlob(CReaderRequestResult& result,
                 }
                 else {
                     ITERATE ( CID2S_Feat_type_Info::TSubtypes,
-                              it2, finfo.GetSubtypes() ) {
+                              subtype_it, finfo.GetSubtypes() ) {
                         types.push_back(SAnnotTypeSelector
-                                        (CSeqFeatData::ESubtype(*it2)));
+                                        (CSeqFeatData::ESubtype(*subtype_it)));
                     }
                 }
             }
@@ -2418,8 +2418,8 @@ void CProcessor_AnnotInfo::LoadBlob(CReaderRequestResult& result,
         CTSE_Chunk_Info::TLocationSet loc;
         CSplitParser::x_ParseLocation(loc, annot_info.GetSeq_loc());
 
-        ITERATE ( vector<SAnnotTypeSelector>, it, types ) {
-            chunk->x_AddAnnotType(name, *it, loc);
+        ITERATE ( vector<SAnnotTypeSelector>, type_it, types ) {
+            chunk->x_AddAnnotType(name, *type_it, loc);
         }
     }
     if ( names.size() == 1 ) {
@@ -2449,7 +2449,7 @@ namespace {
         bool IsDone(void) {
             return true;
         }
-        bool Execute(CReader& reader) {
+        bool Execute(CReader& /*reader*/) {
             return true;
         }
         string GetErrMsg(void) const {
