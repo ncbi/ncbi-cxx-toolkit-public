@@ -407,7 +407,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
                                    priority);
 }
 
-string CGBDataLoader::GetLoaderNameFromArgs(EIncludeHUP include_hup)
+string CGBDataLoader::GetLoaderNameFromArgs(EIncludeHUP /*include_hup*/)
 {
     return GBLOADER_HUP_NAME;
 }
@@ -425,7 +425,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
 }
 
 
-string CGBDataLoader::GetLoaderNameFromArgs(EIncludeHUP include_hup,
+string CGBDataLoader::GetLoaderNameFromArgs(EIncludeHUP /*include_hup*/,
                                             const string& web_cookie)
 {
     CGBLoaderParams params;
@@ -444,8 +444,8 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
                                    is_default, priority);
 }
 
-string CGBDataLoader::GetLoaderNameFromArgs(const string& reader_name,
-                                            EIncludeHUP include_hup)
+string CGBDataLoader::GetLoaderNameFromArgs(const string& /*reader_name*/,
+                                            EIncludeHUP /*include_hup*/)
 {
     return GBLOADER_HUP_NAME;
 }
@@ -454,7 +454,7 @@ string CGBDataLoader::GetLoaderNameFromArgs(const string& reader_name,
 CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager& om,
     const string&   reader_name,
-    EIncludeHUP     include_hup,
+    EIncludeHUP     /*include_hup*/,
     const string& web_cookie,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
@@ -466,7 +466,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
 
 
 string CGBDataLoader::GetLoaderNameFromArgs(const string& reader_name,
-                                            EIncludeHUP include_hup,
+                                            EIncludeHUP /*include_hup*/,
                                             const string& web_cookie)
 {
     CGBLoaderParams params(reader_name);
@@ -486,7 +486,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
 }
 
 
-string CGBDataLoader::GetLoaderNameFromArgs(const TParamTree& param_tree)
+string CGBDataLoader::GetLoaderNameFromArgs(const TParamTree& /*param_tree*/)
 {
     return GBLOADER_NAME;
 }
