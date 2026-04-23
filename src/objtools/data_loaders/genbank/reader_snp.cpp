@@ -518,6 +518,10 @@ void LoadIndexedOctetStringsFrom(CNcbiIstream& stream,
     size_t element_size =
         read_size(stream, "SNP table OCTET STRING element size");
     if ( element_size ) {
+        if ( element_size > max_length ) {
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "SNP table OCTET STRING is too big");
+        }
         size_t total_size =
             read_size(stream, "SNP table OCTET STRING total size");
         if ( element_size == 0 || total_size%element_size != 0 ||
