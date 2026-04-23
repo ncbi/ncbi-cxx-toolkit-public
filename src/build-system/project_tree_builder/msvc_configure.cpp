@@ -296,8 +296,6 @@ void CMsvcConfigure::WriteExtraDefines(CMsvcSite& site, const string& root_dir, 
 
 void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, const SConfigInfo& config)
 {
-    static TXChar* filename_cache = NULL;
-    
     string cfg = CMsvc7RegSettings::GetConfigNameKeyword();
     string cfg_root_inc(root_dir);
     if (!cfg.empty()) {
@@ -313,19 +311,6 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
     string dir;
     CDirEntry::SplitPath(filename, &dir);
     CDir(dir).CreatePath();
-
-    // Each file with build version information is the same for each configuration,
-    // so create it once and copy to each configuration on next calls.
-
-    if (filename_cache) {
-        CFile src(_T_STDSTRING(filename_cache));
-        CFile dst(filename);
-        if (!dst.Exists() || src.IsNewer(dst.GetPath(),0)) {
-            src.Copy(filename, CFile::fCF_Overwrite);
-            GetApp().RegisterGeneratedFile( filename );
-        }
-        return;
-    }
 
     // get vars
     string tc_ver   = GetApp().GetEnvironment().Get("TEAMCITY_VERSION");
@@ -456,8 +441,6 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
 
     string file_in = CDirEntry::ConvertToOSPath(CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Include, "common/ncbi_build_ver.h.in"));
     converter(file_in, filename, build_vars); 
-    // Cache file name for the generated file
-    filename_cache = NcbiSys_strdup(_T_XCSTRING(filename));
     m_HaveBuildVer = true;
 
     filename = CDirEntry::ConvertToOSPath(CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Include, "common/ncbi_revision.h"));
