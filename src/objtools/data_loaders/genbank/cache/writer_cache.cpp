@@ -604,7 +604,7 @@ public:
     CWriter*
     CreateInstance(const string& driver  = kEmptyStr,
                    CVersionInfo version = NCBI_INTERFACE_VERSION(CWriter),
-                   const TPluginManagerParamTree* params = 0) const
+                   const TPluginManagerParamTree* /*params*/ = 0) const
     {
         if ( !driver.empty()  &&  driver != m_DriverName )
             return 0;
