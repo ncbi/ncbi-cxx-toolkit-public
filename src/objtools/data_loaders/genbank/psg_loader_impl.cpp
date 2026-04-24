@@ -616,8 +616,8 @@ BEGIN_LOCAL_NAMESPACE;
 struct SErrorFormatter
 {
     explicit
-    SErrorFormatter(const CPSGL_Processor* processor)
-        : processor(processor)
+    SErrorFormatter(const CPSGL_Processor* processor_)
+        : processor(processor_)
     {
     }
 
@@ -646,10 +646,10 @@ static auto FormatError(const CPSGL_Processor* processor)
 struct SBulkErrorFormatter
 {
     explicit
-    SBulkErrorFormatter(const char* type,
-                        const CPSGL_Processor* processor)
-        : type(type),
-          processor(processor)
+    SBulkErrorFormatter(const char* type_,
+                        const CPSGL_Processor* processor_)
+        : type(type_),
+          processor(processor_)
     {
     }
 
@@ -925,7 +925,7 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
         locks.insert(GetBlobByIdOnce(data_source, *processor->GetDLBlobId()));
     }
     if ( m_CDDPrefetchTask ) {
-        if ( auto bioseq_info = m_Caches->m_BioseqInfoCache.Find(idh) ) {
+        if ( bioseq_info ) {
             auto cdd_ids = x_GetCDDIds(bioseq_info->ids);
             if (cdd_ids && !m_Caches->m_NoCDDCache.Find(x_MakeLocalCDDEntryId(cdd_ids))) {
                 m_CDDPrefetchTask->AddRequest(bioseq_info->ids);
@@ -1470,8 +1470,8 @@ void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source,
     if ( s_GetDebugLevel() >= 5 ) {
         LOG_POST(Info<<"PSG loader: GetBlobs() with "<<tse_sets.size()<<" ids");
     }
-    ITERATE(TTSE_LockSets, tse_set, tse_sets) {
-        const CSeq_id_Handle& ask_idh = tse_set->first;
+    ITERATE(TTSE_LockSets, tse_set_iter, tse_sets) {
+        const CSeq_id_Handle& ask_idh = tse_set_iter->first;
         if ( loaded.count(ask_idh) ) {
             continue;
         }
@@ -2488,7 +2488,7 @@ END_LOCAL_NAMESPACE;
 
         
 CPSGDataLoader_Impl::TBioseqAndBlobInfo
-CPSGDataLoader_Impl::x_GetBioseqAndBlobInfo(CDataSource* data_source,
+CPSGDataLoader_Impl::x_GetBioseqAndBlobInfo(CDataSource* /*data_source*/,
                                             const CSeq_id_Handle& idh)
 {
     TBioseqAndBlobInfo ret;
@@ -2582,7 +2582,7 @@ CPSGDataLoader_Impl::x_CreateBioseqAndBlobInfoRequests(CPSGL_QueueGuard& queue,
 //   eFailed    -  processing was unsuccessful, check result for errors
 CPSGDataLoader_Impl::EProcessResult
 CPSGDataLoader_Impl::x_ProcessBioseqAndBlobInfoResult(CPSGL_QueueGuard& queue,
-                                                      const CSeq_id_Handle& idh,
+                                                      const CSeq_id_Handle& /*idh*/,
                                                       TBioseqAndBlobInfo& ret,
                                                       const CPSGL_ResultGuard& result)
 {
@@ -2789,7 +2789,7 @@ CPSGDataLoader_Impl::x_GetBulkBioseqInfo(const TIds& ids,
 
 
 pair<size_t, CRef<CPSGL_Processor>>
-CPSGDataLoader_Impl::x_GetBulkBioseqAndBlobInfo(CDataSource* data_source,
+CPSGDataLoader_Impl::x_GetBulkBioseqAndBlobInfo(CDataSource* /*data_source*/,
                                                 const TIds& ids,
                                                 const TLoaded& loaded,
                                                 TBioseqAndBlobInfos& ret)
