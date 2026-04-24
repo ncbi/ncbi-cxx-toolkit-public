@@ -584,7 +584,7 @@ CPSGL_Blob_Processor::ProcessItemFast(EPSG_Status status,
 
 
 CPSGL_Processor::EProcessResult
-CPSGL_Blob_Processor::ProcessItemSlow(EPSG_Status status,
+CPSGL_Blob_Processor::ProcessItemSlow(EPSG_Status /*status*/,
                                       const shared_ptr<CPSG_ReplyItem>& item)
 {
     switch (item->GetType()) {
@@ -779,7 +779,7 @@ bool CPSGL_Blob_Processor::ParseChunk(const CPSG_ChunkId* chunk_id,
 
 CPSGL_Processor::EProcessResult
 CPSGL_Blob_Processor::TSE_ToOM(const CPSG_BlobId* blob_id,
-                               const CPSG_ChunkId* split_info_id,
+                               NCBI_UNUSED const CPSG_ChunkId* split_info_id,
                                SBlobSlot* data_slot)
 {
     PROFILE(sp_TSE_ToOM);
@@ -897,11 +897,11 @@ CPSGL_Blob_Processor::TSE_ToOM(const CPSG_BlobId* blob_id,
                 LOG_POST(Info<<"PSGBlobProcessor("<<this<<"): TSE "<<dl_blob_id->ToString()<<" "<<
                          MSerial_AsnText<<*split_info);
             }
-            const CPsgBlobId& blob_id = dynamic_cast<const CPsgBlobId&>(*load_lock->GetBlobId());
-            if ( blob_id.GetId2Info().empty() ) {
-                const_cast<CPsgBlobId&>(blob_id).SetId2Info(split_slot->m_Id2Info);
+            const CPsgBlobId& psg_blob_id = dynamic_cast<const CPsgBlobId&>(*load_lock->GetBlobId());
+            if ( psg_blob_id.GetId2Info().empty() ) {
+                const_cast<CPsgBlobId&>(psg_blob_id).SetId2Info(split_slot->m_Id2Info);
             }
-            _ASSERT(blob_id.GetId2Info() == split_slot->m_Id2Info);
+            _ASSERT(psg_blob_id.GetId2Info() == split_slot->m_Id2Info);
             CSplitParser::Attach(*load_lock, *split_info);
         }
         
