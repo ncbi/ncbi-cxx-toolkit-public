@@ -360,7 +360,7 @@ void CAlnReader::x_ParseAndValidateSeqIds(const SLineInfo& seqIdInfo,
                 seqIdInfo.mNumLine,
                 EAlnSubcode::eAlnSubcode_IllegalSequenceId,
                 "Unable to parse sequence ID string.");
-        ids.push_back(Ref(new CSeq_id(CSeq_id::e_Local, idString)));
+        ids = {Ref(new CSeq_id(CSeq_id::e_Local, idString))};
     }
 
     if (m_fValidateIds) {
