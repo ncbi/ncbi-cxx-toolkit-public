@@ -152,9 +152,9 @@ SPsgBioseqInfo::SPsgBioseqInfo(SPsgBioseqInfo&& parsed)
 }
 
 
-SPsgBioseqInfo::SPsgBioseqInfo(const CSeq_id_Handle& request_id,
+SPsgBioseqInfo::SPsgBioseqInfo(const CSeq_id_Handle& request_id_,
                                const CPSG_BioseqInfo& bioseq_info)
-    : request_id(request_id),
+    : request_id(request_id_),
       included_info(0),
       molecule_type(CSeq_inst::eMol_not_set),
       length(0),
@@ -387,10 +387,10 @@ SPsgBlobInfo::SPsgBlobInfo(const CTSE_Info& tse)
 /////////////////////////////////////////////////////////////////////////////
 
 SPsgAnnotInfo::SPsgAnnotInfo(const pair<string, TIds>& key,
-                             const TInfos& infos)
+                             const TInfos& infos_)
     : name(key.first),
       ids(key.second),
-      infos(infos)
+      infos(infos_)
 {
 }
 
