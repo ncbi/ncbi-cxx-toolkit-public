@@ -463,7 +463,7 @@ ostream& CPSGL_IpgTaxId_Processor::PrintProcessorArgs(ostream& out) const
 
 
 CPSGL_Processor::EProcessResult
-CPSGL_IpgTaxId_Processor::ProcessItemFast(EPSG_Status status,
+CPSGL_IpgTaxId_Processor::ProcessItemFast(NCBI_UNUSED EPSG_Status status,
                                           const shared_ptr<CPSG_ReplyItem>& item)
 {
     _TRACE(Descr()<<": ProcessItemFast("<<int(status)<<", "<<item.get()<<")");
@@ -543,7 +543,7 @@ ostream& CPSGL_CDDAnnot_Processor::PrintProcessorArgs(ostream& out) const
 
 
 CPSGL_Processor::EProcessResult
-CPSGL_CDDAnnot_Processor::ProcessItemFast(EPSG_Status status,
+CPSGL_CDDAnnot_Processor::ProcessItemFast(EPSG_Status /*status*/,
                                           const shared_ptr<CPSG_ReplyItem>& item)
 {
     switch ( item->GetType() ) {
@@ -570,8 +570,8 @@ CPSGL_CDDAnnot_Processor::ProcessItemFast(EPSG_Status status,
 
 
 CPSGL_Processor::EProcessResult
-CPSGL_CDDAnnot_Processor::ProcessReplyFast(EPSG_Status status,
-                                           const shared_ptr<CPSG_Reply>& reply)
+CPSGL_CDDAnnot_Processor::ProcessReplyFast(EPSG_Status /*status*/,
+                                           const shared_ptr<CPSG_Reply>& /*reply*/)
 {
     if ( !m_AnnotInfo || !m_BlobInfo || !m_BlobData ) {
         if ( !m_AnnotInfo && m_Caches ) {
@@ -591,8 +591,8 @@ CPSGL_CDDAnnot_Processor::ProcessReplyFast(EPSG_Status status,
 
 
 CPSGL_Processor::EProcessResult
-CPSGL_CDDAnnot_Processor::ProcessReplySlow(EPSG_Status status,
-                                           const shared_ptr<CPSG_Reply>& reply)
+CPSGL_CDDAnnot_Processor::ProcessReplySlow(EPSG_Status /*status*/,
+                                           const shared_ptr<CPSG_Reply>& /*reply*/)
 {
     CPSG_BlobId blob_id = m_AnnotInfo->GetBlobId();
     CRef<CPsgBlobId> dl_blob_id;
@@ -838,8 +838,8 @@ CPSGL_Get_Processor::ProcessReplyFast(EPSG_Status status,
 
 
 CPSGL_Processor::EProcessResult
-CPSGL_Get_Processor::ProcessReplySlow(EPSG_Status status,
-                                      const shared_ptr<CPSG_Reply>& reply)
+CPSGL_Get_Processor::ProcessReplySlow(NCBI_UNUSED EPSG_Status status,
+                                      const shared_ptr<CPSG_Reply>& /*reply*/)
 {
     _TRACE(Descr()<<": ProcessReplySlow("<<(int)status<<")");
     // attempt to get bioseq TSE lock
@@ -1049,7 +1049,6 @@ pair<CRef<CTSE_Chunk_Info>, string>
 s_CreateNAChunk(const CPSG_NamedAnnotInfo& psg_annot_info)
 {
     CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(kDelayedMain_ChunkId));
-    string name;
     
     unsigned main_count = 0;
     unsigned zoom_count = 0;
@@ -1107,6 +1106,7 @@ s_CreateNAChunk(const CPSG_NamedAnnotInfo& psg_annot_info)
             chunk->x_AddAnnotType(name, *it, loc);
         }
     }
+    string name;
     if ( names.size() == 1 ) {
         name = *names.begin();
     }
