@@ -472,7 +472,7 @@ void CPSGDataLoader::GetSequenceHashes(const TIds& ids, TLoaded& loaded, TSequen
 
 
 CGBDataLoader::TNamedAnnotNames
-CPSGDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih)
+CPSGDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& /*sih*/)
 {
     TNamedAnnotNames names;
 
@@ -513,8 +513,8 @@ CPSGDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih)
 
 
 CGBDataLoader::TNamedAnnotNames
-CPSGDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih,
-                                        const string& named_acc)
+CPSGDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& /*sih*/,
+                                        const string& /*named_acc*/)
 {
     TNamedAnnotNames names;
 
