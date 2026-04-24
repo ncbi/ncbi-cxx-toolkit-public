@@ -214,7 +214,7 @@ void CPubseq2Reader::x_DisconnectAtSlot(TConn conn, bool failed)
 }
 
 
-string CPubseq2Reader::x_ConnDescription(TConn conn) const
+string CPubseq2Reader::x_ConnDescription(TConn /*conn*/) const
 {
     return "";
 }
@@ -573,7 +573,7 @@ void CPubseq2Reader::x_EndOfPacket(TConn conn)
 
 AutoPtr<CObjectIStream>
 CPubseq2Reader::x_SendPacket(CDB_Connection& db_conn,
-                             TConn conn,
+                             TConn /*conn*/,
                              const CID2_Request_Packet& packet)
 {
     string buffer;
