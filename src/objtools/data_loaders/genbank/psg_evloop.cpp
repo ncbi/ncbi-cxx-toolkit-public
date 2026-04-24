@@ -421,7 +421,7 @@ void CPSGL_Queue::ProcessReplyCallback(EPSG_Status status,
                     return;
                 }
             }}
-            m_CallbackQueue->Put(CCallbackQueue::SEvent{std::move(tracker), status, reply});
+            m_CallbackQueue->Put(CCallbackQueue::SEvent{std::move(tracker), status, reply, nullptr});
         }
         else {
             tracker->ProcessReplyCallback(status, reply);
@@ -615,7 +615,7 @@ public:
         DisconnectFromTracker();
     }
     
-    void OnStatusChange(EStatus old_task_status) override
+    void OnStatusChange(EStatus /*old_task_status*/) override
     {
         if ( s_IsFinished(GetStatus()) ) {
             DisconnectFromTracker();
@@ -811,8 +811,8 @@ void CPSGL_RequestTracker::ProcessReplyCallback(EPSG_Status status,
 {
     PROFILE(sp_ProcessReplyCallback);
     _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::ProcessReplyCallback()");
-    CCallbackGuard guard(this);
-    if ( !guard ) {
+    CCallbackGuard callback_guard(this);
+    if ( !callback_guard ) {
         _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::ProcessReplyCallback() - canceled");
         return;
     }
@@ -869,14 +869,14 @@ void CPSGL_RequestTracker::ProcessReplyCallback(EPSG_Status status,
 
 
 CThreadPool_Task::EStatus
-CPSGL_RequestTracker::BackgroundProcessItemCallback(CBackgroundTask* task,
+CPSGL_RequestTracker::BackgroundProcessItemCallback(NCBI_UNUSED CBackgroundTask* task,
                                                     EPSG_Status status,
                                                     const shared_ptr<CPSG_ReplyItem>& item)
 {
     PROFILE(sp_BgProcessItemCallback);
     _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::BackgroundProcessItemCallback()");
-    CCallbackGuard guard(this);
-    if ( !guard ) {
+    CCallbackGuard callback_guard(this);
+    if ( !callback_guard ) {
         _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::BackgroundProcessItemCallback() - finished");
         return m_Status;
     }
@@ -967,12 +967,12 @@ CPSGL_RequestTracker::BackgroundProcessItemCallback(CBackgroundTask* task,
 
 
 CThreadPool_Task::EStatus
-CPSGL_RequestTracker::BackgroundProcessReplyCallback(CBackgroundTask* task)
+CPSGL_RequestTracker::BackgroundProcessReplyCallback(NCBI_UNUSED CBackgroundTask* task)
 {
     PROFILE(sp_BgProcessReplyCallback);
     _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::BackgroundProcessReplyCallback()");
-    CCallbackGuard guard(this);
-    if ( !guard ) {
+    CCallbackGuard callback_guard(this);
+    if ( !callback_guard ) {
         _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::BackgroundProcessReplyCallback() - finished");
         return m_Status;
     }
@@ -1111,11 +1111,11 @@ void CPSGL_Dispatcher::SendRequest(CRef<CPSGL_RequestTracker> tracker)
     if ( q_count > 1 ) {
         for ( size_t k = 0; k < q_count; ++k ) {
             size_t q_tmp = m_NextQueue++;
-            size_t q = q_tmp % q_count;
+            size_t try_q = q_tmp % q_count;
             if ( q_tmp > 1000*q_count ) {
-                m_NextQueue = q+1;
+                m_NextQueue = try_q+1;
             }
-            if ( m_QueueSet[q]->TrySendRequest(tracker, CDeadline::eNoWait) ) {
+            if ( m_QueueSet[try_q]->TrySendRequest(tracker, CDeadline::eNoWait) ) {
                 return;
             }
         }
