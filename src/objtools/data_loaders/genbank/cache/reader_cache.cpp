@@ -1535,11 +1535,8 @@ bool IsDisabledCache(const SCacheInfo::TParams* params)
 static
 SCacheInfo::TParams* GetDriverParams(SCacheInfo::TParams* params)
 {
-    const string& driver_name =
-        SPluginParams::SetDefaultValue(params,
-                        NCBI_GBLOADER_READER_CACHE_PARAM_DRIVER,
-                        "bdb");
-    return SPluginParams::SetSubSection(params, driver_name);
+    return SPluginParams::SetSubSection(params,
+        SPluginParams::SetDefaultValue(params, NCBI_GBLOADER_READER_CACHE_PARAM_DRIVER, "bdb"));
 }
 
 
