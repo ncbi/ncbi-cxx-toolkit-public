@@ -235,9 +235,13 @@ bool CHttpRequest::GetParam(const char *  name, size_t  len,
     if (!m_ParamParsed)
         ParseParams();
 
+    string_view     target{name, len};
     for (size_t i = 0; i < m_ParamCount; ++i) {
-        if (m_Params[i].m_NameLen == len &&
-            memcmp(m_Params[i].m_Name, name, len) == 0) {
+        string_view     param_name{m_Params[i].m_Name,
+                                   m_Params[i].m_NameLen};
+        // string_view implements an optimized comparison while creating a
+        // wrapper cost virtually zero
+        if (target == param_name) {
             *value = m_Params[i].m_Val;
             if (value_len)
                 *value_len = m_Params[i].m_ValLen;
