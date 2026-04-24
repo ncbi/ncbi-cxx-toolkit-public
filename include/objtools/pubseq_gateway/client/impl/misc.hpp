@@ -178,7 +178,9 @@ struct SPSG_Param
     }
 
 protected:
-    _DEBUG_ARG(inline static bool sm_Used = false);
+#ifdef _DEBUG
+    inline static bool sm_Used = false;
+#endif
 
 private:
     // TDescription is not publicly available in CParam, but it's needed for string to enum conversion.
