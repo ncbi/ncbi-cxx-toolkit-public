@@ -112,7 +112,7 @@ static void sx_SetIntId(CDB_RPCCmd& cmd, const char* param, TIntId id)
 }
 
 
-static TIntId sx_GetIntId(CDB_Result& dbr, int pos)
+static TIntId sx_GetIntId(CDB_Result& dbr, NCBI_UNUSED int pos)
 {
     CDB_BigInt idGot;
     dbr.GetItem(&idGot);
@@ -795,7 +795,7 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
         if ( with_named_accs && named_gi != ZERO_GI ) {
             // postponed read of named annot accessions
             _TRACE("id_get_annot_types "<<named_gi);
-            AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_get_annot_types"));
+            cmd = db_conn->RPC("id_get_annot_types");
             sx_SetIntId(*cmd, "@gi", GI_TO(TIntId, CProcessor::ConvertGiFromOM(named_gi)));
             cmd->Send();
             while(cmd->HasMoreResults()) {
