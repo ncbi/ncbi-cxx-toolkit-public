@@ -89,7 +89,7 @@ bool CInfoRequestorLock::SetLoadedFor(TExpirationTime new_expiration_time)
 }
 
 
-bool CInfoRequestorLock::x_SetLoadedFor(TMainMutex::TWriteLockGuard& guard,
+bool CInfoRequestorLock::x_SetLoadedFor(TMainMutex::TWriteLockGuard& /*guard*/,
                                         TExpirationTime new_expiration_time)
 {
     _ASSERT(!IsLocked() || m_Mutex->m_LoadingRequestor == &GetRequestor());
