@@ -732,9 +732,9 @@ void CGBDataLoader_Native::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& 
         // the ID2 may accidentally return no taxid for newly loaded sequences
         // we have to fall back to full sequence retrieval in such cases
         bool retry = false;
-        for ( size_t i = 0; i < ids.size(); ++i ) {
-            if ( loaded[i] && ret[i] == INVALID_TAX_ID ) {
-                loaded[i] = false;
+        for ( size_t j = 0; j < ids.size(); ++j ) {
+            if ( loaded[j] && ret[j] == INVALID_TAX_ID ) {
+                loaded[j] = false;
                 retry = true;
             }
         }
