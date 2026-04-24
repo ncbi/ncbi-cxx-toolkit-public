@@ -119,9 +119,9 @@ private:
     typedef list<TValueIter> TRemoveList;
     typedef typename TRemoveList::iterator TRemoveIter;
     struct SNode {
-        SNode(const mapped_type& value, unsigned lifespan)
-            : value(value),
-              deadline(lifespan)
+        SNode(const mapped_type& value_, unsigned lifespan_)
+            : value(value_),
+              deadline(lifespan_)
         {}
         mapped_type value;
         CDeadline deadline;
@@ -192,9 +192,9 @@ protected:
     typedef list<TValueIter> TRemoveList;
     typedef typename TRemoveList::iterator TRemoveIter;
     struct SNode {
-        SNode(const mapped_type& value, unsigned lifespan)
-            : value(value),
-              deadline(lifespan)
+        SNode(const mapped_type& value_, unsigned lifespan_)
+            : value(value_),
+              deadline(lifespan_)
         {}
         mapped_type value;
         CDeadline deadline;
@@ -348,9 +348,9 @@ private:
     typedef list<TValueIter> TRemoveList;
     typedef typename TRemoveList::iterator TRemoveIter;
     struct SNode {
-        SNode(const mapped_type& value, unsigned lifespan)
-            : value(value),
-              deadline(lifespan)
+        SNode(const mapped_type& value_, unsigned lifespan_)
+            : value(value_),
+              deadline(lifespan_)
         {}
         mapped_type value;
         CDeadline deadline;
