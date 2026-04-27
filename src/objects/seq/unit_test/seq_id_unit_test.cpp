@@ -76,7 +76,7 @@ NCBITEST_AUTO_INIT()
 class CMTTestThread : public CThread
 {
 public:
-    CMTTestThread(int tid) : m_TId(tid), m_Random(tid), m_First(true) {
+    CMTTestThread(int tid) : m_Random(tid), m_First(true) {
     }
 
     CSeq_id_Handle GetRandomId(bool other, bool with_version) {
@@ -128,7 +128,6 @@ public:
     }
 
 private:
-    int m_TId;
     CRandom m_Random;
     bool m_First;
     deque<CSeq_id_Handle> m_Ids;
