@@ -54,7 +54,7 @@ BEGIN_NCBI_SCOPE
 class NCBI_JAEGER_TRACER_EXPORT CJaegerTracerSpan : public ITracerSpan
 {
 public:
-    CJaegerTracerSpan(shared_ptr<jaegertracing::Span> span) : m_Span(move(span)) {}
+    CJaegerTracerSpan(shared_ptr<jaegertracing::Span> span) : m_Span(std::move(span)) {}
     jaegertracing::Span& GetSpan(void) { return *m_Span; }
 
     void SetName(const string& /*name*/) override {}
