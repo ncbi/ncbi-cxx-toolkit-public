@@ -1360,6 +1360,7 @@ void tds_free_param_result(TDSPARAMINFO * param_info);
 void tds_free_msg(TDSMESSAGE * message);
 void tds_cursor_deallocated(TDSCONNECTION *conn, TDSCURSOR *cursor);
 void tds_release_cursor(TDSCURSOR **pcursor);
+DSTR *tds_alloc_dstrs(unsigned int n);
 void tds_free_bcp_column_data(BCPCOLDATA * coldata);
 TDSRESULTINFO *tds_alloc_results(TDS_USMALLINT num_cols);
 TDSCOMPUTEINFO **tds_alloc_compute_results(TDSSOCKET * tds, TDS_USMALLINT num_cols, TDS_USMALLINT by_cols);
@@ -1731,6 +1732,7 @@ struct tds_bcpinfo
 	TDS_INT bind_count;
 	TDSRESULTINFO *bindinfo;
 	TDS5COLINFO *sybase_colinfo;
+        DSTR *collations;
 	TDS_INT sybase_count;
         TDS_INT text_sent;
         TDS_INT next_col;

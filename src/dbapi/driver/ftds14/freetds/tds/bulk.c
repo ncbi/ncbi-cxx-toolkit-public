@@ -188,12 +188,85 @@ tds_bcp_init(TDSSOCKET *tds, TDSBCPINFO *bcpinfo)
 		if (!curcol->bcp_column_data)
 			goto cleanup;
 	}
+        bcpinfo->bindinfo = bindinfo;
 
 	if (!IS_TDS7_PLUS(tds->conn)) {
 		bindinfo->current_row = tds_new(unsigned char, bindinfo->row_size);
 		if (!bindinfo->current_row)
 			goto cleanup;
 		bindinfo->row_free = tds_bcp_row_free;
+        } else if (bcpinfo->direction != TDS_BCP_QUERYOUT) {
+                bcpinfo->collations = tds_alloc_dstrs(bindinfo->num_cols);
+                if (bcpinfo->collations == NULL) {
+                        rc = TDS_FAIL;
+                        goto cleanup;
+                }
+                rc = tds_submit_queryf(tds,
+                                       "sp_describe_first_result_set"
+                                       " N'select * from %s'",
+                                       tds_dstr_cstr(&bcpinfo->tablename));
+                if (TDS_FAILED(rc)) {
+                        goto cleanup;
+                }
+                for (i = 0; ; ++i) {
+                        TDS_INT done_flags, cur_size;
+                        rc = tds_process_tokens(tds, &result_type, &done_flags,
+                                                TDS_RETURN_ROW
+                                                | TDS_RETURN_DONE);
+                        if (TDS_FAILED(rc)) {
+                                goto cleanup;
+                        }
+
+                        if (result_type == TDS_DONE_RESULT) {
+                                if ((done_flags & TDS_DONE_ERROR) != 0) {
+                                        rc = TDS_FAIL;
+                                        goto cleanup;
+                                }
+                                break;
+                        }
+
+                        if (result_type != TDS_ROW_RESULT)
+                                continue;
+
+                        resinfo = tds->current_results;
+
+#if ENABLE_EXTRA_CHECKS
+                        /*
+                         * Most probably the format of result is fixed, but
+                         * couple of asserts are still needed to be sure
+                         */
+                        assert(resinfo->num_cols == 39);
+                        assert(i < bindinfo->num_cols);
+#endif
+
+                        /* collation_name, counting from 0 */
+                        curcol = resinfo->columns[9];
+                        cur_size = curcol->column_cur_size;
+                        if (cur_size > 0) {
+                                if (tds_dstr_copyn(&bcpinfo->collations[i],
+                                                   (char*) curcol->column_data,
+                                                   cur_size) == NULL) {
+                                        goto cleanup;
+                                } else if (curcol->column_data[1] == '\0') {
+                                        /*
+                                         * Still UTF16LE, as observed in ODBC;
+                                         * hand-convert, since all codepoints
+                                         * should trivially map to ASCII.
+                                         * (Is UTF16BE possible anywhere?)
+                                         */
+                                        char * buf = tds_dstr_buf
+                                                (&bcpinfo->collations[i]);
+                                        int j;
+                                        cur_size >>= 1;
+                                        for (j = 1;  j < cur_size;  ++j) {
+                                                buf[j] = buf[2*j];
+                                        }
+                                        tds_dstr_setlen
+                                                (&bcpinfo->collations[i],
+                                                 cur_size);
+                                }
+                        }
+                }
 	}
 
 	if (bcpinfo->identity_insert_on) {
@@ -210,7 +283,6 @@ tds_bcp_init(TDSSOCKET *tds, TDSBCPINFO *bcpinfo)
 			goto cleanup;
 	}
 
-	bcpinfo->bindinfo = bindinfo;
 	bcpinfo->bind_count = 0;
 	return TDS_SUCCESS;
 
@@ -230,11 +302,14 @@ cleanup:
  * \return TDS_SUCCESS or TDS_FAIL.
  */
 static TDSRET
-tds7_build_bulk_insert_stmt(TDSSOCKET * tds, TDSPBCB * clause, TDSCOLUMN * bcpcol, int first)
+tds7_build_bulk_insert_stmt(TDSSOCKET * tds, TDSPBCB * clause,
+                            TDSCOLUMN * bcpcol, DSTR collation, int first)
 {
 	char column_type[40];
 
-	tdsdump_log(TDS_DBG_FUNC, "tds7_build_bulk_insert_stmt(%p, %p, %p, %d)\n", tds, clause, bcpcol, first);
+        tdsdump_log(TDS_DBG_FUNC,
+                    "tds7_build_bulk_insert_stmt(%p, %p, %p, %p, %d)\n",
+                    tds, clause, bcpcol, collation, first);
 
 	if (TDS_FAILED(tds_get_column_declaration(tds, bcpcol, column_type))) {
 		tdserror(tds_get_ctx(tds), tds, TDSEBPROBADTYP, errno);
@@ -246,6 +321,8 @@ tds7_build_bulk_insert_stmt(TDSSOCKET * tds, TDSPBCB * clause, TDSCOLUMN * bcpco
 	if (clause->cb < strlen(clause->pb)
 	    + tds_quote_id(tds, NULL, tds_dstr_cstr(&bcpcol->column_name), tds_dstr_len(&bcpcol->column_name))
 	    + strlen(column_type)
+            + (tds_dstr_isempty(&collation) ? 0
+               : (tds_dstr_len(&collation) + 9))
 	    + ((first) ? 2u : 4u)) {
 		char *temp = tds_new(char, 2 * clause->cb);
 
@@ -267,6 +344,10 @@ tds7_build_bulk_insert_stmt(TDSSOCKET * tds, TDSPBCB * clause, TDSCOLUMN * bcpco
 	tds_quote_id(tds, strchr(clause->pb, 0), tds_dstr_cstr(&bcpcol->column_name), tds_dstr_len(&bcpcol->column_name));
 	strcat(clause->pb, " ");
 	strcat(clause->pb, column_type);
+        if (!tds_dstr_isempty(&collation)) {
+                strcat(clause->pb, " collate ");
+                strcat(clause->pb, tds_dstr_cstr(&collation));
+        }
 
 	return TDS_SUCCESS;
 }
@@ -337,7 +418,9 @@ tds_bcp_start_insert_stmt(TDSSOCKET * tds, TDSBCPINFO * bcpinfo)
                                         continue;
                                 }
                         }
-			tds7_build_bulk_insert_stmt(tds, &colclause, bcpcol, firstcol);
+                        tds7_build_bulk_insert_stmt(tds, &colclause, bcpcol,
+                                                    bcpinfo->collations[i],
+                                                    firstcol);
 			firstcol = 0;
 		}
 
