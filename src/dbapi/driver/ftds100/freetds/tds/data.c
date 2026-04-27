@@ -915,7 +915,7 @@ tds_generic_put_info(TDSSOCKET * tds, TDSCOLUMN * col)
 
 	/* TDS7.1 output collate information */
 	if (IS_TDS71_PLUS(tds->conn) && is_collate_type(col->on_server.column_type))
-		tds_put_n(tds, tds->conn->collation, 5);
+                tds_put_n(tds, col->column_collation, 5);
 
 	return TDS_SUCCESS;
 }

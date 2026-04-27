@@ -1752,6 +1752,18 @@ tds_alloc_lookup_sqlstate(TDSSOCKET * tds, int msgno)
 	return NULL;
 }
 
+DSTR *tds_alloc_dstrs(unsigned int n)
+{
+        DSTR* result = (DSTR*)calloc(n, sizeof(DSTR));
+        if (result != NULL) {
+                unsigned int i;
+                for (i = 0;  i < n;  ++i) {
+                        tds_dstr_init(&result[i]);
+                }
+        }
+        return result;
+}
+
 BCPCOLDATA *
 tds_alloc_bcp_column_data(unsigned int column_size)
 {
@@ -1806,6 +1818,13 @@ tds_deinit_bcpinfo(TDSBCPINFO *bcpinfo)
         }
 	tds_dstr_free(&bcpinfo->tablename);
 	TDS_ZERO_FREE(bcpinfo->insert_stmt);
+        if (bcpinfo->collations != NULL) {
+                int i;
+                for (i = 0;  i < bcpinfo->bindinfo->num_cols;  ++i) {
+                        tds_dstr_free(&bcpinfo->collations[i]);
+                }
+                TDS_ZERO_FREE(bcpinfo->collations);
+        }
 	tds_free_results(bcpinfo->bindinfo);
 	bcpinfo->bindinfo = NULL;
 }
