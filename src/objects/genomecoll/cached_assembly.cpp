@@ -83,7 +83,7 @@ CRef<CGC_Assembly> UncomressAndCreate(const string& blob, CCompressStream::EMeth
 CCompressStream::EMethod CCachedAssembly::Compression(const string& blob)
 {
     if (!CCachedAssembly::ValidBlob(blob.size()))
-        NCBI_THROW(CCoreException, eCore, "Invalid blob size detected: " + blob.size());
+        NCBI_THROW(CCoreException, eCore, "Invalid blob size detected: " + NStr::NumericToString(blob.size()));
     const char bzip2Header[] = {0x42, 0x5a, 0x68};
     const char zlibHeader[] = {0x78};
     if (NStr::StartsWith(blob, CTempString(bzip2Header, sizeof(bzip2Header))))
