@@ -143,7 +143,7 @@ class CArgDesc_agp_validate : public CArgDescriptions
 public:
     CArgDesc_agp_validate(CVersionInfo&& versionInfo) :
         CArgDescriptions(),
-        m_VersionInfo(move(versionInfo)) {}
+        m_VersionInfo(std::move(versionInfo)) {}
 
     string& PrintUsage(string& str, bool /*detailed*/) const
     {

@@ -247,8 +247,8 @@ static CRef<CBioseq> s_MakeProtein()
     pFeat->SetPartial(true);
 
     auto pAnnot = Ref(new CSeq_annot());
-    pAnnot->SetData().SetFtable().push_back(move(pFeat));
-    pBioseq->SetAnnot().push_back(move(pAnnot));
+    pAnnot->SetData().SetFtable().push_back(std::move(pFeat));
+    pBioseq->SetAnnot().push_back(std::move(pAnnot));
 
     return pBioseq;
 }

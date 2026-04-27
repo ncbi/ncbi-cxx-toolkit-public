@@ -124,10 +124,10 @@ static CRef<CBioseq> s_MakeProtein()  // RW-2486
     pFeat3->SetData().SetProt().SetName().push_back("EFGH [not a dummy taxname]");
 
     auto pAnnot = Ref(new CSeq_annot());
-    pAnnot->SetData().SetFtable().push_back(move(pFeat1));
-    pAnnot->SetData().SetFtable().push_back(move(pFeat2));
-    pAnnot->SetData().SetFtable().push_back(move(pFeat3));
-    pBioseq->SetAnnot().push_back(move(pAnnot));
+    pAnnot->SetData().SetFtable().push_back(std::move(pFeat1));
+    pAnnot->SetData().SetFtable().push_back(std::move(pFeat2));
+    pAnnot->SetData().SetFtable().push_back(std::move(pFeat3));
+    pBioseq->SetAnnot().push_back(std::move(pAnnot));
 
     return pBioseq;
 }
