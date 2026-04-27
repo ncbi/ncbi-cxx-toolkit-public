@@ -168,7 +168,7 @@ CCDDDataLoader::TRegisterLoaderInfo CCDDDataLoader::RegisterInObjectManager(
 }
 
 
-string CCDDDataLoader::GetLoaderNameFromArgs(const SLoaderParams& params)
+string CCDDDataLoader::GetLoaderNameFromArgs(const SLoaderParams& /*params*/)
 {
     return kCDDLoaderName;
 }
@@ -195,7 +195,7 @@ CCDDDataLoader::~CCDDDataLoader(void)
 
 
 CDataLoader::TTSE_LockSet
-CCDDDataLoader::GetRecords(const CSeq_id_Handle& idh, EChoice choice)
+CCDDDataLoader::GetRecords(const CSeq_id_Handle& /*idh*/, EChoice /*choice*/)
 {
     TTSE_LockSet locks;
     return locks;
@@ -215,7 +215,7 @@ CCDDDataLoader::GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
 
 CDataLoader::TTSE_LockSet
 CCDDDataLoader::GetOrphanAnnotRecordsNA(const TSeq_idSet& ids,
-    const SAnnotSelector* sel,
+    const SAnnotSelector* /*sel*/,
     TProcessedNAs* processed_nas)
 {
     return m_Impl->GetBlobBySeq_ids(ids, *GetDataSource(), processed_nas);
