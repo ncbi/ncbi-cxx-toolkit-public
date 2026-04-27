@@ -674,8 +674,8 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PreOverrideUserHeader
  * Existing tags matching (case-insensitively) first appearances of those
  * from "header" get appended with the new value (separated by a space) if the
  * added value is non-empty, otherwise, the tags are left untouched.  However,
- * if the new tag value matches (case-insensitively) tag's value already in the
- * header, the new value does not get added (to avoid duplicates).
+ * if the new tag value matches (case-insensitively) a tag's value already in
+ * the header, the new value does not get added (to avoid duplicates).
  * All other new tags from "header" with non-empty values get added at the end
  * of the user header (as with "Append" above).
  * @note
