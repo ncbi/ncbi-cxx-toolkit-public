@@ -1058,7 +1058,8 @@ CPSGL_Dispatcher::CPSGL_Dispatcher(const string& service_name,
         static const unsigned kMaxPoolThreads = 32;
         max_pool_threads = max(max_pool_threads, kMinPoolThreads);
         max_pool_threads = min(max_pool_threads, kMaxPoolThreads);
-        m_ThreadPool = make_unique<CThreadPool>(kMax_UInt, max_pool_threads);
+        unsigned min_pool_threads = min(max_pool_threads, 2u);
+        m_ThreadPool = make_unique<CThreadPool>(kMax_UInt, max_pool_threads, min_pool_threads);
     }
     
     m_QueueSet.push_back(Ref(new CPSGL_Queue(service_name, io_event_loops, m_TrackerMap)));
