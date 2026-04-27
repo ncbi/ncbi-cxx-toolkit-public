@@ -491,7 +491,7 @@ int CAsnvalApp::Run()
                 CAsyncMessageHandler msgHandler(*mAppConfig, *ValidErrorStream);
                 msgHandler.SetInvokeWrite(false); // don't invoke write inside ValidateOneDirectory()
 
-                auto writer_task = std::async([this, &msgHandler] { msgHandler.Write(); });
+                auto writer_task = std::async([&msgHandler] { msgHandler.Write(); });
 
                 auto combination_task = std::async([this, &exit_data]()
                 {
@@ -521,7 +521,7 @@ int CAsnvalApp::Run()
                 exit_data.mReported += msgHandler.GetNumReported();
             }
             else { // write to separate files
-                auto writer_task = std::async([this, ValidErrorStream] { return xCombinedStatsTask(); });
+                auto writer_task = std::async([this] { return xCombinedStatsTask(); });
 
                 ValidateOneDirectory(m_InputDir, args["u"]);
                 m_queue.request_stop();

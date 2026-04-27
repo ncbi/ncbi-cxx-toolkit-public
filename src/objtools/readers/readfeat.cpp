@@ -95,6 +95,8 @@
 #include <objtools/readers/read_util.hpp>
 #include "best_feat_finder.hpp"
 
+#include <utility>
+
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Feature
 
 
@@ -936,9 +938,8 @@ private:
         size_t         len;
         bool           partial5 = false;
         bool           partial3 = false;
-        Int4           startv = -1;
-        Int4           stopv = -1;
-        Int4           swp;
+        long           startv = -1;
+        long           stopv = -1;
         string         start, stop, feat, qual, val, stnd;
         vector<string> tkns;
 
@@ -1011,9 +1012,7 @@ private:
             if (! stnd.empty ()) {
                 if (stnd == "minus" || stnd == "-" || stnd == "complement") {
                     if (start < stop) {
-                        swp = startv;
-                        startv = stopv;
-                        stopv = swp;
+                        swap(startv, stopv);
                     }
                     isminus = true;
                 }
@@ -1216,7 +1215,7 @@ private:
         switch (qtype) {
             case eQual_codon_start:
                 {
-                    int frame = x_StringToLongNoThrow (val, kCdsFeatName, "codon_start");
+                    auto frame = x_StringToLongNoThrow (val, kCdsFeatName, "codon_start");
                     switch (frame) {
                         case 0:
                             crp.SetFrame (CCdregion::eFrame_not_set);
@@ -1274,7 +1273,7 @@ private:
             case eQual_transl_table:
                 // set genetic code directly, or add qualifier and let cleanup convert?
                 try {
-                    int num = NStr::StringToLong(val);
+                    auto num = NStr::StringToInt(val);
                     CGen_code_table::GetTransTable(num); // throws if bad num
                     CRef<CGenetic_code::C_E> code(new CGenetic_code::C_E());
                     code->SetId(num);
@@ -2497,7 +2496,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                         CRef<CObject_id> oid (new CObject_id);
                         static const char* digits = "0123456789";
                         if (tag.find_first_not_of(digits) == string::npos && !NStr::IsBlank(tag))
-                            oid->SetId(NStr::StringToLong(tag));
+                            oid->SetId(NStr::StringToInt(tag));
                         else
                             oid->SetStr(tag);
                         dbt->SetTag (*oid);

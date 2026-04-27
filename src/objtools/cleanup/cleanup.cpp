@@ -2393,7 +2393,7 @@ static bool s_RemoveTaxnameFromProtRef(const string& taxname, CBioseq_Handle bsh
                     change_made = true;
                     auto pEditedFeat = Ref(new CSeq_feat());
                     pEditedFeat->Assign(feat_it->GetOriginalFeature());
-                    pEditedFeat->SetData().SetProt().SetName() = move(temp_names);
+                    pEditedFeat->SetData().SetProt().SetName() = std::move(temp_names);
                     CSeq_feat_EditHandle(*feat_it).Replace(*pEditedFeat);
                 }
             }
@@ -2618,7 +2618,7 @@ bool CCleanup::AddPartialToProteinTitle(CBioseq_Handle bsh)
     // Check for change to title string
     if (title != title_desc->GetTitle()) {
         auto pNewTitleDesc = Ref(new CSeqdesc());
-        pNewTitleDesc->SetTitle() = move(title);
+        pNewTitleDesc->SetTitle() = std::move(title);
         bsh.GetEditHandle().ReplaceSeqdesc(*title_desc, *pNewTitleDesc);
         return true;
     }

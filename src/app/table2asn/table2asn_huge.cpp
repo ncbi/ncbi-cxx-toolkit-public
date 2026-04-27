@@ -317,7 +317,7 @@ void CTbl2AsnApp::ProcessHugeFile(CHugeFile& hugeFile, CNcbiOstream* output)
         };
 
         std::mutex ff_mutex;
-        auto       make_ff_async = [this, &ff_mutex](TAsyncToken& token, std::ostream& ostr) {
+        auto       make_ff_async = [this](TAsyncToken& token, std::ostream& ostr) {
             MakeFlatFile(token.seh, token.submit, ostr);
         };
 

@@ -239,7 +239,7 @@ bool CFindITSParser::IsLengthTooLarge(const string& str, int max_length, int i, 
     if (str == "No start") {
         int start = 1;
         int end   = bioseq_length;
-        for (int j = i + 1; j < spans.size(); j++) {
+        for (auto j = static_cast<size_t>(i+1); j < spans.size(); ++j) {
             if (spans[j]) {
                 end = starts[j] - 1;
                 break;
