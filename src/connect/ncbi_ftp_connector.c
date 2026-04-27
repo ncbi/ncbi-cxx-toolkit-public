@@ -866,6 +866,7 @@ static EIO_Status x_DrainData(SFTPConnector* xxx, const STimeout* timeout)
     EIO_Status status;
     struct timeval deadline;
 
+    assert(timeout);
     gettimeofday(&deadline, 0);
     /* this is not "data" per se, so go silent */
     ESwitch log = xxx->flag & fFTP_LogData
@@ -891,13 +892,10 @@ static EIO_Status x_DrainData(SFTPConnector* xxx, const STimeout* timeout)
             break;
         if (now.tv_usec >= deadline.tv_usec)
             break;
-        remain.sec = deadline.tv_sec - now.tv_sec;
-        if (deadline.tv_usec < now.tv_usec) {
-            assert(remain.sec);
-            --remain.sec;
-            remain.usec = deadline.tv_usec + 1000000 - now.tv_usec;
-        } else
-            remain.usec = deadline.tv_usec - now.tv_usec;
+        assert(deadline.tv_sec == now.tv_sec);
+        assert(deadline.tv_usec < now.tv_usec);
+        remain.sec  = 0;
+        remain.usec = deadline.tv_usec - now.tv_usec;
         if (x_IsLongerTimeout(timeout, &remain))
             SOCK_SetTimeout(xxx->data, eIO_Read, &remain);
     }
