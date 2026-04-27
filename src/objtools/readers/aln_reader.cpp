@@ -435,9 +435,10 @@ void CAlnReader::x_CalculateMiddleSections()
     m_MiddleSections.clear();
 
     for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
-        TSeqPos begin_len = m_Seqs[row_i].find_first_not_of(GetBeginningGap());
+        TSeqPos seq_len = TSeqPos(m_Seqs[row_i].length());
+        TSeqPos begin_len = TSeqPos(m_Seqs[row_i].find_first_not_of(GetBeginningGap()));
         TSeqPos end_len = 0;
-        if (begin_len < m_Seqs[row_i].length()) {
+        if (begin_len < seq_len) {
             string::iterator s = m_Seqs[row_i].end();
             while (s != m_Seqs[row_i].begin()) {
                 --s;
@@ -448,7 +449,7 @@ void CAlnReader::x_CalculateMiddleSections()
                 }
             }
         }
-        m_MiddleSections.push_back(TAlignMiddleInterval(begin_len, m_Seqs[row_i].length() - end_len - 1));
+        m_MiddleSections.push_back(TAlignMiddleInterval(begin_len, seq_len - end_len - 1));
     }
 }
 
