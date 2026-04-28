@@ -34,7 +34,8 @@
 // (DrawText() is both a giflib function and a Win32 GDI function)
 //
 #include <ncbi_pch.hpp>
-#include <ncbiconf.h>
+#include "image_io_gif.hpp"
+
 #ifdef HAVE_LIBGIF
 // alas, poor giflib... it isn't extern'ed
 extern "C" {
@@ -52,7 +53,6 @@ extern "C" {
 };
 #endif
 
-#include "image_io_gif.hpp"
 #include <util/image/image.hpp>
 #include <util/image/image_exception.hpp>
 #include <util/error_codes.hpp>
