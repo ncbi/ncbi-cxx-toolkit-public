@@ -57,6 +57,7 @@
 #define tds_alloc_compute_row           tds_alloc_compute_row_ver14
 #define tds_alloc_context               tds_alloc_context_ver14
 #define tds_alloc_cursor                tds_alloc_cursor_ver14
+#define tds_alloc_dstrs                 tds_alloc_dstrs_ver14
 #define tds_alloc_dynamic               tds_alloc_dynamic_ver14
 #define tds_alloc_locale                tds_alloc_locale_ver14
 #define tds_alloc_login                 tds_alloc_login_ver14
