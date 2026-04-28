@@ -792,12 +792,10 @@ void CValidError_bioseq::ValidateSeqIds(const CBioseq& seq)
     bool is_wgs = false;
     unsigned int gi_count = 0;
     unsigned int accn_count = 0;
-    unsigned int lcl_count = 0;
     FOR_EACH_SEQID_ON_BIOSEQ (k, seq) {
         const CTextseq_id* tsid = (*k)->GetTextseq_Id();
         switch ((**k).Which()) {
         case CSeq_id::e_Local:
-            lcl_count++;
             break;
         case CSeq_id::e_Tpg:
         case CSeq_id::e_Tpe:
