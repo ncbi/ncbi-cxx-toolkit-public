@@ -192,6 +192,7 @@ struct SPubseqGatewaySettings
 
     // [LOG]
     bool                                m_LogPeerIPAlways;
+    bool                                m_AsyncLogEnabled;
 
     // [H2o]
     size_t                              m_IdleTimeoutSec;

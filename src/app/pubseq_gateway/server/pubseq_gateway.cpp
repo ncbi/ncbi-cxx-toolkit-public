@@ -165,6 +165,7 @@ void CPubseqGatewayApp::ParseArgs(void)
     g_Log = m_Settings.m_Log;
     g_AllowProcessorTiming = m_Settings.m_AllowProcessorTiming;
 
+
     m_CassConnectionFactory->AppParseArgs(args);
     m_CassConnectionFactory->LoadConfig(registry, "");
     m_CassConnectionFactory->SetLogging(GetDiagPostLevel());
@@ -413,11 +414,6 @@ static unsigned long    s_TickNoFor5Sec = 0;
 
 int CPubseqGatewayApp::Run(void)
 {
-//    CAsyncDiagHandler diag_handler;
-//    diag_handler.SetCustomThreadSuffix("_l");
-//    diag_handler.InstallToDiag();
-
-
     srand(time(NULL));
 
     try {
@@ -443,6 +439,16 @@ int CPubseqGatewayApp::Run(void)
             NCBI_THROW(CPubseqGatewayException, eDaemonizationFailed,
                        "Error during daemonization");
     }
+
+    // Set the async diag handler right after the settings were read in
+    // ParseArgs()
+    CAsyncDiagHandler *     async_diag_handler = nullptr;
+    if (m_Settings.m_AsyncLogEnabled) {
+        async_diag_handler = new CAsyncDiagHandler();
+        async_diag_handler->SetCustomThreadSuffix("_l");
+        async_diag_handler->InstallToDiag();
+    }
+
 
     // The config file cannot be reloaded while the server is up and running.
     // So it is better to prepare the config request reply once and then use
@@ -828,7 +834,10 @@ int CPubseqGatewayApp::Run(void)
 
     CloseCass();
 
-//    diag_handler.RemoveFromDiag();
+    if (m_Settings.m_AsyncLogEnabled) {
+        async_diag_handler->RemoveFromDiag();
+        delete async_diag_handler;
+    }
     return ret_code;
 }
 

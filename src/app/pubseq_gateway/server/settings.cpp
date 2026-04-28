@@ -157,6 +157,7 @@ const string            kDefaultMyNCBITestWebCubbyUser = "MVWNUIMYDR41F2XRDBT8JT
 const size_t            kDefaultMyNCBITestOkPeriodSec = 180;
 const size_t            kDefaultMyNCBITestFailPeriodSec = 20;
 const bool              kDefaultLogPeerIPAlways = false;
+const bool              kDefaultm_AsyncLogEnabled = false;
 const size_t            kDefaultIdleTimeoutSec = 100000;
 const size_t            kDefaultSeqIdRefreshSec = 300;
 
@@ -250,6 +251,7 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_MyNCBITestOkPeriodSec(kDefaultMyNCBITestOkPeriodSec),
     m_MyNCBITestFailPeriodSec(kDefaultMyNCBITestFailPeriodSec),
     m_LogPeerIPAlways(kDefaultLogPeerIPAlways),
+    m_AsyncLogEnabled(kDefaultm_AsyncLogEnabled),
     m_IdleTimeoutSec(kDefaultIdleTimeoutSec),
     m_SeqIdRefreshSec(kDefaultSeqIdRefreshSec)
 {}
@@ -927,6 +929,8 @@ void SPubseqGatewaySettings::x_ReadLogSection(const CNcbiRegistry &   registry)
 {
     m_LogPeerIPAlways = registry.GetBool(kLogSection, "log_peer_ip_always",
                                          kDefaultLogPeerIPAlways);
+    m_AsyncLogEnabled = registry.GetBool(kLogSection, "async",
+                                         kDefaultm_AsyncLogEnabled);
 }
 
 
