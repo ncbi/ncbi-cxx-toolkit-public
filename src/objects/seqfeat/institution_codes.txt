@@ -253,6 +253,7 @@ ANGU	s	Instituto Nacional de Tecnologia Agropecuaria
 ANGUC	s	Universite Catholiques de l'Ouest			
 ANH	s	Andong National University, School of Bioresource Science			
 ANHC	s	Arkansas Natural Heritage Commission Herbarium			
+ANIC	s	Australian National Insect Collection			
 ANK	s	Ankara UEniversitesi, Biyoloji Boeluemue			
 ANKO	s	Forest Research Institute, Turkey			
 ANLW	s	Amt Der Niederosterreichischen Landsregierung			
@@ -597,7 +598,7 @@ BGHan	s	Bundesanstalf fuer Geowissenschaften und Rohstoffe
 BGIV	c	Banco de Glomeromycota In Vitro (Bank of Glomeromycota In Vitro)			
 BGM	s	Bath Geology Museum (now the Royal Literary and Scientific Institution)			
 BGMA	b	Corporacion Colombiana de Investigacion Agropecuaria - AGROSAVIA			
-BGMRC	c	Beibu Gulf Marine			
+BGMRC	c	Beibu Gulf Marine Research Center			
 BGR	s	Bundesanstalt fur Geowissenschaften und Rohstoffe			
 BGRB	s	Bovine Genome Resources Bank			
 BGS	s	British Geological Survey			
@@ -906,10 +907,10 @@ BZR	s	Musees de la Ville de Beziers
 BZT	s	Biological Institute Titograd			
 C	s	Natural History Museum of Denmark			
 CA	s	Chicago Academy of Sciences	CASM,CHAS		
-CA: Mammal	s	Chicago Academy of Sciences, Mammalogy Collection	CA: Mammal Mammal		
 CA:Bird	s	Chicago Academy of Sciences, Ornithology Collection	CHAS:Bird		
 CA:Fish	s	Chicago Academy of Sciences, Ichthyology collection	CHAS:Fish		
 CA:HERP	s	Chicago Academy of Sciences, Herpetology collection	CHAS:HERP		
+CA:Mammal	s	Chicago Academy of Sciences, Mammalogy Collection	CA: Mammal Mammal		
 CAB	c	Yeast Collection of Department of Microbiology, Stellenbosch University			
 CABI	sc	CABI Genetic Resource Collection	IMI	http://194.203.77.76/grc/DisplayResults.asp?strGRCNumber=#S#	
 CACA	s	Carlsbad Caverns National Park			

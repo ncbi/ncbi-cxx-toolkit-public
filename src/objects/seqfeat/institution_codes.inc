@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed Apr 22 05:33:06 EDT 2026; formally
+/* time_t value corresponding to Tue Apr 28 05:33:04 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1776850386UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1777368784UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -289,6 +289,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ANGUC\ts\tUniversite Catholiques de l'Ouest\t\t\t",
 "ANH\ts\tAndong National University, School of Bioresource Science\t\t\t",
 "ANHC\ts\tArkansas Natural Heritage Commission Herbarium\t\t\t",
+"ANIC\ts\tAustralian National Insect Collection\t\t\t",
 "ANK\ts\tAnkara UEniversitesi, Biyoloji Boeluemue\t\t\t",
 "ANKO\ts\tForest Research Institute, Turkey\t\t\t",
 "ANLW\ts\tAmt Der Niederosterreichischen Landsregierung\t\t\t",
@@ -633,7 +634,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BGIV\tc\tBanco de Glomeromycota In Vitro (Bank of Glomeromycota In Vitro)\t\t\t",
 "BGM\ts\tBath Geology Museum (now the Royal Literary and Scientific Institution)\t\t\t",
 "BGMA\tb\tCorporacion Colombiana de Investigacion Agropecuaria - AGROSAVIA\t\t\t",
-"BGMRC\tc\tBeibu Gulf Marine\t\t\t",
+"BGMRC\tc\tBeibu Gulf Marine Research Center\t\t\t",
 "BGR\ts\tBundesanstalt fur Geowissenschaften und Rohstoffe\t\t\t",
 "BGRB\ts\tBovine Genome Resources Bank\t\t\t",
 "BGS\ts\tBritish Geological Survey\t\t\t",
@@ -942,10 +943,10 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BZT\ts\tBiological Institute Titograd\t\t\t",
 "C\ts\tNatural History Museum of Denmark\t\t\t",
 "CA\ts\tChicago Academy of Sciences\tCASM,CHAS\t\t",
-"CA: Mammal\ts\tChicago Academy of Sciences, Mammalogy Collection\tCA: Mammal Mammal\t\t",
 "CA:Bird\ts\tChicago Academy of Sciences, Ornithology Collection\tCHAS:Bird\t\t",
 "CA:Fish\ts\tChicago Academy of Sciences, Ichthyology collection\tCHAS:Fish\t\t",
 "CA:HERP\ts\tChicago Academy of Sciences, Herpetology collection\tCHAS:HERP\t\t",
+"CA:Mammal\ts\tChicago Academy of Sciences, Mammalogy Collection\tCA: Mammal Mammal\t\t",
 "CAB\tc\tYeast Collection of Department of Microbiology, Stellenbosch University\t\t\t",
 "CABI\tsc\tCABI Genetic Resource Collection\tIMI\thttp://194.203.77.76/grc/DisplayResults.asp?strGRCNumber=#S#\t",
 "CACA\ts\tCarlsbad Caverns National Park\t\t\t",
