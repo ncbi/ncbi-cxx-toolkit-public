@@ -55,6 +55,7 @@
 #define tds_alloc_compute_row           tds_alloc_compute_row_ver100
 #define tds_alloc_context               tds_alloc_context_ver100
 #define tds_alloc_cursor                tds_alloc_cursor_ver100
+#define tds_alloc_dstrs                 tds_alloc_dstrs_ver100
 #define tds_alloc_dynamic               tds_alloc_dynamic_ver100
 #define tds_alloc_locale                tds_alloc_locale_ver100
 #define tds_alloc_login                 tds_alloc_login_ver100
