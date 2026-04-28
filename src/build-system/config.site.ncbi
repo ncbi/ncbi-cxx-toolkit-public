@@ -10,7 +10,6 @@ ncbi_platform=`COMMON_DetectPlatform`
 case "$ncbi_platform" in
     Linux64 )
         ncbi_cv_prog_cxx_stdlib_libcxx=no
-	: ${with_gif=no}
         ;;
     *MAC )
         test() {
@@ -168,27 +167,30 @@ case "$ncbi_platform" in
         ;;
 esac
 
-: ${APACHE_ARROW_PATH=$NCBI/apache-arrow-3.0.0}
+: ${APACHE_ARROW_PATH=$NCBI/apache-arrow-21.0.0}
 
-: ${AVRO_PATH=$NCBI/avro-1.10.2}
+: ${AVRO_PATH=$NCBI/avro-1.12.0}
 
-: ${AWS_SDK_PATH=$NCBI/aws-sdk-cpp-1.8.14}
+: ${AWS_SDK_PATH=$NCBI/aws-sdk-cpp-1.11.245}
 
 : ${BACKWARD_CPP_PATH=$NCBI/backward-cpp-1.6-ncbi1}
 
 : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-5.3.28-ncbi1}
 
-: ${BOOST_PATH=$NCBI/boost-1.76.0-ncbi1}
-
-: ${CASSANDRA_PATH=$NCBI/datastax-cpp-driver-2.15.1}
+case "$ncbi_platform" in
+    Linux64    ) : ${BOOST_PATH=$NCBI/boost-1.89.0-ncbi1} ;;
+    *          ) : ${BOOST_PATH=$NCBI/boost-1.76.0-ncbi1} ;;
+esac
+    
+: ${CASSANDRA_PATH=$NCBI/datastax-cpp-driver-2.17.1-ncbi1b}
 
 : ${CEREAL_PATH=$NCBI/cereal-1.3.0}
 
-: ${CPPKAFKA_PATH=$NCBI/cppkafka-0.3.1+rdkafka-2.3.0}
+: ${CPPKAFKA_PATH=$NCBI/cppkafka-0.4.1}
 
 : ${CRC32C_PATH=$NCBI/crc32c-1.1.2}
 
-: ${CURL_PATH=$NCBI/curl-7.85.0}
+: ${CURL_PATH=$NCBI/curl-8.16.0}
 
 case "$ncbi_platform" in
     Linux64    ) : ${FASTCGI_PATH=$NCBI/fcgi-2.4.7} ;;
@@ -217,29 +219,35 @@ case "$ncbi_platform" in
     *MAC       ) : ${with_gcrypt=no} ;;
 esac
 
-: ${GL2PS_PATH=$NCBI/gl2ps-1.4.0}
+case "$ncbi_platform" in
+    Linux64    ) : ${GL2PS_PATH=$NCBI/gl2ps-1.4.2} ;;
+    *          ) : ${GL2PS_PATH=$NCBI/gl2ps-1.4.0} ;;
+esac
 
 case "$ncbi_platform" in
     Linux*     ) : ${GLEW_PATH=$NCBI/glew-2.2.0-ncbi1} ;;
     *          ) : ${GLEW_PATH=$NCBI/glew-1.5.8}       ;;
 esac
 
-: ${GMOCK_PATH=$NCBI/googletest-1.8.1}
+: ${GMOCK_PATH=$NCBI/googletest-1.12.1}
 
 : ${GMP_PATH=$NCBI/gmp-6.3.0}
 
 # NB: now used only when explicitly configured --with-gnutls
 : ${GNUTLS_PATH=$NCBI/gnutls-3.8.10-ncbi1}
 
-: ${GOOGLE_CLOUD_PATH=$NCBI/google-cloud-cpp-1.31.1-ncbi1}
-
-: ${GRPC_PATH=$NCBI/grpc-1.50.2-ncbi1}
+: ${GOOGLE_CLOUD_PATH=$NCBI/google-cloud-cpp-2.41.0-ncbi1}
 
 case "$ncbi_platform" in
-    Linux64    ) : ${GSOAP_PATH=$NCBI/gsoap-2.8.129} ;;
+    Linux64    ) : ${GRPC_PATH=$NCBI/grpc-1.67.1-ncbi2} ;;
+    *          ) : ${GRPC_PATH=$NCBI/grpc-1.50.2-ncbi1} ;;
 esac
 
-: ${H2O_PATH=$NCBI/h2o-2.2.6-ncbi3}
+case "$ncbi_platform" in
+    Linux64    ) : ${GSOAP_PATH=$NCBI/gsoap-2.8.129+a8} ;;
+esac
+
+: ${H2O_PATH=$NCBI/h2o-2.2.6-ncbi3+uv1.51}
 
 : ${HDF5_PATH=$NCBI/hdf5-1.8.3}
 
@@ -255,7 +263,7 @@ esac
 
 : ${IPS4O_PATH=$NCBI/ips4o-0.0.20250115}
 
-: ${JAEGER_PATH=$NCBI/jaeger-client-cpp-0.7.0}
+: ${JAEGER_PATH=$NCBI/jaeger-client-cpp-0.9.0}
 
 case "$ncbi_platform" in
     *MAC       ) : ${JPEG_PATH=$NCBI/libjpeg-turbo-3.1.2} ;;
@@ -263,13 +271,14 @@ esac
 
 : ${LEVELDB_PATH=$NCBI/leveldb-1.21}
 
-: ${LIBRDKAFKA_PATH=$NCBI/librdkafka-2.3.0}
+: ${LIBRDKAFKA_PATH=$NCBI/librdkafka-2.11.1}
 
 : ${LIBUNWIND_PATH=$NCBI/libunwind-1.1}
 
 : ${LIBURING_PATH=$NCBI/liburing-2.4}
 
 case "$ncbi_platform" in
+    Linux64    ) : ${LIBUV_PATH=$NCBI/libuv-1.51.0} ;;
     *MAC       ) : ${LIBUV_PATH=$NCBI/libuv-1.44.2} ;;
     *          ) : ${LIBUV_PATH=$NCBI/libuv-1.42.0} ;;
 esac
@@ -295,7 +304,7 @@ esac
 
 : ${MONGODB_PATH=$NCBI/mongodb-1.1.2}
 
-: ${MONGODB3_PATH=$NCBI/mongodb-3.7.0}
+: ${MONGODB3_PATH=$NCBI/mongodb-3.11.0-ncbi1}
 
 : ${MSGSL_PATH=$NCBI/msgsl-0.0.20171114-1c95f94}
 
@@ -315,19 +324,18 @@ esac
 
 : ${NETTLE_PATH=$NCBI/nettle-3.10.2}
 
-: ${NGHTTP2_PATH=$NCBI/nghttp2-1.40.0}
-
-net_ngs_base=/net/snowman/vol/projects/trace_software/ngs/ngs-versions
-case "`lsb_release -rs 2>/dev/null`" in
-    7.* ) : ${NGS_PATH=$net_ngs_base/3.2.0} ;;
-    *   ) : ${NGS_PATH=$net_ngs_base/3.4.0} ;;
+case "$ncbi_platform" in
+    Linux64    ) : ${NGHTTP2_PATH=$NCBI/nghttp2-1.67.0} ;;
+    *          ) : ${NGHTTP2_PATH=$NCBI/nghttp2-1.40.0} ;;
 esac
 
-: ${NLOHMANN_JSON_PATH=$NCBI/nlohmann-json-3.9.1}
+: ${NGS_PATH=/net/snowman/vol/projects/trace_software/ngs/ngs-versions/3.4.0}
+
+: ${NLOHMANN_JSON_PATH=$NCBI/nlohmann-json-3.12.0}
 
 # : ${ODBC_PATH:="/opt/machine/merant"}
 
-: ${OPENTELEMETRY_PATH=$NCBI/opentelemetry-cpp-1.14.2+grpc150}
+: ${OPENTELEMETRY_PATH=$NCBI/opentelemetry-cpp-1.20.0}
 
 : ${OPENTRACING_PATH=$NCBI/opentracing-cpp-1.6.0}
 
@@ -375,7 +383,7 @@ local_sybase_root="/opt/sybase/clients"
 
 : ${TCHECK_FALLBACK=/opt/intel/itt/bin/32e:/usr/local/intel/itt-3.1/tcheck/bin/32e}
 
-: ${THRIFT_PATH=$NCBI/thrift-0.11.0}
+: ${THRIFT_PATH=$NCBI/thrift-0.22.0}
 
 case "$ncbi_platform" in
     *MAC       ) : ${TIFF_PATH=$NCBI/tiff-4.7.1} ;;
@@ -385,11 +393,8 @@ net_vdb_base=/net/snowman/vol/projects/trace_software/vdb/vdb-versions
 local_vdb_base=/opt/ncbi/64/trace_software/vdb/vdb-versions
 case "$ncbi_platform" in
     Linux64 )
-        case "`lsb_release -rs 2>/dev/null`:$with_vdb" in
-            7.* )
-                : ${VDB_PATH=$local_vdb_base/3.2.0}
-                ;;
-            *:rc ) 
+        case "$with_vdb" in
+            rc ) 
                 # with_vdb=$local_vdb_base/cxx_toolkit/3
                 with_vdb=$net_vdb_base/cxx_toolkit/3-rc
                 ;;
@@ -410,6 +415,7 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
+    Linux64    ) : ${WXWIDGETS_PATH=$NCBI/wxWidgets-3.2.8.1-ncbi1} ;;
     *MAC       ) : ${WXWIDGETS_PATH=$NCBI/wxWidgets-3.2.8.1-ncbi1} ;;
     *          ) : ${WXWIDGETS_PATH=$NCBI/wxWidgets-3.2.1-ncbi1}   ;;
 esac
@@ -420,7 +426,7 @@ esac
 
 : ${YAML_CPP_PATH=$NCBI/yaml-cpp-0.6.3}
 
-# : ${ZORBA_PATH=$NCBI/zorba-2.2.0}
+: ${ZORBA_PATH=$NCBI/zorba-4.0-ncbi1}
 
 : ${ZSTD_PATH=$NCBI/zstd-1.5.2}
 
