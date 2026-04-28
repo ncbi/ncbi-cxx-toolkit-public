@@ -18,12 +18,17 @@ https="0"
 memcheck="0"
 max_sessions="200"
 
-H2LOAD_CNT="100"
-H2LOAD_CNT_ADMIN="50"
-H2LOAD_CNT_NON_CASS="50"
-REQ_CNT="50000"
-REQ_CNT_ADMIN="1000"
-REQ_CNT_NON_CASS="100"
+H2LOAD_CNT="10"
+H2LOAD_THREADS_CNT="40"
+REQ_CNT="500000"
+
+H2LOAD_CNT_ADMIN="5"
+H2LOAD_THREADS_CNT_ADMIN="40"
+REQ_CNT_ADMIN="10000"
+
+H2LOAD_CNT_NON_CASS="5"
+H2LOAD_THREADS_CNT_NON_CASS="40"
+REQ_CNT_NON_CASS="1000"
 
 
 while (( $# )); do
@@ -63,11 +68,16 @@ fi
 
 if [[ "${memcheck}" == "1" ]]; then
     H2LOAD_CNT="10"
-    H2LOAD_CNT_ADMIN="5"
-    H2LOAD_CNT_NON_CASS="5"
     REQ_CNT="500"
+    H2LOAD_THREADS_CNT="20"
+
+    H2LOAD_CNT_ADMIN="5"
     REQ_CNT_ADMIN="50"
+    H2LOAD_THREADS_CNT_ADMIN="20"
+
+    H2LOAD_CNT_NON_CASS="5"
     REQ_CNT_NON_CASS="10"
+    H2LOAD_THREADS_CNT_NON_CASS="20"
 fi
 
 # Waits for h2load to finish; exit if failed;
@@ -83,7 +93,7 @@ finilize() {
 # case_run "name" "url"
 case_run() {
     echo "${1}..."
-    for i in `seq 1 ${H2LOAD_CNT}`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -T 6000000 -N 6000000 -n ${REQ_CNT} -c 4 -t 4 -m ${max_sessions} -v  "${url}/${2}" > ${outdir}/h2load.${i}.out &); done
+    for i in `seq 1 ${H2LOAD_CNT}`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -T 6000000 -N 6000000 -n ${REQ_CNT} -c ${H2LOAD_THREADS_CNT} -t ${H2LOAD_THREADS_CNT} -m ${max_sessions} "${url}/${2}" > ${outdir}/h2load.${i}.out &); done
     finilize "${1}"
 }
 
@@ -91,14 +101,14 @@ case_run() {
 # case_run "name" "url"
 admin_case_run() {
     echo "${1}..."
-    for i in `seq 1 ${H2LOAD_CNT_ADMIN}`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -T 6000000 -N 6000000 -n ${REQ_CNT_ADMIN} -c 4 -t 4 -m ${max_sessions} -v  "${url}/${2}" > ${outdir}/h2load.${i}.out &); done
+    for i in `seq 1 ${H2LOAD_CNT_ADMIN}`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -T 6000000 -N 6000000 -n ${REQ_CNT_ADMIN} -c ${H2LOAD_THREADS_CNT_ADMIN} -t ${H2LOAD_THREADS_CNT_ADMIN} -m ${max_sessions} "${url}/${2}" > ${outdir}/h2load.${i}.out &); done
     finilize "${1}"
 }
 
 
 non_cass_case_run() {
     echo "${1}..."
-    for i in `seq 1 ${H2LOAD_CNT_NON_CASS}`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -T 6000000 -N 6000000 -n ${REQ_CNT_NON_CASS} -c 4 -t 4 -m ${max_sessions} -v  "${url}/${2}" > ${outdir}/h2load.${i}.out &); done
+    for i in `seq 1 ${H2LOAD_CNT_NON_CASS}`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -T 6000000 -N 6000000 -n ${REQ_CNT_NON_CASS} -c ${H2LOAD_THREADS_CNT_NON_CASS} -t ${H2LOAD_THREADS_CNT_NON_CASS} -m ${max_sessions} "${url}/${2}" > ${outdir}/h2load.${i}.out &); done
     finilize "${1}"
 }
 
