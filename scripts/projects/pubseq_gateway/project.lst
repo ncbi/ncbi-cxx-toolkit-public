@@ -1,6 +1,7 @@
 corelib$
 corelib/impl
 corelib/hash_impl$
+corelib/boost_patches$
 connect$
 connect/ext$
 connect/impl$ update-only
