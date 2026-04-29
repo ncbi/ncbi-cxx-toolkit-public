@@ -2180,7 +2180,6 @@ bool IsLikelyTaxname(const string& val)
 }
 
 
-//LCOV_EXCL_START
 //not used by asnvalidate but used by other applications
 bool IsSpecificHostValid(const string& val, string& error_msg)
 {
@@ -2220,6 +2219,7 @@ static char s_ConvertChar(char ch)
 }
 
 
+//LCOV_EXCL_START
 void ConvertToEntrezTerm(string& title)
 {
     string::iterator s = title.begin();

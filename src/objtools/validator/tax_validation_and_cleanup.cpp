@@ -1850,7 +1850,6 @@ bool CTaxValidationAndCleanup::DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with
 //LCOV_EXCL_STOP
 
 
-//LCOV_EXCL_START
 //only used by biosample
 void CTaxValidationAndCleanup::FixOneSpecificHost(string& val)
 {
@@ -1892,10 +1891,8 @@ void CTaxValidationAndCleanup::FixOneSpecificHost(string& val)
     val = edited.front()->GetOrgname().GetMod().front()->GetSubname();
     m_HostMapForFix.Clear();
 }
-//LCOV_EXCL_STOP
 
 
-//LCOV_EXCL_START
 //only used by biosample
 bool CTaxValidationAndCleanup::IsOneSpecificHostValid(const string& val, string& error_msg)
 {
@@ -1936,7 +1933,6 @@ bool CTaxValidationAndCleanup::IsOneSpecificHostValid(const string& val, string&
     m_HostMap.Clear();
     return rval;
 }
-//LCOV_EXCL_STOP
 
 
 void CTaxValidationAndCleanup::CheckOneOrg(const COrg_ref& org, CBioSource::TGenome genome, CValidError_imp& imp)
