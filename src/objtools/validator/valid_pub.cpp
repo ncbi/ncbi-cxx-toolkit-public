@@ -48,6 +48,7 @@
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 
+#include <objects/biblio/ArticleId.hpp>
 #include <objects/biblio/Author.hpp>
 #include <objects/biblio/Auth_list.hpp>
 #include <objects/biblio/Cit_art.hpp>
@@ -86,6 +87,7 @@ void CValidError_imp::ValidatePubdesc(
     }
     TEntrezId uid = ZERO_ENTREZ_ID, pmid = ZERO_ENTREZ_ID, muid = ZERO_ENTREZ_ID;
     bool conflicting_pmids = false, redundant_pmids = false, conflicting_muids = false, redundant_muids = false;
+    // bool has_doi = false;
 
     ValidatePubHasAuthor(pubdesc, obj, ctx);
 
@@ -119,6 +121,24 @@ void CValidError_imp::ValidatePubdesc(
                 uid = pub.GetPmid();
             }
             break;
+
+        /*
+        case CPub::e_Article:
+            {
+            const CCit_art & art = pub.GetArticle();
+            if (art.CanGetIds()) {
+                for (auto id : art.GetIds().Get()) {
+                    if (id->Which() == CArticleId::e_Doi) {
+                        const string& doi = id->GetDoi();
+                        if (! doi.empty()) {
+                            has_doi = true;
+                        }
+                    }
+                }
+            }
+            break;
+            }
+        */
 
         default:
             break;
@@ -324,9 +344,23 @@ void CValidError_imp::ValidatePubArticle(
     const CSerialObject& obj,
     const CSeq_entry*    ctx)
 {
+    bool no_doi = true;
+    if (art.CanGetIds()) {
+        for (auto id : art.GetIds().Get()) {
+            if (id->Which() == CArticleId::e_Doi) {
+                const string& doi = id->GetDoi();
+                if (! doi.empty()) {
+                    no_doi = false;
+                }
+            }
+        }
+    }
+
     if ( !art.IsSetTitle()  ||  !HasTitle(art.GetTitle()) ) {
-        PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubRequirement,
-            "Publication has no title", obj, ctx);
+        if (uid == ZERO_ENTREZ_ID && no_doi) {
+            PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubRequirement,
+                "Publication has no title", obj, ctx);
+        }
     }
 
     if (art.GetFrom().IsJournal()) {
@@ -340,7 +374,7 @@ void CValidError_imp::ValidatePubArticle(
                 "Journal title missing", obj, ctx);
         }
 
-        if (uid == ZERO_ENTREZ_ID) {
+        if (uid == ZERO_ENTREZ_ID && no_doi) {
             ValidatePubArticleNoPMID(art, obj, ctx);
         }
 
@@ -829,7 +863,6 @@ void CValidError_imp::ValidateAuthorList(
         }
     }
 }
-
 
 void CValidError_imp::ValidateAuthorsInPubequiv(
     const CPub_equiv&    pe,
