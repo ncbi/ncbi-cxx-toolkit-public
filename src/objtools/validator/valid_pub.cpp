@@ -87,7 +87,6 @@ void CValidError_imp::ValidatePubdesc(
     }
     TEntrezId uid = ZERO_ENTREZ_ID, pmid = ZERO_ENTREZ_ID, muid = ZERO_ENTREZ_ID;
     bool conflicting_pmids = false, redundant_pmids = false, conflicting_muids = false, redundant_muids = false;
-    // bool has_doi = false;
 
     ValidatePubHasAuthor(pubdesc, obj, ctx);
 
@@ -121,24 +120,6 @@ void CValidError_imp::ValidatePubdesc(
                 uid = pub.GetPmid();
             }
             break;
-
-        /*
-        case CPub::e_Article:
-            {
-            const CCit_art & art = pub.GetArticle();
-            if (art.CanGetIds()) {
-                for (auto id : art.GetIds().Get()) {
-                    if (id->Which() == CArticleId::e_Doi) {
-                        const string& doi = id->GetDoi();
-                        if (! doi.empty()) {
-                            has_doi = true;
-                        }
-                    }
-                }
-            }
-            break;
-            }
-        */
 
         default:
             break;
