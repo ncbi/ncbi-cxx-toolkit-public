@@ -664,7 +664,7 @@ void CAlnScannerNexus::xImportAlignmentData(
     size_t       commandEnd(0);
     size_t       commandStart(0);
     int          numOpenBrackets(0);
-    size_t       commentStartLine(-1);
+    int          commentStartLine{ -1 };
     bool         inCommand(false);
     bool         firstToken = true;
 

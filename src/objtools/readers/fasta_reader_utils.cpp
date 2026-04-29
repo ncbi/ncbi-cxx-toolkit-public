@@ -151,7 +151,6 @@ void CFastaDeflineReader::ParseDefline(const CTempString& defline,
 {
     size_t range_len = 0;
     const TFastaFlags& fFastaFlags = info.fFastaFlags;
-    const TSeqPos& lineNumber = info.lineNumber;
     data.has_range = false;
 
     const size_t len = defline.length();
@@ -221,7 +220,7 @@ void CFastaDeflineReader::ParseDefline(const CTempString& defline,
         // Parse the title elsewhere - after the molecule has been deduced
         data.titles.push_back(
             SLineTextAndLoc(
-                defline.substr(title_start, pos - title_start), lineNumber));
+                defline.substr(title_start, pos - title_start), static_cast<TSeqPos>(info.lineNumber)));
     }
 }
 
@@ -364,7 +363,7 @@ void CFastaDeflineReader::x_ProcessIDs(
             + "symbol. Please correct the sequence id string.";
 
         s_PostWarning(pMessageListener,
-            info.lineNumber,
+            static_cast<TSeqPos>(info.lineNumber),
             id_string,
             err_message,
             ILineError::eProblem_GeneralParsingError,
@@ -389,7 +388,7 @@ void CFastaDeflineReader::x_ProcessIDs(
 
     if (ids.empty()) {
         s_PostError(pMessageListener,
-                info.lineNumber,
+                static_cast<TSeqPos>(info.lineNumber),
                 id_string,
                 "Could not construct seq-id from '" + id_string + "'",
                 ILineError::eProblem_GeneralParsingError,
@@ -432,7 +431,7 @@ void CSeqIdCheck::operator()(const TIds& ids,
         s_IdValidate.SetMaxGeneralTagLength(info.maxIdLength);
         s_IdValidate.SetMaxAccessionLength(info.maxIdLength);
     }
-    s_IdValidate(ids, info.lineNumber, CIdErrorReporter(listener));
+    s_IdValidate(ids, static_cast<int>(info.lineNumber), CIdErrorReporter(listener));
 }
 
 

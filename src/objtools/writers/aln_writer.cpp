@@ -445,7 +445,7 @@ static string s_GetSegString(const string& seq_plus,
         CSeqUtil::ECoding coding,
         ENa_strand strand,
         TSeqPos start,
-        size_t len)
+        TSeqPos len)
 {
     if (start >= seq_plus.size()) {
         NCBI_THROW(CObjWriterException,
@@ -468,7 +468,7 @@ string CAlnWriter::GetSegString(const string& seq_plus,
     CSeqUtil::ECoding coding,
     const ENa_strand strand,
     const int start,
-    const size_t len)
+    const TSeqPos len)
 {
     if (start >= 0) {
         return s_GetSegString(seq_plus, coding, strand, static_cast<TSeqPos>(start), len);

@@ -118,7 +118,7 @@ protected:
         CSeqUtil::ECoding coding,
         ENa_strand strand,
         int start,
-        size_t len);
+        TSeqPos len);
 
     void WriteContiguous(const string& defline, const string& seqdata);
 
