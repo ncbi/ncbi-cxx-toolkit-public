@@ -72,7 +72,8 @@ public:
             */
             enum EErrCode
             {
-                eNullGenome     /**< Genome has 0 size. */
+                eNullGenome,    /**< Genome has 0 size. */
+                eBadOption      ///< Command line options inconsistency.
             };
 
             /**\brief Return description string corresponding to an error code.

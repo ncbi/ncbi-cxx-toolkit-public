@@ -202,6 +202,12 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     ids( arg_ids ), exclude_ids( arg_exclude_ids ),
     infmt( infmt_arg )
 {
+    if( input == "-" ) {
+        NCBI_THROW(
+            GenCountsException, eBadOption,
+            "input file name must be non-empty" );
+    }
+
     // Parse arg_th to set up th[].
     string::size_type pos( 0 );
     Uint1 count( 0 );
@@ -555,6 +561,7 @@ CWinMaskCountsGenerator::GenCountsException::GetErrCodeString() const
 {
     switch( GetErrCode() ) {
         case eNullGenome: return "empty genome";
+        case eBadOption: return "argument error";
         default: return CException::GetErrCodeString();
     }
 }
