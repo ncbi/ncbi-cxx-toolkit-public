@@ -28500,8 +28500,8 @@
                 }
             ]
         },
-        "HUP biodata of gb|PP445004| (ok)": {
-            "description": "HUP biodata of gb|PP445004| (ok)",
+        "HUP biodata of gb|XXN32607| (ok)": {
+            "description": "HUP biodata of gb|XXN32607| (ok)",
             "tags": ["id-get", "cassandra", "200", "hup-ok"],
             "requests": [
                 [
@@ -28510,7 +28510,7 @@
                         "method": "biodata",
                         "params": {
                             "bio_id": [
-                                "gb|PP445004|",
+                                "gb|XXN32607|",
                                 "5"
                             ],
                             "request_flags": [
@@ -28529,26 +28529,26 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "gi|2695360147",
+                            "id": "gi|3021103303",
                             "type": 12
                         },
                         "other_ids": [
                             {
-                                "id": "gb|PP445004",
+                                "id": "gb|XXN32607",
                                 "type": 5
                             }
                         ],
-                        "molecule_type": "rna",
-                        "length": 6680,
+                        "molecule_type": "aa",
+                        "length": 482,
                         "seq_state": 10,
                         "state": 10,
                         "blob_id": {
-                            "id": "20.37823530"
+                            "id": "20.39689094"
                         },
                         "tax_id": 0,
-                        "hash": 195649713,
-                        "date_changed": null,
-                        "gi": 2695360147
+                        "hash": 905942975,
+                        "date_changed": "10/16/2025 10:30:00",
+                        "gi": 3021103303
                     }
                 },
                 {
@@ -28557,12 +28557,12 @@
                     "result": {
                         "reply": "BlobData",
                         "id": {
-                            "id": "20.37823530",
-                            "last_modified": 1709848694053
+                            "id": "20.39689094",
+                            "last_modified": 1760610600423
                         },
-                        "length": 5460,
-                        "hash": "65C493163AAAE291",
-                        "preview": "eJylWk2P3Nh1bfXo23YcEg=="
+                        "length": 63225,
+                        "hash": "19330955A782675B",
+                        "preview": "eJykum1YE9f2NzxkQAJMMg=="
                     }
                 },
                 {
@@ -28571,13 +28571,13 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id": "20.37823530",
-                            "last_modified": 1709848694053
+                            "id": "20.39689094",
+                            "last_modified": 1760610600423
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 5460,
-                        "size": 9979,
+                        "storage_size": 63225,
+                        "size": 122418,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -28586,12 +28586,12 @@
                         "is_withdrawn_permanently": false,
                         "is_edit_blocked": false,
                         "no_incremental_processing": false,
-                        "hup_release_date": "03/07/2034 05:00:00",
+                        "hup_release_date": "01/01/2028 05:00:00",
                         "owner": 13,
-                        "original_load_date": "03/07/2024 21:58:14",
+                        "original_load_date": "10/16/2025 10:30:00",
                         "class": "nuc-prot",
-                        "division": "VRL",
-                        "username": "gbupdate",
+                        "division": "PLN",
+                        "username": "calhounv",
                         "id2_info": "",
                         "n_chunks": 1
                     }
@@ -28605,8 +28605,8 @@
                 }
             ]
         },
-        "HUP biodata of 2695360147 (ok)": {
-            "description": "HUP biodata of 2695360147 (ok)",
+        "HUP biodata of 3021103303 (ok)": {
+            "description": "HUP biodata of 3021103303 (ok)",
             "tags": ["id-get", "cassandra", "200", "hup-ok"],
             "requests": [
                 [
@@ -28615,7 +28615,7 @@
                         "method": "biodata",
                         "params": {
                             "bio_id": [
-                                "2695360147",
+                                "3021103303",
                                 "12"
                             ],
                             "request_flags": [
@@ -28634,26 +28634,26 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "gi|2695360147",
+                            "id": "gi|3021103303",
                             "type": 12
                         },
                         "other_ids": [
                             {
-                                "id": "gb|PP445004",
+                                "id": "gb|XXN32607",
                                 "type": 5
                             }
                         ],
-                        "molecule_type": "rna",
-                        "length": 6680,
+                        "molecule_type": "aa",
+                        "length": 482,
                         "seq_state": 10,
                         "state": 10,
                         "blob_id": {
-                            "id": "20.37823530"
+                            "id": "20.39689094"
                         },
                         "tax_id": 0,
-                        "hash": 195649713,
-                        "date_changed": null,
-                        "gi": 2695360147
+                        "hash": 905942975,
+                        "date_changed": "10/16/2025 10:30:00",
+                        "gi": 3021103303
                     }
                 },
                 {
@@ -28662,12 +28662,12 @@
                     "result": {
                         "reply": "BlobData",
                         "id": {
-                            "id": "20.37823530",
-                            "last_modified": 1709848694053
+                            "id": "20.39689094",
+                            "last_modified": 1760610600423
                         },
-                        "length": 5460,
-                        "hash": "65C493163AAAE291",
-                        "preview": "eJylWk2P3Nh1bfXo23YcEg=="
+                        "length": 63225,
+                        "hash": "19330955A782675B",
+                        "preview": "eJykum1YE9f2NzxkQAJMMg=="
                     }
                 },
                 {
@@ -28676,13 +28676,13 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id": "20.37823530",
-                            "last_modified": 1709848694053
+                            "id": "20.39689094",
+                            "last_modified": 1760610600423
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 5460,
-                        "size": 9979,
+                        "storage_size": 63225,
+                        "size": 122418,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -28691,12 +28691,12 @@
                         "is_withdrawn_permanently": false,
                         "is_edit_blocked": false,
                         "no_incremental_processing": false,
-                        "hup_release_date": "03/07/2034 05:00:00",
+                        "hup_release_date": "01/01/2028 05:00:00",
                         "owner": 13,
-                        "original_load_date": "03/07/2024 21:58:14",
+                        "original_load_date": "10/16/2025 10:30:00",
                         "class": "nuc-prot",
-                        "division": "VRL",
-                        "username": "gbupdate",
+                        "division": "PLN",
+                        "username": "calhounv",
                         "id2_info": "",
                         "n_chunks": 1
                     }
