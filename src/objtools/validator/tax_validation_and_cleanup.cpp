@@ -224,7 +224,6 @@ void CSpecificHostRequest::ListErrors(vector<TTaxError>& errs) const
 }
 
 
-//LCOV_EXCL_START
 //used by cleanup
 const string& CSpecificHostRequest::SuggestFix() const
 {
@@ -234,7 +233,6 @@ const string& CSpecificHostRequest::SuggestFix() const
         return m_SuggestedFix;
     }
 }
-//LCOV_EXCL_STOP
 
 // new strain code
 
@@ -989,7 +987,6 @@ void CQualLookupMap::AddOrg(const COrg_ref& org)
 }
 
 
-//LCOV_EXCL_START
 //only used by biosample
 void CQualLookupMap::AddString(const string& val)
 {
@@ -1001,7 +998,6 @@ void CQualLookupMap::AddString(const string& val)
         m_Map[val] = x_MakeNewRequest(val, *org);
     }
 }
-//LCOV_EXCL_STOP
 
 
 vector<CRef<COrg_ref> > CQualLookupMap::GetRequestList()
@@ -1056,7 +1052,6 @@ string CQualLookupMap::IncrementalUpdate(const vector<CRef<COrg_ref> >& input, c
 }
 
 
-//LCOV_EXCL_START
 //only used for cleanup
 bool CQualLookupMap::IsUpdateComplete() const
 {
@@ -1067,7 +1062,6 @@ bool CQualLookupMap::IsUpdateComplete() const
     }
     return true;
 }
-//LCOV_EXCL_STOP
 
 
 void CQualLookupMap::PostErrors(CValidError_imp& imp)
@@ -1078,7 +1072,6 @@ void CQualLookupMap::PostErrors(CValidError_imp& imp)
 }
 
 
-//LCOV_EXCL_START
 //only used by biosample
 void CQualLookupMap::ListErrors(vector<TTaxError>& errs) const
 {
@@ -1088,7 +1081,6 @@ void CQualLookupMap::ListErrors(vector<TTaxError>& errs) const
 }
 
 
-//LCOV_EXCL_STOP
 
 
 CRef<CQualifierRequest> CSpecificHostMap::x_MakeNewRequest(const string& orig_val, const COrg_ref& org)
@@ -1098,7 +1090,6 @@ CRef<CQualifierRequest> CSpecificHostMap::x_MakeNewRequest(const string& orig_va
 }
 
 
-//LCOV_EXCL_START
 //used for cleanup
 CRef<CQualifierRequest> CSpecificHostMapForFix::x_MakeNewRequest(const string& orig_val, const COrg_ref& org)
 {
@@ -1145,7 +1136,6 @@ bool CSpecificHostMapForFix::ApplyToOrg(COrg_ref& org_ref) const
 
     return changed;
 }
-//LCOV_EXCL_STOP
 
 
 CRef<CQualifierRequest> CStrainMap::x_MakeNewRequest(const string& orig_val, const COrg_ref& org)
@@ -1481,7 +1471,6 @@ void CTaxValidationAndCleanup::ReportIncrementalTaxLookupErrors(
 }
 
 
-//LCOV_EXCL_START
 //used by Genome Workbench
 bool CTaxValidationAndCleanup::AdjustOrgRefsWithTaxLookupReply(
     const CTaxon3_reply&   reply,
@@ -1523,7 +1512,6 @@ bool CTaxValidationAndCleanup::AdjustOrgRefsWithTaxLookupReply(
     }
     return changed;
 }
-//LCOV_EXCL_STOP
 
 
 vector<CRef<COrg_ref> > CTaxValidationAndCleanup::GetSpecificHostLookupRequest(bool for_fix)
@@ -1584,7 +1572,6 @@ void CTaxValidationAndCleanup::ReportSpecificHostErrors(CValidError_imp& imp)
     m_HostMap.PostErrors(imp);
 }
 
-//LCOV_EXCL_START
 //appears to not be used
 void CTaxValidationAndCleanup::ReportSpecificHostErrors(const CTaxon3_reply& reply, CValidError_imp& imp)
 {
@@ -1600,10 +1587,8 @@ void CTaxValidationAndCleanup::ReportSpecificHostErrors(const CTaxon3_reply& rep
 
     m_HostMap.PostErrors(imp);
 }
-//LCOV_EXCL_STOP
 
 
-//LCOV_EXCL_START
 //only used by cleanup
 bool CTaxValidationAndCleanup::AdjustOrgRefsWithSpecificHostReply(
     vector<CRef<COrg_ref>> requests,
@@ -1643,7 +1628,6 @@ TSpecificHostRequests::iterator CTaxValidationAndCleanup::x_FindHostFixRequest(c
     }
     return m_SpecificHostRequests.end();
 }
-//LCOV_EXCL_STOP
 
 
 string CTaxValidationAndCleanup::IncrementalSpecificHostMapUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply)
@@ -1661,7 +1645,6 @@ string CTaxValidationAndCleanup::IncrementalSpecificHostMapUpdate(const vector<C
 }
 
 
-//LCOV_EXCL_START
 //used only by cleanup
 bool CTaxValidationAndCleanup::IsSpecificHostMapUpdateComplete() const
 {
@@ -1745,7 +1728,6 @@ bool CTaxValidationAndCleanup::IsStrainMapUpdateComplete() const
 {
     return m_StrainMap.IsUpdateComplete();
 }
-//LCOV_EXCL_STOP
 
 
 void CTaxValidationAndCleanup::ReportStrainErrors(CValidError_imp& imp)
@@ -1759,7 +1741,6 @@ CConstRef<CSeq_entry> CTaxValidationAndCleanup::GetSeqContext(size_t num) const
 }
 
 
-//LCOV_EXCL_START
 //used by Genome Workbench, asn_cleanup, and table2asn but not asnvalidate
 bool CTaxValidationAndCleanup::DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with_host)
 {
@@ -1847,7 +1828,6 @@ bool CTaxValidationAndCleanup::DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with
     }
     return (num_updated_descs > 0 || num_updated_feats > 0);
 }
-//LCOV_EXCL_STOP
 
 
 //only used by biosample
