@@ -77,6 +77,7 @@
 #include <cstring>
 #include <algorithm>
 #include <thread>
+#include <atomic>
 
 BEGIN_NCBI_SCOPE
 
@@ -689,21 +690,52 @@ CTime CVDBMgr::GetURLTimestamp(const string& path) const
 #endif
 
 
-//DEFINE_STATIC_MUTEX(s_SDKMutex);
-static recursive_mutex s_SDKMutex;
+class CSDKMutexStaticGuard
+{
+public:
+    CSDKMutexStaticGuard(void)
+    {
+        s_Instance.store(this);
+    }
+
+    ~CSDKMutexStaticGuard(void)
+    {
+        s_Instance.store(nullptr);
+    }
+
+    static CSraSDKLocks::TSDKMutex& GetSDKMutex(void)
+    {
+        auto ptr = s_Instance.load();
+        _ASSERT(ptr);
+        return ptr->m_Mutex;
+    }
+
+    static atomic<CSDKMutexStaticGuard*> s_Instance;
+
+private:
+    CSraSDKLocks::TSDKMutex m_Mutex;
+};
+
+atomic<CSDKMutexStaticGuard*> CSDKMutexStaticGuard::s_Instance;
+static shared_ptr<CSDKMutexStaticGuard> s_SDKMutexStaticGuard = make_shared<CSDKMutexStaticGuard>();
 
 CSraSDKLocks::TSDKMutex& CSraSDKLocks::GetSDKMutex(void)
 {
-    return s_SDKMutex;
+    return CSDKMutexStaticGuard::GetSDKMutex();
 }
 
 CSraSDKLocks::TSDKGuard CSraSDKLocks::GetSDKGuard(void)
 {
 #ifndef DISABLE_SRA_SDK_GUARD
-    return make_unique<TSDKGuardType>(s_SDKMutex);
+    return make_unique<TSDKGuardType>(GetSDKMutex());
 #else
     return nullptr;
 #endif
+}
+
+shared_ptr<CSDKMutexStaticGuard> CSraSDKLocks::GetSDKMutexStaticGuard(void)
+{
+    return s_SDKMutexStaticGuard;
 }
 
 /////////////////////////////////////////////////////////////////////////////
