@@ -67,6 +67,8 @@ struct CSraRefTraits
 {
 };
 
+class CSDKMutexStaticGuard;
+
 class CSraSDKLocks
 {
 public:
@@ -76,6 +78,7 @@ public:
 
     static TSDKMutex& GetSDKMutex(void);
     static TSDKGuard GetSDKGuard(void);
+    static shared_ptr<CSDKMutexStaticGuard> GetSDKMutexStaticGuard();
 };
 
 #define DECLARE_SRA_REF_TRAITS(T, Const)                                \
@@ -103,15 +106,16 @@ public:
     typedef TObject* TPointer;
 
     CSraRef(void)
-        : m_Object(0)
+        : m_Object(0), m_SDKMutexStaticGuard(CSraSDKLocks::GetSDKMutexStaticGuard())
         {
         }
     CSraRef(const TSelf& ref)
-        : m_Object(s_AddRef(ref))
+        : m_Object(s_AddRef(ref)), m_SDKMutexStaticGuard(CSraSDKLocks::GetSDKMutexStaticGuard())
         {
         }
     /// Copy constructor from an existing CRef object, 
     CSraRef(TSelf&& ref)
+        : m_SDKMutexStaticGuard(CSraSDKLocks::GetSDKMutexStaticGuard())
         {
             m_Object = ref.m_Object;
             ref.m_Object = 0;
@@ -180,7 +184,7 @@ public:
 protected:
     explicit
     CSraRef(TPointer ptr)
-        : m_Object(ptr)
+        : m_Object(ptr), m_SDKMutexStaticGuard(CSraSDKLocks::GetSDKMutexStaticGuard())
         {
         }
 
@@ -205,6 +209,7 @@ protected:
 
 private:
     TObject* m_Object;
+    shared_ptr<CSDKMutexStaticGuard> m_SDKMutexStaticGuard; // prevents premanure destruction of SDK mutex
 };
 
 
