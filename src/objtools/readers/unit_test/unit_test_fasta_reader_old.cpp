@@ -443,7 +443,7 @@ BOOST_AUTO_TEST_CASE(TestWarnings)
             const ILineError & line_error = pMessageListener->GetError(ii);
             SOneWarningsInfo warning_info(line_error.Problem(),
                 line_error.FeatureName(),
-                line_error.Line());
+                static_cast<unsigned int>(line_error.Line()));
             setWarningsSeen.insert(warning_info);
         }
 

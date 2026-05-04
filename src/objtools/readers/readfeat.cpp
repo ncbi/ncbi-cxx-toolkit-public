@@ -938,8 +938,8 @@ private:
         size_t         len;
         bool           partial5 = false;
         bool           partial3 = false;
-        long           startv = -1;
-        long           stopv = -1;
+        Int4           startv = -1;
+        Int4           stopv = -1;
         string         start, stop, feat, qual, val, stnd;
         vector<string> tkns;
 
@@ -987,8 +987,7 @@ private:
               ispoint = true;
               start [len - 1] = '\0';
             }
-            startv = x_StringToLongNoThrow(start, feat, qual,
-                ILineError::eProblem_BadFeatureInterval);
+            startv    = static_cast<Int4>(x_StringToLongNoThrow(start, feat, qual, ILineError::eProblem_BadFeatureInterval));
             has_start = true;
         }
 
@@ -998,8 +997,7 @@ private:
                 partial3 = true;
                 stop.erase (0, 1);
             }
-            stopv = x_StringToLongNoThrow (stop, feat, qual,
-                ILineError::eProblem_BadFeatureInterval);
+            stopv    = static_cast<Int4>(x_StringToLongNoThrow(stop, feat, qual, ILineError::eProblem_BadFeatureInterval));
             has_stop = true;
         }
 

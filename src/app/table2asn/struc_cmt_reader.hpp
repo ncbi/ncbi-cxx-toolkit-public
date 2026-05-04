@@ -40,7 +40,7 @@ private:
     // Second collumn of the file is the value of the field
 
     void x_LoadComments();
-    void x_LogMessage(EDiagSev sev, const string& msg, unsigned int lineNum) override;
+    void x_LogMessage(EDiagSev sev, const string& msg, unsigned long lineNum) override;
 
     static
     bool IsVertical(ILineReader& reader);

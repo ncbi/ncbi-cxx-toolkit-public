@@ -115,7 +115,7 @@ void CTable2AsnStructuredCommentsReader::x_LoadComments()
     }
 }
 
-void CTable2AsnStructuredCommentsReader::x_LogMessage(EDiagSev sev, const string& msg, unsigned int lineNum)
+void CTable2AsnStructuredCommentsReader::x_LogMessage(EDiagSev sev, const string& msg, unsigned long lineNum)
 {
     string newMsg = "In " + m_Filename + ": " + msg;
     CStructuredCommentsReader::x_LogMessage(sev, newMsg, lineNum);
