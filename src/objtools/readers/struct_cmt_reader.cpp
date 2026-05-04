@@ -104,7 +104,7 @@ size_t CStructuredCommentsReader::LoadComments(ILineReader& reader,
 
            if (values.size() > numCols) {
                string msg{"Number of values exceeds number of columns."};
-               x_LogMessage(eDiag_Error, msg, reader.GetLineNumber());
+               x_LogMessage(eDiag_Error, msg, static_cast<unsigned long>(reader.GetLineNumber()));
                continue; // do not attempt to read
            }
 
@@ -162,7 +162,7 @@ const string& CStructuredCommentsReader::CStructComment::GetPrefix(const CSeqdes
 }
 
 
-void CStructuredCommentsReader::x_LogMessage(EDiagSev sev, const string& msg, unsigned int lineNum)
+void CStructuredCommentsReader::x_LogMessage(EDiagSev sev, const string& msg, unsigned long lineNum)
 {
     if (m_logger) {
         unique_ptr<CLineErrorEx> pMsg{

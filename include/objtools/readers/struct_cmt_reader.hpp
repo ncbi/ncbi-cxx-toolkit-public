@@ -64,7 +64,7 @@ protected:
    void _LoadHeaderLine(ILineReader& reader, vector<string>& cols);
    void _BuildStructuredComment(CStructComment& cmt, const vector<string>& cols, const vector<CTempString>& values);
    objects::CUser_object* _AddStructuredComment(objects::CUser_object* user_obj, CStructComment& cmt, const CTempString& name, const CTempString& value);
-   virtual void x_LogMessage(EDiagSev, const string& msg, unsigned int lineNum);
+   virtual void x_LogMessage(EDiagSev, const string& msg, unsigned long lineNum);
    objects::ILineErrorListener* m_logger;
 };
 

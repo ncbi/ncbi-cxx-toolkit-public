@@ -155,7 +155,7 @@ CRef<CBioseq> s_MakeNucSeq()
     pBioseq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
     string seq_data{"ACTGCCAAAGAGTCAA"};
     pBioseq->SetInst().SetSeq_data().SetIupacna().Set(seq_data);
-    pBioseq->SetInst().SetLength(seq_data.size());
+    pBioseq->SetInst().SetLength(static_cast<TSeqPos>(seq_data.size()));
 
     auto pId = Ref(new CSeq_id());
     pId->SetLocal().SetStr("nuc");
@@ -215,8 +215,9 @@ static CRef<CBioseq> s_MakeProtein()
     pBioseq->SetInst().SetMol(CSeq_inst::eMol_aa);
     pBioseq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
     string seq_data{"MPRKTEIN"};
+    auto seq_length = static_cast<TSeqPos>(seq_data.size());
     pBioseq->SetInst().SetSeq_data().SetIupacaa().Set(seq_data);
-    pBioseq->SetInst().SetLength(seq_data.size());
+    pBioseq->SetInst().SetLength(seq_length);
     pBioseq->SetInst().SetTopology(CSeq_inst::eTopology_linear);
     
     
@@ -243,7 +244,7 @@ static CRef<CBioseq> s_MakeProtein()
     pFeat->SetData().SetProt().SetName().push_back("dummy protein");
     pFeat->SetLocation().SetInt().SetId(*pId);
     pFeat->SetLocation().SetInt().SetFrom(0);
-    pFeat->SetLocation().SetInt().SetTo(seq_data.size()-1); 
+    pFeat->SetLocation().SetInt().SetTo(seq_length-1); 
     pFeat->SetPartial(true);
 
     auto pAnnot = Ref(new CSeq_annot());

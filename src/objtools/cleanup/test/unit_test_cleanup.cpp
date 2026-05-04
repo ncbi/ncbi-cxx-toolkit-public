@@ -72,8 +72,10 @@ static CRef<CBioseq> s_MakeProtein()  // RW-2486
     pBioseq->SetInst().SetMol(CSeq_inst::eMol_aa);
     pBioseq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
     string seq_data{"MPRKTEIN"};
+    auto seq_length = static_cast<TSeqPos>(seq_data.size());
+
     pBioseq->SetInst().SetSeq_data().SetIupacaa().Set(seq_data);
-    pBioseq->SetInst().SetLength(seq_data.size());
+    pBioseq->SetInst().SetLength(seq_length);
     pBioseq->SetInst().SetTopology(CSeq_inst::eTopology_linear);
     
     
@@ -108,7 +110,7 @@ static CRef<CBioseq> s_MakeProtein()  // RW-2486
     pFeat1->SetData().SetProt().SetName().push_back("ABCD [dummy taxname]");
     pFeat1->SetLocation().SetInt().SetId(*pId);
     pFeat1->SetLocation().SetInt().SetFrom(0);
-    pFeat1->SetLocation().SetInt().SetTo(seq_data.size()-1); 
+    pFeat1->SetLocation().SetInt().SetTo(seq_length-1); 
     pFeat1->SetPartial(true);
 
     // Adding different feature types to check that the iteration over features
