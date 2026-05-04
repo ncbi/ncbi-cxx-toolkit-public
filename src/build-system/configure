@@ -37485,10 +37485,10 @@ if test "$with_jaeger" != "no"; then
     JAEGER_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       JAEGER_LIBS="$JAEGER_LIBPATH -ljaegertracing $OPENTRACING_LIBS $YAML_CPP_LIBS $THRIFT_LIBS"
+       JAEGER_LIBS="$JAEGER_LIBPATH -ljaegertracing $THRIFT_LIBS $OPENTRACING_LIBS $YAML_CPP_LIBS"
     else
        JAEGER_INCLUDE=""
-       JAEGER_LIBS="-ljaegertracing $OPENTRACING_LIBS $YAML_CPP_LIBS $THRIFT_LIBS"
+       JAEGER_LIBS="-ljaegertracing $THRIFT_LIBS $OPENTRACING_LIBS $YAML_CPP_LIBS"
        in_path=
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libjaegertracing$in_path" >&5
@@ -37496,7 +37496,7 @@ $as_echo_n "checking for libjaegertracing$in_path... " >&6; }
 if ${ncbi_cv_lib_jaeger+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  CPPFLAGS="$OPENTRACING_INCLUDE $YAML_CPP_INCLUDE $NLOHMANN_JSON_INCLUDE $THRIFT_INCLUDE $JAEGER_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS="$THRIFT_INCLUDE $OPENTRACING_INCLUDE $YAML_CPP_INCLUDE $NLOHMANN_JSON_INCLUDE $JAEGER_INCLUDE $orig_CPPFLAGS"
        LIBS="$JAEGER_LIBS $OPENSSL_LIBS $orig_LIBS"
        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -37531,7 +37531,7 @@ $as_echo "$ncbi_cv_lib_jaeger" >&6; }
     JAEGER_LIBS=
  else
               WithPackages="$WithPackages${WithPackagesSep}JAEGER"; WithPackagesSep=" "
-    JAEGER_INCLUDE="$OPENTRACING_INCLUDE $YAML_CPP_INCLUDE $NLOHMANN_JSON_INCLUDE $THRIFT_INCLUDE $JAEGER_INCLUDE"
+    JAEGER_INCLUDE="$THRIFT_INCLUDE $OPENTRACING_INCLUDE $YAML_CPP_INCLUDE $NLOHMANN_JSON_INCLUDE $JAEGER_INCLUDE"
 
 $as_echo "#define HAVE_LIBJAEGER 1" >>confdefs.h
 
@@ -37542,9 +37542,9 @@ $as_echo "#define HAVE_LIBJAEGER 1" >>confdefs.h
 if test "$with_jaeger" != no \
    -a -f "$JAEGER_PATH/lib/libjaegertracing-static.a"; then
    JAEGER_STATIC_LIBS="-L$JAEGER_PATH/lib -ljaegertracing-static"
+   JAEGER_STATIC_LIBS="$JAEGER_STATIC_LIBS $THRIFT_STATIC_LIBS"
    JAEGER_STATIC_LIBS="$JAEGER_STATIC_LIBS $OPENTRACING_STATIC_LIBS"
    JAEGER_STATIC_LIBS="$JAEGER_STATIC_LIBS $YAML_CPP_STATIC_LIBS"
-   JAEGER_STATIC_LIBS="$JAEGER_STATIC_LIBS $THRIFT_STATIC_LIBS"
 else
    JAEGER_STATIC_LIBS=$JAEGER_LIBS
 fi
