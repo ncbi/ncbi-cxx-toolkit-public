@@ -73,8 +73,8 @@ struct SProfilerGuard
 {
     SProfiler& p;
     CStopWatch sw;
-    SProfilerGuard(SProfiler& p, const char* name)
-        : p(p),
+    SProfilerGuard(SProfiler& p_, const char* name)
+        : p(p_),
           sw(CStopWatch::eStart)
         {
             if ( !p.name ) {
@@ -100,6 +100,11 @@ static SProfiler sp_TSE_ToOM1;
 static SProfiler sp_TSE_ToOM2;
 static SProfiler sp_TSE_ToOM3;
 static SProfiler sp_TSE_ToOM4;
+static SProfiler sp_TSE_ToOM41;
+static SProfiler sp_TSE_ToOM42;
+static SProfiler sp_TSE_ToOM43;
+static SProfiler sp_TSE_ToOM44;
+static SProfiler sp_TSE_ToOM45;
 static SProfiler sp_TSE_ToOM5;
 static SProfiler sp_TSE_ToOM6;
 static SProfiler sp_ParseTSE;
@@ -675,15 +680,18 @@ bool CPSGL_Blob_Processor::ParseTSE(const CPSG_BlobId* blob_id,
         blob_info = data_slot->m_BlobInfo;
         blob_data = data_slot->m_BlobData;
     }}
-    PROFILE(sp_ParseTSE2);
     _TRACE(Descr()<<": ParseTSE("<<blob_id->GetId()<<")");
     // full TSE entry
-    unique_ptr<CObjectIStream> in(GetBlobDataStream(*blob_info, *blob_data));
-    if ( !in.get() ) {
-        LOG_POST("PSGBlobProcessor("<<this<<"): cannot open data stream for "<<
-                 blob_id->GetId());
-        return false;
-    }
+    unique_ptr<CObjectIStream> in;
+    {{
+        PROFILE(sp_ParseTSE2);
+        in.reset(GetBlobDataStream(*blob_info, *blob_data));
+        if ( !in.get() ) {
+            LOG_POST("PSGBlobProcessor("<<this<<"): cannot open data stream for "<<
+                     blob_id->GetId());
+            return false;
+        }
+    }}
     CRef<CSeq_entry> object(new CSeq_entry);
     {{
         PROFILE(sp_ParseTSE3);
@@ -884,6 +892,7 @@ CPSGL_Blob_Processor::TSE_ToOM(const CPSG_BlobId* blob_id,
     if ( !load_lock.IsLoaded() || delayed_main_chunk ) {
         PROFILE(sp_TSE_ToOM4);
         if ( entry ) {
+            PROFILE(sp_TSE_ToOM41);
             _ASSERT(!split_info);
             if ( s_GetDebugLevel() >= 8 ) {
                 LOG_POST(Info<<"PSGBlobProcessor("<<this<<"): TSE "<<dl_blob_id->ToString()<<" "<<
@@ -892,6 +901,7 @@ CPSGL_Blob_Processor::TSE_ToOM(const CPSG_BlobId* blob_id,
             load_lock->SetSeq_entry(*entry);
         }
         else {
+            PROFILE(sp_TSE_ToOM42);
             _ASSERT(split_info);
             if ( s_GetDebugLevel() >= 8 ) {
                 LOG_POST(Info<<"PSGBlobProcessor("<<this<<"): TSE "<<dl_blob_id->ToString()<<" "<<
@@ -906,10 +916,12 @@ CPSGL_Blob_Processor::TSE_ToOM(const CPSG_BlobId* blob_id,
         }
         
         if ( m_AddWGSMasterDescr ) {
+            PROFILE(sp_TSE_ToOM43);
             CWGSMasterSupport::AddWGSMaster(load_lock);
         }
         
         if ( delayed_main_chunk ) {
+            PROFILE(sp_TSE_ToOM44);
             if ( s_GetDebugLevel() >= 6 ) {
                 LOG_POST(Info<<"PSGBlobProcessor("<<this<<"): "
                          "calling delayed_main_chunk->SetLoaded() for "<<dl_blob_id->ToString());
@@ -921,6 +933,7 @@ CPSGL_Blob_Processor::TSE_ToOM(const CPSG_BlobId* blob_id,
             }
         }
         else {
+            PROFILE(sp_TSE_ToOM45);
             if ( s_GetDebugLevel() >= 6 ) {
                 LOG_POST(Info<<"PSGBlobProcessor("<<this<<"): "
                          "calling SetLoaded() for "<<dl_blob_id->ToString());
