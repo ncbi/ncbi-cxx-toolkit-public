@@ -2227,6 +2227,28 @@ case "$ncbi_cv_prog_cc_whole_archive" in
       ;;
 esac
 
+AC_CACHE_CHECK([whether $CC has options to push and pop linker state],
+   ncbi_cv_prog_cc_linker_state,
+   [orig_LDFLAGS=$LDFLAGS
+    ncbi_cv_prog_cc_linker_state=no
+    for x in -Wl,--push-state,--pop-state; do
+       LDFLAGS="$orig_LDFLAGS $x"
+       AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+          [ncbi_cv_prog_cc_linker_state=$x])
+       test "x$ncbi_cv_prog_cc_linker_state" = "xno"  ||  break
+    done
+    LDFLAGS=$orig_LDFLAGS])
+case "$ncbi_cv_prog_cc_linker_state" in
+   -Wl,--push-state,--pop-state )
+      PUSH_STATE=-Wl,--push-state
+      POP_STATE=-Wl,--pop-state
+      ;;
+   no )
+      PUSH_STATE=
+      POP_STATE=
+      ;;
+esac
+
 case "$compiler" in
  *Clang)
    CFLAGS="$CFLAGS -Wno-deprecated-register"
@@ -9241,9 +9263,9 @@ if test -n "$GRPC_LIBS"; then
          esac
       done
    fi
-   GRPC_REFLECTION_LIBS="$WHOLE_ARCHIVE $NO_AS_NEEDED $GRPC_LIBPATH"
+   GRPC_REFLECTION_LIBS="$PUSH_STATE $WHOLE_ARCHIVE $NO_AS_NEEDED $GRPC_LIBPATH"
    GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS -lgrpc++_reflection"
-   GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS $NO_WHOLE_ARCHIVE $AS_NEEDED"
+   GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS ${POP_STATE:-$NO_WHOLE_ARCHIVE $AS_NEEDED}"
    AC_PATH_PROG(GRPC_CPP_PLUGIN, grpc_cpp_plugin, [],
       [$GRPC_PATH/bin:$PROTOBUF_PATH/bin:$PATH])
    if test ! -x "$GRPC_CPP_PLUGIN"; then
