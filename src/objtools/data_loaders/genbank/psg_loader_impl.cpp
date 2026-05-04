@@ -238,6 +238,11 @@ NCBI_PARAM_DEF_EX(bool, PSG_LOADER, WHOLE_TSE_BULK, false,
                   eParam_NoThread, PSG_LOADER_WHOLE_TSE_BULK);
 typedef NCBI_PARAM_TYPE(PSG_LOADER, WHOLE_TSE_BULK) TPSG_WholeTSEBulk;
 
+NCBI_PARAM_DECL(unsigned, PSG_LOADER, MIN_POOL_THREADS);
+NCBI_PARAM_DEF_EX(unsigned, PSG_LOADER, MIN_POOL_THREADS, 2,
+                  eParam_NoThread, PSG_LOADER_MIN_POOL_THREADS);
+typedef NCBI_PARAM_TYPE(PSG_LOADER, MIN_POOL_THREADS) TPSG_MinPoolThreads;
+
 NCBI_PARAM_DECL(unsigned, PSG_LOADER, MAX_POOL_THREADS);
 NCBI_PARAM_DEF_EX(unsigned, PSG_LOADER, MAX_POOL_THREADS, 10,
                   eParam_NoThread, PSG_LOADER_MAX_POOL_THREADS);
@@ -391,9 +396,12 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
     if ( empty(service_name) ) {
         service_name = GET_PARAM(SERVICE_NAME, psg_params);
     }
+    auto min_pool_threads = GET_PARAM(MIN_POOL_THREADS, psg_params);
     auto max_pool_threads = GET_PARAM(MAX_POOL_THREADS, psg_params);
     auto io_event_loops = GET_PARAM(IO_EVENT_LOOPS, psg_params);
-    m_Dispatcher = new CPSGL_Dispatcher(service_name, max_pool_threads, io_event_loops);
+    m_Dispatcher = new CPSGL_Dispatcher(service_name,
+                                        make_pair(min_pool_threads, max_pool_threads),
+                                        io_event_loops);
     m_Dispatcher->SetRequestFlags(params.HasHUPIncluded()? CPSG_Request::fIncludeHUP: CPSG_Request::fExcludeHUP);
     if ( m_RequestContext ) {
         m_Dispatcher->SetRequestContext(m_RequestContext);

@@ -71,8 +71,8 @@ struct SProfilerGuard
 {
     SProfiler& p;
     CStopWatch sw;
-    SProfilerGuard(SProfiler& p, const char* name)
-        : p(p),
+    SProfilerGuard(SProfiler& p_, const char* name)
+        : p(p_),
           sw(CStopWatch::eStart)
         {
             if ( !p.name ) {
@@ -658,6 +658,12 @@ void CPSGL_RequestTracker::Reset()
 }
 
 
+inline
+bool CPSGL_RequestTracker::IsUsingBackgroundTasks() const
+{
+    return kUseBackgroundTasks && m_QueueGuard.HasThreadPool();
+}
+
 void CPSGL_RequestTracker::CancelBackgroundTasks()
 {
     CRef<CBackgroundTask> task;
@@ -783,7 +789,7 @@ void CPSGL_RequestTracker::ProcessItemCallback(EPSG_Status status,
         auto result = m_Processor->ProcessItemFast(status, item);
         if ( result == CPSGL_Processor::eToNextStage ) {
             PROFILE(sp_ProcessItemCallbackS);
-            if ( kUseBackgroundTasks ) {
+            if ( IsUsingBackgroundTasks() ) {
                 // queue background processing
                 StartProcessItemInBackground(status, item);
                 return;
@@ -839,7 +845,7 @@ void CPSGL_RequestTracker::ProcessReplyCallback(EPSG_Status status,
         _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::ProcessReplyCallback(): ProcessReplyFast(): "<<result);
         if ( result == CPSGL_Processor::eToNextStage ) {
             PROFILE(sp_ProcessReplyCallbackS);
-            if ( kUseBackgroundTasks ) {
+            if ( IsUsingBackgroundTasks() ) {
                 // queue processing
                 StartProcessReplyInBackground();
                 return;
@@ -1049,16 +1055,17 @@ CPSGL_ResultGuard CPSGL_RequestTracker::FinalizeResult()
 /////////////////////////////////////////////////////////////////////////////
 
 CPSGL_Dispatcher::CPSGL_Dispatcher(const string& service_name,
-                                   unsigned max_pool_threads,
+                                   pair<unsigned, unsigned> pool_threads,
                                    unsigned io_event_loops)
     : m_TrackerMap(new CPSGL_TrackerMap())
 {
-    if ( kUseBackgroundTasks ) {
+    auto [ min_pool_threads, max_pool_threads ] = pool_threads;
+    if ( kUseBackgroundTasks && max_pool_threads > 0 ) {
         static const unsigned kMinPoolThreads = 1;
         static const unsigned kMaxPoolThreads = 32;
         max_pool_threads = max(max_pool_threads, kMinPoolThreads);
         max_pool_threads = min(max_pool_threads, kMaxPoolThreads);
-        unsigned min_pool_threads = min(max_pool_threads, 2u);
+        min_pool_threads = min(min_pool_threads, max_pool_threads);
         m_ThreadPool = make_unique<CThreadPool>(kMax_UInt, max_pool_threads, min_pool_threads);
     }
     

@@ -177,6 +177,8 @@ protected:
         return *m_TrackerMutex;
     }
     
+    bool IsUsingBackgroundTasks() const;
+
     CThreadPool_Task::EStatus
     BackgroundProcessItemCallback(CBackgroundTask* task,
                                   EPSG_Status status,
@@ -274,10 +276,14 @@ class CPSGL_Dispatcher : public CObject
 {
 public:
     CPSGL_Dispatcher(const string& service_name,
-                     unsigned max_pool_threads,
+                     pair<unsigned, unsigned> pool_threads,
                      unsigned io_event_loops);
     ~CPSGL_Dispatcher();
 
+    bool HasThreadPool() const
+    {
+        return m_ThreadPool.get() != nullptr;
+    }
     CThreadPool& GetThreadPool()
     {
         return *m_ThreadPool;
@@ -310,6 +316,11 @@ public:
     void AddRequest(const shared_ptr<CPSG_Request>& request,
                     const CRef<CPSGL_Processor>& processor,
                     size_t index = 0);
+
+    bool HasThreadPool() const
+    {
+        return m_Dispatcher->HasThreadPool();
+    }
     CThreadPool& GetThreadPool()
     {
         return m_Dispatcher->GetThreadPool();
