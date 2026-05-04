@@ -20,7 +20,7 @@ set(SRC_MBED
     psa_crypto_aead psa_crypto_cipher psa_crypto_client
     psa_crypto_driver_wrappers_no_static psa_crypto_ecp
     psa_crypto_ffdh psa_crypto_hash psa_crypto_mac psa_crypto_pake
-    psa_crypto_rsa psa_crypto_se psa_crypto_slot_management
+    psa_crypto_random psa_crypto_rsa psa_crypto_se psa_crypto_slot_management
     psa_crypto_storage psa_its_file psa_util ripemd160 rsa
     rsa_alt_helpers sha1 sha256 sha3 sha512 ssl_cache ssl_ciphersuites
     ssl_client ssl_cookie ssl_debug_helpers_generated ssl_msg
