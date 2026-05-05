@@ -66,7 +66,8 @@ const SAlertToId     kAlertToIdMap[] = {
     { ePSGS_BioseqInfoCacheLookupIncompatibleRecords,       "BioseqInfoCacheLookupIncompatibleRecords" },
     { ePSGS_BioseqInfoDBLookupIncompatibleRecords,          "BioseqInfoDBLookupIncompatibleRecords" },
     { ePSGS_BioseqInfoCacheLookupINSDCIncompatibleRecords,  "BioseqInfoCacheLookupINSDCIncompatibleRecords" },
-    { ePSGS_BioseqInfoDBLookupINSDCIncompatibleRecords,     "BioseqInfoDBLookupINSDCIncompatibleRecords" }
+    { ePSGS_BioseqInfoDBLookupINSDCIncompatibleRecords,     "BioseqInfoDBLookupINSDCIncompatibleRecords" },
+    { ePSGS_RequestDropped,                                 "RequestDropped" }
 };
 const size_t        kAlertToIdMapSize = sizeof(kAlertToIdMap) / sizeof(SAlertToId);
 

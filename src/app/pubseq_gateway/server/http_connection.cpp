@@ -54,6 +54,13 @@ static void IncrementTooManyRequestsCounter(void)
 }
 
 
+static void SetRequestDroppedAlert(const string &  msg)
+{
+    auto *  app = CPubseqGatewayApp::GetInstance();
+    app->GetAlerts().Register(ePSGS_RequestDropped, msg);
+}
+
+
 static void NotifyRequestFinished(size_t  request_id)
 {
     auto *  app = CPubseqGatewayApp::GetInstance();
@@ -361,6 +368,13 @@ void CHttpConnection::x_RegisterPending(shared_ptr<CPSGS_Request>  request,
     } else {
         IncrementTooManyRequestsCounter();
 
+        CJsonNode   req_json = request->Serialize();
+        string      req_str = req_json.Repr(CJsonNode::fStandardJson);
+        SetRequestDroppedAlert("A request dropped because there are too many "
+                               "running and backlogged requests. Connection id: " +
+                               to_string(m_RunTimeProps.m_Id) +
+                               ". Request: " + req_str);
+
         reply->SetContentType(ePSGS_PSGMime);
         reply->PrepareReplyMessage("Too many pending requests",
                                    CRequestStatus::e503_ServiceUnavailable,
@@ -606,7 +620,7 @@ CHttpConnection::GetProperties(void) const
 
     // Update some of the values
 
-    // Stricktly speaking this is not absolutely thread safe however a
+    // Strictly speaking this is not absolutely thread safe however a
     // precision is not required here. Even if there is a mistake it is likely
     // to be cleared by the next request of the connection status.
     props.m_NumBackloggedRequests = m_BacklogRequests.size();
