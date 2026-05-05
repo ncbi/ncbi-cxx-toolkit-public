@@ -7685,9 +7685,6 @@ void CValidError_bioseq::x_ValidateAbuttingUTR(const CBioseq_Handle& seq)
                     if (cug_it->GetLocation().GetStrand() != eNa_strand_minus) {
                         PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
                                  "3'UTR is not on minus strand", cug_it->GetOriginalFeature());
-                    } else if (utr5_right > 0 && utr5_right + 1 != this_left) {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
-                                 "Previous 5'UTR does not abut next 3'UTR", cug_it->GetOriginalFeature());
                     }
                     utr3_right = this_right;
                 } else if (subtype == CSeqFeatData::eSubtype_cdregion) {
@@ -7718,9 +7715,6 @@ void CValidError_bioseq::x_ValidateAbuttingUTR(const CBioseq_Handle& seq)
                     if (cug_it->GetLocation().GetStrand() == eNa_strand_minus) {
                         PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
                                  "5'UTR is not on plus strand", cug_it->GetOriginalFeature());
-                    } else if (utr3_right > 0 && utr3_right + 1 != this_left) {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
-                                 "Previous 3'UTR does not abut next 5'UTR", cug_it->GetOriginalFeature());
                     }
                     utr5_right = this_right;
                 } else if (subtype == CSeqFeatData::eSubtype_cdregion) {
