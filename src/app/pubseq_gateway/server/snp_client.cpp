@@ -151,6 +151,10 @@ struct SParsedId2Info
             NStr::StringToNumeric<int>(id2info.substr(pos + 1)); // tse-version is always 0
             id2info.resize(pos);
             blob_id.reset(new CSNPBlobId(id2info));
+            if (blob_id->IsEmpty()) {
+                blob_id.reset();
+                split_version = 0;
+            }
         }
         catch (...) {
             split_version = 0;
@@ -483,8 +487,8 @@ void CSNPBlobId::FromString(CTempString str)
 
     SIZE_TYPE div = str.rfind(kFileEnd);
     if (div == NPOS) {
-        NCBI_THROW_FMT(CSraException, eOtherError,
-            "Bad CSNPBlobId: " << str);
+        m_Accession.clear();
+        return; // Not a valid blob-id
     }
     m_Accession = str.substr(0, div);
     m_SeqId = CSeq_id_Handle::GetHandle(str.substr(div + strlen(kFileEnd)));

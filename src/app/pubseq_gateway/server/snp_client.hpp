@@ -175,6 +175,11 @@ public:
     void SetPrimaryTrackFeat();
     void SetPrimaryTrackGraph();
 
+    bool IsEmpty() const
+    {
+        return m_NAIndex == 0 && m_Accession.empty();
+    }
+    
 protected:
     // ID2 blob id
     Uint4 m_NAIndex;
