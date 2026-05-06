@@ -33,17 +33,10 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
-#include <objects/seqfeat/BioSource.hpp>
-#include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/Imp_feat.hpp>
-#include <objects/seqfeat/Cdregion.hpp>
-#include <objects/seq/Seq_descr.hpp>
 #include <objects/biblio/Id_pat.hpp>
 #include <objects/biblio/Title.hpp>
-#include <objects/general/Dbtag.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/medline/Medline_entry.hpp>
-#include <objects/misc/sequence_macros.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/seq/GIBB_mol.hpp>
@@ -114,7 +107,7 @@ void RemoveDbxref(CBioSource& src, string db, CObject_id::TId id)
 }
 
 
-void SetTaxon(CBioSource& src, size_t taxon)
+void SetTaxon(CBioSource& src, CObject_id::TId taxon)
 {
     if (taxon == 0) {
         RemoveDbxref (src, "taxon", 0);
@@ -314,7 +307,7 @@ void RemoveDbxref (CRef<CSeq_feat> feat, string db, CObject_id::TId id)
 }
 
 
-void SetTaxon(CRef<CSeq_entry> entry, size_t taxon)
+void SetTaxon(CRef<CSeq_entry> entry, CObject_id::TId taxon)
 {
     if (!entry) {
         return;
@@ -405,7 +398,7 @@ CRef<CSeq_feat> AddGoodSourceFeature(CRef<CSeq_entry> entry)
 }
 
 
-CRef<CSeq_feat> MakeMiscFeature(CRef<CSeq_id> id, size_t right_end, size_t left_end)
+CRef<CSeq_feat> MakeMiscFeature(CRef<CSeq_id> id, TSeqPos right_end, TSeqPos left_end)
 {
     CRef<CSeq_feat> feat(new CSeq_feat());
     feat->SetLocation().SetInt().SetId().Assign(*id);
@@ -441,7 +434,7 @@ CRef<CSeq_id> IdFromEntry(CRef<CSeq_entry> entry)
 }
 
 
-CRef<CSeq_feat> AddMiscFeature(CRef<CSeq_entry> entry, size_t right_end)
+CRef<CSeq_feat> AddMiscFeature(CRef<CSeq_entry> entry, TSeqPos right_end)
 {
     CRef<CSeq_feat> feat = MakeMiscFeature(IdFromEntry(entry), right_end);
     feat->SetComment("misc_feature needs a comment");
@@ -1565,11 +1558,11 @@ void RevComp(CBioseq& bioseq)
         return;
     }
     string seq = bioseq.GetInst().GetSeq_data().GetIupacna().Get();
-    string new_seq = "";
+    string new_seq;
     string::iterator sit = seq.end();
     while (sit != seq.begin()) {
         --sit;
-        string new_ch = "";
+        string new_ch;
         new_ch += *sit;
         if (NStr::Equal(new_ch, "A")) {
             new_ch = "T";
@@ -1584,7 +1577,7 @@ void RevComp(CBioseq& bioseq)
     }
 
     bioseq.SetInst().SetSeq_data().SetIupacna().Set(new_seq);
-    size_t len = bioseq.GetLength();
+    TSeqPos len = bioseq.GetLength();
     if (bioseq.IsSetAnnot()) {
         EDIT_EACH_SEQFEAT_ON_SEQANNOT (feat_it, *(bioseq.SetAnnot().front())) {
             TSeqPos new_from = len - (*feat_it)->GetLocation().GetInt().GetTo() - 1;
@@ -1602,7 +1595,7 @@ void RevComp(CBioseq& bioseq)
 }
 
 
-void RevComp(CSeq_loc& loc, size_t len)
+void RevComp(CSeq_loc& loc, TSeqPos len)
 {
     if (loc.IsInt()) {
         TSeqPos new_from = len - loc.GetInt().GetTo() - 1;
@@ -1631,7 +1624,7 @@ void RevComp(CRef<CSeq_entry> entry)
         if (entry->GetSet().IsSetClass()
             && entry->GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
             RevComp(entry->SetSet().SetSeq_set().front());
-            size_t len = entry->GetSet().GetSeq_set().front()->GetSeq().GetLength();
+            TSeqPos len = entry->GetSet().GetSeq_set().front()->GetSeq().GetLength();
             EDIT_EACH_SEQFEAT_ON_SEQANNOT (feat_it, *(entry->SetSet().SetAnnot().front())) {
                 RevComp ((*feat_it)->SetLocation(), len);
             }
@@ -1678,8 +1671,8 @@ void RemoveDeltaSeqGaps(CRef<CSeq_entry> entry)
 
 void AddToDeltaSeq(CRef<CSeq_entry> entry, string seq)
 {
-    size_t orig_len = entry->GetSeq().GetLength();
-    size_t add_len = seq.length();
+    TSeqPos orig_len = entry->GetSeq().GetLength();
+    TSeqPos add_len = TSeqPos(seq.length());
 
     CRef<CDelta_seq> gap_seg(new CDelta_seq());
     gap_seg->SetLiteral().SetSeq_data().SetGap();
@@ -1787,23 +1780,23 @@ CRef<CSeq_entry> BuildGoodEcoSet()
 }
 
 
-CRef<CSeq_entry> BuildGoodEcoSetWithAlign(size_t front_insert)
+CRef<CSeq_entry> BuildGoodEcoSetWithAlign(TSeqPos front_insert)
 {
     CRef<CSeq_entry> entry = BuildGoodEcoSet();
 
     CRef<CSeq_align> align(new CSeq_align());
     align->SetType(CSeq_align::eType_global);
-    align->SetDim(entry->GetSet().GetSeq_set().size());
-    size_t offset = 0;
+    align->SetDim(int(entry->GetSet().GetSeq_set().size()));
+    TSeqPos offset = 0;
     for (auto& s : entry->SetSet().SetSeq_set()) {
         CRef<CSeq_id> id(new CSeq_id());
         id->Assign(*(s->GetSeq().GetId().front()));
         align->SetSegs().SetDenseg().SetIds().push_back(id);
         if (offset > 0) {
             const string& orig = s->SetSeq().SetInst().SetSeq_data().SetIupacna().Set();
-            size_t orig_len = s->GetSeq().GetInst().GetLength();
-            string add = "";
-            for (auto i = (size_t)0; i < offset; i++) {
+            TSeqPos orig_len = s->GetSeq().GetInst().GetLength();
+            string add;
+            for (TSeqPos i = 0; i < offset; i++) {
                 add += "A";
             }
             s->SetSeq().SetInst().SetSeq_data().SetIupacna().Set(add + orig);
@@ -1824,7 +1817,7 @@ CRef<CSeq_entry> BuildGoodEcoSetWithAlign(size_t front_insert)
 
 
 // assumes that sequence has been reverse-complemented
-void ReverseAlignmentStrand(CDense_seg& denseg, size_t pos, size_t seq_len)
+void ReverseAlignmentStrand(CDense_seg& denseg, TSeqPos pos, TSeqPos seq_len)
 {
     // prepopulate the strand array if not already present
     auto num_pieces = denseg.GetDim() * denseg.GetNumseg();

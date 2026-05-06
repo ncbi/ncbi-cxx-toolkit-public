@@ -116,13 +116,13 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetSubSource (CRef<objects::CSeq_entry> entry, o
 NCBI_UNIT_TEST_UTIL_EXPORT void SetCompleteness(CRef<objects::CSeq_entry> entry, objects::CMolInfo::TCompleteness completeness);
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetTaxon (objects::CBioSource& src, size_t taxon);
-NCBI_UNIT_TEST_UTIL_EXPORT void SetTaxon (CRef<objects::CSeq_entry> entry, size_t taxon);
+NCBI_UNIT_TEST_UTIL_EXPORT void SetTaxon(objects::CBioSource& src, objects::CObject_id::TId taxon);
+NCBI_UNIT_TEST_UTIL_EXPORT void SetTaxon(CRef<objects::CSeq_entry> entry, objects::CObject_id::TId taxon);
 NCBI_UNIT_TEST_UTIL_EXPORT void AddGoodSource (CRef<objects::CSeq_entry> entry);
 NCBI_UNIT_TEST_UTIL_EXPORT void AddFeatAnnotToSeqEntry (CRef<objects::CSeq_annot> annot, CRef<objects::CSeq_entry> entry);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> AddProtFeat(CRef<objects::CSeq_entry> entry) ;
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> AddGoodSourceFeature(CRef<objects::CSeq_entry> entry);
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> MakeMiscFeature(CRef<objects::CSeq_id> id, size_t right_end = 10, size_t left_end = 0);
+NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> MakeMiscFeature(CRef<objects::CSeq_id> id, TSeqPos right_end = 10, TSeqPos left_end = 0);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_id> IdFromEntry(CRef<objects::CSeq_entry> entry);
 NCBI_UNIT_TEST_UTIL_EXPORT void SetTaxname (CRef<objects::CSeq_entry> entry, string taxname);
 NCBI_UNIT_TEST_UTIL_EXPORT void SetSebaea_microphylla(CRef<objects::CSeq_entry> entry);
@@ -182,17 +182,17 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> GetGenomicFromGenProdSet (C
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> GetmRNAFromGenProdSet(CRef<objects::CSeq_entry> entry);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> GetNucProtSetFromGenProdSet(CRef<objects::CSeq_entry> entry);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> GetCDSFromGenProdSet (CRef<objects::CSeq_entry> entry);
-NCBI_UNIT_TEST_UTIL_EXPORT void RevComp (objects::CBioseq& bioseq);
-NCBI_UNIT_TEST_UTIL_EXPORT void RevComp (objects::CSeq_loc& loc, size_t len);
-NCBI_UNIT_TEST_UTIL_EXPORT void RevComp (CRef<objects::CSeq_entry> entry);
+NCBI_UNIT_TEST_UTIL_EXPORT void RevComp(objects::CBioseq& bioseq);
+NCBI_UNIT_TEST_UTIL_EXPORT void RevComp(objects::CSeq_loc& loc, TSeqPos len);
+NCBI_UNIT_TEST_UTIL_EXPORT void RevComp(CRef<objects::CSeq_entry> entry);
 NCBI_UNIT_TEST_UTIL_EXPORT void RemoveDeltaSeqGaps(CRef<objects::CSeq_entry> entry) ;
 NCBI_UNIT_TEST_UTIL_EXPORT void AddToDeltaSeq(CRef<objects::CSeq_entry> entry, string seq);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildSegSetPart(string id_str);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodSegSet(void);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodEcoSet();
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodEcoSetWithAlign(size_t front_insert = 5);
+NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodEcoSetWithAlign(TSeqPos front_insert = 5);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_align> BuildGoodAlign();
-NCBI_UNIT_TEST_UTIL_EXPORT void ReverseAlignmentStrand(objects::CDense_seg& denseg, size_t pos, size_t seq_len);
+NCBI_UNIT_TEST_UTIL_EXPORT void ReverseAlignmentStrand(objects::CDense_seg& denseg, TSeqPos pos, TSeqPos seq_len);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_annot> BuildGoodGraphAnnot(string id);
 NCBI_UNIT_TEST_UTIL_EXPORT void RemoveDescriptorType (CRef<objects::CSeq_entry> entry, objects::CSeqdesc::E_Choice desc_choice);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> BuildtRNA(CRef<objects::CSeq_id> id);
@@ -206,7 +206,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> AddGoodImpFeat (CRef<objects
 
 // Adding Features
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> AddMiscFeature(CRef<objects::CSeq_entry> entry);
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> AddMiscFeature(CRef<objects::CSeq_entry> entry, size_t right_end);
+NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> AddMiscFeature(CRef<objects::CSeq_entry> entry, TSeqPos right_end);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_annot> AddFeat (CRef<objects::CSeq_feat> feat, CRef<objects::CSeq_entry> entry);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<CSeq_feat> BuildGoodFeat ();
 
