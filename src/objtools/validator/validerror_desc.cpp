@@ -667,7 +667,7 @@ bool CValidError_desc::x_ValidateStructuredComment(
         if (m_Imp.IsGenomeSubmission() && HasBadGenomeAssemblyPartial(usr)) {
             is_valid = false;
             if (report) {
-                PostErr(eDiag_Error, eErr_SEQ_DESCR_BadGenomeRepresentation,
+                PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadGenomeRepresentation,
                     "Genome Representation should not start with 'Partial' in structured comment", *m_Ctx, desc);
             } else {
                 return false;
