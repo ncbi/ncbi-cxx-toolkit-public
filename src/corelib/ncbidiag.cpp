@@ -7362,13 +7362,13 @@ void
 CAsyncDiagHandler::Post(const SDiagMessage& mess)
 {
     CAsyncDiagThread* thr = m_AsyncThread;
-    SAsyncDiagMessage async;
+    SAsyncDiagMessage async_message;
     if (thr->m_SubHandler->AllowAsyncWrite(mess)) {
-        async.m_Composed = new string(thr->m_SubHandler->
-            ComposeMessage(mess, &async.m_FileType));
+        async_message.m_Composed = new string(thr->m_SubHandler->
+            ComposeMessage(mess, &async_message.m_FileType));
     }
     else {
-        async.m_Message = new SDiagMessage(mess);
+        async_message.m_Message = new SDiagMessage(mess);
     }
 
     static CSafeStatic<NCBI_PARAM_TYPE(Diag, Max_Async_Queue_Size)> s_MaxAsyncQueueSizeParam;
@@ -7386,7 +7386,7 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
 #endif
             --thr->m_CntWaiters;
         }
-        thr->m_MsgQueue.push_back(async);
+        thr->m_MsgQueue.push_back(async_message);
         if (thr->m_MsgsInQueue.Add(1) == 1) {
 #ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
             thr->m_QueueCond.SignalSome();
@@ -7398,8 +7398,8 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
     else {
         thr->Stop();
         thr->m_SubHandler->Post(mess);
-        if (async.m_Composed) delete async.m_Composed;
-        if (async.m_Message) delete async.m_Message;
+        if (async_message.m_Composed) delete async_message.m_Composed;
+        if (async_message.m_Message) delete async_message.m_Message;
     }
 }
 
@@ -7457,7 +7457,7 @@ struct SMessageBuffer
 
     bool IsEmpty(void)
     {
-        return pos != 0;
+        return pos == 0;
     }
 
     void Clear(void)
