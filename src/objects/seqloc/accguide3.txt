@@ -2538,7 +2538,44 @@ special3 6+9 embl_tpa_wgs_nuc
 : MZ-WANJ L-DDJ EC-GB D-MR T-EEC E-IR TCX-DC E-G WRE V X SB G-H O Q-S U-TJ YQ-R
 : XDA MD-E VG-L N-WH J-R T-X
 : YEU-XEIO GOE-I K N-Q S-T W Y PA C E I K M O U X Z QC H-I K-L N P-Q S-T W RB-C
-: H J P S U W Z SE H J-M Q-ZM
+: H J P S U W Z SE H J-M Q-HAF H-J L-M O-P R-W Y BA C-N P R-X Z-CA C-D F-H K-X
+: Z-DA C-H J-R T-V X-EI K-Y FB-C E-J L-M O-T X-GM P-Q S-HF I-K M-Q S-X Z-IB E
+: H-I O Q-S U-JA C-E G-O Q-R T-KE G I-N P R-S V X LB-C E-L N P-S U-V X-ME G I-L
+: N-O Q-NB D-E G-H J L O Q-S U-OB D-H J-M O-R T-PA C-H J-K M-P S-V X-QA C-E G I
+: O Q S-RE G-J L-M P-SH J-M O-TE G-L N-Z UB-VE G I K-O Q-R V-Y WA-C E G-H K-M
+: O-U W-Z XB-M O-YA C-F H-L N P-R T-V X-Y ZA C-N P-Q T-U W-IAB D-I K-L P-Q S
+: U-Y BA-C E-T V-CE G-K M O-Y DA-B D-Q S U-W Z-EA C-K M-FA C-H J-K M P-GG I-J
+: L-M O-P R-T V-Z HD-F J-IB D-E G I-N Q-X Z JB-J M-X Z-KL N Q-X Z LC E-I K-L
+: N-Q S U Y MA-F H-L N-O T-W Y-NE G L-M O-P R-S V-W Y-OH J L-T V-Z PB D-K M P-Q
+: S U-X Z-QC E-RD F I-S U X-SC E-F H-I K N-P S-TW Y-UA D-F H-VX Z-WA C-E H-I K
+: M-Z XC-G I-J L-W Z-YB D F-M O-X Z ZC F-O Q-R T-Y JAA-F H-S U-BE G-CC E-U W-Z
+: DC E G-Q S-Y EA-U X-Z FB-I K-P R-GA D-E G-H K-L N-U W-HD F-Z IB-M O-P R T-U
+: X-JL N-KD F-K M Q-Y LA-K M O-P R U-MH K-Q S-U W-NB D F-L N-R V-W Y-OA D F H-Z
+: PB-H J-K M-P R-X Z-QA C E-L N-P R-T X-Z RB D-Y SA-F I-K M-N P-R T-Y TB-L N
+: P-U W-UA D-W Z-VA C-E G-O Q S-T W-WB D-G I-Q S-XE G-M O-YK M-N P-ZC E G-K M O
+: Q U-KAE J L-Q S-BE G-N P R-T V-Y CA-G I-O Q-W Y-DC E I-J L-O Q-Z EB-I M-S U-V
+: X-Z FB-E G I-J L-M O-W Y-GB D-S U-W Y-HG I-IC E-J L-U W-JC E-J L-KQ T-LO Q-ML
+: N-P R U-NI K-N P R-OG I-PE G-Z QB-P R-RG I-O Q-U W-SF I-R T-TE G I-T V-UL N-O
+: Q-V Y-VE G-H J-U W-WM O-S U-XC E-YE G-H K N Q-V X ZA-C E-H J L-N P R-S U-X
+: LAA E-F H K O S Z-BB D G-I K-R T-Z CB-I K-U X-DF H-I O Q T EF-G N P S U FI
+: K-L N V X GA D-F I K M-O T-X Z HB F I N-O Q-S U-V Z IC E I N S Z-JB D-I K-KH
+: J-K N Q S U X LE H-I K M P R T-MC E-G K M-V X Z-NA F-L O-R OA C H-I N Q S-V
+: X-PV QB-C E-I K-RD F-N P-SD G-H J-K M O-R U-TB D-E N Q Y UH M-O T V X VB D
+: I-J L-M Q T-U WD G I N S Z-XB G J-L N P-X Z YB-H L-O R-V X-ZB D-Q S-T V-MAC E
+: K N P R U Y BA D-E H-J L-O Q T W CA E-F J N-O DA-G J-P R-EB F I L-N P T V-FB
+: E-F H-J O-P S Y-GC E H J M-N T-V X-HC E-IB H-I M R-S U-JI L-N Q-T V LJ-L O-P
+: T-V Y-MA C-D I L-N P V-X NB E-H O-R T V X-Y OE-L O Q U-W Z-PB D F H-I P-S U
+: QB-C F K-L O R-W RA-C F I-L O R X-Y SB D-E G-H M-P R U X TB D-E H L P R-S U
+: UA D F-J N-R V-W VA C-D G-H M-P R-S V-W Y-Z WB E-F J O Q S V XF H-K Q S-T W Z
+: YB-C E G J-O S-U Y-ZA C-E G-J L N P R-T V-X Z-NAB D-E G-I K N-P U W-X BA D-R
+: V-CC G J-L P-T Y-Z DB D G-H J-K R U W-EB D F I-L N-Q S V Y FC-D G I-P R U X
+: GA-D F H K-O R Y HA C-D J L-P R-T V-W Z-IA D G-I K-P S U Z-JA C-D F-I O-P S-T
+: V-X KC-K O Q U-X LI K-O Q T V X Z-MA E-K N-O Q-R U-V X Z-ND F-G K N-Q S U-V
+: OC-D I L N Q-R V-W Z-PA C-E G-I K-L P-S U W-Y QA E G-J Q-S U Y-RA D-E G-H K
+: M-O T-V SA-B D G I K N-O Q S X-Y TC-E H K N S V-X UB G-H J-K M O-P R-S V-VA C
+: G L-M O Q S U-V X Z-WA F-G J Q-R T V-Z XB E-F I-L N Q-R T W Z-YA C E H-I K
+: M-N P-S U-V ZA-D F I K M O-R U-X OAB-E I-J L N-P R-V X Z BC F-H J L-N P S-U W
+: Y-Z CC E G J L-Q S-U X-DD H J-L N-T V Z-EB D-E L R V-W Y-FA
 
 # Some "EMBL" TPA nucleotide accessions are really third-party annotations.
 special3 4+8 embl_tpa_tsa_nuc
