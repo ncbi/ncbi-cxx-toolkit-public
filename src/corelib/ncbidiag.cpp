@@ -7260,10 +7260,10 @@ void CFileDiagHandler::WriteMessage(const char*   buf,
 struct SAsyncDiagMessage
 {
     SAsyncDiagMessage(void)
-        : m_Message(nullptr), m_Composed(nullptr), m_FileType(eDiagFile_All) {}
+        : m_Message(nullptr), m_FileType(eDiagFile_All) {}
 
     SDiagMessage* m_Message;
-    string*       m_Composed;
+    string        m_Composed;
     EDiagFileType m_FileType;
 };
 
@@ -7364,8 +7364,8 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
     CAsyncDiagThread* thr = m_AsyncThread;
     SAsyncDiagMessage async_message;
     if (thr->m_SubHandler->AllowAsyncWrite(mess)) {
-        async_message.m_Composed = new string(thr->m_SubHandler->
-            ComposeMessage(mess, &async_message.m_FileType));
+        async_message.m_Composed = thr->m_SubHandler->
+            ComposeMessage(mess, &async_message.m_FileType);
     }
     else {
         async_message.m_Message = new SDiagMessage(mess);
@@ -7386,7 +7386,7 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
 #endif
             --thr->m_CntWaiters;
         }
-        thr->m_MsgQueue.push_back(async_message);
+        thr->m_MsgQueue.push_back(move(async_message));
         if (thr->m_MsgsInQueue.Add(1) == 1) {
 #ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
             thr->m_QueueCond.SignalSome();
@@ -7398,7 +7398,6 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
     else {
         thr->Stop();
         thr->m_SubHandler->Post(mess);
-        if (async_message.m_Composed) delete async_message.m_Composed;
         if (async_message.m_Message) delete async_message.m_Message;
     }
 }
@@ -7527,7 +7526,7 @@ drain_messages:
         while (!save_msgs.empty()) {
             SAsyncDiagMessage msg = save_msgs.front();
             save_msgs.pop_front();
-            if ( msg.m_Composed ) {
+            if ( !msg.m_Composed.empty() ) {
                 SMessageBuffer* buf = buffers[msg.m_FileType];
                 if ( !buf ) {
                     buf = new SMessageBuffer;
@@ -7535,23 +7534,23 @@ drain_messages:
                 }
                 if ( !buf->size ) {
                     // Do not use buffering.
-                    m_SubHandler->WriteMessage(msg.m_Composed->data(),
-                        msg.m_Composed->size(), msg.m_FileType);
+                    m_SubHandler->WriteMessage(msg.m_Composed.data(),
+                        msg.m_Composed.size(), msg.m_FileType);
                 }
-                else if ( !buf->Append(*msg.m_Composed) ) {
+                else if ( !buf->Append(msg.m_Composed) ) {
                     // Not enough space in the buffer or no waiters,
                     // try to flush if not empty.
                     if ( !buf->IsEmpty() ) {
                         m_SubHandler->WriteMessage(buf->data, buf->pos, msg.m_FileType);
                         buf->Clear();
                     }
-                    if ( !buf->Append(*msg.m_Composed) ) {
+                    if ( !buf->Append(msg.m_Composed) ) {
                         // The message is too long to fit in the buffer.
-                        m_SubHandler->WriteMessage(msg.m_Composed->data(),
-                            msg.m_Composed->size(), msg.m_FileType);
+                        m_SubHandler->WriteMessage(msg.m_Composed.data(),
+                            msg.m_Composed.size(), msg.m_FileType);
                     }
                 }
-                delete msg.m_Composed;
+                msg.m_Composed.clear();
             }
             else {
                 _ASSERT(msg.m_Message);
