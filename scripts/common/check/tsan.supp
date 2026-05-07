@@ -28,13 +28,19 @@ deadlock:^ncbi::CInitGuard::CInitGuard
 race:^__db_get_pp
 race:^__db_put_pp
 race:^__db_del_pp
+race:^__db_retcopy
 race:^__db_cursor_pp
+race:^__db_pthread_mutex_init
+race:^__db_pthread_mutex_prep
 race:^__dbc_get_pp
 race:^__dbc_put_pp
 race:^__dbc_close_pp
 race:^__txn_begin_pp
 race:^__txn_commit_pp
 race:^__txn_checkpoint_pp
+race:^__bam_ritem_nolog
+race:^__lock_getobj
+race:^__mutex_alloc_int
 
 # VDB *Release() functions have different reference counting code depending on processor.
 # They use simple volatile keyword on i386 architecture.
