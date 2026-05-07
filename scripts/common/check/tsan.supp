@@ -41,6 +41,7 @@ race:^__txn_checkpoint_pp
 race:^__bam_ritem_nolog
 race:^__lock_getobj
 race:^__mutex_alloc_int
+race:^__os_io
 
 # VDB *Release() functions have different reference counting code depending on processor.
 # They use simple volatile keyword on i386 architecture.
