@@ -34,6 +34,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbisys.hpp>
 #include <corelib/ncbimempool.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
