@@ -50,6 +50,7 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <memory>
+#include <fcntl.h>
 
 BEGIN_NCBI_SCOPE
 
