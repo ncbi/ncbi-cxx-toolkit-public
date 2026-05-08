@@ -107,9 +107,14 @@ CSeqDBAtlas::CSeqDBAtlas(bool use_atlas_lock)
 {
     m_OpenedFilesCount = 0;
     m_MaxOpenedFilesCount = 0;
-    int soft_limit, hard_limit;
-    CCurrentProcess::GetFileDescriptorsCount(&soft_limit, &hard_limit);
-    m_MaxFileDescriptors = std::max(CSeqDBAtlas::kDefaultMaxFileDescriptors, soft_limit-100);
+    CNcbiEnvironment env;
+    const string & MAX_FD_STRING = env.Get("NCBI_BLAST_MAX_FILE_DESCRIPTORS");
+    if (MAX_FD_STRING != kEmptyStr){
+       m_MaxFileDescriptors = NStr::StringToInt(MAX_FD_STRING);
+    }
+    else {
+        m_MaxFileDescriptors = CSeqDBAtlas::kDefaultMaxFileDescriptors;
+    }
     LOG_POST(Info <<"Max num of File descriptor: " << m_MaxFileDescriptors);
 }
 
