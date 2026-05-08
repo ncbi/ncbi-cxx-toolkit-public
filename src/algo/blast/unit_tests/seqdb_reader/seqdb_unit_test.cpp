@@ -4471,6 +4471,17 @@ BOOST_AUTO_TEST_CASE(TestMemoryMapFile)
 	BOOST_REQUIRE_EQUAL(atlas.GetOpenedFilseCount(), MAX_FD_COUNT);
 }
 
+BOOST_AUTO_TEST_CASE(TestMaxFDConfig)
+{
+    CNcbiEnvironment env;
+    const string ENV_FD_STR("2000"); 
+    env.Set("NCBI_BLAST_MAX_FILE_DESCRIPTORS", ENV_FD_STR);
+	CSeqDBAtlas atlas(true);
+	const int MAX_FD_COUNT = atlas.GetMaxFileDescriptors();
+	BOOST_REQUIRE_EQUAL(MAX_FD_COUNT, NStr::StringToInt(ENV_FD_STR));
+}
+
+
 #ifdef NCBI_THREADS
 class CTestThread : public CThread
 {
