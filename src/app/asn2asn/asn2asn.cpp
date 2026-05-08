@@ -51,7 +51,11 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <memory>
-#include <fcntl.h>
+#if defined(NCBI_OS_MSWIN)
+#  include <corelib/ncbi_os_mswin.hpp>
+#  include <io.h> 
+#  include <fcntl.h> 
+#endif
 
 BEGIN_NCBI_SCOPE
 
