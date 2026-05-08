@@ -213,8 +213,9 @@ public:
                             const CObjectInfo& info)
     {
         ++m_Count;
-        if ( m_Count % 1000 == 0 )
-            NcbiCout << "Bioseq "<<m_Count<<NcbiEndl;
+        if ( m_Count % 1000 == 0 ) {
+            LOG_POST("Bioseq "<<m_Count);
+        }
 
         try {
             ///
@@ -263,10 +264,10 @@ public:
             _ASSERT((*member).GetTypeInfo()->GetSize() == sizeof(object));
             CObjectInfo info(&object, (*member).GetTypeInfo());
             in.ReadObject(info);
-            NcbiCout << "Skipped class member: " <<
-                member.GetClassType().GetTypeInfo()->GetName() << '.' <<
-                member.GetMemberInfo()->GetId().GetName() << ": " <<
-                MSerial_AsnText << info << NcbiEndl;
+            LOG_POST("Skipped class member: " <<
+                     member.GetClassType().GetTypeInfo()->GetName() << '.' <<
+                     member.GetMemberInfo()->GetId().GetName() << ": " <<
+                     MSerial_AsnText << info);
         }
     
 private:
@@ -299,11 +300,11 @@ public:
             int complete = 0;
             int tech = 0;
 
-            NcbiCout << "Skipped object: " <<
-                type.GetTypeInfo()->GetName() << ": " <<
-                MSerial_AsnText << info << NcbiEndl;
-            ITERATE(list< CRef< CSeqdesc > >,it,descr.Get()) {
-                CConstRef<CSeqdesc> desc = *it;
+            LOG_POST("Skipped object: " <<
+                     type.GetTypeInfo()->GetName() << ": " <<
+                     MSerial_AsnText << info);
+            ITERATE(list< CRef< CSeqdesc > >,desc_it,descr.Get()) {
+                CConstRef<CSeqdesc> desc = *desc_it;
                 if (desc->IsTitle()) {
                     title = desc->GetTitle();
                     string lt = NStr::ToLower(title); 
@@ -313,18 +314,18 @@ public:
                     if (source.IsSetGenome())
                         genome = source.GetGenome();					
                     if (source.IsSetSubtype()) {
-                        ITERATE(list< CRef< CSubSource > >,it,source.GetSubtype()) {
-                            string name = (*it)->GetName();
-                            int st = (*it)->GetSubtype();
+                        ITERATE(list< CRef< CSubSource > >,sub_it,source.GetSubtype()) {
+                            string name = (*sub_it)->GetName();
+                            int st = (*sub_it)->GetSubtype();
                             if (st == 19) subtype = st;
                         }
                     }
                     if (source.IsSetOrg()) {
                         const COrg_ref & orgref= source.GetOrg();
                         taxname = orgref.GetTaxname();
-                        ITERATE(vector< CRef< CDbtag > > ,it,orgref.GetDb()) {
-                            if (CDbtag::eDbtagType_taxon == (*it)->GetType()) {
-                                taxid = (*it)->GetTag().GetId();
+                        ITERATE(vector< CRef< CDbtag > > ,db_it,orgref.GetDb()) {
+                            if (CDbtag::eDbtagType_taxon == (*db_it)->GetType()) {
+                                taxid = (*db_it)->GetTag().GetId();
                                 break;
                             }
                         }
@@ -383,6 +384,10 @@ void CAsn2Asn::Init(void)
                "binary ASN.1 output format");
     d->AddFlag("x",
                "XML output format");
+    d->AddFlag("igzip",
+               "input is gzipped");
+    d->AddFlag("ogzip",
+               "gzip output");
     d->AddFlag("C",
                "Convert data without reading in memory");
     d->AddFlag("S",
@@ -483,7 +488,7 @@ int CAsn2Asn::Run(void)
     for ( int i = 1; i < threadCount; ++i ) {
         threads[i]->Join();
         if ( !threads[i]->DoneOk() ) {
-            NcbiCerr << "Error in thread: " << i << NcbiEndl;
+            ERR_POST("Error in thread: " << i);
             return 1;
         }
     }
@@ -502,11 +507,11 @@ BEGIN_SCOPE(merge_annot)
 class CInsertAnnotManager
 {
 public:
-    CInsertAnnotManager(TGi target_gi, CConstRef<CSeq_annot> annot)
-        : target_gi(target_gi), do_insert(false), annot(annot), annot_in(0) {
+    CInsertAnnotManager(TGi target_gi_, CConstRef<CSeq_annot> annot_)
+        : target_gi(target_gi_), do_insert(false), annot(annot_), annot_in(0) {
     }
-    CInsertAnnotManager(TGi target_gi, CObjectIStream& annot_in)
-        : target_gi(target_gi), do_insert(false), annot_in(&annot_in) {
+    CInsertAnnotManager(TGi target_gi_, CObjectIStream& annot_in_)
+        : target_gi(target_gi_), do_insert(false), annot_in(&annot_in_) {
     }
 
     // Returns true if there is any annot to insert.
@@ -544,8 +549,8 @@ class CInsertAnnotHookId : public CCopyClassMemberHook
 {
 public:
     CInsertAnnotManager& manager;
-    CInsertAnnotHookId(CInsertAnnotManager& manager)
-        : manager(manager) {
+    CInsertAnnotHookId(CInsertAnnotManager& manager_)
+        : manager(manager_) {
     }
     void CopyClassMember(CObjectStreamCopier& copier,
                          const CObjectTypeInfoMI& member) {
@@ -577,13 +582,13 @@ class CInsertAnnotHookCopy : public CSkipObjectHook
 public:
     CObjectStreamCopier& copier; // Object copier to use.
     COStreamContainer& out; // Output stream object iterator to use.
-    CInsertAnnotHookCopy(CObjectStreamCopier& copier,
-                         COStreamContainer& out)
-        : copier(copier), out(out) {
+    CInsertAnnotHookCopy(CObjectStreamCopier& copier_,
+                         COStreamContainer& out_)
+        : copier(copier_), out(out_) {
     }
 
     void SkipObject(CObjectIStream& in,
-                    const CObjectTypeInfo& type) {
+                    const CObjectTypeInfo& /*type*/) {
         // Just copy the Seq-annot.
         out.WriteElement(copier, in);
     }
@@ -597,8 +602,8 @@ class CInsertAnnotHookAnnot : public CCopyClassMemberHook
 {
 public:
     CInsertAnnotManager& manager;
-    CInsertAnnotHookAnnot(CInsertAnnotManager& manager)
-        : manager(manager) {
+    CInsertAnnotHookAnnot(CInsertAnnotManager& manager_)
+        : manager(manager_) {
     }
     // Inserts Seq-annot from external source.
     void InsertAnnot(CObjectStreamCopier& copier,
@@ -877,6 +882,46 @@ END_SCOPE(merge_annot)
 
 DEFINE_STATIC_FAST_MUTEX(s_ArgsMutex);
 
+static AutoPtr<istream> s_OpenRawInput(const string& file_name, ESerialDataFormat format)
+{
+    bool binary = format == eSerial_AsnBinary;
+    if ( file_name == "" ||
+         file_name == "-" ||
+         file_name == "stdin" ) {
+#if defined(NCBI_OS_MSWIN)
+        NcbiSys_setmode(NcbiSys_fileno(stdin), binary ? O_BINARY : O_TEXT);
+#endif
+        return AutoPtr<istream>(&NcbiCin, eNoOwnership);
+    }
+    else {
+        auto open_mode = IOS_BASE::in;
+        if ( binary ) {
+            open_mode |= IOS_BASE::binary;
+        }
+        return AutoPtr<istream>(new ifstream(file_name.c_str(), open_mode));
+    }
+}
+
+static AutoPtr<ostream> s_OpenRawOutput(const string& file_name, ESerialDataFormat format)
+{
+    bool binary = format == eSerial_AsnBinary;
+    if ( file_name == "" ||
+         file_name == "-" ||
+         file_name == "stdout" ) {
+#if defined(NCBI_OS_MSWIN)
+        NcbiSys_setmode(NcbiSys_fileno(stdout), binary ? O_BINARY : O_TEXT);
+#endif
+        return AutoPtr<ostream>(&NcbiCout, eNoOwnership);
+    }
+    else {
+        auto open_mode = IOS_BASE::out;
+        if ( binary ) {
+            open_mode |= IOS_BASE::binary;
+        }
+        return AutoPtr<ostream>(new ofstream(file_name.c_str(), open_mode));
+    }
+}
+
 void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
 {
     CFastMutexGuard GUARD(s_ArgsMutex);
@@ -889,6 +934,8 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
         inFormat = eSerial_AsnBinary;
     else if ( args["X"] )
         inFormat = eSerial_Xml;
+    bool gzip_input = args["igzip"];
+    bool gzip_output = args["ogzip"];
 
     const CArgValue& o = args["o"];
     bool haveOutput = o;
@@ -929,6 +976,8 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
 
     bool quiet = args["q"];
     bool multi = args["m"];
+    bool reset_input = true;
+    bool reset_output = true;
 
     size_t count = args["c"].AsInteger();
 
@@ -936,29 +985,60 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
     
     for ( size_t i = 1; i <= count; ++i ) {
         bool displayMessages = count != 1 && !quiet;
-        if ( displayMessages )
-            NcbiCerr << "Step " << i << ':' << NcbiEndl;
-        unique_ptr<CObjectIStream> in(CObjectIStream::Open(inFormat, inFile,
-                                                         eSerial_StdWhenAny));
-        if ( usePool ) {
-            in->UseMemoryPool();
+        if ( displayMessages ) {
+            LOG_POST("Step " << i << ':');
         }
-        unique_ptr<CObjectOStream> out(!haveOutput? 0:
-                                     CObjectOStream::Open(outFormat, outFile,
-                                                          eSerial_StdWhenAny));
+        AutoPtr<istream> in_raw_stream = s_OpenRawInput(inFile, inFormat);
+        AutoPtr<ostream> out_raw_stream = s_OpenRawOutput(outFile, outFormat);
+        AutoPtr<istream> in_byte_stream;
+        AutoPtr<ostream> out_byte_stream;
+        
+        unique_ptr<CObjectIStream> in;
+        unique_ptr<CObjectOStream> out;
 
         for ( ;; ) {
+            if ( !in.get() ) {
+                if ( !in_byte_stream.get() ) {
+                    if ( gzip_input ) {
+                        in_byte_stream.reset(new CCompressionIStream(*in_raw_stream,
+                                                                new CZipStreamDecompressor(CZipCompression::fGZip),
+                                                                CCompressionIStream::fOwnProcessor));
+                    }
+                    else {
+                        in_byte_stream.reset(in_raw_stream.get(), eNoOwnership);
+                    }
+                }
+                in.reset(CObjectIStream::Open(inFormat, *in_byte_stream));
+                if ( usePool ) {
+                    in->UseMemoryPool();
+                }
+            }
+            if ( haveOutput && !out.get() ) {
+                if ( !out_byte_stream.get() ) {
+                    if ( gzip_output ) {
+                        out_byte_stream.reset(new CCompressionOStream(*out_raw_stream,
+                                                                 new CZipStreamCompressor(CZipCompression::fGZip),
+                                                                 CCompressionOStream::fOwnProcessor));
+                    }
+                    else {
+                        out_byte_stream.reset(out_raw_stream.get(), eNoOwnership);
+                    }
+                }
+                out.reset(CObjectOStream::Open(outFormat, *out_byte_stream));
+            }
+            
             /* read one Seq-entry or Seq-submit */
             if ( eDataType == eDataType_SeqEntry ||
-                 eDataType == eDataType_SeqSubmit ) 
+                eDataType == eDataType_SeqSubmit ) 
             {
                 const CObjectTypeInfo objectTypeInfo = (
                     eDataType == eDataType_SeqEntry ?
                     CType<CSeq_entry>().operator ncbi::CObjectTypeInfo() :
                     CType<CSeq_submit>().operator ncbi::CObjectTypeInfo() );
                 if ( skip ) {
-                    if ( displayMessages )
-                        NcbiCerr << "Skipping " << objectTypeInfo.GetName() << "..." << NcbiEndl;
+                    if ( displayMessages ) {
+                        LOG_POST("Skipping " << objectTypeInfo.GetName() << "...");
+                    }
                     if ( readHook ) {
                         {{
                             CObjectTypeInfo type = CType<CSeq_descr>();
@@ -982,8 +1062,9 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
                     }
                 }
                 else if ( convert && haveOutput ) {
-                    if ( displayMessages )
-                        NcbiCerr << "Copying " << objectTypeInfo.GetName() << "..." << NcbiEndl;
+                    if ( displayMessages ) {
+                        LOG_POST("Copying " << objectTypeInfo.GetName() << "...");
+                    }
 
                     CObjectStreamCopier copier(*in, *out);
                     copier.Copy(CType<CSeq_entry>());
@@ -991,8 +1072,9 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
                 else if ( eDataType == eDataType_SeqEntry &&
                     merge && haveOutput ) 
                 {
-                    if ( displayMessages )
-                        NcbiCerr << "Merging Seq-annot..." << NcbiEndl;
+                    if ( displayMessages ) {
+                        LOG_POST("Merging Seq-annot...");
+                    }
 
                     if ( args["Min"] ) {
                         merge_annot::MergeFromFile(*in, *out, GI_FROM(TIntId, args["Mgi"].AsIntId()),
@@ -1006,8 +1088,9 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
                 else {
                     CRef<CSerialObject> pObjectFromIn;
                     //entry.DoNotDeleteThisObject();
-                    if ( displayMessages )
-                        NcbiCerr << "Reading " << objectTypeInfo.GetName() << "..." << NcbiEndl;
+                    if ( displayMessages ) {
+                        LOG_POST("Reading " << objectTypeInfo.GetName() << "...");
+                    }
 
                     // read in the CSerialObject, then
                     // extract the Seq-entry inside there for processing
@@ -1034,29 +1117,33 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
                     }
 
                     if ( haveOutput ) {
-                        if ( displayMessages )
-                            NcbiCerr << "Writing " << objectTypeInfo.GetName() << "..." << NcbiEndl;
+                        if ( displayMessages ) {
+                            LOG_POST("Writing " << objectTypeInfo.GetName() << "...");
+                        }
                         *out << *pObjectFromIn;
                     }
                 }
             }
             else {              /* read Seq-entry's from a Bioseq-set */
                 if ( skip ) {
-                    if ( displayMessages )
-                        NcbiCerr << "Skipping Bioseq-set..." << NcbiEndl;
+                    if ( displayMessages ) {
+                        LOG_POST("Skipping Bioseq-set...");
+                    }
                     in->Skip(CType<CBioseq_set>());
                 }
                 else if ( convert && haveOutput ) {
-                    if ( displayMessages )
-                        NcbiCerr << "Copying Bioseq-set..." << NcbiEndl;
+                    if ( displayMessages ) {
+                        LOG_POST("Copying Bioseq-set...");
+                    }
                     CObjectStreamCopier copier(*in, *out);
                     copier.Copy(CType<CBioseq_set>());
                 }
                 else {
                     CRef<CBioseq_set> entries(new CBioseq_set);
                     //entries.DoNotDeleteThisObject();
-                    if ( displayMessages )
-                        NcbiCerr << "Reading Bioseq-set..." << NcbiEndl;
+                    if ( displayMessages ) {
+                        LOG_POST("Reading Bioseq-set...");
+                    }
 
                     if ( readHook ) {
                         CObjectTypeInfo bioseqSetType = CType<CBioseq_set>();
@@ -1073,8 +1160,9 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
                         }
                     }
                     if ( haveOutput ) {
-                        if ( displayMessages )
-                            NcbiCerr << "Writing Bioseq-set..." << NcbiEndl;
+                        if ( displayMessages ) {
+                            LOG_POST("Writing Bioseq-set...");
+                        }
                         if ( writeHook ) {
 #if 0
                             CObjectTypeInfo bioseqSetType = CType<CBioseq_set>();
@@ -1093,8 +1181,31 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
                     }
                 }
             }
-            if ( !multi || in->EndOfData() )
+            if ( !multi ) {
                 break;
+            }
+            if ( reset_input ) {
+                in.reset();
+                if ( gzip_input ) {
+                    if ( in_byte_stream->peek() == istream::traits_type::eof() ) {
+                        break;
+                    }
+                }
+                else {
+                    in_byte_stream.reset();
+                    if ( in_raw_stream->peek() == istream::traits_type::eof() ) {
+                        break;
+                    }
+                }
+            }
+            else if (in->EndOfData() ) {
+                break;
+            }
+            if ( reset_output || gzip_output ) {
+                // create new gzip packet for each object
+                out.reset();
+                out_byte_stream.reset();
+            }
         }
     }
 }
@@ -1149,7 +1260,7 @@ void CWriteSeqEntryHook::WriteObject(CObjectOStream& out,
 {
     CInc inc(m_Level);
     if ( m_Level == 1 ) {
-        NcbiCerr << "entry" << NcbiEndl;
+        LOG_POST("entry");
         // const CSeq_entry& entry = *CType<CSeq_entry>::Get(object);
         object.GetTypeInfo()->DefaultWriteData(out, object.GetObjectPtr());
     }
