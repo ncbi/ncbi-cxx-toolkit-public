@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Tue Apr 28 05:33:04 EDT 2026; formally
+/* time_t value corresponding to Sun May 10 05:33:04 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1777368784UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1778405584UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -621,7 +621,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BFD\ts\tBedfordshire Natural History Society\t\t\t",
 "BFDL\ts\tForest Products Laboratory\t\t\t",
 "BFIC\ts\tMuseum National d'Histoire Naturelle\t\t\t",
-"BFRIRS \ts\tBangladesh Fisheries Research Institute\t\t\t",
 "BFRS\ts\tBlodgett Forest Research Station\t\t\t",
 "BFT\ts\tQueen's University, Botany Department\t\t\t",
 "BFUS\ts\tUniversity of Sofia, Biology Faculty\t\t\t",
@@ -5047,7 +5046,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MNHN:IM\ts\tMuseum National d'Histoire Naturelle, Molluscs\t\t\t",
 "MNHN:IN\ts\tMuseum National d'Histoire Naturelle, Nematodes\t\t\t",
 "MNHN:IP\ts\tMuseum National d'Histoire Naturelle, Porifera\t\t\t",
-"MNHN:IR IR\ts\tMuseum National d'Histoire Naturelle, Protists\tMNHN:IR \t\t",
+"MNHN:IR \ts\tMuseum National d'Histoire Naturelle, Protists\tMNHN:IR IR\t\t",
 "MNHN:IT \ts\tMuseum National d'Histoire Naturelle, Tunicates/ascidians\t\t\t",
 "MNHN:IU\ts\tMuseum National d'Histoire Naturelle, Crustaceans\t\t\t",
 "MNHN:LCP\ts\tMuseum National d'Histoire Naturelle, Laboratory of Cryptogamy\t\t\t",
@@ -7319,7 +7318,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SORO\ts\tUniversidade Federal de Sao Carlos, campus Sorocaba\t\t\t",
 "SOSCMVNH\ts\tSouthern Oregon State College, Museum of Vertebrate Natural History\t\t\t",
 "SOSN\ts\tSilesian Medical School in Katowice, Department of Pharmaceutical Botany\t\t\t",
-"SOSSRC \ts\tSave Our Seas Shark Research Center, Nova Southeastern University\t\t\t",
 "SOTO\ts\tCollege of the Ozarks, Biology Department\t\t\t",
 "SOTON\ts\tSouthampton University\t\t\t",
 "SOUT\ts\tLong Island University\t\t\t",
