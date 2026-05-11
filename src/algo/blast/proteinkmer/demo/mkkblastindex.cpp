@@ -80,7 +80,7 @@ void CBlastKmerBuildIndexApplication::Init(void)
 					 "Width of data arrays.  4 for an int, 2 for short(recommmended), 1 for byte",
 					 CArgDescriptions::eInteger, "2");
 	
-	arg_desc->AddDefaultKey("threads", "number_threads", 
+	arg_desc->AddDefaultKey("num_threads", "number_threads", 
 					 "Number of threads to use.",
 					 CArgDescriptions::eInteger, "1");
 	
@@ -131,7 +131,7 @@ int CBlastKmerBuildIndexApplication::Run(void)
 
 	int dataWidth = GetArgs()["width"].AsInteger();
 
-	int numThreads = GetArgs()["threads"].AsInteger();
+	int numThreads = GetArgs()["num_threads"].AsInteger();
 
 	int numHashes = GetArgs()["hashes"].AsInteger();
 
