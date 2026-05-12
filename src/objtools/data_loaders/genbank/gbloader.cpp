@@ -207,7 +207,7 @@ typedef NCBI_PARAM_TYPE(GENBANK, LOADER_METHOD) TGenbankLoaderMethod;
 
 string CGBDataLoader::x_GetLoaderMethod(const TParamTree* params)
 {
-    string method = GetParam(params, NCBI_GBLOADER_PARAM_LOADER_METHOD);
+    string method = GetParam(params, NCBI_GBLOADER_PARAM_LOADER_METHOD, _TX("GENBANK_LOADER_METHOD"));
     if ( method.empty() ) {
         // try config first
         method = TGenbankLoaderMethod::GetDefault();
@@ -283,7 +283,7 @@ static bool s_GetDefaultUsePSG(const CGBLoaderParams::TParamTree* param_tree)
                 }
             }
 #endif
-            string loader_method = CGBDataLoader::GetParam(gb_params, NCBI_GBLOADER_PARAM_LOADER_METHOD);
+            string loader_method = CGBDataLoader::GetParam(gb_params, NCBI_GBLOADER_PARAM_LOADER_METHOD, _TX("GENBANK_LOADER_METHOD"));
             if ( !loader_method.empty() ) {
                 return s_CheckPSGMethod(loader_method);
             }
@@ -340,7 +340,7 @@ void CGBDataLoader::SetLoaderMethod(CGBLoaderParams& params)
             gb_params = GetLoaderParams(app_params.get());
         }
 
-        loader_method = GetParam(gb_params, NCBI_GBLOADER_PARAM_LOADER_METHOD);
+        loader_method = GetParam(gb_params, NCBI_GBLOADER_PARAM_LOADER_METHOD, _TX("GENBANK_LOADER_METHOD"));
         if ( loader_method.empty() ) {
             // try config first
             loader_method = TGenbankLoaderMethod::GetDefault();
@@ -663,8 +663,15 @@ void CGBDataLoader::SetParam(TParamTree* params,
 
 
 string CGBDataLoader::GetParam(const TParamTree* params,
-                               const string& param_name)
+                               const string& param_name,
+                               const TXChar* env_var)
 {
+    if ( env_var ) {
+        auto value = NcbiSys_getenv(env_var);
+        if ( value && *value ) {
+            return _T_STDSTRING(value);
+        }
+    }
     if ( params ) {
         const TParamTree* subnode = FindSubNode(params, param_name);
         if ( subnode ) {

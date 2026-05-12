@@ -362,7 +362,8 @@ public:
     static const TParamTree* GetReaderParams(const TParamTree* params,
                                              const string& reader_name);
     static string GetParam(const TParamTree* params,
-                           const string& param_name);
+                           const string& param_name,
+                           const TXChar* env_var = nullptr);
 
     enum ECacheType {
         fCache_Id   = CReaderCacheManager::fCache_Id,
