@@ -111,7 +111,7 @@
 
 /// Suppress clang analyzer report.
 
-#ifdef __clang_analyzer__
+#if defined(__clang_analyzer__)  &&  __has_attribute(suppress)
 #  define NCBI_CLANG_ANALYZER_SUPPRESS __attribute__((suppress))
 #else
 #  define NCBI_CLANG_ANALYZER_SUPPRESS
