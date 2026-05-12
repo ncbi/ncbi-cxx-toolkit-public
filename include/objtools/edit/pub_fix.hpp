@@ -101,12 +101,14 @@ public:
     // public vars
     EOutcome outcome;
     int pub_year;
-    int cnt_gb;
-    int cnt_pm;
-    int cnt_matched;
-    int cnt_added;      // new from pubmed list
-    int cnt_removed;    // not matched in genbank list
-    int cnt_min;        // minimum # in GB/PM list, use as a base for ration
+
+    using TCount = unsigned int;
+    TCount cnt_gb;
+    TCount cnt_pm;
+    TCount cnt_matched;
+    TCount cnt_added;      // new from pubmed list
+    TCount cnt_removed;    // not matched in genbank list
+    TCount cnt_min;        // minimum # in GB/PM list, use as a base for ration
     list<string> matched;
     list<string> removed;
     list<string> added;

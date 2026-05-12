@@ -42,7 +42,7 @@ BEGIN_SCOPE(objects);
 //  ----------------------------------------------------------------------------
 CGff3LocationRecord::CGff3LocationRecord(
     const CGff2Record& record,
-    unsigned int flags,
+    CGff3Reader::TReaderFlags flags,
     CGff3ReadRecord::SeqIdResolver seqIdResolve)
 //  ----------------------------------------------------------------------------
 {
@@ -185,7 +185,7 @@ void CGffIdTracker::CheckIntegrity()
 
 //  ============================================================================
 CGff3LocationMerger::CGff3LocationMerger(
-    unsigned int flags,
+    TFlags flags,
     CGff3ReadRecord::SeqIdResolver idResolver,
     TSeqPos sequenceSize,
     CReaderListener* pListener):

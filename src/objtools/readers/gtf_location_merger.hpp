@@ -62,7 +62,7 @@ public:
 
     CGtfLocationRecord(
         const CGtfReadRecord&,
-        unsigned int,
+        CGtfReader::TReaderFlags flags,
         CGff3ReadRecord::SeqIdResolver);
 
     CGtfLocationRecord(
@@ -105,9 +105,10 @@ class CGtfLocationMerger
 {
     using LOCATIONS = list<CGtfLocationRecord>;
     using LOCATION_MAP = map<string, LOCATIONS>;
+    using TFlags = CGtfReader::TReaderFlags;
 public:
     CGtfLocationMerger(
-        unsigned int flags =0,
+        TFlags flags =0,
         CGff3ReadRecord::SeqIdResolver =nullptr);
 
     void AddRecord(
@@ -145,7 +146,7 @@ public:
         LOCATIONS::const_iterator&);
 
 private:
-    unsigned int mFlags;
+    TFlags mFlags;
     CGff3ReadRecord::SeqIdResolver mIdResolver;
 
     LOCATION_MAP mMapIdToLocations;

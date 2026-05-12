@@ -101,7 +101,7 @@ public:
         CReaderListener* = nullptr);
 
     CGff3Reader(
-        unsigned int uFlags,
+        TReaderFlags uFlags,
         CReaderListener*);
 
     virtual ~CGff3Reader();
