@@ -48,7 +48,7 @@ class CGff3LocationRecord
 public:
     CGff3LocationRecord(
         const CGff2Record&,
-        unsigned int,
+        CGff3Reader::TReaderFlags flags,
         CGff3ReadRecord::SeqIdResolver);
 
     CConstRef<CSeq_id> mpGffId;
@@ -119,10 +119,11 @@ class NCBI_XOBJREAD_EXPORT CGff3LocationMerger
 {
     using LOCATIONS = list<CGff3LocationRecord>;
     using LOCATION_MAP = map<string, LOCATIONS>;
+    using TFlags = CGff3Reader::TReaderFlags;
 
 public:
     CGff3LocationMerger(
-        unsigned int flags =0,
+        TFlags flags =0,
         CGff3ReadRecord::SeqIdResolver = CReadUtil::AsSeqId,
         TSeqPos sequenceSize =0,
         CReaderListener* pListener=nullptr);
@@ -180,7 +181,7 @@ private:
     static void xSortLocations(
         LOCATIONS&);
 
-    unsigned int mFlags;
+    TFlags mFlags;
     map<string, TSeqPos> mSequenceSizes;
     CGff3ReadRecord::SeqIdResolver mIdResolver;
 

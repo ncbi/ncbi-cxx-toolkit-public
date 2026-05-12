@@ -1492,7 +1492,7 @@ static void s_SetDBLinkFieldVals(const string& label,
     for (const auto& val : vals) {
         pField->SetData().SetStrs().push_back(val);
     }
-    pField->SetNum(pField->GetData().GetStrs().size());
+    pField->SetNum(static_cast<CUser_field::TNum>(pField->GetData().GetStrs().size()));
 }
 
 

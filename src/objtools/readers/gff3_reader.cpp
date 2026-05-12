@@ -228,7 +228,7 @@ CGff3Reader::CGff3Reader(
 
 //  ----------------------------------------------------------------------------
 CGff3Reader::CGff3Reader(
-    unsigned int uFlags,
+    TReaderFlags uFlags,
     CReaderListener* pRL):
 //  ----------------------------------------------------------------------------
     CGff3Reader(uFlags, "", "", CReadUtil::AsSeqId, pRL)

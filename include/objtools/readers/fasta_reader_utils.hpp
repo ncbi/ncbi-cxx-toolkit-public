@@ -52,7 +52,7 @@ class NCBI_XOBJREAD_EXPORT CFastaDeflineReader : public CReaderBase {
 
 public:
 
-    using TFastaFlags = int;
+    using TFastaFlags = long;
     using TBaseFlags = CReaderBase::TReaderFlags;
     using TIgnoredProblems = vector<ILineError::EProblem>;
     using TIds = list<CRef<CSeq_id>>;

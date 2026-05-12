@@ -1621,7 +1621,7 @@ void CFastaReader::AssignMolType(ILineErrorListener * /*pMessageListener*/)
     // Do the residue frequencies suggest a specific type?
     SIZE_TYPE length = min(m_SeqData.length(), SIZE_TYPE(4096));
     const auto& data = m_SeqData.data();
-    switch (CFormatGuess::SequenceType(data, length, strictness)) {
+    switch (CFormatGuess::SequenceType(data, static_cast<unsigned>(length), strictness)) {
     case CFormatGuess::eNucleotide:
     {
         if (!sRefineNaMol(data, data+length, *m_CurrentSeq)) {

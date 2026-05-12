@@ -216,14 +216,14 @@ public:
     };
 
     CGtfReader(
-        unsigned int =0,
+        TReaderFlags flags=0,
         const string& = "",
         const string& = "",
         SeqIdResolver = CReadUtil::AsSeqId,
         CReaderListener* = nullptr);
 
     CGtfReader(
-        unsigned int,
+        TReaderFlags flags,
         CReaderListener*);
 
     virtual ~CGtfReader();

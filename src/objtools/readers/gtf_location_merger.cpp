@@ -54,7 +54,7 @@ CGtfLocationRecord::TYPEORDER_MAP CGtfLocationRecord::msTypeOrder = {
 //  ----------------------------------------------------------------------------
 CGtfLocationRecord::CGtfLocationRecord(
     const CGtfReadRecord& record,
-    unsigned int flags,
+    CGtfReader::TReaderFlags flags,
     CGff3ReadRecord::SeqIdResolver seqIdResolve)
 //  ----------------------------------------------------------------------------
 {
@@ -167,7 +167,7 @@ bool CGtfLocationRecord::CompareTypeAndPartNumbers(
 
 //  ============================================================================
 CGtfLocationMerger::CGtfLocationMerger(
-    unsigned int flags,
+    TFlags flags,
     CGff3ReadRecord::SeqIdResolver idResolver):
 //  ============================================================================
     mFlags(flags),

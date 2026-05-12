@@ -119,7 +119,7 @@ bool CGtfReadRecord::xAssignAttributesFromGff(
 
 //  ----------------------------------------------------------------------------
 CGtfReader::CGtfReader(
-    unsigned int uFlags,
+    TReaderFlags uFlags,
     const string& strAnnotName,
     const string& strAnnotTitle,
     SeqIdResolver resolver,
@@ -132,7 +132,7 @@ CGtfReader::CGtfReader(
 
 //  ----------------------------------------------------------------------------
 CGtfReader::CGtfReader(
-    unsigned int uFlags,
+    TReaderFlags uFlags,
     CReaderListener* pRL):
 //  ----------------------------------------------------------------------------
     CGtfReader( uFlags, "", "", CReadUtil::AsSeqId, pRL)

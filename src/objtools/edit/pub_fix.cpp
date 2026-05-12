@@ -1425,8 +1425,8 @@ CAuthListValidator::EOutcome CAuthListValidator::validate(const CCit_art& gb_art
     }
     matched.clear();
     compare_lastnames();
-    actual_matched_to_min = double(cnt_matched) / cnt_min;
-    actual_removed_to_gb = double(cnt_removed) / cnt_gb;
+    actual_matched_to_min = static_cast<double>(cnt_matched)/cnt_min;
+    actual_removed_to_gb = static_cast<double>(cnt_removed)/cnt_gb;
     if (actual_removed_to_gb > cfg_removed_to_gb) {
         ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, err_AuthList, err_AuthList_SignificantDrop,
             "Too many authors removed (" << cnt_removed << ") compared to total Genbank authors (" << cnt_gb << ")");
@@ -1511,9 +1511,9 @@ void CAuthListValidator::compare_lastnames()
         }
         gbit = gbnext;
     }
-    cnt_matched = matched.size();
-    cnt_removed = removed.size();
-    cnt_added = added.size();
+    cnt_matched = static_cast<TCount>(matched.size());
+    cnt_removed = static_cast<TCount>(removed.size());
+    cnt_added = static_cast<TCount>(added.size());
     cnt_gb = cnt_matched + cnt_removed;
     cnt_pm = cnt_matched + cnt_added;
     cnt_min = min(cnt_gb, cnt_pm);
