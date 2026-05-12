@@ -1230,6 +1230,12 @@ void CMultiReaderApp::xProcessFasta(
     }
 
     CRef<CSeq_entry> pSeqEntry = reader.ReadSeqEntry(line_reader, m_pErrors.get());
+
+    if (args["cleanup"]) {
+        CCleanup cleanup;
+        cleanup.BasicCleanup(*pSeqEntry);
+    }
+
     xWriteObject(args, *pSeqEntry, ostr);
 }
 

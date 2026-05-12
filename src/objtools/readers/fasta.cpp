@@ -1348,6 +1348,22 @@ bool CFastaReader::ParseGapLine(
     return true;
 }
 
+
+static CRef<CSeq_feat> s_FetchProtFeat(list<CRef<CSeq_annot>>& annots)
+{
+    for (auto pAnnot : annots) {
+        if (pAnnot->IsFtable()) {
+            for (auto pFeat : pAnnot->SetData().SetFtable()) {
+                if (pFeat && pFeat->IsSetData() && pFeat->GetData().IsProt()) {
+                    return pFeat;
+                }
+            }
+        }
+    }
+    return CRef<CSeq_feat>();
+}
+
+
 void CFastaReader::AssembleSeq(ILineErrorListener * pMessageListener)
 {
     CSeq_inst& inst = m_CurrentSeq->SetInst();
@@ -1511,9 +1527,22 @@ void CFastaReader::AssembleSeq(ILineErrorListener * pMessageListener)
                                 ->SetLiteral().SetSeq_data());
             inst.ResetExt();
         }
+    }
 
+    if (inst.IsAa() && inst.IsSetLength() && inst.GetLength() > 0) { // RW-2605 - once sequence length is known, convert prot-feat location to interval
+        if (m_CurrentSeq->IsSetAnnot()) {
+            if (auto pProtFeat = s_FetchProtFeat(m_CurrentSeq->SetAnnot()); pProtFeat) {
+                if (pProtFeat->IsSetLocation() && pProtFeat->GetLocation().IsWhole()) {
+                    auto pSeqId = Ref(new CSeq_id());
+                    pSeqId->Assign(pProtFeat->GetLocation().GetWhole());
+                    auto pSeq_int = Ref(new CSeq_interval(*pSeqId, 0, inst.GetLength() - 1));
+                    pProtFeat->SetLocation().SetInt(*pSeq_int);
+                }
+            }
+        }
     }
 }
+
 
 static void s_AddBiomol(CMolInfo::EBiomol biomol, CBioseq& bioseq)
 {
