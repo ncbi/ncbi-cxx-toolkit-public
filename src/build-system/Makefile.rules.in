@@ -73,6 +73,13 @@ else
     CPPFLAGS += -I$(srcdir:$(top_srcdir)/src/%=$(includedir)/%)
 endif
 
+ifneq "" "$(filter %/ccc-analyzer,$(CC))"
+  override CC += $(wordlist 2,$(words $(ORIG_CC)),$(ORIG_CC))
+endif
+ifneq "" "$(filter %/c++-analyzer,$(CXX))"
+  override CXX += $(wordlist 2,$(words $(ORIG_CXX)),$(ORIG_CXX))
+endif
+
 ###  C++ compilation
 make_cpp = $(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
 ###  C compilation
