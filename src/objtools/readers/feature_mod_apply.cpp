@@ -1,34 +1,34 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Authors:  Justin Foley
-*
-* File Description:
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Justin Foley
+ *
+ * File Description:
+ *
+ * ===========================================================================
+ */
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
@@ -39,6 +39,7 @@
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/Prot_ref.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 
 #include <objtools/logging/message.hpp>
 #include <objtools/logging/listener.hpp>
@@ -54,9 +55,9 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CFeatModApply::CFeatModApply(CBioseq& bioseq,
-        FReportError fReportError,
-        TSkippedMods& skipped_mods) :
+CFeatModApply::CFeatModApply(CBioseq&      bioseq,
+                             FReportError  fReportError,
+                             TSkippedMods& skipped_mods) :
     m_Bioseq(bioseq),
     m_fReportError(fReportError),
     m_SkippedMods(skipped_mods) {}
@@ -68,7 +69,7 @@ CFeatModApply::~CFeatModApply() {}
 bool CFeatModApply::Apply(const TModEntry& mod_entry)
 {
     // A nucleotide sequence cannot have protein feature annotations
-    static unordered_set<string> protein_quals = {"protein-desc", "protein", "ec-number", "activity"};
+    static unordered_set<string> protein_quals = { "protein-desc", "protein", "ec-number", "activity" };
     if (m_Bioseq.IsNa() &&
         protein_quals.find(x_GetModName(mod_entry)) != protein_quals.end()) {
 
@@ -91,18 +92,16 @@ bool CFeatModApply::Apply(const TModEntry& mod_entry)
             qual_names.insert(mod_data.GetName());
         }
         string name_string;
-        bool first_name = true;
+        bool   first_name = true;
         for (const auto& name : qual_names) {
             if (first_name) {
                 first_name = false;
-            }
-            else {
+            } else {
                 name_string += ", ";
             }
-            name_string  += name;
+            name_string += name;
         }
-        string msg = "Cannot apply protein modifier to nucleotide sequence. The following modifiers will be ignored: "
-                   + name_string + ".";
+        string msg = "Cannot apply protein modifier to nucleotide sequence. The following modifiers will be ignored: " + name_string + ".";
 
         NCBI_THROW(CModReaderException, eInvalidModifier, msg);
     }
@@ -157,23 +156,38 @@ bool CFeatModApply::x_TryProtRefMod(const TModEntry& mod_entry)
 }
 
 
+static CRef<CSeq_loc> s_GetProtFeatLoc(const CBioseq& prot_seq)
+{
+    auto pSeqLoc = Ref(new CSeq_loc());
+    auto pSeqId  = FindBestChoice(prot_seq.GetId(), CSeq_id::BestRank);
+    if (pSeqId) {
+        if (prot_seq.IsSetLength() && prot_seq.GetLength()>0) { // prefer Seq-loc.int over Seq-loc.whole
+            auto pSeq_int = Ref(new CSeq_interval(*pSeqId, 0, prot_seq.GetLength()-1));
+            pSeqLoc->SetInt(*pSeq_int);
+        } else {
+            pSeqLoc->SetWhole(*pSeqId);
+        }
+    }
+    return pSeqLoc;
+}
+
+
 CSeq_feat& CFeatModApply::x_SetProtein(void)
 {
 
-    if (!m_pProtein) {
-        m_pProtein = x_FindSeqfeat([](const CSeq_feat& seq_feat)
-                { return (seq_feat.IsSetData() &&
-                          seq_feat.GetData().IsProt()); });
+    if (! m_pProtein) {
+        m_pProtein = x_FindSeqfeat([](const CSeq_feat& seq_feat) { return (seq_feat.IsSetData() &&
+                                                                           seq_feat.GetData().IsProt()); });
 
-        if (!m_pProtein) {
-            auto pFeatLoc = x_GetWholeSeqLoc();
+        if (! m_pProtein) {
+            auto pFeatLoc = s_GetProtFeatLoc(m_Bioseq);
             m_pProtein =
                 x_CreateSeqfeat([]() {
                     auto pData = Ref(new CSeqFeatData());
                     pData->SetProt();
                     return pData;
-                    },
-                    *pFeatLoc);
+                },
+                                *pFeatLoc);
         }
     }
 
@@ -192,16 +206,6 @@ const string& CFeatModApply::x_GetModValue(const TModEntry& mod_entry)
     return CModHandler::AssertReturnSingleValue(mod_entry);
 }
 
-
-CRef<CSeq_loc> CFeatModApply::x_GetWholeSeqLoc(void)
-{
-    auto pSeqLoc = Ref(new CSeq_loc());
-    auto pSeqId = FindBestChoice(m_Bioseq.GetId(), CSeq_id::BestRank);
-    if (pSeqId) {
-        pSeqLoc->SetWhole(*pSeqId);
-    }
-    return pSeqLoc;
-}
 
 
 CRef<CSeq_feat> CFeatModApply::x_FindSeqfeat(FVerifyFeat fVerifyFeature)
@@ -223,12 +227,12 @@ CRef<CSeq_feat> CFeatModApply::x_FindSeqfeat(FVerifyFeat fVerifyFeature)
 
 
 CRef<CSeq_feat> CFeatModApply::x_CreateSeqfeat(
-        FCreateFeatData fCreateFeatData,
-        const CSeq_loc& feat_loc)
+    FCreateFeatData fCreateFeatData,
+    const CSeq_loc& feat_loc)
 {
     auto pSeqfeat = Ref(new CSeq_feat());
     pSeqfeat->SetData(*fCreateFeatData());
-    pSeqfeat->SetLocation(const_cast<CSeq_loc&>(feat_loc));
+    pSeqfeat->SetLocation().Assign(feat_loc);
 
     auto pAnnot = Ref(new CSeq_annot());
     pAnnot->SetData().SetFtable().push_back(pSeqfeat);
