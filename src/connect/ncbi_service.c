@@ -331,7 +331,7 @@ size_t SERV_CheckDomain(const char* domain)
 static size_t s_SearchPrefix(const char* svc, size_t len)
 {
     /* See: CXX-14373 */
-    static struct {
+    static const struct {
         size_t      lablen;  /* strlen(label) - 1 */
         const char* label;
     } kLegacyLabel[] = {
@@ -362,8 +362,9 @@ static size_t s_SearchPrefix(const char* svc, size_t len)
         lablen = (size_t)(end - beg);
         assert(lablen > 1);
         if (SERV_LABLEN_MIN <= lablen  &&  lablen <= SERV_LABLEN_MAX) {
-            /* The current label array has a nice property, so we take advantage *
-             * of that, but this may need rework for a more generic search case. */
+            /* The current label array has a nice property, so we take advantage
+             * of that, but this may need a rework for a more generic search case.
+             */
             size_t n = lablen - SERV_LABLEN_MIN;
             assert(n < sizeof(kLegacyLabel) / sizeof(kLegacyLabel[0]));
             assert(lablen == kLegacyLabel[n].lablen);
