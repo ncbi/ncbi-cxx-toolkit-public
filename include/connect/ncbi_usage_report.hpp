@@ -41,7 +41,6 @@
  * 0, FALSE, NO, or OFF (case-insensitive), it disables reporting as well.
  *    DO_NOT_TRACK=1
  * It have priority over NCBI_USAGE_REPORT_ENABLED. 
- * See Console Do Not Track standard: https://consoledonottrack.com/
  * 
  * For working usage sample of this API, please see:
  *    src/sample/app/connect/ncbi_usage_report_api_sample.cpp
@@ -143,7 +142,6 @@ public:
     ///   0, FALSE, NO, or OFF (case-insensitive), it disables reporting as well.
     ///      DO_NOT_TRACK=1
     ///   It have priority over NCBI_USAGE_REPORT_ENABLED. 
-    ///   See Console Do Not Track standard: https://consoledonottrack.com/.
     /// @sa SetEnabled(), CUsageReport
     ///
     static void SetEnabled(bool enable = true);
