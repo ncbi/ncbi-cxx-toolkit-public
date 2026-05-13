@@ -72,7 +72,7 @@ bool ConvertDoubleQuotes(string& str)
 }
 
 
-bool CleanVisString( string &str );
+bool CleanVisString( string &str, bool allow_trailing_punctuation = false  );
 
 bool CleanVisStringJunk( string &str, bool allow_ellipses = false );
 
