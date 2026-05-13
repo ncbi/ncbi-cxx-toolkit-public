@@ -190,7 +190,6 @@ static int/*bool*/ s_LoadServices(SERV_ITER iter)
         if (svc[len])
             svc[len++] = '\0';
         if ((name = SERV_ServiceName(svc)) != 0) {
-            name[strcspn(name, ".")] = '\0';
             if (*name
                 &&  (iter->reverse_dns
                      || (iter->ismask

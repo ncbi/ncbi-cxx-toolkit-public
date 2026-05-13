@@ -165,23 +165,25 @@ char* SERV_Print
 
 /* Private interface:  get the final service name, using the
  * "<service>_CONN_SERVICE_NAME" environment variable(s), then (if not found)
- * registry section "[<service>]" and a key "CONN_SERVICE_NAME".
+ * registry section "[<service>]" with a key "CONN_SERVICE_NAME".
  * Return the resultant name (perhaps, an exact copy of "service" if no
  * override name has been found in the environment/registry), which is to be
  * 'free()'d by the caller when no longer needed.
- * Return NULL on error (bad service name or recursion).
+ * Return NULL on error (bad service name or deep recursion).
  * NOTE:  NULL or too long service name gets an error output to the log.
  * NOTE:  This procedure can detect cyclic redefinitions, and is limited to a
- * certain search depth.
+ *        certain search depth.
  * NOTE:  If the service gets redefined with itself (case-blindly) then the
- * search ends without an error, and a flag is set to use the resultant name
- * case-sensitively (in mappers that support that).
+ *        search ends without an error, and a flag is set to use the final
+ *        name case-sensitively (in mappers that support that).
+ * @sa
+ *   SERV_ServiceNameInternal
  */
 char* SERV_ServiceName(const char* service);
 
 
 /* Private interface:  check a string to be a valid domain name and return
- * its length (not couting any leading and / or trailing dot);  or return
+ * its length (not counting any leading and / or trailing dot);  or return
  * 0 if the domain name is not valid.  Note that "." is not accepted as a
  * valid domain name.
  */

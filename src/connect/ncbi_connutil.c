@@ -338,13 +338,16 @@ static const char* s_GetValue(const char* svc, size_t svclen,
             assert(retval == value);
         }
     }
-    if (*value) {
+#ifdef _DEBUG
+    if (!retval  ||  (!*value  &&  def_value  &&  *def_value)
+        ||  (*value  &&  (!def_value  ||  strcmp(value, def_value) != 0))) {
         CORE_TRACEF(("ConnNetInfo(%s%.*s%s%.*s=\"%s\"): %s%s%s", &"\""[!svclen],
                      (int) svclen, svc,   svclen ? "\", " : "",
                      (int) parlen, param, value,
                      &"\""[!retval], retval ? retval : "NULL",
                      &"\""[!retval]));
     }
+#endif /*_DEBUG*/
     return retval;
 }
 
@@ -406,7 +409,7 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
     assert(!service  ||  *service);
 
     service_only = 0/*false*/;
-    retval = s_GetValue(service, service ? strcspn(service, ".") : 0,
+    retval = s_GetValue(service, service ? strlen(service) : 0,
                         param, parlen, value, value_size, def_value,
                         &service_only, strncasecmp);
     if (service)
@@ -797,9 +800,9 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     double dbl;
     char*  e;
 
+    svclen = service  &&  *service ? strlen(service) : 0;
     assert(!service  ||  !*service  ||
-           (!NCBI_HasSpaces(service, strlen(service))  &&  !strpbrk(service, "?*[")));
-    svclen = service  &&  *service ? strcspn(service, ".") : 0;
+           (!NCBI_HasSpaces(service, svclen)  &&  !strpbrk(service, ".?*[")));
 
     /* NB: created *NOT* cleared up with all 0s */
     if (!(info = (SConnNetInfo*) malloc(sizeof(*info) + svclen)))
