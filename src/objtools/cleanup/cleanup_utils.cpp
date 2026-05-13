@@ -70,7 +70,7 @@ BEGIN_SCOPE(objects)
 
 using namespace sequence;
 
-bool CleanVisString( string &str )
+bool CleanVisString( string &str, bool allow_trailing_punctuation )
 {
     bool changed = false;
 
@@ -100,6 +100,12 @@ bool CleanVisString( string &str )
         // nothing to chop of the end
         return changed;
     } else if( str[last_good_char_pos+1] == ';' ) {
+
+        // RW-2685: override intended to capture original user-supplied Seq-id string that may end in semicolon
+        if (allow_trailing_punctuation) {
+            return changed;
+        }
+
         // special extra logic for semicolons because it might be part of
         // an HTML character like "&nbsp;"
 

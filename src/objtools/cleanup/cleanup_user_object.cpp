@@ -84,7 +84,7 @@ bool CCleanup::x_CleanupUserField(CUser_field& field)
         switch (field.GetData().Which()) {
         case CUser_field::TData::e_Str:
             any_change |= Asn2gnbkCompressSpaces(field.SetData().SetStr());
-            any_change |= CleanVisString(field.SetData().SetStr());
+            any_change |= CleanVisString(field.SetData().SetStr(), true);
             break;
         case CUser_field::TData::e_Object:
             any_change |= CleanupUserObject(field.SetData().SetObject());
@@ -99,7 +99,7 @@ bool CCleanup::x_CleanupUserField(CUser_field& field)
             // does not work here
             for (auto str = field.SetData().SetStrs().begin(); str != field.SetData().SetStrs().end(); str++) {
                 any_change |= Asn2gnbkCompressSpaces(*str);
-                any_change |= CleanVisString(*str);
+                any_change |= CleanVisString(*str, true);
             }
             break;
         case CUser_field::TData::e_Fields:
