@@ -368,7 +368,9 @@ AC_ARG_WITH(ftds,
 AC_ARG_WITH(ftds-renamed,
    [ --without-ftds-renamed  do not rename Sybase DBLIB symbols in built-in FTDS])
 AC_ARG_WITH(ftds-tls,
-   [ --with-ftds-tls=IMPL    use gnutls/openssl/auto/NONE by built-in FTDS])
+   [ --with-ftds-tls=IMPL    use gnutls/openssl/auto/NO(NE) by built-in FTDS])
+AC_ARG_WITH(ftds-tls,
+   [ --with-ftds-tls         like =auto, but require some implementation])
 AC_ARG_WITH(mysql,
    [ --without-mysql         do not use MySQL])
 AC_ARG_WITH(mysql,
@@ -753,7 +755,7 @@ geo included-geo vdb downloaded-vdb static-vdb ngs ncbicrypt libunwind libdw \
 backward-cpp backward-cpp-sig \
 z bz2 lzo zstd pcre pcre2 mbedtls \
 gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
-sybase sybase-local sybase-new ftds mysql \
+sybase sybase-local sybase-new ftds ftds-tls mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx gl2ps \
 bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
@@ -1006,7 +1008,12 @@ case "$with_ftds_tls" in
    [[Aa][Uu][Tt][Oo]] )
       with_ftds_tls=auto
       ;;
-   '' | [[Nn][Oo][Nn][Ee]] )
+   yes )
+      if test "x$with_gnutls:$with_openssl" = xno:no; then
+         AC_MSG_ERROR([incompatible options: --without-gnutls and --without-openssl but --with-ftds-tls=$with_ftds_tls])
+      fi
+      ;;
+   '' | no | [[Nn][Oo][Nn][Ee]] )
       with_ftds_tls=none
       ;;
    * )
@@ -5041,11 +5048,14 @@ if test "$with_openssl" != no; then
    LIBS=$orig_LIBS
 fi
 
-if test "$with_ftds_tls:$with_openssl" = auto:no; then
-   def_with_gnutls=yes
-else
-   def_with_gnutls=no
-fi
+case "$with_ftds_tls:$with_openssl" in
+   auto:no | yes:no )
+      def_with_gnutls=yes
+      ;;
+   * )
+      def_with_gnutls=no
+      ;;
+esac
 
 if test "x${with_mbedtls-no}" != xno; then
    case "$with_mbedtls" in
@@ -5573,13 +5583,13 @@ if test "$with_ftds" != "no" ; then
    FTDS_TLS_INCLUDE=
    # Already canonicalized to lowercase
    case "$with_ftds_tls::$OPENSSL_LIBS::$GNUTLS_LIBS" in
-      openssl::* | auto::?*::* )
+      openssl::* | auto::?*::* | yes::?*::* )
          FTDS_TLS_INCLUDE="$OPENSSL_INCLUDE"
          FTDS_TLS_LIBS="$OPENSSL_LIBS"
          AC_DEFINE(NCBI_FTDS_USES_OPENSSL, 1,
                    [Define to 1 if built-in FreeTDS should support using OpenSSL.])
          ;;
-      gnutls::* | auto::*::?* )
+      gnutls::* | auto::*::?* | yes::*::?* )
          FTDS_TLS_INCLUDE="$GNUTLS_INCLUDE"
          FTDS_TLS_LIBS="$GNUTLS_LIBS"
          AC_DEFINE(NCBI_FTDS_USES_GNUTLS, 1,
@@ -5587,6 +5597,9 @@ if test "$with_ftds" != "no" ; then
          ;;
       auto::* )
          AC_MSG_WARN([No supported TLS implementation available for --with-ftds-tls=auto])
+         ;;
+      yes::* )
+         AC_MSG_ERROR([No supported TLS implementation available for --with-ftds-tls])
          ;;
    esac
    : ${FTDS_CTLIBS:="-lct -ltds $NETWORK_LIBS"}

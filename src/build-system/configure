@@ -1976,7 +1976,7 @@ geo included-geo vdb downloaded-vdb static-vdb ngs ncbicrypt libunwind libdw \
 backward-cpp backward-cpp-sig \
 z bz2 lzo zstd pcre pcre2 mbedtls \
 gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
-sybase sybase-local sybase-new ftds mysql \
+sybase sybase-local sybase-new ftds ftds-tls mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx gl2ps \
 bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
@@ -2307,7 +2307,8 @@ Optional Packages:
  --without-ftds          do not use FreeTDS libraries
  --with-ftds=DIR         use FreeTDS installation in DIR
  --without-ftds-renamed  do not rename Sybase DBLIB symbols in built-in FTDS
- --with-ftds-tls=IMPL    use gnutls/openssl/auto/NONE by built-in FTDS
+ --with-ftds-tls=IMPL    use gnutls/openssl/auto/NO(NE) by built-in FTDS
+ --with-ftds-tls         like =auto, but require some implementation
  --without-mysql         do not use MySQL
  --with-mysql=DIR        use MySQL installation in DIR
  --without-opengl        do not use OpenGL
@@ -5212,6 +5213,12 @@ if test "${with_ftds_tls+set}" = set; then :
 fi
 
 
+# Check whether --with-ftds-tls was given.
+if test "${with_ftds_tls+set}" = set; then :
+  withval=$with_ftds_tls;
+fi
+
+
 # Check whether --with-mysql was given.
 if test "${with_mysql+set}" = set; then :
   withval=$with_mysql;
@@ -6447,7 +6454,12 @@ case "$with_ftds_tls" in
    [Aa][Uu][Tt][Oo] )
       with_ftds_tls=auto
       ;;
-   '' | [Nn][Oo][Nn][Ee] )
+   yes )
+      if test "x$with_gnutls:$with_openssl" = xno:no; then
+         as_fn_error $? "incompatible options: --without-gnutls and --without-openssl but --with-ftds-tls=$with_ftds_tls" "$LINENO" 5
+      fi
+      ;;
+   '' | no | [Nn][Oo][Nn][Ee] )
       with_ftds_tls=none
       ;;
    * )
@@ -19256,11 +19268,14 @@ done
    LIBS=$orig_LIBS
 fi
 
-if test "$with_ftds_tls:$with_openssl" = auto:no; then
-   def_with_gnutls=yes
-else
-   def_with_gnutls=no
-fi
+case "$with_ftds_tls:$with_openssl" in
+   auto:no | yes:no )
+      def_with_gnutls=yes
+      ;;
+   * )
+      def_with_gnutls=no
+      ;;
+esac
 
 if test "x${with_mbedtls-no}" != xno; then
    case "$with_mbedtls" in
@@ -21319,14 +21334,14 @@ if test "$with_ftds" != "no" ; then
    FTDS_TLS_INCLUDE=
    # Already canonicalized to lowercase
    case "$with_ftds_tls::$OPENSSL_LIBS::$GNUTLS_LIBS" in
-      openssl::* | auto::?*::* )
+      openssl::* | auto::?*::* | yes::?*::* )
          FTDS_TLS_INCLUDE="$OPENSSL_INCLUDE"
          FTDS_TLS_LIBS="$OPENSSL_LIBS"
 
 $as_echo "#define NCBI_FTDS_USES_OPENSSL 1" >>confdefs.h
 
          ;;
-      gnutls::* | auto::*::?* )
+      gnutls::* | auto::*::?* | yes::*::?* )
          FTDS_TLS_INCLUDE="$GNUTLS_INCLUDE"
          FTDS_TLS_LIBS="$GNUTLS_LIBS"
 
@@ -21336,6 +21351,9 @@ $as_echo "#define NCBI_FTDS_USES_GNUTLS 1" >>confdefs.h
       auto::* )
          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: No supported TLS implementation available for --with-ftds-tls=auto" >&5
 $as_echo "$as_me: WARNING: No supported TLS implementation available for --with-ftds-tls=auto" >&2;}
+         ;;
+      yes::* )
+         as_fn_error $? "No supported TLS implementation available for --with-ftds-tls" "$LINENO" 5
          ;;
    esac
    : ${FTDS_CTLIBS:="-lct -ltds $NETWORK_LIBS"}
