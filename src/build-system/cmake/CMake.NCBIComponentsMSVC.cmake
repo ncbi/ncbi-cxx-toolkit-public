@@ -378,7 +378,7 @@ endif()
 # Boost.Spirit
 if(NOT NCBI_COMPONENT_Boost.Spirit_FOUND)
     if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
-        NCBI_define_Wcomponent(Boost.Spirit libboost_thread.lib libboost_date_time.lib libboost_chrono.lib)
+        NCBI_define_Wcomponent(Boost.Spirit libboost_thread.lib)
     else()
         NCBI_define_Wcomponent(Boost.Spirit libboost_thread.lib boost_thread.lib boost_system.lib boost_date_time.lib boost_chrono.lib)
     endif()
