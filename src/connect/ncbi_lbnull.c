@@ -55,6 +55,8 @@
 
 /* Regular: */
 
+#define REG_CONN_LBNULL_PREFIX                               "LBNULL_PREFIX"
+
 #define REG_CONN_LBNULL_DOMAIN                               "LBNULL_DOMAIN"
 
 #define REG_CONN_LBNULL_VHOST                                "LBNULL_VHOST"
@@ -251,19 +253,23 @@ static void x_tr(char* dst, const char* src, size_t len, char x, char y)
 
 const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
                                      SSERV_Info** info,
+                                     int/*bool*/  exact,
+                                     const char*  default_prefix,
                                      const char*  default_domain)
 {
-    char buf[CONN_PATH_LEN + 1];
+    char buf[CONN_PATH_LEN + 1], temp[80];
     TSERV_TypeOnly type, types;
     struct SLBNULL_Data* data;
+    size_t len, pfxlen, domlen;
     int/*bool*/ vhost = 0;
     const char* path = 0;
     unsigned long port;
-    size_t len, domlen;
     char* domain;
 
     assert(iter  &&  !iter->data  &&  !iter->op  &&  !iter->external);
     assert(!iter->ismask  &&  *iter->name  &&  !strchr(iter->name, '/'));
+    assert(!default_prefix  ||  (*default_prefix  &&  *default_prefix != '-'
+                                 &&  default_prefix[strlen(default_prefix) - 1] != '-'));
     assert(!default_domain  ||  (*default_domain  &&  *default_domain != '.'));
 
     /* Can process fSERV_Any (basically meaning fSERV_Standalone), and explicit
@@ -276,7 +282,9 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     if (types  &&  !(type &= types))
         return 0;
 
-    CORE_TRACEF(("SERV_LBNULL_Open(\"%s%s%s\")", iter->name,
+    CORE_TRACEF(("SERV_LBNULL_Open(\"%s%s%s%s%s\")",
+                 default_prefix ? default_prefix : "", &"-"[!default_prefix],
+                 iter->name,
                  &"."[!default_domain], default_domain ? default_domain : ""));
 
     assert(CONN_HOST_LEN + 1 < sizeof(buf));
@@ -302,7 +310,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     if (!(type & fSERV_Dns)  &&  (type & fSERV_Http)) {
         vhost = ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
                                     (iter->name, REG_CONN_LBNULL_VHOST,
-                                     buf, sizeof(buf), 0));
+                                     temp, sizeof(temp), 0));
         if (!ConnNetInfo_GetValueService(iter->name, REG_CONN_LBNULL_PATH,
                                          buf, sizeof(buf), "/")) {
             CORE_LOGF_X(89, eLOG_Error,
@@ -321,25 +329,25 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     }
 
     if (!ConnNetInfo_GetValueInternal(iter->name, REG_CONN_LBNULL_PORT,
-                                      buf, sizeof(buf), 0)) {
+                                      temp, sizeof(temp), 0)) {
         CORE_LOGF_X(91, eLOG_Error,
                     ("[%s]  Cannot obtain port number for LBNULL",
                      iter->name));
         goto out;
     }
     port = 0;
-    if (*buf) {
-        if (isdigit((unsigned char)(*buf))) {
+    if (*temp) {
+        if (isdigit((unsigned char)(*temp))) {
             char* end;
             errno = 0;
-            port = strtoul(buf, &end, 0);
+            port = strtoul(temp, &end, 0);
             if (errno  ||  *end  ||  port > 0xFFFF)
                 port = 0;
         }
         if (!port) {
             CORE_LOGF_X(92, eLOG_Error,
                         ("[%s]  Bad port number \"%s\" for LBNULL",
-                         iter->name, buf));
+                         iter->name, temp));
             goto out;
         }
         assert(port);
@@ -347,14 +355,32 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
         port = CONN_PORT_LBNULL;
     CORE_TRACEF(("[%s]  LBNULL using port number :%lu", iter->name, port));
 
-    if (ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
-                            (iter->name, REG_CONN_LBNULL_ASIS,
-                             buf, sizeof(buf), 0))) {
-        memcpy(buf, iter->name, len);
-    } else {
-        x_tr(buf, iter->name, len, '_', '-');
-        buf[0] = iter->name[0];
+    if (!ConnNetInfo_GetValueService(iter->name, REG_CONN_LBNULL_PREFIX,
+                                     buf, sizeof(buf) - (CONN_HOST_LEN + 1),
+                                     default_prefix)) {
+        CORE_LOGF_X(97, eLOG_Error,
+                    ("[%s]  Cannot obtain prefix name for LBNULL",
+                     iter->name));
+        goto out;
     }
+    pfxlen = strlen(buf);
+    if (pfxlen) {
+        buf[pfxlen++] = '-';
+        if (pfxlen + len >= sizeof(buf) - (CONN_HOST_LEN + 1)) {
+            CORE_LOGF_X(98, eLOG_Error,
+                        ("[%s]  Prefixed service name to long for LBNULL",
+                         iter->name));
+            goto out;
+        }
+    }
+
+    if (exact  ||  ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
+                                       (iter->name, REG_CONN_LBNULL_ASIS,
+                                        temp, sizeof(temp), 0))) {
+        memcpy(buf + pfxlen, iter->name, len);
+    } else
+        x_tr(buf + pfxlen, iter->name, len, '_', '-');
+    len += pfxlen;
     domain = buf + len + 1;
 
     if (!ConnNetInfo_GetValueInternal(iter->name, REG_CONN_LBNULL_DOMAIN,

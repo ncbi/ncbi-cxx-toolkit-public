@@ -44,6 +44,8 @@ extern "C" {
 
 const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
                                      SSERV_Info** info,
+                                     int/*bool*/  exact,
+                                     const char*  prefix,
                                      const char*  domain);
 
 
