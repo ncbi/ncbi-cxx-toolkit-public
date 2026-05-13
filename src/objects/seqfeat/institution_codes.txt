@@ -7330,6 +7330,7 @@ SRGH	s	Botanic Garden
 SRH	s	Bard College at Simon's Rock			
 SRI	s	Serengetti Research Institute			
 SRJC	s	Santa Rosa Junior College			
+SRLAR	s	Somali Region Livestock and Agricultural Research Institute			
 SRNP	s	Insects of the Area Conservacion Guanacaste, northwestern Costa Rica			
 SRP	s	Boise State University, Biology Department			
 SRPARI	s	Somali Region Pastoral and Agro-pastoral Research Institute			
@@ -8335,6 +8336,7 @@ UQAT	s	Universite du Quebec en Abitibi-Temiscamingue
 UQH	s	University of Qom			
 UQIC	s	University of Queensland Insect Collection			
 UQTR	s	Universite du Quebec a Trois-Rivieres, Departement de chimie-biologie			
+UQUH	s	Umm Al-Qura University			
 UR	s	Instituto Federal de Educacao, Ciencia e Tecnologia Goiano, Campus Urutai			
 URB	s	Ryukyu University Department of Zoology			
 URI	s	Naturforschende Gesellschaft Uri			
