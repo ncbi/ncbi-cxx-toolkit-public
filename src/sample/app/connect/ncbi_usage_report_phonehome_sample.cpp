@@ -46,7 +46,6 @@
  *    ncbi_usage_report_api_sample.cpp.
  *
  * 4) Used CUsageReport API follow the rules of the Console Do Not Track standard:
- *    https://consoledonottrack.com/
  *    If DO_NOT_TRACK environment variable is set to any value other than
  *    0, FALSE, NO, or OFF (case-insensitive), it disables telemetry even if
  *    user opted in.
@@ -430,6 +429,10 @@ void CUsageReportPhoneHomeSampleApp::Exit()
 
 int main(int argc, const char* argv[])
 {
+    string a = "sss";
+    auto b = (a == kEmptyStr);
+
+    return 0;
     // Each application have a name. It can be specified as last parameter
     // in arguments to AppMain, or extracted from the executable file name.
     // So it can be automatically used for reporting.
