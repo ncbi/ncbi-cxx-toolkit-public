@@ -4,7 +4,7 @@ endif()
 # Boost: headers and libs
 set(Boost_USE_MULTITHREADED     ON)
 set(Boost_REQUESTED_COMPONENTS
-    system thread filesystem iostreams
+    thread filesystem iostreams
     unit_test_framework
     context chrono date_time regex serialization timer
 )
@@ -96,10 +96,10 @@ else()
 endif()
 
 #############################################################################
-if(TARGET Boost::thread AND TARGET Boost::system)
+if(TARGET Boost::thread)
     message(STATUS "Found Boost.Spirit")
     set(NCBI_COMPONENT_Boost.Spirit_FOUND YES)
-    set(NCBI_COMPONENT_Boost.Spirit_LIBS    Boost::thread Boost::system)
+    set(NCBI_COMPONENT_Boost.Spirit_LIBS    Boost::thread)
 else()
     NCBI_notice("NOT FOUND Boost.Spirit")
     set(NCBI_COMPONENT_Boost.Spirit_FOUND NO)
