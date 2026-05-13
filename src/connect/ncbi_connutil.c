@@ -338,16 +338,13 @@ static const char* s_GetValue(const char* svc, size_t svclen,
             assert(retval == value);
         }
     }
-#ifdef _DEBUG
-    if (!retval  ||  (!*value  &&  def_value  &&  *def_value)
-        ||  (*value  &&  (!def_value  ||  strcmp(value, def_value) != 0))) {
+    if (*value  ||  (!*value  &&  def_value  &&  *def_value)) {
         CORE_TRACEF(("ConnNetInfo(%s%.*s%s%.*s=\"%s\"): %s%s%s", &"\""[!svclen],
                      (int) svclen, svc,   svclen ? "\", " : "",
                      (int) parlen, param, value,
                      &"\""[!retval], retval ? retval : "NULL",
                      &"\""[!retval]));
     }
-#endif /*_DEBUG*/
     return retval;
 }
 
@@ -359,11 +356,11 @@ const char* ConnNetInfo_GetValueInternal(const char* service,const char* param,
     int/*bool*/ service_only = 0/*false*/;
     size_t      parlen = strlen(param);
     assert(!service  ||
-           (!NCBI_HasSpaces(service, strlen(service))  &&  !strpbrk(service, "?*[")));
+           (!NCBI_HasSpaces(service, strlen(service))  &&  !strpbrk(service, ".?*[")));
     assert(parlen  &&  !NCBI_HasSpaces(param, parlen));
     assert(value  &&  value_size);
     *value = '\0';
-    return s_GetValue(service, service  &&  *service ? strcspn(service, ".") : 0,
+    return s_GetValue(service, service  &&  *service ? strlen(service) : 0,
                       param, parlen, value, value_size, def_value,
                       &service_only, strncmp);
 }
@@ -378,11 +375,11 @@ const char* ConnNetInfo_GetValueService(const char* service, const char* param,
     size_t      parlen = strlen(param);
     const char* retval;
     assert(service  &&  *service  &&
-           (!NCBI_HasSpaces(service, strlen(service))  &&  !strpbrk(service, "?*[")));
+           (!NCBI_HasSpaces(service, strlen(service))  &&  !strpbrk(service, ".?*[")));
     assert(parlen  &&  !NCBI_HasSpaces(param, parlen));
     assert(value  &&  value_size);
     *value = '\0';
-    retval = s_GetValue(service, strcspn(service, "."),
+    retval = s_GetValue(service, strlen(service),
                         param, parlen, value, value_size, def_value,
                         &service_only, strncmp);
     assert(!service_only);

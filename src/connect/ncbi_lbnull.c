@@ -271,6 +271,8 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     assert(!default_prefix  ||  (*default_prefix  &&  *default_prefix != '-'
                                  &&  default_prefix[strlen(default_prefix) - 1] != '-'));
     assert(!default_domain  ||  (*default_domain  &&  *default_domain != '.'));
+    assert(!default_prefix  ||  default_domain);
+    assert(sizeof(buf) > CONN_HOST_LEN + 1);
 
     /* Can process fSERV_Any (basically meaning fSERV_Standalone), and explicit
      * fSERV_Dns, fSERV_Http and fSERV_Standalone only, which all, as a matter
@@ -355,9 +357,11 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
         port = CONN_PORT_LBNULL;
     CORE_TRACEF(("[%s]  LBNULL using port number :%lu", iter->name, port));
 
-    if (!ConnNetInfo_GetValueService(iter->name, REG_CONN_LBNULL_PREFIX,
-                                     buf, sizeof(buf) - (CONN_HOST_LEN + 1),
-                                     default_prefix)) {
+    if (!default_prefix  &&  default_domain)
+        *buf = '\0';  /* prefix already in-place */
+    else if (!ConnNetInfo_GetValueInternal(iter->name, REG_CONN_LBNULL_PREFIX,
+                                           buf, sizeof(buf) - (CONN_HOST_LEN + 1),
+                                           default_prefix)) {
         CORE_LOGF_X(97, eLOG_Error,
                     ("[%s]  Cannot obtain prefix name for LBNULL",
                      iter->name));
@@ -384,7 +388,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     domain = buf + len + 1;
 
     if (!ConnNetInfo_GetValueInternal(iter->name, REG_CONN_LBNULL_DOMAIN,
-                                      domain, (CONN_HOST_LEN + 1) - len,
+                                      domain, CONN_HOST_LEN + 1,
                                       default_domain)) {
         CORE_LOGF_X(93, eLOG_Error,
                     ("[%s]  Cannot obtain domain name for LBNULL",
@@ -406,7 +410,6 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
         } else
             memmove(domain - 1, domain, domlen);
         len += domlen;
-        assert(len <= CONN_HOST_LEN + 1);
         if (len > CONN_HOST_LEN) {
             CORE_LOGF_X(95, eLOG_Error,
                         ("[%s]  Domain name \"%.*s\" too long for LBNULL",
@@ -429,7 +432,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
 
     data->debug = ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
                                       (0, REG_CONN_LBNULL_DEBUG,
-                                       buf, sizeof(buf), 0));
+                                       temp, sizeof(temp), 0));
     data->vhost =                  vhost ? 1 : 0;
     data->type  =                  type;
     data->port  = (unsigned short) port;
