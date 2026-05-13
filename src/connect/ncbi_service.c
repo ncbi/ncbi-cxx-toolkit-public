@@ -431,9 +431,9 @@ static char* x_ServiceName(unsigned int* depth,
                            int*/*bool*/ ismask, int*/*bool*/ isfast,
                            const char** prefix, const char** domain, char** url)
 {
-    char* str;
+    size_t len, pfx, domlen;
     char buf[256];
-    size_t len, pfx;
+    char* str;
 
     assert(depth  &&  ismask  &&  isfast);
     assert(sizeof(buf) > sizeof(REG_CONN_SERVICE_NAME));
@@ -452,7 +452,8 @@ static char* x_ServiceName(unsigned int* depth,
                &&  strcasecmp(service, svc) != 0  &&  !*ismask  &&  (!url  ||  !*url));
     }
     len = !svc ? 0 : !*ismask ? strcspn(svc, ".") : strlen(svc);
-    if (!len  ||  len >= sizeof(buf) - sizeof(REG_CONN_SERVICE_NAME)) {
+    if (!svc  ||  (!len  &&  !*ismask)
+        ||  len >= sizeof(buf) - sizeof(REG_CONN_SERVICE_NAME)) {
         CORE_LOGF_X(7, eLOG_Error,
                     ("%s%s%s%s service name%s%s",
                      service  &&  *service ? "["   : "",
@@ -464,16 +465,22 @@ static char* x_ServiceName(unsigned int* depth,
         svc = 0/*fatal*/;
         goto out;
     }
-    if (len  &&  (!x_CheckServiceName(svc, len, *ismask, svc[len])
-                  ||  (svc[len]/*NB:'.'*/  &&  !SERV_CheckDomain(svc + len)))) {
+    domlen = 0;
+    if (!len) {
+        /* A case of the literal "" service wildcard */
+        assert(!*svc  &&  *ismask  &&  !*depth);
+        pfx = 0;
+    } else if (!x_CheckServiceName(svc, len, *ismask, svc[len])
+               ||  (svc[len]/*NB:'.'*/
+                    &&  !(domlen = SERV_CheckDomain(svc + len)))) {
         if (url  &&  !(*url = strdup(svc))) {
             svc = 0/*fatal*/;
             goto out;
         }
         *ismask = 0/*false*/;
         return 0/*use URL*/;
-    }
-    pfx = !svc[len] ? 0 : s_SearchPrefix(svc, len);
+    } else
+        pfx = !svc[len] ? 0 : s_SearchPrefix(svc, len);
     assert(!pfx  ||  (3 < pfx  &&  pfx < len));
     if (!*ismask  &&  !*isfast) {
         char        tmp[sizeof(buf)];
@@ -547,8 +554,8 @@ static char* x_ServiceName(unsigned int* depth,
          * not expected to be returned (arg == NULL).
          */
         size_t dom = len - pfx;
-        if (domain)
-            len += strlen(svc + len);
+        if (domain  &&  domlen)
+            len += 1 + domlen;
         str = (char*) malloc((prefix ? len : len - pfx) + 1);
         if (str) {
             memcpy(str, svc + pfx, len -= pfx);
@@ -982,6 +989,7 @@ static SERV_ITER x_Open(const char*         service,
 
     svc = s_ServiceName(service, &ismask, &exact, &prefix, &domain, &url);
     assert((!svc  ||  *svc  ||  ismask)  &&  (!url  ||  (*url  &&  !ismask)));
+    assert(svc  ||  (!prefix  &&  !domain));
     if (url  &&  (data = s_InternalMapper(svc, types, url)) != 0) {
         /* Service resolved to some parsable URL -- proceed internally */
         if (!svc) {
@@ -995,7 +1003,7 @@ static SERV_ITER x_Open(const char*         service,
             }
         } else
             assert(*svc);
-        assert(ismask == 0/*false*/);
+        assert(ismask == 0);
         types         &= fSERV_ReverseDns | fSERV_All;
         preferred_host = 0;
         preferred_port = 0;
