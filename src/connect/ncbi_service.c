@@ -97,19 +97,9 @@ static int/*bool*/ x_mkenv(char* dst, const char* src, size_t len)
 }
 
 
-/* Return the service name length or 0 if the name is not valid.
- * Service name must start with a letter or an underscore and be a sequence of
- * (one or more) alphanumeric [incl. underscores] identifiers (which may also
- * include non-consecutive interior minus signs, not adjacent to any underscore)
- * separated by single slashes.  The first identifier must include at least one
- * letter.  Any subsequent identifier(s) may be composed without them.
- * If DNS validation is on ("dns" != 0), then the first character may not be an
- * underscore, nor may underscores be in series or trailing, or follow a minus
- * sign.  Also, exactly only one identifier is allowed (no slashes).
- * NB:  The NCBI C++ Toolkit _registry_ allows [A_Za-z0-9_-/.] in section names
- * (case-insensitively, by default). */
-static size_t x_CheckServiceName(const char* svc, size_t len,
-                                 int/*bool*/ ismask, int/*bool*/ dns)
+/* Service name validation routine */
+size_t SERV_CheckServiceName(const char* svc, size_t len,
+                             int/*bool*/ dns, int/*bool*/ ismask)
 {
     int/*bool*/ alpha = 0/*false*/;  /* there was a letter */
     int/*bool*/ delim = 0/*false*/;  /* previous char was either [-/] */
@@ -321,14 +311,14 @@ size_t SERV_CheckDomain(const char* domain)
 }
 
 
-/* "svc" (of length "len") is assumed to be syntactically valid.  That is, it
- * does not start or end with a dash, nor does it have the dashes in sequence.
- * Also, this routine can only be called for domain-enabled services.
- * Return the string position, 0-based, from the open range
+/* "svc" (of length "len") is assumed to be syntactically valid.  That is,
+ * it does not start or end with a dash, nor does it have the dashes in
+ * sequence.  Also, this routine can be called _only_ for domain-enabled
+ * services.  Return a 0-based string position from the open range
  * (SERV_LABLEN_MIN + 1 .. "len"),
  * where a legacy name appears to start.  Return 0 when none found.
  */
-static size_t s_SearchPrefix(const char* svc, size_t len)
+static size_t x_SearchPrefix(const char* svc, size_t len)
 {
     /* See: CXX-14373 */
     static const struct {
@@ -379,13 +369,20 @@ static size_t s_SearchPrefix(const char* svc, size_t len)
 #ifdef __GNUC__
 inline
 #endif /*__GNUC__*/
-static void x_tr(char* str, size_t len, char a, char b)
+static void x_tr(char* dst, const char* src, size_t len, char x, char y)
 {
-    while (len--) {
-        if (*str == a)
-            *str++ = b;
-        else
-            ++str;
+    assert(len);
+    if (dst == src) {
+        do {
+            if (*dst == x)
+                *dst  = y;
+            ++dst;
+        } while (--len);
+    } else {
+        do {
+            char c = *src++;
+            *dst++ = c == x ? y : c;
+        } while (--len);
     }
 }
 
@@ -409,7 +406,6 @@ static int x_srvncasecmp(const char* s1, const char* s2, size_t m, size_t n)
     }
     return 0;
 }
-
 
 
 /* "service" =   the original input service name;
@@ -471,7 +467,7 @@ static char* x_ServiceName(unsigned int* depth,
         /* A case of the literal "" service wildcard */
         assert(!*svc  &&  *ismask  &&  !*depth);
         pfx = 0;
-    } else if (!x_CheckServiceName(svc, len, *ismask, svc[len])
+    } else if (!SERV_CheckServiceName(svc, len, svc[len], *ismask)
                ||  (svc[len]/*NB:'.'*/
                     &&  !(domlen = SERV_CheckDomain(svc + len)))) {
         if (url  &&  !(*url = strdup(svc))) {
@@ -481,7 +477,7 @@ static char* x_ServiceName(unsigned int* depth,
         *ismask = 0/*false*/;
         return 0/*use URL*/;
     } else
-        pfx = !svc[len] ? 0 : s_SearchPrefix(svc, len);
+        pfx = domlen ? x_SearchPrefix(svc, len) : 0;
     assert(!pfx  ||  (3 < pfx  &&  pfx < len));
     if (!*ismask  &&  !*isfast) {
         char        tmp[sizeof(buf)];
@@ -500,11 +496,8 @@ static char* x_ServiceName(unsigned int* depth,
                   ||  !(s = x_getenv((char*) memcpy(buf, tmp, keylen))))) {
             CORE_UNLOCK;
             /* Looking for "CONN_SERVICE_NAME" in the registry section "[svc]" */
-            if (e  ||  pfx) {
-                memcpy(tmp, key, keylen);  /* re-copy */
-                if (pfx)
-                    x_tr(tmp, keylen, '-', '_');
-            }
+            if (e  ||  pfx)
+                x_tr(tmp, key, keylen, "-"[!pfx], "_"[!pfx]);  /* re-copy */
             tmp[keylen] = '\0';
             *buf = '\0';
             if (!CORE_REG_GET(tmp, REG_CONN_SERVICE_NAME, buf, sizeof(buf), 0)) {
@@ -560,19 +553,18 @@ static char* x_ServiceName(unsigned int* depth,
         str = (char*) malloc((prefix ? len : len - pfx) + 1);
         if (str) {
             memcpy(str, svc + pfx, len -= pfx);
+            if (!*isfast  &&  pfx)
+                x_tr(str, str, dom, '-', '_');
+            str[dom++] = '\0';
+            if (domain  &&  domlen)
+                *domain = str + dom;
             str[len++] = '\0';
             if (prefix  &&  pfx) {
                 char* tmp = str + len;
                 memcpy(tmp, svc, --pfx);
-                str[len + pfx++] = '\0';
+                str[len + pfx] = '\0';
                 *prefix = tmp;
             }
-            if (!*isfast  &&  pfx)
-                x_tr(str, dom, '-', '_');
-            str[dom] = '\0';
-            svc += pfx;
-            if (domain  &&  svc[dom++])
-                *domain = str + dom;
         }
     } else
         str = 0;

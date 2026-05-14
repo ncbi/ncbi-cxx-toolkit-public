@@ -177,7 +177,7 @@ char* SERV_Print
  *        search ends without an error, and a flag is set to use the final
  *        name case-sensitively (in mappers that support that).
  * @sa
- *   SERV_ServiceNameInternal
+ *   SERV_CheckServiceName
  */
 char* SERV_ServiceName(const char* service);
 
@@ -188,6 +188,32 @@ char* SERV_ServiceName(const char* service);
  * valid domain name.
  */
 size_t SERV_CheckDomain(const char* domain);
+
+
+/* Private interface:  return the service name length or 0 if the name is not valid.
+ * A service name must start with a letter or an underscore and be a sequence of
+ * (one or more) alphanumeric [with underscores] identifiers (which may also
+ * include non-consecutive interior minus signs, not adjacent to any underscore)
+ * separated by single slashes.  The first identifier must include at least one
+ * letter.  Any subsequent identifier(s) may be composed without them.
+ * If DNS validation is on ("dns" != 0), then the first character may not be an
+ * underscore, nor may underscores be in series or trailing.  Also, exactly only
+ * one identifier is allowed (no slashes).
+ * This validation routine also accepts service name wildcards ("ismask" != 0)
+ * for non-DNS services, and those can include "*" for any sequence of valid
+ * characters, "?" for a single valid character and ranges "[...]" or complement
+ * ranges "[!...]", see: UTIL_MatchesMask() for details.
+ * For wildcards, the code assumes that "len" covers the entirety of the string
+ * representing the service name.  For all other cases, "len" can limit some
+ * initial substring of the original service name pointed to by "svc".
+ * NOTE that both "dns" AND "ismask" may NOT be passed non-zero together.
+ * NB:  The NCBI C++ Toolkit _registry_ allows [A_Za-z0-9_-/.] in section names
+ * (case-insensitively, by default).
+ * @sa
+ *   UTIL_MatchesMask, SERV_ServiceName
+ */
+size_t SERV_CheckServiceName(const char* svc, size_t len,
+                             int/*bool*/ dns, int/*bool*/ ismask);
 
 
 /* Private interface:  trim in-place all leading and trailing whitespace first,
