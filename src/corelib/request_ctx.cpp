@@ -288,6 +288,7 @@ void CRequestContext::Reset(void)
     UnsetBytesWr();
     m_ReqTimer.Reset();
     m_PassThroughProperties.clear();
+    SetRequestStartPosted(false);
     x_LoadEnvContextProperties();
 }
 

@@ -203,7 +203,8 @@ class NCBI_XNCBI_EXPORT CRequestContext : public CObject
 public:
     /// Request context flags.
     enum EContextFlags {
-        fResetOnStart = 1, ///< Reset values when printing request-start.
+        fResetOnStart           = 1,    ///< Reset values when printing request-start.
+        fRequestStartPosted     = 2,    ///< Request-start has been logged (used by CAsyncDiagHandler)
 
         fDefault = 0
     };
@@ -456,6 +457,9 @@ public:
     /// The getters are expected to be used mostly by tracer and span classes.
     const string& GetSrcTraceState(void) const { return m_TraceState; }
     const string& GetSrcTraceParent(void) const { return m_TraceParent; }
+
+    void SetRequestStartPosted(bool value);
+    bool IsRequestStartPosted(void) const;
 
 private:
     // Prohibit copying
@@ -1004,6 +1008,25 @@ inline
 const string CRequestContext::GetTraceParent(void) const
 {
     return m_TracerSpan ? m_TracerSpan->GetTraceParent() : m_TraceParent;
+}
+
+
+inline
+void CRequestContext::SetRequestStartPosted(bool value)
+{
+    if (value) {
+        m_Flags |= fRequestStartPosted;
+    }
+    else {
+        m_Flags &= ~fRequestStartPosted;
+    }
+}
+
+
+inline
+bool CRequestContext::IsRequestStartPosted(void) const
+{
+    return m_Flags & fRequestStartPosted;
 }
 
 

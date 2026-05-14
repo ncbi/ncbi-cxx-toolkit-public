@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/test_mt.hpp>
 #include <corelib/ncbidiag.hpp>
+#include <corelib/request_ctx.hpp>
 #include <algorithm>
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -57,6 +58,10 @@ private:
 
     void x_TestOldFormat(TStringList& messages);
     void x_TestNewFormat(TStringList& messages);
+
+    CAsyncDiagHandler m_Handler;
+    bool m_UseAsync = false;
+    bool m_AsyncDiscard = false;
 };
 
 
@@ -71,6 +76,8 @@ bool CTestDiagApp::TestApp_Args(CArgDescriptions& args)
     args.AddOptionalKey("format", "Format", "Log format",
         CArgDescriptions::eString);
     args.SetConstraint("format", &(*new CArgAllow_Strings, "old", "new"));
+    args.AddFlag("async", "Use async handler");
+    args.AddFlag("async_discard", "Discard queue overflow in async mode");
     return true;
 }
 
@@ -82,14 +89,36 @@ bool CTestDiagApp::Thread_Init(int idx)
     return true;
 }
 
+
+const int kAsyncRequests = 10;
+const int kAsyncRepeats = 10;
+
 bool CTestDiagApp::Thread_Run(int idx)
 {
-    if (!s_LogLine)
-        s_LogLine = __LINE__ + 1;
-    ERR_POST(Note << "NOTE message from thread " + NStr::IntToString(idx));
-    if (!s_ErrLine)
-        s_ErrLine = __LINE__ + 1;
-    ERR_POST("ERROR message from thread " + NStr::IntToString(idx));
+    if (m_UseAsync) {
+        for (int r = 0; r < 10; ++r) {
+            auto& ctx = CDiagContext::GetRequestContext();
+            auto rid = ctx.SetRequestID();
+            GetDiagContext().PrintRequestStart();
+            for (int i = 0; i < 10; ++i) {
+                if (!s_LogLine)
+                    s_LogLine = __LINE__ + 1;
+                ERR_POST(Note << "NOTE message from thread " + NStr::IntToString(idx) << "; request " << rid);
+                if (!s_ErrLine)
+                    s_ErrLine = __LINE__ + 1;
+                ERR_POST("ERROR message from thread " + NStr::IntToString(idx) << "; request " << rid);
+            }
+            GetDiagContext().PrintRequestStop();
+        }
+    }
+    else {
+        if (!s_LogLine)
+            s_LogLine = __LINE__ + 1;
+        ERR_POST(Note << "NOTE message from thread " + NStr::IntToString(idx));
+        if (!s_ErrLine)
+            s_ErrLine = __LINE__ + 1;
+        ERR_POST("ERROR message from thread " + NStr::IntToString(idx));
+    }
     for ( int i = 0; i < 1000000; ++i ) {
         GetCurrentThreadSystemID();
         //CThread::GetSelf();
@@ -103,6 +132,9 @@ bool CTestDiagApp::TestApp_Init(void)
     if ( args["format"] ) {
         GetDiagContext().SetOldPostFormat(args["format"].AsString() == "old");
     }
+    m_UseAsync = args["async"];
+    m_AsyncDiscard = args["async_discard"];
+
     NcbiCout << NcbiEndl
              << "Testing NCBIDIAG with "
              << NStr::IntToString(s_NumThreads)
@@ -111,11 +143,29 @@ bool CTestDiagApp::TestApp_Init(void)
              << " format)..."
              << NcbiEndl;
     SetDiagStream(&s_Sout);
+    if (m_UseAsync) {
+        //if (m_AsyncDiscard) m_Handler.SetDiscardOnOverflow();
+        m_Handler.InstallToDiag();
+    }
     return true;
 }
 
+
+struct SRequestRec
+{
+    bool m_Start = false;
+    bool m_Stop = false;
+    int  m_MsgCount = 0;
+};
+
+
 bool CTestDiagApp::TestApp_Exit(void)
 {
+    if (m_UseAsync) {
+        // This must be done before processing the output to make sure all messages were flushed.
+        m_Handler.RemoveFromDiag();
+    }
+    bool old_format = GetDiagContext().IsSetOldPostFormat();
     // Verify the result
     string test_res = CNcbiOstrstreamToString(s_Sout);
     TStringList messages;
@@ -124,13 +174,55 @@ bool CTestDiagApp::TestApp_Exit(void)
     NStr::Split(test_res, "\r\n", messages,
         NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
-    assert(messages.size() == s_NumThreads*3+m_LogMsgCount);
+    if (m_UseAsync) {
+        int msg_per_request = kAsyncRepeats * 2;
+        if (!old_format) msg_per_request += 2; // start/stop
+        int msg_per_thread = kAsyncRequests * msg_per_request + 1;
+        int expected = s_NumThreads * msg_per_thread;
+        if (m_AsyncDiscard) {
+            assert(messages.size() <= expected + m_LogMsgCount);
+        }
+        else {
+            assert(messages.size() == expected + m_LogMsgCount);
+        }
 
-    if (GetDiagContext().IsSetOldPostFormat()) {
-        x_TestOldFormat(messages);
+        using TReqId = CRequestContext::TCount;
+        map<TReqId, SRequestRec> req_by_id;
+        for (const auto& s : messages) {
+            if (old_format) {
+                size_t p = s.find("request");
+                if (p == NPOS) continue;
+                TReqId rid = NStr::StringToNumeric<TReqId>(s.substr(p + 8));
+                req_by_id[rid].m_MsgCount++;
+            }
+            else {
+                SDiagMessage m(s);
+                auto& rec = req_by_id[m.m_RequestId];
+                rec.m_MsgCount++;
+                if (m.m_Flags & eDPF_AppLog) {
+                    if (m.m_Event == SDiagMessage::eEvent_RequestStart) rec.m_Start = true;
+                    if (m.m_Event == SDiagMessage::eEvent_RequestStop) rec.m_Stop = true;
+                }
+            }
+        }
+        for (const auto& rec : req_by_id) {
+            if (rec.second.m_Start) { // main thread has no request-start and different number of messages
+                assert(rec.second.m_MsgCount == msg_per_request ||
+                    (m_AsyncDiscard && rec.second.m_MsgCount <= msg_per_request));
+            }
+            if (!old_format) {
+                assert(rec.second.m_Start == rec.second.m_Stop);
+            }
+        }
     }
     else {
-        x_TestNewFormat(messages);
+        assert(messages.size() == s_NumThreads * 3 + m_LogMsgCount);
+        if (old_format) {
+            x_TestOldFormat(messages);
+        }
+        else {
+            x_TestNewFormat(messages);
+        }
     }
 
     // Cleaunp
