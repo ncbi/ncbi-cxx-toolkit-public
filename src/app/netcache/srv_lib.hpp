@@ -461,6 +461,7 @@ CNcbiOstream& operator<<(CNcbiOstream& os, const CStackTrace& stack_trace)
 #define ERR_POST_X_ONCE(err_subcode, msg)  ERR_POST_X(err_subcode, msg)
 
 #define _TRACE(msg) do {} while (0)
+#define _TRACE_X(err_subcode, msg) _TRACE(msg)
 #define NCBI_TROUBLE(msg) SRV_FATAL(msg)
 #define _TROUBLE          SRV_FATAL("")
 #define Abort       abort
