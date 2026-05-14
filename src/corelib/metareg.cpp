@@ -37,6 +37,9 @@
 #include <corelib/ncbi_safe_static.hpp>
 #include "ncbisys.hpp"
 
+#include <corelib/error_codes.hpp>
+#define NCBI_USE_ERRCODE_X Corelib_MetaReg
+
 // strstream (aka CNcbiStrstream) remains the default for historical
 // reasons; however, MIPSpro's implementation is buggy, yielding
 // truncated results in some cases. :-/
@@ -63,7 +66,7 @@ bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags reload_flags)
 {
     CFile file(actual_name);
     if ( !file.Exists() ) {
-        _TRACE("No such registry file " << actual_name);
+        _TRACE_X(1, "No such registry file " << actual_name);
         return false;
     }
     CMutexGuard GUARD(s_Instance->m_Mutex);
@@ -72,13 +75,14 @@ bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags reload_flags)
     file.GetTime(&new_timestamp);
     if ( ((reload_flags & fAlwaysReload) != fAlwaysReload)
          &&  new_length == length  &&  new_timestamp == timestamp ) {
-        _TRACE("Registry file " << actual_name
-               << " appears not to have changed since last loaded");
+        _TRACE_X(2,
+                 "Registry file " << actual_name
+                 << " appears not to have changed since last loaded");
         return false;
     }
     CNcbiIfstream ifs(actual_name.c_str(), IOS_BASE::in | IOS_BASE::binary);
     if ( !ifs.good() ) {
-        _TRACE("Unable to (re)open registry file " << actual_name);
+        _TRACE_X(3, "Unable to (re)open registry file " << actual_name);
         return false;
     }
     IRWRegistry* dest = NULL;
@@ -188,7 +192,7 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
                       const string& name0, CMetaRegistry::ENameStyle style0,
                       CMetaRegistry::SEntry& scratch_entry, const string& path)
 {
-    _TRACE("CMetaRegistry::Load: looking for " << name);
+    _TRACE_X(4, "CMetaRegistry::Load: looking for " << name);
 
     CMutexGuard GUARD(m_Mutex);
 
@@ -199,7 +203,7 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
         TIndex::const_iterator iit
             = m_Index.find(SKey(name, style, flags, reg_flags));
         if (iit != m_Index.end()) {
-            _TRACE("found in cache");
+            _TRACE_X(5, "found in cache");
             _ASSERT(iit->second < m_Contents.size());
             SEntry& result = m_Contents[iit->second];
             result.Reload(flags);
@@ -211,7 +215,7 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
                 continue;
 
             if (style == eName_AsIs  &&  it->actual_name == name) {
-                _TRACE("found in cache");
+                _TRACE_X(6, "found in cache");
                 it->Reload(flags);
                 return *it;
             }
@@ -241,7 +245,7 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
 string CMetaRegistry::x_FindRegistry(const string& name, ENameStyle style,
                                      const string& path)
 {
-    _TRACE("CMetaRegistry::FindRegistry: looking for " << name);
+    _TRACE_X(7, "CMetaRegistry::FindRegistry: looking for " << name);
 
     if ( !path.empty()  &&   !CDirEntry::IsAbsolutePath(name) ) {
         const string& result
