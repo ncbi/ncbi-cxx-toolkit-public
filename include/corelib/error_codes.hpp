@@ -65,6 +65,7 @@ NCBI_DEFINE_ERRCODE_X(Corelib_Mutex,      121,  2);
 NCBI_DEFINE_ERRCODE_X(Corelib_Cookies,    122,  7);
 NCBI_DEFINE_ERRCODE_X(Corelib_Message,    123,  2);
 NCBI_DEFINE_ERRCODE_X(Corelib_Balancer,   124,  16);
+NCBI_DEFINE_ERRCODE_X(Corelib_MetaReg,    125,  8);
 
 
 END_NCBI_SCOPE
