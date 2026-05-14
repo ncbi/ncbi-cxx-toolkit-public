@@ -542,10 +542,10 @@ static char* x_ServiceName(unsigned int* depth,
  out:
     *depth = SERV_SERVICE_NAME_RECURSION_MAX;
     if (svc) {
-        /* Let's assemble the result:
-         * "service\0domain\0prefix\0"
-         * Do not store "domain" or "prefix" if they are
-         * not expected to be returned (arg == NULL).
+        /* Now let's assemble the result:
+         * "service\000domain\000prefix\000"
+         * Do not store the "domain" or "prefix" part
+         * if they are not expected back (arg == NULL).
          */
         size_t dom = len - pfx;
         if (domain  &&  domlen)
@@ -565,6 +565,8 @@ static char* x_ServiceName(unsigned int* depth,
                 str[len + pfx] = '\0';
                 *prefix = tmp;
             }
+            assert(*str  &&  strlen(str) == dom - 1);
+            assert(SERV_CheckServiceName(str, --dom, !!domlen, *ismask));
         }
     } else
         str = 0;
@@ -585,9 +587,8 @@ static char* s_ServiceName(const char* service, int*/*bool*/ ismask, int*/*bool*
 
 char* SERV_ServiceName(const char* service)
 {
-    int dummy = 0;
-    return s_ServiceName(service, &dummy/*ismask*/, &dummy/*isfast*/,
-                         0/*prefix*/, 0/*domain*/, 0/*url*/);
+    int ismask = 0/*false*/, isfast = 0/*false*/;
+    return s_ServiceName(service, &ismask, &isfast, 0/*prefix*/, 0/*domain*/, 0/*url*/);
 }
 
 
