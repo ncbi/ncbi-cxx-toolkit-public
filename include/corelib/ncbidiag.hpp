@@ -1668,7 +1668,7 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     TCount           m_ThrPost;    ///< Number of the post in the thread
     TCount           m_RequestId;  ///< FastCGI iteration or request ID
 
-    /// If the severity is eDPF_AppLog, m_Event contains event type.
+    /// If eDPF_AppLog flag is set, m_Event contains event type.
     EEventType       m_Event;
 
     typedef pair<string, string> TExtraArg;
@@ -2819,8 +2819,6 @@ public:
     /// initialized, i.e. no earlier than CNcbiApplication::Run() is called.
     /// Method can throw CThreadException if dedicated thread failed
     /// to start.
-    /// @deprecated Use regular diganostics instead.
-    NCBI_DEPRECATED
     void InstallToDiag(void);
     /// Remove this DiagHandler from diagnostics.
     /// This method must be called if InstallToDiag was called. Object cannot
@@ -2833,6 +2831,10 @@ public:
     /// of the value after call to InstallToDiag() will be ignored.
     void SetCustomThreadSuffix(const string& suffix);
 
+    /// On the log queue overflow discard new log messages - instead of
+    /// waiting for the queue to free up room for new messages.
+    static void SetDiscardOnOverflow();
+
     /// Implementation of CDiagHandler
     virtual void Post(const SDiagMessage& mess);
     virtual string GetLogName(void);
@@ -2842,6 +2844,7 @@ private:
     /// Thread handling all physical printing of log messages
     CAsyncDiagThread* m_AsyncThread;
     string m_ThreadSuffix;
+    bool m_DiscardOnOverflow = false;
 };
 
 
