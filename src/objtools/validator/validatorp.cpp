@@ -3133,7 +3133,6 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
         x_SetEntryInfo().SetNoBioSource(!src);
     }
 
-
     // Look for genomic product set
     for (CTypeConstIterator <CBioseq_set> si (*m_TSE); si; ++si) {
         if (si->IsSetClass ()) {
@@ -3278,7 +3277,7 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                  ITERATE (CUser_object::TData, field, obj.GetData()) {
                      if ((*field)->IsSetLabel() && (*field)->GetLabel().IsStr()) {
                          if (NStr::EqualNocase((*field)->GetLabel().GetStr(), "Annotation Pipeline")) {
-                             if (NStr::EqualNocase((*field)->GetData().GetStr(), "NCBI eukaryotic genome annotation pipeline")) {
+                             if (NStr::StartsWith((*field)->GetData().GetStr(), "NCBI eukaryotic genome annotation pipeline", NStr::eNocase)) {
                                  x_SetEntryInfo().SetGpipe();
                              }
                          }
