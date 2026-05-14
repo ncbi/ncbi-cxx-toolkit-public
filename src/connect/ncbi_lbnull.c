@@ -237,12 +237,16 @@ static void s_Close(SERV_ITER iter)
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static void x_tr(char* dst, const char* src, size_t len, char x, char y)
 {
-    while (len--) {
+    assert(len);
+    do {
         char c = *src++;
         *dst++ = c == x ? y : c;
-    }
+    } while (--len);
 }
 
 
@@ -272,7 +276,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
                                  &&  default_prefix[strlen(default_prefix) - 1] != '-'));
     assert(!default_domain  ||  (*default_domain  &&  *default_domain != '.'));
     assert(!default_prefix  ||  default_domain);
-    assert(sizeof(buf) > CONN_HOST_LEN + 1);
+    assert(sizeof(buf) > 2 * (CONN_HOST_LEN + 1));
 
     /* Can process fSERV_Any (basically meaning fSERV_Standalone), and explicit
      * fSERV_Dns, fSERV_Http and fSERV_Standalone only, which all, as a matter
@@ -289,14 +293,13 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
                  iter->name,
                  &"."[!default_domain], default_domain ? default_domain : ""));
 
-    assert(CONN_HOST_LEN + 1 < sizeof(buf));
     if ((len = strlen(iter->name)) > CONN_HOST_LEN) {
         CORE_LOGF_X(87, eLOG_Error,
                     ("[%s]  Service name too long for LBNULL",
                      iter->name));
         goto out;
     }
-    assert(len > 0);
+    assert(len);
     if (iter->arg) {
         assert(iter->arglen);
         CORE_LOGF_X(88, eLOG_Error,
@@ -357,22 +360,28 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
         port = CONN_PORT_LBNULL;
     CORE_TRACEF(("[%s]  LBNULL using port number :%lu", iter->name, port));
 
-    if (!default_prefix  &&  default_domain)
+    if (default_prefix  ||  !default_domain) {
+        const char* pfx
+            = ConnNetInfo_GetValueInternal(iter->name, REG_CONN_LBNULL_PREFIX,
+                                           buf, CONN_HOST_LEN + 1,
+                                           default_prefix);
+        assert(!pfx  ||  pfx == buf);
+        pfxlen = !pfx  ||  !*pfx ? 0 : strlen(pfx);
+        if (!pfx  ||  (pfxlen  &&  !SERV_CheckServiceName(pfx, pfxlen, 1, 0))) {
+            CORE_LOGF_X(97, eLOG_Error,
+                        ("[%s]  %s service name prefix for LBNULL", iter->name,
+                         !pfx ? "Cannot obtain" : "Invalid"));
+            goto out;
+        }
+    } else {
         *buf = '\0';  /* prefix already in-place */
-    else if (!ConnNetInfo_GetValueInternal(iter->name, REG_CONN_LBNULL_PREFIX,
-                                           buf, sizeof(buf) - (CONN_HOST_LEN + 1),
-                                           default_prefix)) {
-        CORE_LOGF_X(97, eLOG_Error,
-                    ("[%s]  Cannot obtain prefix name for LBNULL",
-                     iter->name));
-        goto out;
+        pfxlen = 0;
     }
-    pfxlen = strlen(buf);
     if (pfxlen) {
         buf[pfxlen++] = '-';
-        if (pfxlen + len >= sizeof(buf) - (CONN_HOST_LEN + 1)) {
+        if (pfxlen + len > CONN_HOST_LEN) {
             CORE_LOGF_X(98, eLOG_Error,
-                        ("[%s]  Prefixed service name to long for LBNULL",
+                        ("[%s]  Prefixed service name too long for LBNULL",
                          iter->name));
             goto out;
         }
@@ -385,8 +394,9 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     } else
         x_tr(buf + pfxlen, iter->name, len, '_', '-');
     len += pfxlen;
-    domain = buf + len + 1;
+    assert(SERV_CheckServiceName(buf, len, 1, 0));
 
+    domain = buf + len + 1;
     if (!ConnNetInfo_GetValueInternal(iter->name, REG_CONN_LBNULL_DOMAIN,
                                       domain, CONN_HOST_LEN + 1,
                                       default_domain)) {
@@ -403,12 +413,11 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
                      iter->name, domain));
         goto out;
     } else {
-        assert(domlen > 1  ||  domain[0] != '.');
         if (domain[ 0] != '.') {
             domain[-1]  = '.';
             ++domlen;
         } else
-            memmove(domain - 1, domain, domlen);
+            memmove(domain - 1, domain, ++domlen);
         len += domlen;
         if (len > CONN_HOST_LEN) {
             CORE_LOGF_X(95, eLOG_Error,
@@ -417,8 +426,10 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
             goto out;
         }
     }
+
     buf[len] = '\0';
     strlwr(buf);
+    assert(SERV_CheckServiceName(buf, strcspn(buf, "."), 1, 0));
     CORE_TRACEF(("[%s]  LBNULL using host name \"%s\"", iter->name, buf));
 
     if (!(data = (struct SLBNULL_Data*) calloc(1, sizeof(*data) + len))) {
