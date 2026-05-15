@@ -418,17 +418,21 @@ static int x_srvncasecmp(const char* s1, const char* s2, size_t m, size_t n)
  * "*isfast" = 1 on output if the service was substituted with itself (but may
  *               be different case);  otherwise, "*isfast" == 0.  This is used
  *               (only) for mappers (e.g. namerd), which are case-sensitive.
- *               NOTE: not updated if the return value is NULL (no service).
+ *               NOTE: *Not* updated if the return value is NULL (no service).
  * Return non-NULL malloc()'ed resultant service name, or NULL if "service"
  * does not resolve to anything like a service name.  If, however, "service"
- * can be considered to be a URL, instead, the "url" parameter contains the result.
+ * can be considered to be a URL, instead, the "url" parameter contains the
+ * (malloc()'ed) result.
+ * NOTE:  Both "prefix" and "domain" point to an allocated storage past the
+ *        returned "service name" value, and are only valid until the result
+ *        is deallocated with free().  Both may not be free()'d on their own.
  */
 static char* x_ServiceName(unsigned int* depth,
                            const char* service, const char* svc,
                            int*/*bool*/ ismask, int*/*bool*/ isfast,
                            const char** prefix, const char** domain, char** url)
 {
-    size_t len, pfx, domlen;
+    size_t len, pfxlen, domlen;
     char buf[256];
     char* str;
 
@@ -452,13 +456,14 @@ static char* x_ServiceName(unsigned int* depth,
     if (!svc  ||  (!len  &&  !*ismask)
         ||  len >= sizeof(buf) - sizeof(REG_CONN_SERVICE_NAME)) {
         CORE_LOGF_X(7, eLOG_Error,
-                    ("%s%s%s%s service name%s%s",
+                    ("%s%s%s%s service name%s%s%s",
                      service  &&  *service ? "["   : "",
                      service  ?    service         : "",
                      service  &&  *service ? "]  " : "",
                      !svc ? "NULL" : !*svc ? "Empty" : !len ? "Invalid" : "Too long",
-                     service != svc ? " in: "      : "",
-                     service != svc ? svc          : ""));
+                     service != svc ? " in: \""    : "",
+                     service != svc ? svc          : "",
+                     service != svc ? "\""         : ""));
         svc = 0/*fatal*/;
         goto out;
     }
@@ -466,7 +471,7 @@ static char* x_ServiceName(unsigned int* depth,
     if (!len) {
         /* A case of the literal "" service wildcard */
         assert(!*svc  &&  *ismask  &&  !*depth);
-        pfx = 0;
+        pfxlen = 0;
     } else if (!SERV_CheckServiceName(svc, len, svc[len], *ismask)
                ||  (svc[len]/*NB:'.'*/
                     &&  !(domlen = SERV_CheckDomain(svc + len)))) {
@@ -477,12 +482,12 @@ static char* x_ServiceName(unsigned int* depth,
         *ismask = 0/*false*/;
         return 0/*use URL*/;
     } else
-        pfx = domlen ? x_SearchPrefix(svc, len) : 0;
-    assert(!pfx  ||  (3 < pfx  &&  pfx < len));
+        pfxlen = domlen ? x_SearchPrefix(svc, len) : 0;
+    assert(!pfxlen  ||  (3 < pfxlen  &&  pfxlen < len));
     if (!*ismask  &&  !*isfast) {
         char        tmp[sizeof(buf)];
-        const char* key    = svc + pfx;
-        size_t      keylen = len - pfx;
+        const char* key    = svc + pfxlen;
+        size_t      keylen = len - pfxlen;
         int/*bool*/ e = x_mkenv(tmp, key, keylen);
         char*       s = (char*) memcpy(buf, tmp, keylen) + keylen;
         *s = '\0';
@@ -496,8 +501,8 @@ static char* x_ServiceName(unsigned int* depth,
                   ||  !(s = x_getenv((char*) memcpy(buf, tmp, keylen))))) {
             CORE_UNLOCK;
             /* Looking for "CONN_SERVICE_NAME" in the registry section "[svc]" */
-            if (e  ||  pfx)
-                x_tr(tmp, key, keylen, "-"[!pfx], "_"[!pfx]);  /* re-copy */
+            if (e  ||  pfxlen)
+                x_tr(tmp, key, keylen, "-"[!pfxlen], "_"[!pfxlen]);  /* re-copy */
             tmp[keylen] = '\0';
             *buf = '\0';
             if (!CORE_REG_GET(tmp, REG_CONN_SERVICE_NAME, buf, sizeof(buf), 0)) {
@@ -518,7 +523,7 @@ static char* x_ServiceName(unsigned int* depth,
         if (*(s = ConnNetInfo_TrimInPlace(buf))) {
             CORE_TRACEF(("[%s]  SERV_ServiceName(\"%s\"): \"%s\"",
                          service, svc, s));
-            if (x_srvncasecmp(svc, s, pfx, len) != 0  ||  (s[len]  &&  s[len] != '.')) {
+            if (x_srvncasecmp(svc, s, pfxlen, len) != 0  ||  (s[len]  &&  s[len] != '.')) {
                 if (++(*depth) < SERV_SERVICE_NAME_RECURSION_MAX) {
                     char* rv = x_ServiceName(depth, service, s, ismask, isfast,
                                              prefix, domain, url);
@@ -530,11 +535,16 @@ static char* x_ServiceName(unsigned int* depth,
                                  " depth exceeded: %u", service, *depth));
                     return 0/*fatal*/;
                 }
-            } else if (s[len]/*NB:'.'*/  &&  !SERV_CheckDomain(s + len)) {
+            } else if (s[len]/*NB:'.'*/  &&  !(keylen = SERV_CheckDomain(s + len))) {
                 if (url  &&  !(*url = strdup(s)))
                     svc = 0/*fatal*/;
-            } else
+            } else {
+                if (s[len])
+                    domlen = keylen;
+                else
+                    domlen = pfxlen = 0;
                 svc = s, *isfast = 1/*true*/;
+            }
         } else
             assert(*isfast == 0/*false*/);
     } else
@@ -547,22 +557,22 @@ static char* x_ServiceName(unsigned int* depth,
          * Do not store the "domain" or "prefix" part
          * if they are not expected back (arg == NULL).
          */
-        size_t dom = len - pfx;
+        size_t dom = len - pfxlen;
         if (domain  &&  domlen)
             len += 1 + domlen;
-        str = (char*) malloc((prefix ? len : len - pfx) + 1);
+        str = (char*) malloc((prefix ? len : len - pfxlen) + 1);
         if (str) {
-            memcpy(str, svc + pfx, len -= pfx);
-            if (!*isfast  &&  pfx)
+            memcpy(str, svc + pfxlen, len -= pfxlen);
+            if (!*isfast  &&  pfxlen)
                 x_tr(str, str, dom, '-', '_');
             str[dom++] = '\0';
             if (domain  &&  domlen)
                 *domain = str + dom;
             str[len++] = '\0';
-            if (prefix  &&  pfx) {
+            if (prefix  &&  pfxlen) {
                 char* tmp = str + len;
-                memcpy(tmp, svc, --pfx);
-                str[len + pfx] = '\0';
+                memcpy(tmp, svc, --pfxlen);
+                str[len + pfxlen] = '\0';
                 *prefix = tmp;
             }
             assert(*str  &&  strlen(str) == dom - 1);
@@ -796,8 +806,8 @@ static struct SINTERNAL_Data* s_InternalMapper(const char* name,
                                                TSERV_Type  types,
                                                const char* url)
 {
-    static int/*bool*/     do_internal = -1/*unassigned*/;
-    static void* /*bool*/  s_Once = 0/*false*/;
+    static volatile int/*bool*/ do_internal = -1/*unassigned*/;
+    static void* volatile /*bool*/ s_Once = 0/*false*/;
     unsigned/*bool*/       reverse_dns;
     SConnNetInfo*          net_info;
     struct SINTERNAL_Data* data;
@@ -982,8 +992,9 @@ static SERV_ITER x_Open(const char*         service,
         *host_info = 0;
 
     svc = s_ServiceName(service, &ismask, &exact, &prefix, &domain, &url);
-    assert((!svc  ||  *svc  ||  ismask)  &&  (!url  ||  (*url  &&  !ismask)));
-    assert(svc  ||  (!prefix  &&  !domain));
+    assert(!svc  ||  *svc  ||  ismask);
+    assert(!url  ||  (*url  &&  !ismask));
+    assert((svc  &&  *svc)  ||  (!prefix  &&  !domain));
     if (url  &&  (data = s_InternalMapper(svc, types, url)) != 0) {
         /* Service resolved to some parsable URL -- proceed internally */
         if (!svc) {
@@ -1009,6 +1020,7 @@ static SERV_ITER x_Open(const char*         service,
         exact          = 0;
         if ( info )
             *info      = 0;
+        free(url);
     } else if (svc  &&  !url) {
         /* Service name was entirely valid -- use resolver(s) */
         assert(!prefix  ||  *prefix);
@@ -1043,19 +1055,42 @@ static SERV_ITER x_Open(const char*         service,
 #endif /*NCBI_CXX_TOOLKIT*/
             do_dispd   = 0/*false*/;
         }
-    } else if (svc) {  /* Bad service name or bad URL -- prepare to bail out */
-        free((void*) svc);
-        svc = 0;
-    } /* else "service" was NULL/empty (already logged) or no memory, just bail out */
-    if (url)
-        free((void*) url);
+    } else if (url) {
+        /* Unparsable / unresolvable URL */
+        assert(*url  &&  *service  &&  !ismask);
+        exact = strcasecmp(service, url) == 0;
+        if (svc) {
+            size_t len1 = strcspn(service, ".");
+            size_t len2 = strlen(svc);
+            assert(len1  &&  len2);
+            if (len1 != len2  ||  strncasecmp(service, svc, len1) != 0)
+                ismask = 1/*true*/;
+        }
+        CORE_LOGF_X(15, eLOG_Trace,
+                    ("[%s]  Service unresolvable%s%s%s%s%s%s",
+                     service,
+                     ismask ? " in \"" : "",
+                     ismask ? svc      : "",
+                     ismask ? "\""     : "",
+                     !exact ? ": \""   : "",
+                     !exact ? url      : "",
+                     &"\""[!exact]));
+        if (svc) {
+            free((void*) svc);
+            svc = 0/*fatal*/;
+        }
+        free(url);
+    } else {
+        /* "service" was NULL/empty/bad (already logged) or no memory -- just bail out */
+        assert(!svc  &&  !url);
+    }
 
     if (!svc  ||  !(iter = (SERV_ITER) calloc(1, sizeof(*iter)))) {
         if (svc)
             free((void*) svc);
         return 0;
     }
-    assert(ismask  ||  *svc);
+    assert(service  &&  svc  &&  (ismask  ||  *svc));
 
     iter->name              = svc;
     iter->host              = (preferred_host == SERV_LOCALHOST
@@ -1243,16 +1278,22 @@ static SERV_ITER x_Open(const char*         service,
             &&  !do_lbnull  &&  !do_linkerd  &&  !do_namerd
 #endif /*NCBI_CXX_TOOLKIT*/
             &&  !do_dispd) {
-            if (svc  &&  strcasecmp(service, svc) == 0)
-                svc = 0;
             assert(*service  ||  !svc);
+            if (svc) {
+                size_t len1 = strcspn(service, ".");
+                size_t len2 = strlen(svc);
+                assert(len1  &&  len2);
+                if (len1 == len2  &&  strncasecmp(service, svc, len1) == 0)
+                    svc = 0;
+            }
             CORE_LOGF_X(1, eLOG_Error,
-                        ("%s%s%sNo service mappers available%s%s",
+                        ("%s%s%sNo service mappers available%s%s%s",
                          *service ? "["     : "",
                          *service ? service : "*",
                          *service ? "]  "   : "",
-                         svc ? " for: "     : "",
-                         svc ? svc          : ""));
+                         svc ? " for: \""   : "",
+                         svc ? svc          : "",
+                         &"\""[!svc]));
         }
         SERV_Close(iter);
         return 0;
