@@ -404,7 +404,8 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
         len += domlen;
     }
     buf[len] = '\0';
-    strlwr(buf);
+    if (!exact)
+        strlwr(buf);
     assert(strlen(buf) == len);
     assert(SERV_CheckServiceName(buf, strcspn(buf, "."), 1, 0));
 
