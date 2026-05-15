@@ -492,8 +492,8 @@ private:
 
 
 #define EUTILS_CLIENT_SECTION "eutils_client"
-// Temporary limit to be virtually 'unlimited' but prevent server failure - see CXX-14065 and EU-3437
-#define DEFAULT_RETMAX 100000000
+// Unlimited by default
+#define DEFAULT_RETMAX kMax_Int
 // The default values approximate the old "sqrt(retry)" wait times.
 #define DEFAULT_MAX_RETRIES 9
 #define DEFAULT_WAIT_TIME 0
