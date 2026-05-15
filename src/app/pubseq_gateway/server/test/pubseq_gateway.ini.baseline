@@ -224,3 +224,13 @@ url="http://txproxy.linkerd.ncbi.nlm.nih.gov/v1/service/MyNCBIAccount?txsvc=MyNC
 http_proxy="linkerd:4140"
 timeout_ms=100
 
+[LOG]
+log_peer_ip_always = false
+async = true
+
+[DIAG]
+;Max_Async_Queue_Size = 10000
+;ASYNC_BUFFER_SIZE = 32768
+;ASYNC_BUFFER_MAX_LINES = 100
+Async_Discard_On_Overflow = true
+
