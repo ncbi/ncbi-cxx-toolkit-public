@@ -330,6 +330,7 @@ ASAY	s	Academy of Science of Armenia
 ASC	s	Northern Arizona University, Biological Sciences Department			
 ASCC	s	Adams State College Collection			
 ASCOL	s	Amrit Campus (ASCOL herbarium)			
+ASCOL Herbarium	s	Amrit Campus			
 ASCU	s	Agricultural Scientific Collections Unit			
 ASDM	s	Arizona-Sonora Desert Museum			
 ASE	s	Universidade Federal de Sergipe, Departamento de Biologia			
@@ -346,6 +347,7 @@ ASNHC	s	Angelo State Natural History Collection
 ASNHC:Birds	s	Angelo State Natural History Collection, Ornithology Collection			
 ASNHC:Mammals	s	Angelo State Natural History Collection, Mammalogy Collection			
 ASNHC:Reptiles	s	Angelo State Natural History Collection, Herpetology Collection			
+ASRC	s	Atmospheric Sciences Research Center Whiteface Mountain Field Station			
 ASSAM	s	Botanical Survey of India, Eastern Circle			
 ASSL	s	Academy of Sciences			
 AST	s	University of Aston			
@@ -1151,6 +1153,7 @@ CDFM	s	Cardiff Museum
 CDFN	s	Canadian Forest Service - Atlantic			
 CDFW	s	California Department of Fish and Wildlife			
 CDFW:Bird	s	Bird Collection			
+CDH	s	Bureau of Land Management			
 CDMU	s	Chengde Medical University			
 CDN	s	Whitgift School			
 CDRI	s	Central Drug Research Institute			
@@ -3020,6 +3023,8 @@ HMUG	s	Hunterian Museum	GLAHM
 HMUT	s	Herbarium Mycologicum Universitatis Tarimensis			
 HN	s	National Center for Natural Sciences and Technology, Botany Department			
 HNBG	s	Research Institute of Forest and Rangelands			
+HNBG<UKR>	s	M.M. Hryshko National Botanical Garden of the National Academy of Sciences of Ukraine			
+HNBG<UKR>	s	M.M. Hryshko National Botanical Garden of the National Academy of Sciences of Ukraine			
 HNBU	s	Institut de l'Environnement et de Recherche Agricola (INERA)			
 HNCMB	c	Hungarian National Collection of Medical Bacteria			
 HND	s	Centre d'Etude et de Recherche de Djibouti (CERD)			
@@ -4514,6 +4519,8 @@ MA:Hepat	s	Real Jardin Botanico, Liverwort collection
 MA:Lichen	s	Real Jardin Botanico, Lichen collection			
 MA:Musci	s	Real Jardin Botanico, Bryophyte collection			
 MAA	s	Escuela Tecnica Superior de Ingenieros Agronomos, Departamento de Produccion Vegetal			
+MAAG	s	Museo archeologico ambientale di Gratteri			
+MAAG	s	Museo archeologico ambientale di Gratteri			
 MAAS	s	Natuurhistorisch Museum Maastricht, Botany Department			
 MAB	s	Musee Anne de Beaujeu			
 MABIK	s	National Marine Biodiversity Institute of Korea			
@@ -5102,6 +5109,8 @@ MPGB	s	Museum of Portuguese Guinea
 MPH	s	Shahid Behershti University			
 MPKV	c	Biological Nitrogen Fixation Project College of Agriculture			
 MPL	s	Musee de Port Louis			
+MPLB	s	Museo Paleontologico Luigi Boldrini di Pietrafitta			
+MPLB	s	Museo Paleontologico Luigi Boldrini di Pietrafitta			
 MPLN	s	Museo Provinciale di Storia Naturale			
 MPM	s	Milwaukee Public Museum			
 MPM<JPN>	s	Meguro Parasitological Museum			
@@ -5557,6 +5566,8 @@ NFRDI	c	National Fisheries Research & Development Institute
 NFRI	c	Norwegian Forest Research Institute			
 NFRN	s	Canadian Forest Service, NRCan			
 NGBB	s	Nezahat Gokyigit Botanik Bahcesi			
+NGBT	s	National Genebank of Tunisia			
+NGBT	s	National Genebank of Tunisia			
 NGCPR	s	Naoroji Godrej Centre for Plant Research			
 NGI	s	Nanjing Geographical Institute	NIG		
 NGM	s	Bromley House Library			
@@ -5687,6 +5698,8 @@ NMBT	s	Natuurmuseum Brabant
 NMBZ	s	Natural History Museum of Zimbabwe			
 NMC	s	New Mexico State University, Department of Biology			
 NMC<CAN>	s	Canadian Museum of Nature	CMN		
+NMCBT	s	National Mushroom Centre, Department of Agriculture, Ministry of Agriculture and Livestock			
+NMCBT	s	National Mushroom Centre, Department of Agriculture, Ministry of Agriculture and Livestock			
 NMCC	c	North Maharashtra Microbial Culture Collection Centre			
 NMCDC	s	Inner Mongolia Center for Endemic Disease Control and Research			
 NMCI<JPN>	s	Noto Marine Center Ishikawa Prefecture			
@@ -6052,6 +6065,8 @@ ONPC	s	Olympic National Park	ONP
 OOM	s	Kameyama Botanical Garden			
 OP	s	Silesian Museum			
 OPANM	s	Otdel Paleontologii i Biostratigrafii Akademii Nauk Moldovkoi Republiki			
+OPH	s	OPHIS - Museo paleontologico e Centro erpetologico			
+OPH	s	OPHIS - Museo paleontologico e Centro erpetologico			
 OPM	s	Okinawa Prefectual Museum			
 ORE	s	University of Oregon, Biology Department			
 OREB	s	Karolinska Hoegre Allmaenna Laeroverket			
@@ -6844,6 +6859,7 @@ SCA	s	Limbe Botanical & Zoological Gardens
 SCAC	s	South China Agricultural College			
 SCAPPC	c	Specialty Crop-Associated Plant Pathogen Collections			
 SCAR	s	Wood End Museum			
+SCARB	s	Boys' High School			
 SCAUB	s	South China Agricultural University			
 SCB	s	Station Centrale de Boukoko			
 SCBI	s	Smithsonian Conservation Biology Institute			
@@ -7066,6 +7082,8 @@ SJSC	s	San Jose State University, J. Gordon Edwards Museum of Entomology
 SJSU	s	San Jose State University, Carl W. Sharsmith Herbarium			
 SJUBC	s	Saint John's University, Biology Collections			
 SK	s	Katedralskolan			
+SKA	s	Stiftelsen Skansen The Biological Museum			
+SKA	s	Stiftelsen Skansen The Biological Museum			
 SKK	s	Sung Kyun Kwan University, Biological Sciences Department			
 SKM	s	Skokholm Field Centre			
 SKN	s	Craven Museum Service			
@@ -9173,6 +9191,7 @@ ZUTC	s	Zoological Museum University of Tehran
 ZV	s	Technical University, Department of Phytology			
 ZVC	s	Depto. de Zoologia Vertebrados de la Facultad de Humanidades y Ciencias			
 ZVCB	s	Vertebrate Collection, Facultad de Ciencias, Universidad de la Republica			
+ZVS	s	Bundesamt fur Naturschutz			
 ZY	s	Zunyi Normal College			
 ZYTC	s	Zhangye Teachers College, Chemistry-Biology Department			
 ZZEL	s	Forest Research Institute			
