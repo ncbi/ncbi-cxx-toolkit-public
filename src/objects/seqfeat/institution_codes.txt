@@ -771,6 +771,7 @@ BPIC	c	Benaki Phytopathological Institute Collection
 BPL	s	Museum of Barnstaple & North Devon			
 BPM	s	Beipiao Paleontological Museum			
 BPPT-ESC	c	BPPT Ethanol-Single Cell Protein-Fructose Syrup Technical Unit			
+BPS	s	California Department of Food and Agriculture			
 BPU	s	Eoetvoes Lorand University, Department of Plant Taxonomy and Ecology			
 BR<BEL>	s	Botanic Garden Meise			
 BR<BRA>	c	Johanna Dobereiner Biological Resouce Center (CRB-JD)			
@@ -881,6 +882,7 @@ BUKH	s	Bukidnon State University
 BUL	s	Natural History Museum of Zimbabwe			
 BULQ	s	Bishop's University			
 BULU	s	Uludag University, Biology Department			
+BUMMC	s	Mayborn Museum Complex			
 BUNH	s	University of Baghdad			
 BUNS	s	University of Novi Sad, Department of Biology and Ecology			
 BUPL	s	Bucknell University, Biology Department			
@@ -953,6 +955,7 @@ CANL	s	Canadian Museum of Nature, Lichenology Section
 CANM	s	Canadian Museum of Nature, Bryology Section			
 CANT	s	South China Agricultural University, Forestry Department			
 CANTE	sb	Jardin Botanico El Charco del Ingenio			
+CANTY	s	Canterbury Museum			
 CANU	s	University of Canterbury, Department of Plant and Microbial Sciences			
 CAP	s	Universidade Federal do Espirito Santo			
 CAPM	c	Collection of Animal Pathogenic Microorganisms			
@@ -1216,6 +1219,7 @@ CGE	s	Cambridge University, Department of Plant Sciences
 CGEC	s	China Entomological Research Institute			
 CGG	s	Cambridge University Botanic Garden			
 CGH	s	National Museum of Prague			
+CGMC	s	Chongqing Three Gorges Medical College			
 CGMCC	c	China General Microbiological Culture Collection Center		http://www.cgmcc.net/english/cata.php?stn=CGMCC%20	
 CGMS	s	Universidade Federal de Mato Grosso do Sul, Departamento de Biologia			
 CGN	s	Centre for Genetic Resources, The Netherlands			
@@ -1969,12 +1973,14 @@ DSP	s	Fitzsimon's Snake Park
 DSRC	s	Mohonk Preserve			
 DSSC	b	Drosophila Species Stock Center			
 DSU	s	Dnipropetrovsk National University, Department of Geobotany, Soil, and Ecology			
+DSUM	s	Dakota State University			
 DSY	s	Dewsbury Museum			
 DTE	s	Centro de Investigaciones Cientificas y Transferencia de Tecnologia a la Produccion (CICyTTP-CONICET)			
 DTIC	s	Departamento Parasitologia			
 DTN	s	Darlington and Teesdale Naturalists' Field Club			
 DTO	sc	Department of Applied and Industrial Mycology			
 DU	s	Duke University Vertebrate Collection			
+DUB	s	National Botanic Gardens			
 DUBN	s	Dublin Naturalists' Field Club			
 DUE	s	University of Dundee			
 DUF	s	University of Dicle, Biological Department, Botany			
@@ -2674,6 +2680,7 @@ GRM	s	Museum d'Histoire Naturelle de Grenoble
 GRMP	s	Central Geological Research Museum			
 GRO	s	State University of Groningen, Department of Plant Biology			
 GRPM	s	Public Museum of Grand Rapids			
+GRS	s	Gezira Research Station			
 GRSM	s	Great Smoky Mountains National Park			
 GRSU	s	Yanka Kupala Grodno State University, Department of Botany			
 GRSW	s	Desert Ecological Research Unit			
@@ -2818,6 +2825,7 @@ HBU	sc	Hebei University
 HBUM	s	College of Life Sciences Hebei Univesity, Baoding			
 HC	s	Hangchow Christian College			
 HCA	s	University of Foggia			
+HCAN	s	Herbario Islas Canarias - CSIC			
 HCAT	s	University of Tabriz, Landscape Department			
 HCB	s	Universidade de Santa Cruz do Sul, Departamento de Biologia			
 HCCA	s	Hastings College			
@@ -2880,6 +2888,7 @@ HER<CAN>	c	Felix d'Herelle Reference Center for Bacterial Viruses (Bacteriophage
 HER<ZAF>	s	Hermanus Botanical Society			
 HERA	s	Altinbas University			
 HERBAM	s	Universidade do Estado de Mato Grosso			
+herbarium	T	Centre for Implementation and Research of Plant Health Clinic			
 HERT	s	Fundacao Universidade Estadual do Ceara			
 HERVA	s	Universidade Federal de Mato Grosso			
 HERZ	s	Herzen State Pedagogical University of Russia, Department of Botany			
@@ -3515,6 +3524,7 @@ IMM<CHN-Bejing>	s	Chinese Academy of Medical Science
 IMM<CHN-Hohhot>	s	Inner Mongolian Museum			
 IMMH	c	Collection of Animal Viruses			
 IMMIB	c	Culture Collection of the Institute of Medical Microbiology and Immunology of the University of Bonn			
+IMP	s	Instituto del Mar del Peru			
 IMPC	s	Sichuan Academy of Traditional Chinese Medicine and Pharmacy	IMC		
 IMPH	s	Institute of Medicinal Plants, ACECR			
 IMRU	c	Waksman Institute of Microbiology			
@@ -3886,6 +3896,7 @@ JUJ	s	Hebei Agricultural University
 JUNCT	s	Texas Tech University Center at Junction			
 JUR	s	Jurassica Museum			
 JURASSICA	s	Jurassica Museum			
+JVC	s	Jardin Botanico Canario Viera y Clavijo			
 JVR	s	Universidad Nacional			
 JWC	s	University of Texas at Austin			
 JXAU	s	Jiangxi Agricultural University, Forestry Department			
@@ -4242,6 +4253,7 @@ LCR	s	Ratcliffe College
 LCS	s	International Red Locust Control Service			
 LCU	s	Catholic University of America			
 LCUF	s	Liaocheng University Herbarium			
+LCUH	s	Lead City UniversityIbadan			
 LCVA	s	Lakeland College, Environmental Sciences Department			
 LCW	s	Lahore College for Women University, Lahore, Pakistan			
 LD	s	Botanical Museum, Lunds University			
@@ -4478,6 +4490,7 @@ LUKI	s	Institut National pour l'Etude et la Recherche Agronomiques
 LUMH	s	Lorestan University of Medical Sciences			
 LUNZ	s	Lincoln University Entomology Research Museum			
 LUQ	s	Laval University			
+LUS	s	Lushan Botanical Garden			
 LUSC	s	Universidade do Estado de Santa Catarina			
 LUTI	s	Herbario LUTI			
 LUW	s	Landbouwuniversiteit Wageningen, Department of Entomology			
@@ -4709,6 +4722,7 @@ MCSNIO	s	Museo Civico di Scienze Naturali di Induno Olona
 MCST	s	Museo Civico di Storia Naturale, Trieste			
 MCT	s	Michigan Technological University, Biological Sciences Department			
 MCTC	s	Cryptogamic Herbarium, Michigan Technological University			
+MCTF	s	Michigan Technological University			
 MCTP	s	Museu de Ciencias	MCT-PUCRS		
 MCVE	s	Museo di Storia Naturale di Venezia			
 MCVM	s	Museo Civico, Villa Mirabello			
@@ -4897,6 +4911,7 @@ MISS	s	University of Mississippi, Department of Biology
 MISSA	s	Mississippi State University, Department of Biological Sciences			
 MISU	s	Minot State University			
 MIT	c	Massachusetts Institute of Technology			
+MIUH	s	Mohi-Ud-Din Islamic University Nerian Sharif AJ&K			
 MIWG	s	Museum of he Isle of Wight Geology	IWCMS		
 MIZA	s	Museuo del Instituto de Zoologia Agricola			
 MIZL	s	Musee de l'Institut de Zoologie			
@@ -5194,6 +5209,7 @@ MSLH	s	Chinese University of Hong Kong, Marine Sciences Laboratory	MSLKHC
 MSLY	s	Mossley Botanical Society			
 MSM<JPN>	s	Marine Science Museum, Tokai Univ.			
 MSM<PRI>	s	University of Puerto Rico, Marino Puertorriqueno			
+MSMC	s	Mount Saint Mary College			
 MSNA	s	Museo di Storia Naturale e Arte Archeologica			
 MSNG	s	Museo Civico di Storia Naturale di Genova 'Giacomo Doria'			
 MSNM	s	Museo Civico di Storia Naturale di Milano			
@@ -6209,6 +6225,7 @@ PEM<CHN>	s	Beijing Medical University, Botany Department
 PEM<ZAF>	s	Port Elizabeth Museum			
 PEMB	s	University of North Carolina at Pembroke			
 PEN	s	Penrith Museum			
+PENC	s	Peninsula College			
 PENN	s	University of Pennsylvania Herbarium			
 PER	s	City Museum			
 PERC	s	Purdue Entomological Research Collection			
@@ -6380,6 +6397,7 @@ PPWD	s	Pepperwood Preserve
 PQFC	b	Phu Qui's Fruit Tree Center-Vietnam			
 PR	s	National Museum in Prague, Department of Botany			
 PRA	s	Institute of Botany, Academy of Sciences			
+PRAGATI	s	Pragati Green Meadows			
 PRB	s	Prague Botanical Garden			
 PRC	s	Charles University, Botany Department			
 PRE	s	National Botanical Institute - Pretoria			
@@ -6467,6 +6485,7 @@ PZL	s	Penzance Library
 PZV	s	Petrozavodsk State University, Department of Botany and Plant Physiology			
 PZZP	s	Institute for Nature Conservation of the Vojvodina province			
 Q	s	Universidad Central			
+QA	s	Stanford University			
 QAME	s	Direccion Nacional Forestal, Ministerio de Agricultura y Ganaderia			
 QAP	s	Universidad Central			
 QAR	s	Buketov University			
@@ -6829,6 +6848,7 @@ SAT	s	Angelo State University, Biology Department
 SAU<CHN>	s	Sichuan Agricultural University, Department of Basic Courses			
 SAU<USA-AR>	s	Southern Arkansas University			
 SAUF	s	Sichuan Agricultural University, Forestry Department			
+SAUFC	s	Sichuan Agricultural University			
 SAUT	s	Sichuan Agricultural University			
 SAV	s	Institute of Botany, Slovak Academy of Sciences			
 SAV:F	s	Institute of Botany, Slovak Academy of Sciences, Fungal Collection			
@@ -6875,6 +6895,7 @@ SCH	s	Museum zu Allerheiligen
 SCHG	s	George Museum			
 SCHN	s	Smith College, Biological Sciences Department			
 SCIEA	s	South China Institute of Endangered Animals			
+SCIR	s	Santa Cruz Island Reserve UCSB Natural Reserve System			
 SCL	s	St. Cloud State University, Department of Biological Sciences			
 SCM	s	Sheffield City Museums			
 SCMN	s	Shiojiri City Museum of Natural History			
@@ -6977,6 +6998,7 @@ SFDL	s	Sheffield Literary and Philosophical Society
 SFDN	s	Sheffield Naturalists' Club			
 SFGRH	s	Sandong Forest Germplasm Resources Center			
 SFI	b	Slovenian Forestry Institute			
+SFPA	s	Fundacao Estadual de Pesquisa Agropecuaria			
 SFRF	s	Forest Service, Region 5, USDA			
 SFRP	s	Southern Research Station, USDA Forest Service			
 SFRS	s	Sea Fisheries Research Station			
@@ -7234,6 +7256,7 @@ SMNHTAU	s	The Steinhardt Museum of Natural History	SMNH<ISR>,ZMTAU
 SMNK	s	Staatliches Museum fur Naturkunde Karlsruhe (State Museum of Natural History)			
 SMNS	s	Staatliches Museum fur Naturkunde Stuttgart			
 SMOC	s	Slezske Muzeum Opava			
+SMOP	s	Slovak Museum of Nature Protection and Speleology			
 SMP<SUR>	s	Surinaams Museum			
 SMP<USA-PA>	s	The State Museum of Pennsylvania			
 SMR	s	Samara State University, Department for Ecology, Botany, and Nature Protection			
@@ -7324,6 +7347,7 @@ SPMS	s	University of South Florida
 SPN	s	Southampton University, Biology Department			
 SPNRI	s	Sichuan Province, Natural Resources Institute			
 SPP	s	Society for the Protection of Prespa			
+SPPU	s	Savitribai Phule Pune University			
 SPR	s	Springfield Science Museum, Natural Science Department			
 SPRY	s	Burton Constable Foundation			
 SPSC	s	Universidade Federal de Sao Carlos			
@@ -7762,6 +7786,7 @@ TPI	s	The Pirbright Institute
 TPI:ENT	s	The Pirbright Institute, Entomology collection			
 TPNG	s	Department of Primary Industry			
 TPV	s	Prairie View A & M University, Biology Department			
+TPWDSP	s	Texas State Parks			
 TR	s	Museo Tridentino di Scienze Naturali			
 TRA	s	American Plant Life Society			
 TRD	s	Ancient House Museum			
@@ -8017,6 +8042,7 @@ UDBC	s	Universidad Distrital
 UDCC	s	University of Delaware			
 UDEL	s	University of Delaware			
 UDLAP	s	UDLAP			
+UDM	s	Museo Friulano di Storia Naturale			
 UDONECI	s	Universidad de Oriente			
 UDSM	s	University of Dar es Salaam			
 UDU	s	Udmurt State University, Department of Biology and Chemistry			
