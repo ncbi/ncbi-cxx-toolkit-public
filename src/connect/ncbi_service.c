@@ -311,12 +311,13 @@ size_t SERV_CheckDomain(const char* domain)
 }
 
 
-/* "svc" (of length "len") is assumed to be syntactically valid.  That is,
- * it does not start or end with a dash, nor does it have the dashes in
- * sequence.  Also, this routine can be called _only_ for domain-enabled
+/* "svc" (of length "len") is assumed to be syntactically correct.  That is,
+ * it does not start or end with a dash, nor does it have any dashes in a
+ * succession.  Also, this routine may _only_ be called for domain-enabled
  * services.  Return a 0-based string position from the open range
  * (SERV_LABLEN_MIN + 1 .. "len"),
- * where a legacy name appears to start.  Return 0 when none found.
+ * where a legacy name appears to start (which also equates to the entire
+ * prefix length).  Return 0 when none found.
  */
 static size_t x_SearchPrefix(const char* svc, size_t len)
 {
@@ -390,6 +391,7 @@ static void x_tr(char* dst, const char* src, size_t len, char x, char y)
 static int x_srvncasecmp(const char* s1, const char* s2, size_t m, size_t n)
 {
     size_t i;
+    assert(m < n);
     if (!m)
         return strncasecmp(s1, s2, n);
     for (i = 0;  i < n;  ++i, ++s1, ++s2) {
@@ -401,7 +403,7 @@ static int x_srvncasecmp(const char* s1, const char* s2, size_t m, size_t n)
         if (i >= m  &&  isdash(*s1) == isdash(*s2))
             continue;
         cmp = tolower((unsigned char)(*s1)) - tolower((unsigned char)(*s2));
-        if (cmp != 0)
+        if (cmp)
             return cmp;
     }
     return 0;
@@ -483,7 +485,7 @@ static char* x_ServiceName(unsigned int* depth,
         return 0/*use URL*/;
     } else
         pfxlen = domlen ? x_SearchPrefix(svc, len) : 0;
-    assert(!pfxlen  ||  (3 < pfxlen  &&  pfxlen < len));
+    assert(!pfxlen  ||  (3 < pfxlen  &&  pfxlen < len  &&  svc[pfxlen - 1] == '-'));
     if (!*ismask  &&  !*isfast) {
         char        tmp[sizeof(buf)];
         const char* key    = svc + pfxlen;
@@ -510,14 +512,13 @@ static char* x_ServiceName(unsigned int* depth,
                 goto out;
             }
         } else {
-            size_t x_len = strlen(s);
-            if (x_len >= sizeof(buf)) {
+            if ((keylen = strlen(s)) >= sizeof(buf)) {
                 CORE_UNLOCK;
                 svc = 0/*fatal*/;
                 goto out;
             }
-            memcpy(buf, s, x_len);
-            buf[x_len] = '\0';
+            memcpy(buf, s, keylen);
+            buf[keylen] = '\0';
             CORE_UNLOCK;
         }
         if (*(s = ConnNetInfo_TrimInPlace(buf))) {
@@ -539,7 +540,7 @@ static char* x_ServiceName(unsigned int* depth,
                 if (url  &&  !(*url = strdup(s)))
                     svc = 0/*fatal*/;
             } else {
-                if (s[len])
+                if (s[len]/*NB:'.'*/)
                     domlen = keylen;
                 else
                     domlen = pfxlen = 0;
@@ -558,6 +559,8 @@ static char* x_ServiceName(unsigned int* depth,
          * if they are not expected back (arg == NULL).
          */
         size_t dom = len - pfxlen;
+        if (url  &&  *url)
+            prefix = domain = 0;
         if (domain  &&  domlen)
             len += 1 + domlen;
         str = (char*) malloc((prefix ? len : len - pfxlen) + 1);
@@ -570,12 +573,15 @@ static char* x_ServiceName(unsigned int* depth,
                 *domain = str + dom;
             str[len++] = '\0';
             if (prefix  &&  pfxlen) {
-                char* tmp = str + len;
-                memcpy(tmp, svc, --pfxlen);
-                str[len + pfxlen] = '\0';
-                *prefix = tmp;
+                char* pfx = str + len;
+                /*NB:svc[pfxlen-1]=='-'*/
+                memcpy(pfx, svc, --pfxlen);
+                pfx[pfxlen] = '\0';
+                assert(pfxlen);
+                *prefix = pfx;
             }
             assert(*str  &&  strlen(str) == dom - 1);
+            assert(!*ismask  ||  !(pfxlen  ||  domlen));
             assert(SERV_CheckServiceName(str, --dom, !!domlen, *ismask));
         }
     } else
@@ -994,7 +1000,8 @@ static SERV_ITER x_Open(const char*         service,
     svc = s_ServiceName(service, &ismask, &exact, &prefix, &domain, &url);
     assert(!svc  ||  *svc  ||  ismask);
     assert(!url  ||  (*url  &&  !ismask));
-    assert((svc  &&  *svc)  ||  (!prefix  &&  !domain));
+    assert(!url  ||  !(prefix  ||  domain));
+    assert((svc  &&  *svc)  ||  !(prefix  ||  domain));
     if (url  &&  (data = s_InternalMapper(svc, types, url)) != 0) {
         /* Service resolved to some parsable URL -- proceed internally */
         if (!svc) {
