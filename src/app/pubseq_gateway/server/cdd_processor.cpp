@@ -360,6 +360,9 @@ void CPSGS_CDDProcessor::Process()
     _ASSERT(GetRequest());
     CRequestContextResetter     context_resetter;
     GetRequest()->SetRequestContext();
+    if (x_IsCanceled()) {
+        return;
+    }
 
     try {
         {

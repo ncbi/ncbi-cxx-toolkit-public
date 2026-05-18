@@ -420,6 +420,10 @@ void CPSGS_SNPProcessor::Process()
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
 
+    if (x_IsCanceled()) {
+        return;
+    }
+    
     try {
         {
             CFastMutexGuard guard(m_Mutex);
