@@ -208,10 +208,11 @@ CFormatGuessApp::Run(void)
         }
     }
     
-    string object_type_to_show("unknown");
+    string object_type_to_show;
     if( args["show-object-type"] ) {
         switch(uFormat) {
         default:
+            object_type_to_show = "unknown";
             break;
         case CFormatGuess::eTextASN:
         case CFormatGuess::eBinaryASN:
