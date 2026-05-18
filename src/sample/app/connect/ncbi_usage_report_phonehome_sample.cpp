@@ -429,10 +429,6 @@ void CUsageReportPhoneHomeSampleApp::Exit()
 
 int main(int argc, const char* argv[])
 {
-    string a = "sss";
-    auto b = (a == kEmptyStr);
-
-    return 0;
     // Each application have a name. It can be specified as last parameter
     // in arguments to AppMain, or extracted from the executable file name.
     // So it can be automatically used for reporting.
