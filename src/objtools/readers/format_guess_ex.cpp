@@ -502,7 +502,11 @@ CFormatGuess::EFormat CFormatGuessEx::GuessFormatAndContent(
     case CFormatGuess::eXml:
     case CFormatGuess::eJSON:
         new(&contentInfo.mInfoGenbank) CFileContentInfoGenbank();
-        contentInfo.mInfoGenbank.mTypeInfo = xGuessGenbankObjectType(baseFormat);
+        try {
+            contentInfo.mInfoGenbank.mTypeInfo = xGuessGenbankObjectType(baseFormat);
+        } catch (...) {
+            _ASSERT(! contentInfo.mInfoGenbank.mTypeInfo);
+        }
         if (contentInfo.mInfoGenbank.mTypeInfo) {
             contentInfo.mInfoGenbank.mObjectType =  
                 contentInfo.mInfoGenbank.mTypeInfo->GetName();
