@@ -1847,9 +1847,9 @@ void ConvertRawToDeltaByNs(CSeq_inst& inst,
                 bool is_unknown = false;
                 bool is_known = false;
 
-                if (n_len >= min_unknown && (max_unknown < 0 || n_len <= max_unknown)) {
+                if (n_len >= min_unknown && (max_unknown < 0 || n_len <= unsigned(max_unknown))) {
                     is_unknown = true;
-                } else if (n_len >= min_known && (max_known < 0 || n_len <= max_known)) {
+                } else if (n_len >= min_known && (max_known < 0 || n_len <= unsigned(max_known))) {
                     is_known = true;
                 }
                 if (is_unknown || is_known) {
@@ -1872,9 +1872,9 @@ void ConvertRawToDeltaByNs(CSeq_inst& inst,
         bool is_unknown = false;
         bool is_known = false;
 
-        if (n_len >= min_unknown && (max_unknown < 0 || n_len <= max_unknown)) {
+        if (n_len >= min_unknown && (max_unknown < 0 || n_len <= unsigned(max_unknown))) {
             is_unknown = true;
-        } else if (n_len >= min_known && (max_known < 0 || n_len <= max_known)) {
+        } else if (n_len >= min_known && (max_known < 0 || n_len <= unsigned(max_known))) {
             is_known = true;
         }
         if (is_unknown || is_known) {
