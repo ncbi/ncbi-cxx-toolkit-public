@@ -66,7 +66,7 @@ bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags reload_flags)
 {
     CFile file(actual_name);
     if ( !file.Exists() ) {
-        _TRACE_X(1, "No such registry file " << actual_name);
+        ERR_POST_X(1, Warning << "No such registry file " << actual_name);
         return false;
     }
     CMutexGuard GUARD(s_Instance->m_Mutex);
@@ -82,7 +82,9 @@ bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags reload_flags)
     }
     CNcbiIfstream ifs(actual_name.c_str(), IOS_BASE::in | IOS_BASE::binary);
     if ( !ifs.good() ) {
-        _TRACE_X(3, "Unable to (re)open registry file " << actual_name);
+        ERR_POST_X(3,
+                   Warning << "Unable to (re)open registry file "
+                   << actual_name);
         return false;
     }
     IRWRegistry* dest = NULL;
@@ -90,19 +92,23 @@ bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags reload_flags)
         CRegistryWriteGuard REG_GUARD(*registry);
         TRegFlags rflags = IRWRegistry::AssessImpact(reg_flags,
                                                      IRWRegistry::eRead);
+        TRegFlags io_flags = reg_flags & (IRegistry::fInternalSpaces
+                                          | IRegistry::fCountCleared
+                                          | IRegistry::fCaseFlags
+                                          | IRegistry::fSectionlessEntries);
         if ((reload_flags & fKeepContents)  ||  registry->Empty(rflags)) {
-            dest = registry->Read(ifs, reg_flags | IRegistry::fJustCore);
+            dest = registry->Read(ifs, io_flags | IRegistry::fJustCore);
         } else {
             // Go through a temporary so errors (exceptions) won't
             // cause *registry to be incomplete.
-            CMemoryRegistry tmp_reg(reg_flags & IRegistry::fCaseFlags);
+            CMemoryRegistry tmp_reg(io_flags);
             TStrStream      str;
-            tmp_reg.Read(ifs, reg_flags);
-            tmp_reg.Write(str, reg_flags);
+            tmp_reg.Read(ifs, io_flags);
+            tmp_reg.Write(str, io_flags);
             str.seekg(0);
             bool was_modified = registry->Modified(rflags);
             registry->Clear(rflags);
-            dest = registry->Read(str, reg_flags | IRegistry::fJustCore);
+            dest = registry->Read(str, io_flags | IRegistry::fJustCore);
             if ( !was_modified ) {
                 registry->SetModifiedFlag(false, rflags);
             }
@@ -118,6 +124,12 @@ bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags reload_flags)
     CCompoundRWRegistry* crwreg = dynamic_cast<CCompoundRWRegistry*>(dest);
     if (crwreg) {
         crwreg->LoadBaseRegistries(reg_flags, reload_flags, file.GetDir());
+        if ((reg_flags & IRegistry::fWithNcbirc) != 0) {
+            CNcbiRegistry* ncbi_reg = dynamic_cast<CNcbiRegistry*>(dest);
+            if (ncbi_reg != nullptr) {
+                ncbi_reg->IncludeNcbircIfAllowed();
+            }
+        }
     }
 
     timestamp = new_timestamp;
@@ -330,8 +342,19 @@ bool CMetaRegistry::x_Reload(const string& path, IRWRegistry& reg,
         }
     }
     if (entryp) {
+        if (reg_flags != 0  &&  reg_flags != entryp->reg_flags) {
+            ERR_POST_X(8,
+                       Warning
+                       << "CMetaRegistry::Reload: disregarding explicit"
+                       " registry flags (0x" << hex << reg_flags
+                       << ") that differ from the originally specified 0x"
+                       << hex << entryp->reg_flags);
+        }
         return entryp->Reload(flags);
     } else {
+        // No warning ever needed in this branch -- IRWRegistry::Read
+        // already loudly disallows fCaseFlags, which are the main
+        // practical concern.
         SEntry entry = Load(path, eName_AsIs, flags, reg_flags, &reg);
         _ASSERT(entry.registry.IsNull()  ||  entry.registry == &reg);
         return !entry.registry.IsNull();

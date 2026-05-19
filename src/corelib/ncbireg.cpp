@@ -242,7 +242,8 @@ bool IRegistry::Write(CNcbiOstream& os, TFlags flags) const
         os << Endl();
         // Write in-section comment
         list<string> in_section_comments;
-        EnumerateInSectionComments(*section, &in_section_comments, flags);
+        EnumerateInSectionComments(*section, &in_section_comments,
+                                   flags & ~fCountCleared);
         ITERATE(list<string>, comment, in_section_comments) {
             s_WriteComment(os, *comment + "\n");
         }
@@ -265,21 +266,24 @@ const string& IRegistry::Get(const string& section, const string& name,
     if (flags & fInternalCheckedAndLocked) return x_Get(section, name, flags);
 
     x_CheckFlags("IRegistry::Get", flags,
-                 (TFlags)fLayerFlags | fInternalSpaces | fSectionlessEntries);
+                 (TFlags) fLayerFlags | fInternalSpaces
+                 | fCountCleared | fSectionlessEntries);
 
     if ( !(flags & fTPFlags) ) {
         flags |= fTPFlags;
     }
     string clean_section = NStr::TruncateSpaces(section);
     if ( !IsNameSection(clean_section, flags) ) {
-        _TRACE("IRegistry::Get: bad section name \""
-               << NStr::PrintableString(section) << '\"');
+        ERR_POST_X(10,
+                   Warning << "IRegistry::Get: bad section name \""
+                   << NStr::PrintableString(section) << '\"');
         return kEmptyStr;
     }
     string clean_name = NStr::TruncateSpaces(name);
     if ( !IsNameEntry(clean_name, flags) ) {
-        _TRACE("IRegistry::Get: bad entry name \""
-               << NStr::PrintableString(name) << '\"');
+        ERR_POST_X(11,
+                   Warning << "IRegistry::Get: bad entry name \""
+                   << NStr::PrintableString(name) << '\"');
         return kEmptyStr;
     }
     TReadGuard LOCK(*this);
@@ -301,16 +305,18 @@ bool IRegistry::HasEntry(const string& section, const string& name,
     }
     string clean_section = NStr::TruncateSpaces(section);
     if ( !IsNameSection(clean_section, flags) ) {
-        _TRACE("IRegistry::HasEntry: bad section name \""
-               << NStr::PrintableString(section) << '\"');
+        ERR_POST_X(12,
+                   Warning << "IRegistry::HasEntry: bad section name \""
+                   << NStr::PrintableString(section) << '\"');
         return false;
     }
     string clean_name = NStr::TruncateSpaces(name);
     bool is_special_name = clean_name.empty() || 
                             clean_name == sm_InSectionCommentName;
     if ( !is_special_name  &&  !IsNameEntry(clean_name, flags) ) {
-        _TRACE("IRegistry::HasEntry: bad entry name \""
-               << NStr::PrintableString(name) << '\"');
+        ERR_POST_X(13,
+                   Warning << "IRegistry::HasEntry: bad entry name \""
+                   << NStr::PrintableString(name) << '\"');
         return false;
     }
     TReadGuard LOCK(*this);
@@ -451,19 +457,22 @@ const string& IRegistry::GetComment(const string& section, const string& name,
                                     TFlags flags) const
 {
     x_CheckFlags("IRegistry::GetComment", flags,
-                 (TFlags)fLayerFlags | fInternalSpaces | fSectionlessEntries);
+                 (TFlags) fLayerFlags | fInternalSpaces | fCountCleared
+                 | fSectionlessEntries);
     string clean_section = NStr::TruncateSpaces(section);
     if ( !clean_section.empty()  &&  !IsNameSection(clean_section, flags) ) {
-        _TRACE("IRegistry::GetComment: bad section name \""
-               << NStr::PrintableString(section) << '\"');
+        ERR_POST_X(14,
+                   Warning << "IRegistry::GetComment: bad section name \""
+                   << NStr::PrintableString(section) << '\"');
         return kEmptyStr;
     }
     string clean_name = NStr::TruncateSpaces(name);
     bool is_special_name = clean_name.empty() || 
                             clean_name == sm_InSectionCommentName;
     if ( !is_special_name  &&  !IsNameSection(clean_name, flags) ) {
-        _TRACE("IRegistry::GetComment: bad entry name \""
-               << NStr::PrintableString(name) << '\"');
+        ERR_POST_X(15,
+                   Warning << "IRegistry::GetComment: bad entry name \""
+                   << NStr::PrintableString(name) << '\"');
         return kEmptyStr;
     }
     TReadGuard LOCK(*this);
@@ -476,7 +485,8 @@ void IRegistry::EnumerateInSectionComments(const string& section,
                                            TFlags        flags) const
 {
     x_CheckFlags("IRegistry::EnumerateInSectionComments", flags,
-        (TFlags)fLayerFlags);
+                 (TFlags) fLayerFlags | fSectionlessEntries
+                 | fInSectionComments);
 
     if (!(flags & fTPFlags)) {
         flags |= fTPFlags;
@@ -484,9 +494,11 @@ void IRegistry::EnumerateInSectionComments(const string& section,
     _ASSERT(comments);
     comments->clear();
     string clean_section = NStr::TruncateSpaces(section);
-    if (clean_section.empty() || !IsNameSection(clean_section, flags)) {
-        _TRACE("IRegistry::EnumerateInSectionComments: bad section name \""
-            << NStr::PrintableString(section) << '\"');
+    if ( !IsNameSection(clean_section, flags) ) {
+        ERR_POST_X(16,
+                   Warning <<
+                   "IRegistry::EnumerateInSectionComments: bad section name \""
+                   << NStr::PrintableString(section) << '\"');
         return;
     }
     TReadGuard LOCK(*this);
@@ -525,8 +537,10 @@ void IRegistry::EnumerateEntries(const string& section, list<string>* entries,
     entries->clear();
     string clean_section = NStr::TruncateSpaces(section);
     if ( !clean_section.empty()  &&  !IsNameSection(clean_section, flags) ) {
-        _TRACE("IRegistry::EnumerateEntries: bad section name \""
-               << NStr::PrintableString(section) << '\"');
+        ERR_POST_X(17,
+                   Warning
+                   << "IRegistry::EnumerateEntries: bad section name \""
+                   << NStr::PrintableString(section) << '\"');
         return;
     }
     TReadGuard LOCK(*this);
@@ -565,11 +579,11 @@ void IRegistry::Unlock(void)
 void IRegistry::x_CheckFlags(const string& _DEBUG_ARG(func),
                              TFlags& flags, TFlags allowed)
 {
-    if (flags & ~allowed)
-        _TRACE(func << "(): extra flags passed: "
-               << resetiosflags(IOS_BASE::basefield)
-               << setiosflags(IOS_BASE::hex | IOS_BASE::showbase)
-               << flags);
+    if (flags & ~allowed) {
+        ERR_POST_X(9,
+                   Warning << func << ": extra flags passed: 0x" << hex
+                   << (flags & ~allowed));
+    }
     flags &= allowed;
 }
 
@@ -645,7 +659,7 @@ IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags,
     bool   ignore_errors = (flags & fIgnoreErrors) > 0;
 
     // Adjust flags for Set() fSectionlessEntries must survive this change
-    flags = (flags & ~fTPFlags & ~fIgnoreErrors) | layer;
+    flags = (flags & ~fTPFlags & ~fIgnoreErrors & ~fWithNcbirc) | layer;
 
     string    str;          // the line being parsed
     SIZE_TYPE line;         // # of the line being parsed
@@ -789,8 +803,9 @@ IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags,
                 TFlags set_flags = flags & ~fJustCore;
                 if (NStr::EqualNocase(section, "NCBI")
                     &&  NStr::EqualNocase(name, ".Inherits")
-                    &&  HasEntry(section, name, flags)) {
-                    const string& old_value = Get(section, name, flags);
+                    &&  HasEntry(section, name, flags & ~fNoOverride)) {
+                    const string& old_value = Get(section, name,
+                                                  flags & ~fNoOverride);
                     if (flags & fNoOverride) {
                         value = old_value + ' ' + value;
                         set_flags &= ~fNoOverride;
@@ -798,7 +813,8 @@ IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags,
                         value += ' ';
                         value += old_value;
                     }
-                } else if (was_empty  &&  HasEntry(section, name, flags)) {
+                } else if (was_empty
+                           &&  HasEntry(section, name, flags & ~fNoOverride)) {
                     ERR_POST_X(8, Warning
                                << "Found multiple [" << section << "] "
                                << name << " settings" << in_path
@@ -835,18 +851,21 @@ bool IRWRegistry::Set(const string& section, const string& name,
                       const string& comment)
 {
     x_CheckFlags("IRWRegistry::Set", flags,
-                 fPersistent | fNoOverride | fTruncate | fInternalSpaces
+                 (TFlags) fTPFlags | fNoOverride | fOverride
+                 | fTruncate | fNoTruncate | fInternalSpaces
                  | fCountCleared | fSectionlessEntries);
     string clean_section = NStr::TruncateSpaces(section);
     if ( !IsNameSection(clean_section, flags) ) {
-        _TRACE("IRWRegistry::Set: bad section name \""
-               << NStr::PrintableString(section) << '\"');
+        ERR_POST_X(18,
+                   Warning << "IRWRegistry::Set: bad section name \""
+                   << NStr::PrintableString(section) << '\"');
         return false;
     }
     string clean_name = NStr::TruncateSpaces(name);
     if ( !IsNameEntry(clean_name, flags) ) {
-        _TRACE("IRWRegistry::Set: bad entry name \""
-               << NStr::PrintableString(name) << '\"');
+        ERR_POST_X(19,
+                   Warning << "IRWRegistry::Set: bad entry name \""
+                   << NStr::PrintableString(name) << '\"');
         return false;
     }
     SIZE_TYPE beg = 0, end = value.size();
@@ -863,7 +882,7 @@ bool IRWRegistry::Set(const string& section, const string& name,
     TWriteGuard LOCK(*this);
     if (x_Set(clean_section, clean_name, value.substr(beg, end - beg + 1),
               flags, s_ConvertComment(comment, section.empty()))) {
-        x_SetModifiedFlag(true, flags);
+        x_SetModifiedFlag(true, flags & fLayerFlags);
         return true;
     } else {
         return false;
@@ -879,14 +898,16 @@ bool IRWRegistry::Unset(const string& section, const string& name,
                  | fSectionlessEntries);
     string clean_section = NStr::TruncateSpaces(section);
     if ( !IsNameSection(clean_section, flags) ) {
-        _TRACE("IRWRegistry::Unset: bad section name \""
-               << NStr::PrintableString(section) << '\"');
+        ERR_POST_X(20,
+                   Warning << "IRWRegistry::Unset: bad section name \""
+                   << NStr::PrintableString(section) << '\"');
         return false;
     }
     string clean_name = NStr::TruncateSpaces(name);
     if ( !IsNameEntry(clean_name, flags) ) {
-        _TRACE("IRWRegistry::Unset: bad entry name \""
-               << NStr::PrintableString(name) << '\"');
+        ERR_POST_X(21,
+                   Warning << "IRWRegistry::Unset: bad entry name \""
+                   << NStr::PrintableString(name) << '\"');
         return false;
     }
     TWriteGuard LOCK(*this);
@@ -903,19 +924,22 @@ bool IRWRegistry::SetComment(const string& comment, const string& section,
                              const string& name, TFlags flags)
 {
     x_CheckFlags("IRWRegistry::SetComment", flags,
-                 fTransient | fNoOverride | fInternalSpaces | fCountCleared);
+                 (TFlags) fLayerFlags | fNoOverride | fInternalSpaces
+                 | fCountCleared | fSectionlessEntries);
     string clean_section = NStr::TruncateSpaces(section);
     if ( !clean_section.empty()  &&  !IsNameSection(clean_section, flags) ) {
-        _TRACE("IRWRegistry::SetComment: bad section name \""
-               << NStr::PrintableString(section) << '\"');
+        ERR_POST_X(22,
+                   Warning << "IRWRegistry::SetComment: bad section name \""
+                   << NStr::PrintableString(section) << '\"');
         return false;
     }
     string clean_name = NStr::TruncateSpaces(name);
     bool is_special_name = clean_name.empty()  || 
                             clean_name == sm_InSectionCommentName;
     if ( !is_special_name && !IsNameEntry(clean_name, flags) )  {
-        _TRACE("IRWRegistry::SetComment: bad entry name \""
-               << NStr::PrintableString(name) << '\"');
+        ERR_POST_X(23,
+                   Warning << "IRWRegistry::SetComment: bad entry name \""
+                   << NStr::PrintableString(name) << '\"');
         return false;
     }
     TWriteGuard LOCK(*this);
@@ -1027,8 +1051,10 @@ void CMemoryRegistry::x_Enumerate(const string& section, list<string>& entries,
           || !(flags & IRegistry::fSectionlessEntries))) {
         // Enumerate sections
         if(!(flags & (IRegistry::fSections | IRegistry::fSectionlessEntries)))
-            _TRACE("Deprecated call to x_Enumerate with empty section name, "
-                   " but with no fSections flag set");
+            ERR_POST_X(24,
+                       Warning
+                       << "Deprecated call to x_Enumerate with empty section"
+                       " name, but with no fSections flag set");
 
         ITERATE (TSections, it, m_Sections) {
             if (IsNameSection(it->first, flags)
@@ -1068,7 +1094,7 @@ bool CMemoryRegistry::x_Set(const string& section, const string& name,
                             const string& value, TFlags flags,
                             const string& comment)
 {
-    _TRACE(this << ": [" << section << ']' << name << " = " << value);
+    _TRACE_X(25, this << ": [" << section << ']' << name << " = " << value);
 #if 0 // historic behavior; could inappropriately expose entries in lower layers
     if (value.empty()) {
         return x_Unset(section, name, flags);
@@ -1115,7 +1141,7 @@ bool CMemoryRegistry::x_Set(const string& section, const string& name,
 bool CMemoryRegistry::x_Unset(const string& section, const string& name,
                               TFlags flags)
 {
-    _TRACE(this << ": [" << section << ']' << name << " to be unset");
+    _TRACE_X(26, this << ": [" << section << ']' << name << " to be unset");
     TSections::iterator sit = m_Sections.find(section);
     if (sit == m_Sections.end()) {
         return false;
@@ -1863,8 +1889,9 @@ bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags,
 
         {
             if (dynamic_cast<CNcbiRegistry*>(this) != NULL) {
-                _TRACE("LoadBaseRegistries(" << this
-                       << "): trying file registry");
+                _TRACE_X(27,
+                         "LoadBaseRegistries(" << this
+                         << "): trying file registry");
                 s += ',';
                 s += FindByName(CNcbiRegistry::sm_FileRegName)
                     ->Get("NCBI", ".Inherits");
@@ -1875,7 +1902,7 @@ bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags,
                     NStr::fSplit_MergeDelimiters | 
                     NStr::fSplit_Truncate);
         if (names.empty()) return false;
-        _TRACE("LoadBaseRegistries(" << this << "): using " << s);
+        _TRACE_X(28, "LoadBaseRegistries(" << this << "): using " << s);
     }}
 
     typedef pair<string, CRef<IRWRegistry> > TNewBase;
@@ -2061,12 +2088,13 @@ bool CCompoundRWRegistry::x_Set(const string& section, const string& name,
 {
     TFlags flags2 = (flags & fPersistent) ? flags : (flags | fTransient);
     flags2 &= fLayerFlags;
-    _TRACE('[' << section << ']' << name << " = " << value);
-    if ((flags & fNoOverride) && HasEntry(section, name, flags)) {
+    _TRACE_X(29, '[' << section << ']' << name << " = " << value);
+    if ((flags & fNoOverride)
+        &&  HasEntry(section, name, flags & ~fNoOverride)) {
         return false;
     }
     if (value.empty()) {
-        bool was_empty = Get(section, name, flags).empty();
+        bool was_empty = Get(section, name, flags & ~fNoOverride).empty();
         m_MainRegistry->Set(section, name, value, flags, comment);
         m_ClearedEntries[s_FlatKey(section, name)] |= flags2;
         return !was_empty;

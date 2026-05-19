@@ -50,7 +50,7 @@ NCBI_DEFINE_ERRCODE_X(Corelib_App,        106, 24);
 NCBI_DEFINE_ERRCODE_X(Corelib_Diag,       107, 29);
 NCBI_DEFINE_ERRCODE_X(Corelib_File,       108, 106);
 NCBI_DEFINE_ERRCODE_X(Corelib_Object,     109, 15);
-NCBI_DEFINE_ERRCODE_X(Corelib_Reg,        110,  8);
+NCBI_DEFINE_ERRCODE_X(Corelib_Reg,        110, 29);
 NCBI_DEFINE_ERRCODE_X(Corelib_Util,       111,  6);
 NCBI_DEFINE_ERRCODE_X(Corelib_StreamBuf,  112, 14);
 NCBI_DEFINE_ERRCODE_X(Corelib_PluginMgr,  113,  4);
