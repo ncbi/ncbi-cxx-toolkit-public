@@ -313,7 +313,8 @@ bool CTestRegApp::TestApp_Init(void)
 
     {{
         list<string> entries;
-        m_Registry.EnumerateEntries(NcbiEmptyString, &entries);
+        m_Registry.EnumerateEntries(NcbiEmptyString, &entries,
+                                    IRegistry::fSectionlessEntries);
         assert( entries.empty() );
     }}
 
