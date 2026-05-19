@@ -570,7 +570,7 @@ BOOST_AUTO_TEST_CASE(TestRegistry)
     BOOST_CHECK( sections.empty() );
 
     list<string> entries;
-    reg.EnumerateEntries(kEmptyStr, &entries);
+    reg.EnumerateEntries(kEmptyStr, &entries, IRegistry::fSectionlessEntries);
     BOOST_CHECK( entries.empty() );
 
     // Compose a test registry
