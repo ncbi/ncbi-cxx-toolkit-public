@@ -505,7 +505,7 @@ CFormatGuess::EFormat CFormatGuessEx::GuessFormatAndContent(
         try {
             contentInfo.mInfoGenbank.mTypeInfo = xGuessGenbankObjectType(baseFormat);
         } catch (...) {
-            _ASSERT(! contentInfo.mInfoGenbank.mTypeInfo);
+            break;
         }
         if (contentInfo.mInfoGenbank.mTypeInfo) {
             contentInfo.mInfoGenbank.mObjectType =  
