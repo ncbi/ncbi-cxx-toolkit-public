@@ -576,8 +576,7 @@ void IRegistry::Unlock(void)
 }
 
 
-void IRegistry::x_CheckFlags(const string& _DEBUG_ARG(func),
-                             TFlags& flags, TFlags allowed)
+void IRegistry::x_CheckFlags(const string& func, TFlags& flags, TFlags allowed)
 {
     if (flags & ~allowed) {
         ERR_POST_X(9,
