@@ -195,7 +195,7 @@ static const AmbCharData ambiguity_list[] = {
     { 'V', "ACG" },
     { 'D', "AGT" },
 };
-static const int num_ambiguities = ArraySize(ambiguity_list);
+static const auto num_ambiguities = ArraySize(ambiguity_list);
 
 static bool s_AmbiguousMatch (char a, char b)
 {
@@ -206,7 +206,7 @@ static bool s_AmbiguousMatch (char a, char b)
     } else {
         char search[2];
         search[1] = 0;
-        for (int i = 0; i < num_ambiguities; i++) {
+        for (unsigned i = 0; i < num_ambiguities; i++) {
             search[0] = b;
             if (a == ambiguity_list[i].ambig_char
                 && NStr::Find (ambiguity_list[i].match_list, search) != string::npos) {
@@ -257,13 +257,13 @@ bool CValidError_align::AlignmentScorePercentIdOk(const CSeq_align& align)
 
 bool CValidError_align::IsTpaAlignment(const CDense_seg& denseg, CScope& scope)
 {
-    int dim = denseg.GetDim();
+    unsigned dim = denseg.GetDim();
     if (dim != s_GetNumIdsToUse(denseg)) {
         return false;
     }
 
     bool is_tpa = false;
-    for (CDense_seg::TDim row = 0; row < dim && !is_tpa; ++row) {
+    for (unsigned row = 0; row < dim && ! is_tpa; ++row) {
         CRef<CSeq_id> id = denseg.GetIds()[row];
         CBioseq_Handle bsh = scope.GetBioseqHandle(*id);
         if (bsh) {
@@ -306,11 +306,11 @@ bool CValidError_align::IsTpaAlignment(const CSparseAln& sparse_aln, CScope& sco
 
 void s_CalculateMatchingColumns(const CDense_seg& denseg, TSeqPos &col, size_t &num_match, bool& ids_missing, bool internal_gaps, CScope& scope)
 {
-    int dim = denseg.GetDim();
+    unsigned dim = denseg.GetDim();
     if (dim != s_GetNumIdsToUse(denseg)) {
         return;
     }
-    if (denseg.GetStarts().size() != denseg.GetNumseg() * dim) {
+    if (denseg.GetStarts().size() != unsigned(denseg.GetNumseg()) * dim) {
         return;
     }
 
@@ -423,7 +423,7 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
         return;
     } else if (align.GetSegs().IsDenseg()) {
         const CDense_seg& denseg = align.GetSegs().GetDenseg();
-        int dim = denseg.GetDim();
+        unsigned dim = denseg.GetDim();
         if (dim != s_GetNumIdsToUse(denseg)) {
             return;
         }
@@ -1057,13 +1057,13 @@ CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TDenseg
     TSegmentGapV seggaps;
     size_t align_pos = 0;
 
-    int numseg = denseg.GetNumseg();
-    int dim = denseg.GetDim();
+    unsigned numseg = denseg.GetNumseg();
+    unsigned dim = denseg.GetDim();
     const CDense_seg::TStarts& starts = denseg.GetStarts();
 
-    for (size_t seg = 0; seg < numseg; ++seg) {
+    for (unsigned seg = 0; seg < numseg; ++seg) {
         bool seggap = true;
-        for (int id = 0; id < dim && seg * dim + id < starts.size(); ++id) {
+        for (unsigned id = 0; id < dim && seg * dim + id < starts.size(); ++id) {
             if (starts[seg * dim + id] != -1) {
                 seggap = false;
                 break;
