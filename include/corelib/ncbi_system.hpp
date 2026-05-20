@@ -422,6 +422,41 @@ public:
     /// @return
     ///   0, if cannot determine it on current platform, or on error.
     static clock_t GetClockTicksPerSecond(void);
+    
+    /// CI types
+    enum ECI {
+        eCI_Unknown = 0, ///< Unknown / undetected
+        eCI,             ///< Generic / some other platform not listed below
+        eCI_GitLab,      ///< GitLab CI
+        eCI_GitHub,      ///< GitHub Actions
+        eCI_Circle,      ///< Circle CI
+        eCI_Jenkins,     ///< Jenkins
+        eCI_Travis,      ///< Travis CI
+        eCI_Buildkite,   ///< Buildkite
+        eCI_TeamCity     ///< TeamCity
+    };
+    
+    /// Check if application runs in the continuous integration environment (CI).
+    ///
+    /// @param ci
+    ///   Optional pointer to variable to get a detected CI type.
+    /// @return
+    ///   TRUE if detected a know CI environment. FALSE otherwise.
+    /// @sa
+    ///   ECI, IsInteractive
+    static bool IsCIEnvironment(ECI* ci = nullptr);
+
+    /// Check if console application can interact with the user.
+    ///
+    /// @return
+    ///   TRUE if stdin and stdout refer to a terminal and the application is
+    ///        not running in a known continuous integration (CI) environment.
+    ///   FALSE otherwise:
+    ///        the application may be not a console application, running as part
+    ///        of a pipe, or its output redirected to a file.
+    /// @sa
+    ///   IsCIEnvironment, CNcbiApplication::SetPhoneHomePolicy
+    static bool IsInteractive(void);
 };
 
 

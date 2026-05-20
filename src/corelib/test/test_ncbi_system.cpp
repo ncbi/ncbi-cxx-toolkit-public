@@ -88,7 +88,10 @@ static void Test_General(void)
     PRINT("Virtual memory limit soft (bytes)",  ((mem_limit_soft > 0) ? std::to_string(mem_limit_soft): "unlimited"), true);
     PRINT("Virtual memory limit hard (bytes)",  ((mem_limit_hard > 0) ? std::to_string(mem_limit_hard): "unlimited"), true);
     PRINT("Virtual memory page size (bytes)",   CSystemInfo::GetVirtualMemoryPageSize(),   true);
-     
+    cout << endl;
+    PRINT("CI environment", NStr::BoolToString(CSystemInfo::IsCIEnvironment()), true);
+    PRINT("Interactive",    NStr::BoolToString(CSystemInfo::IsInteractive()),  true);
+
     cout << "\nCurrent process information:" << endl;
 
     CProcess::SMemoryUsage mem_usage;

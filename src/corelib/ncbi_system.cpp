@@ -102,6 +102,8 @@ extern "C" {
 #  include "ncbi_os_mswin_p.hpp"
 #  include <dbghelp.h>
 #  include <intrin.h>
+#  include <io.h>
+#  include <stdio.h>
 #endif //NCBI_OS_MSWIN
 
 
@@ -920,6 +922,46 @@ clock_t CSystemInfo::GetClockTicksPerSecond(void)
 #endif
     return 0;
 }
+
+
+bool CSystemInfo::IsCIEnvironment(ECI* ci_ptr)
+{
+    struct CI {
+        const TXChar* env;
+        ECI type;
+    };
+    std::array<CI,8> ci_check_list = {{
+        { _TX("GITLAB_CI"),        eCI_GitLab    },
+        { _TX("GITHUB_ACTIONS"),   eCI_GitHub    },
+        { _TX("CIRCLECI"),         eCI_Circle    },
+        { _TX("JENKINS_URL"),      eCI_Jenkins   },
+        { _TX("TRAVIS"),           eCI_Travis    },
+        { _TX("BUILDKITE"),        eCI_Buildkite },
+        { _TX("TEAMCITY_VERSION"), eCI_TeamCity  },
+        { _TX("CI"),               eCI        }
+    }};
+   
+    ECI ci = eCI_Unknown;
+    for (const auto& c : ci_check_list) {
+        if ( NcbiSys_getenv(c.env) ) {
+            ci = c.type;
+        }
+    }
+    if (ci_ptr) {
+        *ci_ptr = ci;
+    }
+    return ci != eCI_Unknown;
+}
+
+bool CSystemInfo::IsInteractive(void)
+{
+#ifdef NCBI_OS_MSWIN
+    return _isatty(_fileno(stdin)) && _isatty(_fileno(stdout)) && !IsCIEnvironment();
+#else
+    return isatty(STDIN_FILENO) && isatty(STDOUT_FILENO) && !IsCIEnvironment();
+#endif
+}
+
 
 
 // @deprecated

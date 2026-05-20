@@ -44,6 +44,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/metareg.hpp>
 #include <corelib/version_api.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <corelib/phone_home_policy.hpp>
 
 /// Avoid preprocessor name clash with the NCBI C Toolkit.
@@ -643,6 +644,18 @@ protected:
     /// Return pointer to current Phone Home Policy or NULL.
     /// @sa SetPhoneHomePolicy(), IPhoneHomePolicy
     IPhoneHomePolicy* GetPhoneHomePolicy() const { return m_PhoneHomePolicy; };
+
+    /// Check if console application can interact with the user.
+    ///
+    /// @return
+    ///   TRUE if stdin and stdout refer to a terminal and the application is
+    ///        not running in a known continuous integration (CI) environment.
+    ///   FALSE otherwise:
+    ///        the application may be not a console application, running as part
+    ///        of a pipe, or its output redirected to a file.
+    /// @sa
+    ///   SetPhoneHomePolicy
+    static bool IsInteractive(void) { return CSystemInfo::IsInteractive(); };
 
 private:
     /// Read standard NCBI application configuration settings.
