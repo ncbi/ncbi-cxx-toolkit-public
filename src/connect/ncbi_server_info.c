@@ -935,7 +935,7 @@ SSERV_Info* SERV_CreateHttpInfoEx(ESERV_Type     type,
 
     if (type & (unsigned int)(~fSERV_Http))
         return 0;
-    if (!path  ||  !*path  ||  path[strcspn(path, "?#")])
+    if (!path  ||  !*path  ||  strpbrk(path, "?#"))
         return 0;
     else
         path_len = strlen(path) + 1;

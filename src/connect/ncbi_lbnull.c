@@ -129,17 +129,17 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
                 ( (info->mode & fSERV_Secure)  &&  data->port != CONN_PORT_HTTPS)) {
                 len += sprintf(vhost + len, ":%hu", data->port);
                 if (len > CONN_HOST_LEN) {
+                    CORE_LOGF_X(91, eLOG_Error,
+                                ("[%s]  LBNULL cannot store outsized VHost \"%s\"",
+                                 iter->name, vhost));
                     free(info);
-                    errno = ERANGE;
-                    info = 0;
+                    return 0;
                 }
             } else
                 vhost[len] = '\0';
-            if (info) {
-                assert(len <= CONN_HOST_LEN);
-                info->vhost = (unsigned char) len;
-                assert((size_t) info->vhost == len);
-            }
+            assert(len <= CONN_HOST_LEN);
+            info->vhost = (unsigned char) len;
+            assert((size_t) info->vhost == len);
         }
     } else {
         assert(data->port);
@@ -260,15 +260,16 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
 {
     char buf[CONN_PATH_LEN + 1], temp[80];
     TSERV_TypeOnly type, types;
-    struct SLBNULL_Data* data;
     size_t len, pfxlen, domlen;
+    struct SLBNULL_Data* data;
     int/*bool*/ vhost = 0;
     const char* path = 0;
     unsigned long port;
+    const char* str;
     char* domain;
 
     assert(iter  &&  !iter->data  &&  !iter->op  &&  !iter->external);
-    assert(!iter->ismask  &&  *iter->name  &&  !strchr(iter->name, '/'));
+    assert(!iter->ismask  &&  *iter->name  &&  !strpbrk(iter->name, "/.?*["));
     assert(!default_prefix  ||  (*default_prefix  &&  *default_prefix != '-'
                                  &&  default_prefix[strlen(default_prefix) - 1] != '-'));
     assert(!default_domain  ||  (*default_domain  &&  *default_domain != '.'));
@@ -312,60 +313,61 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
         vhost = ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
                                     (iter->name, REG_CONN_LBNULL_VHOST,
                                      temp, sizeof(temp), 0));
-        if (!ConnNetInfo_GetValueService(iter->name, REG_CONN_LBNULL_PATH,
-                                         buf, sizeof(buf), "/")) {
+        if (!(str = ConnNetInfo_GetValueService(iter->name, REG_CONN_LBNULL_PATH,
+                                                buf, sizeof(buf), "/"))
+            ||  !*str  ||  strpbrk(str, "?#")) {
             CORE_LOGF_X(89, eLOG_Error,
-                        ("[%s]  Cannot obtain URL path for LBNULL", iter->name));
+                        ("[%s]  %s URL path%s%s%s for LBNULL", iter->name,
+                         !str ? "Cannot obtain" : "Invalid",
+                         !str ? "" : " \"", !str ? "" : str, &"\""[!str]));
             goto out;
         }
-        if (!(path = strdup(buf))) {
+        assert(str == buf);
+        if (!(path = strdup(str))) {
             CORE_LOGF_ERRNO_X(90, eLOG_Error, errno,
                               ("[%s]  Cannot store path \"%s\" for LBNULL", iter->name,
-                               buf));
+                               str));
             goto out;
         }
         CORE_TRACEF(("[%s]  LBNULL using path \"%s\"%s", iter->name,
                      path, vhost ? " and VHost" : ""));
     }
 
-    if (!ConnNetInfo_GetValueInternal(iter->name, REG_CONN_LBNULL_PORT,
-                                      temp, sizeof(temp), 0)) {
-        CORE_LOGF_X(91, eLOG_Error,
-                    ("[%s]  Cannot obtain port number for LBNULL", iter->name));
-        goto out;
-    }
     port = 0;
-    if (*temp) {
-        if (isdigit((unsigned char)(*temp))) {
+    if (!(str = ConnNetInfo_GetValueInternal(iter->name, REG_CONN_LBNULL_PORT,
+                                             temp, sizeof(temp), 0))  ||  *str) {
+        assert(!str  ||  str == temp);
+        if (str  &&  isdigit((unsigned char)(*str))) {
             char* end;
             errno = 0;
-            port = strtoul(temp, &end, 0);
+            port = strtoul(str, &end, 0);
             if (errno  ||  *end  ||  port > 0xFFFF)
                 port = 0;
         }
         if (!port) {
             CORE_LOGF_X(92, eLOG_Error,
-                        ("[%s]  Bad port number \"%s\" for LBNULL", iter->name,
-                         temp));
+                        ("[%s]  %s port number%s%s%s for LBNULL", iter->name,
+                         !str ? "Cannot obtain" : "Invalid",
+                         !str ? "" : " \"", !str ? "" : str, &"\""[!str]));
             goto out;
         }
-        assert(port);
     } else if (!(type & fSERV_Dns))
         port = CONN_PORT_LBNULL;
-    CORE_TRACEF(("[%s]  LBNULL using port number :%lu", iter->name, port));
+    if (port)
+        CORE_TRACEF(("[%s]  LBNULL using port number :%lu", iter->name, port));
 
     if (default_prefix  ||  !default_domain) {
-        const char* pfx
-            = ConnNetInfo_GetValueInternal(iter->name, REG_CONN_LBNULL_PREFIX,
+        str = ConnNetInfo_GetValueInternal(iter->name, REG_CONN_LBNULL_PREFIX,
                                            buf, CONN_HOST_LEN + 1,
                                            default_prefix);
-        assert(!pfx  ||  pfx == buf);
-        pfxlen = !pfx  ||  !*pfx ? 0 : strlen(pfx);
-        if (!pfx  ||  (pfxlen  &&  !SERV_CheckServiceName(pfx, pfxlen, 1, 0))) {
+        assert(!str  ||  str == buf);
+        pfxlen = !str  ||  !*str ? 0 : strlen(str);
+        if (!str
+            ||  (pfxlen  &&  !SERV_CheckServiceName(str, pfxlen, 1/*dns*/, 0/*ismask*/))) {
             CORE_LOGF_X(93, eLOG_Error,
                         ("[%s]  %s service name prefix%s%s%s for LBNULL", iter->name,
-                         !pfx ? "Cannot obtain" : "Invalid",
-                         !pfx ? "" : " \"", !pfx ? "" : pfx, &"\""[!pfx]));
+                         !str ? "Cannot obtain" : "Invalid",
+                         !str ? "" : " \"", !str ? "" : str, &"\""[!str]));
             goto out;
         }
         if (pfxlen)
@@ -380,7 +382,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
         x_tr(buf + pfxlen, iter->name, len, '_', '-');
     len += pfxlen;
     assert(len <= 2 * (CONN_HOST_LEN + 1));
-    assert(SERV_CheckServiceName(buf, len, 1, 0));
+    assert(SERV_CheckServiceName(buf, len, 1/*dns*/, 0/*ismask*/));
 
     domlen = 0;
     domain = buf + len + 1;
@@ -407,7 +409,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     if (!exact)
         strlwr(buf);
     assert(strlen(buf) == len);
-    assert(SERV_CheckServiceName(buf, strcspn(buf, "."), 1, 0));
+    assert(SERV_CheckServiceName(buf, strcspn(buf, "."), 1/*dns*/, 0/*ismask*/));
 
     if (len > CONN_HOST_LEN) {
         CORE_LOGF_X(95, eLOG_Error,
@@ -439,7 +441,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     if (!s_Resolve(iter)) {
         CORE_LOGF(eLOG_Trace,
                   ("SERV_LBNULL_Open(\"%s\"): Service not found",
-                   data->host/*trace full host, not iter->name*/));
+                   data->host/*trace full host, not just iter->name*/));
         s_Close(iter);
         return 0;
     }
