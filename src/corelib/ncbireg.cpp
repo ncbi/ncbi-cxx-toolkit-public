@@ -580,8 +580,8 @@ void IRegistry::x_CheckFlags(const string& func, TFlags& flags, TFlags allowed)
 {
     if (flags & ~allowed) {
         ERR_POST_X(9,
-                   Warning << func << ": extra flags passed: 0x" << hex
-                   << (flags & ~allowed));
+                   Warning << func << ": extra flags passed: 0x" <<
+                   std::format("{:X}", flags & ~allowed));
     }
     flags &= allowed;
 }
