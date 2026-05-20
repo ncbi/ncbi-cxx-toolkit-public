@@ -93,12 +93,15 @@ void CIdMapperConfig::Initialize(CNcbiIstream& istr)
     CMemoryRegistry reg;
     try {
         CNcbiIstrstream is(buffer);
+        CDiagCollectGuard diag_guard; // ignore warnings from parsing
         reg.Read(is);
     }
-    catch (CException& e) {
+    catch (NCBI_UNUSED CRegistryException& e) {
+        /* No need to warn - both registry and legacy formats are supported
         ERR_POST(Warning << "CIdMapperConfig: "
                  "error reading config file in registry format: " << e <<
                  "; trying to read in old format...");
+        */
 
         //
         // older config file support
