@@ -346,9 +346,9 @@ bool CMetaRegistry::x_Reload(const string& path, IRWRegistry& reg,
             ERR_POST_X(8,
                        Warning
                        << "CMetaRegistry::Reload: disregarding explicit"
-                       " registry flags (0x" << hex << reg_flags
+                       " registry flags (0x" << std::format("{:X}", reg_flags)
                        << ") that differ from the originally specified 0x"
-                       << hex << entryp->reg_flags);
+                       << std::format("{:X}", entryp->reg_flags));
         }
         return entryp->Reload(flags);
     } else {
