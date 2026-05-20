@@ -35,6 +35,7 @@
 #include <corelib/ncbithr.hpp>
 
 #include <util/static_map.hpp>
+#include <util/compile_time.hpp>
 
 #include <serial/iterator.hpp>
 #include <serial/objistrasn.hpp>
@@ -153,25 +154,25 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
         return id;
     }
 
-
-    map<char, list<char>> s_IUPACmap{
-        { 'A', list<char>({ 'A' }) },
-        { 'G', list<char>({ 'G' }) },
-        { 'C', list<char>({ 'C' }) },
-        { 'T', list<char>({ 'T' }) },
-        { 'U', list<char>({ 'U' }) },
-        { 'M', list<char>({ 'A', 'C' }) },
-        { 'R', list<char>({ 'A', 'G' }) },
-        { 'W', list<char>({ 'A', 'T' }) },
-        { 'S', list<char>({ 'C', 'G' }) },
-        { 'Y', list<char>({ 'C', 'T' }) },
-        { 'K', list<char>({ 'G', 'T' }) },
-        { 'V', list<char>({ 'A', 'C', 'G' }) },
-        { 'H', list<char>({ 'A', 'C', 'T' }) },
-        { 'D', list<char>({ 'A', 'G', 'T' }) },
-        { 'B', list<char>({ 'C', 'G', 'T' }) },
-        { 'N', list<char>({ 'A', 'C', 'G', 'T' }) }
-    };
+    using TCharSet = ct::const_bitset<256, char>; // Without this, MAKE_CONST_MAP() doesn't expand correctly
+    MAKE_CONST_MAP(s_IUPACmap, char, TCharSet, {
+        { 'A', { 'A' } },
+        { 'G', { 'G' } },
+        { 'C', { 'C' } },
+        { 'T', { 'T' } },
+        { 'U', { 'U' } },
+        { 'M', { 'A', 'C' } },
+        { 'R', { 'A', 'G' } },
+        { 'W', { 'A', 'T' } },
+        { 'S', { 'C', 'G' } },
+        { 'Y', { 'C', 'T' } },
+        { 'K', { 'G', 'T' } },
+        { 'V', { 'A', 'C', 'G' } },
+        { 'H', { 'A', 'C', 'T' } },
+        { 'D', { 'A', 'G', 'T' } },
+        { 'B', { 'C', 'G', 'T' } },
+        { 'N', { 'A', 'C', 'G', 'T' } },
+    });
 }
 
 
@@ -1680,9 +1681,18 @@ bool CFeatureTableReader_Imp::x_AddCodons(
 
     set<int> codons;
     try {
-        for (char char1 : s_IUPACmap.at(val[0])) {
-            for (char char2 : s_IUPACmap.at(val[1])) {
-                for (char char3 : s_IUPACmap.at(val[2])) {
+        auto it1 = s_IUPACmap.find(val[0]);
+        auto it2 = s_IUPACmap.find(val[1]);
+        auto it3 = s_IUPACmap.find(val[2]);
+        if (it1 == s_IUPACmap.end() ||
+            it2 == s_IUPACmap.end() ||
+            it3 == s_IUPACmap.end()) {
+            return false;
+        }
+
+        for (char char1 : it1->second) {
+            for (char char2 : it2->second) {
+                for (char char3 : it3->second) {
                     const auto codon_index = CGen_code_table::CodonToIndex(char1, char2, char3);
                     codons.insert(codon_index);
                 }
