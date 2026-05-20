@@ -886,12 +886,13 @@ bool CSNPClient::CanProcessRequest(CPSGS_Request& request, TProcessorPriority pr
         SPSGS_BlobBySatSatKeyRequest& blob_request = request.GetRequest<SPSGS_BlobBySatSatKeyRequest>();
         try {
             CSNPBlobId blob_id(blob_request.m_BlobId.GetId());
+            return !blob_id.IsEmpty();
         }
         catch (CSraException&) {
             // Not a valid SNP blob id
             return false;
         }
-        return true;
+        break;
     }
     case CPSGS_Request::ePSGS_TSEChunkRequest: {
         SPSGS_TSEChunkRequest& chunk_request = request.GetRequest<SPSGS_TSEChunkRequest>();
