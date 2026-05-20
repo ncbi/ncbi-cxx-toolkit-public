@@ -36,7 +36,7 @@ optimeout=30000
 ; Default: 1
 maxretries=1
 
-log=false
+log=true
 
 ; Cassandra keyspace where BIOSEQ_INFO and SI2CSI tables are
 ; There is no default value. If not provided then the server does not start
