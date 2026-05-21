@@ -1775,5 +1775,11 @@ bool CSeqDB::IdsToOids(CSeqDBGiList & id_list) const
 }
 
 
+void CSeqDB::SetMMapStrategy(CMemoryFile_Base::EMemMapAdvise strategy)
+{
+    m_Impl->SetMMapStrategy(strategy);
+}
+
+
 END_NCBI_SCOPE
 
