@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed May 20 05:33:04 EDT 2026; formally
+/* time_t value corresponding to Thu May 21 05:33:04 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1779269584UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1779355984UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -623,7 +623,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BFD\ts\tBedfordshire Natural History Society\t\t\t",
 "BFDL\ts\tForest Products Laboratory\t\t\t",
 "BFIC\ts\tMuseum National d'Histoire Naturelle\t\t\t",
-"BFRIRS \ts\tBangladesh Fisheries Research Institute\t\t\t",
 "BFRS\ts\tBlodgett Forest Research Station\t\t\t",
 "BFT\ts\tQueen's University, Botany Department\t\t\t",
 "BFUS\ts\tUniversity of Sofia, Biology Faculty\t\t\t",
@@ -2929,6 +2928,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "herbarium\tT\tCentre for Implementation and Research of Plant Health Clinic\t\t\t",
 "HERT\ts\tFundacao Universidade Estadual do Ceara\t\t\t",
 "HERVA\ts\tUniversidade Federal de Mato Grosso\t\t\t",
+"HERW\ts\tUniversity of State of Rio Grande do Sul\t\t\t",
 "HERZ\ts\tHerzen State Pedagogical University of Russia, Department of Botany\t\t\t",
 "HERZU\ts\tUniversidad del Zulia\t\t\t",
 "HEU\ts\tFaculty of Science Helwan University\t\t\t",
@@ -3115,6 +3115,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HOMU\ts\tMarymount University\t\t\t",
 "HON\ts\tSichuan Grassland Research Institute\t\t\t",
 "HOSP\ts\tHot Springs National Park\t\t\t",
+"HOU\ts\tUniversity of Houston\t\t\t",
 "HOXA\ts\tEstacion biologica del Jardin Botanico de Missouri\t\t\t",
 "HPAN\ts\tUniversity of the State of Mato Grosso, UNEMAT\t\t\t",
 "HPBR\ts\tUniversidade Regional Integrada do Alto Uruguai e das Missoes\t\t\t",
@@ -4267,6 +4268,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "LBLC\ts\tM. Curie-Sklodowska University\t\t\t",
 "LBM<BRA>\tc\tLaboratorio de Biologia Molecula Depto de Biologia Celular\t\t\t",
 "LBM<JPN>\ts\tLake Biwa Museum\t\t\t",
+"LBMBP\ts\tUniversity of Sao Paulo\t\t\t",
 "LBN\ts\tLembaga Biologi Nasional\t\t\t",
 "LBP\ts\tLaboratorio de Biologia e Genetica de Peixes\t\t\t",
 "LBRP\ts\tLaboratorio de Biodiversidade de Recursos Pesqueiros\t\t\t",
@@ -5070,7 +5072,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MNHN:IM\ts\tMuseum National d'Histoire Naturelle, Molluscs\t\t\t",
 "MNHN:IN\ts\tMuseum National d'Histoire Naturelle, Nematodes\t\t\t",
 "MNHN:IP\ts\tMuseum National d'Histoire Naturelle, Porifera\t\t\t",
-"MNHN:IR IR\ts\tMuseum National d'Histoire Naturelle, Protists\tMNHN:IR \t\t",
+"MNHN:IR \ts\tMuseum National d'Histoire Naturelle, Protists\tMNHN:IR IR\t\t",
 "MNHN:IT \ts\tMuseum National d'Histoire Naturelle, Tunicates/ascidians\t\t\t",
 "MNHN:IU\ts\tMuseum National d'Histoire Naturelle, Crustaceans\t\t\t",
 "MNHN:LCP\ts\tMuseum National d'Histoire Naturelle, Laboratory of Cryptogamy\t\t\t",
@@ -7361,7 +7363,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SORO\ts\tUniversidade Federal de Sao Carlos, campus Sorocaba\t\t\t",
 "SOSCMVNH\ts\tSouthern Oregon State College, Museum of Vertebrate Natural History\t\t\t",
 "SOSN\ts\tSilesian Medical School in Katowice, Department of Pharmaceutical Botany\t\t\t",
-"SOSSRC \ts\tSave Our Seas Shark Research Center, Nova Southeastern University\t\t\t",
 "SOTO\ts\tCollege of the Ozarks, Biology Department\t\t\t",
 "SOTON\ts\tSouthampton University\t\t\t",
 "SOUT\ts\tLong Island University\t\t\t",
@@ -8254,6 +8255,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UMO<USA-ME>\ts\tUniversity of Maine\tUMDE\t\t",
 "UMO<USA-MO>\ts\tDunn-Palmer Herbarium, University of Missouri, Museum Support Center\t\t\t",
 "UMOC\ts\tUniversity of Missouri, Museum of Zoology\t\t\t",
+"UMPH\ts\tUniversity of Montpellier\t\t\t",
 "UMPI\ts\tUniversity of Maine at Presque Isle\t\t\t",
 "UMR CNRS\ts\tUnites Mixtes de Recherche\t\t\t",
 "UMRC\tc\tUniversity of Minnesota Rhizobium Collection\t\t\t",

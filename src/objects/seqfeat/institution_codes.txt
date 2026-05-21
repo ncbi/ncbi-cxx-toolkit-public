@@ -587,7 +587,6 @@ BFBI	s	Biologisches Forschunsstation Burgenland
 BFD	s	Bedfordshire Natural History Society			
 BFDL	s	Forest Products Laboratory			
 BFIC	s	Museum National d'Histoire Naturelle			
-BFRIRS 	s	Bangladesh Fisheries Research Institute			
 BFRS	s	Blodgett Forest Research Station			
 BFT	s	Queen's University, Botany Department			
 BFUS	s	University of Sofia, Biology Faculty			
@@ -2893,6 +2892,7 @@ HERBAM	s	Universidade do Estado de Mato Grosso
 herbarium	T	Centre for Implementation and Research of Plant Health Clinic			
 HERT	s	Fundacao Universidade Estadual do Ceara			
 HERVA	s	Universidade Federal de Mato Grosso			
+HERW	s	University of State of Rio Grande do Sul			
 HERZ	s	Herzen State Pedagogical University of Russia, Department of Botany			
 HERZU	s	Universidad del Zulia			
 HEU	s	Faculty of Science Helwan University			
@@ -3079,6 +3079,7 @@ HOMP	s	Okresni muzeum Pribram Brezove Hory
 HOMU	s	Marymount University			
 HON	s	Sichuan Grassland Research Institute			
 HOSP	s	Hot Springs National Park			
+HOU	s	University of Houston			
 HOXA	s	Estacion biologica del Jardin Botanico de Missouri			
 HPAN	s	University of the State of Mato Grosso, UNEMAT			
 HPBR	s	Universidade Regional Integrada do Alto Uruguai e das Missoes			
@@ -4231,6 +4232,7 @@ LBL	s	M. Curie-Sklodowska University, Department of Botany and Mycology Institut
 LBLC	s	M. Curie-Sklodowska University			
 LBM<BRA>	c	Laboratorio de Biologia Molecula Depto de Biologia Celular			
 LBM<JPN>	s	Lake Biwa Museum			
+LBMBP	s	University of Sao Paulo			
 LBN	s	Lembaga Biologi Nasional			
 LBP	s	Laboratorio de Biologia e Genetica de Peixes			
 LBRP	s	Laboratorio de Biodiversidade de Recursos Pesqueiros			
@@ -5034,7 +5036,7 @@ MNHN:IK	s	Museum National d'Histoire Naturelle, Cnidarians
 MNHN:IM	s	Museum National d'Histoire Naturelle, Molluscs			
 MNHN:IN	s	Museum National d'Histoire Naturelle, Nematodes			
 MNHN:IP	s	Museum National d'Histoire Naturelle, Porifera			
-MNHN:IR IR	s	Museum National d'Histoire Naturelle, Protists	MNHN:IR 		
+MNHN:IR 	s	Museum National d'Histoire Naturelle, Protists	MNHN:IR IR		
 MNHN:IT 	s	Museum National d'Histoire Naturelle, Tunicates/ascidians			
 MNHN:IU	s	Museum National d'Histoire Naturelle, Crustaceans			
 MNHN:LCP	s	Museum National d'Histoire Naturelle, Laboratory of Cryptogamy			
@@ -7325,7 +7327,6 @@ SOMF	s	Bulgarian Academy of Sciences (Mycological Collection)
 SORO	s	Universidade Federal de Sao Carlos, campus Sorocaba			
 SOSCMVNH	s	Southern Oregon State College, Museum of Vertebrate Natural History			
 SOSN	s	Silesian Medical School in Katowice, Department of Pharmaceutical Botany			
-SOSSRC 	s	Save Our Seas Shark Research Center, Nova Southeastern University			
 SOTO	s	College of the Ozarks, Biology Department			
 SOTON	s	Southampton University			
 SOUT	s	Long Island University			
@@ -8218,6 +8219,7 @@ UMO<GBR>	s	University Museum of Natural History
 UMO<USA-ME>	s	University of Maine	UMDE		
 UMO<USA-MO>	s	Dunn-Palmer Herbarium, University of Missouri, Museum Support Center			
 UMOC	s	University of Missouri, Museum of Zoology			
+UMPH	s	University of Montpellier			
 UMPI	s	University of Maine at Presque Isle			
 UMR CNRS	s	Unites Mixtes de Recherche			
 UMRC	c	University of Minnesota Rhizobium Collection			
