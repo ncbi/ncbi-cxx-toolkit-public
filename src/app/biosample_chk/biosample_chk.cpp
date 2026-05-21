@@ -861,7 +861,7 @@ void CBiosampleChkApp::ReadClassMember
                     *m_ReportStream << "Elapsed = " << sw.Elapsed() << endl;
                 }
                 n++;
-            } catch (std::exception e) {
+            } catch (std::exception& e) {
                 if ( !m_Continue ) {
                     throw;
                 }

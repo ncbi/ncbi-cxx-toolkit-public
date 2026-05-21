@@ -1812,7 +1812,7 @@ BOOST_AUTO_TEST_CASE(Test_PropagateAllFeatures_UsingFeatureIds)
     vector<CRef<CSeq_feat>> propagated_feats = propagator.PropagateAll();
     BOOST_CHECK_EQUAL(listener.Count(), 0);
 
-    BOOST_CHECK(propagated_feats.size() == feat_id - 1); // it's 'feat_id-1' because the protein is not propagated
+    BOOST_CHECK(int(propagated_feats.size()) == feat_id - 1); // it's 'feat_id-1' because the protein is not propagated
     for (auto& it : propagated_feats) {
         BOOST_CHECK(it->IsSetId());
         BOOST_CHECK(it->GetId().GetLocal().GetId() == (++feat_id));
@@ -2115,7 +2115,7 @@ BOOST_AUTO_TEST_CASE(Test_PropagateFeaturesWithXrefsWithCDS)
     vector<CRef<CSeq_feat>> propagated_feats = propagator.PropagateFeatureList(feat_list);
     BOOST_CHECK_EQUAL(listener.Count(), 0);
 
-    BOOST_CHECK(propagated_feats.size() == feat_id );
+    BOOST_CHECK(int(propagated_feats.size()) == feat_id);
 
     auto feat_it = propagated_feats.begin();
     auto prop_gene = *feat_it;
@@ -2274,7 +2274,7 @@ BOOST_AUTO_TEST_CASE(Test_DoNotPropagateToGap_RW_887)
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
     CObject_id::TId maxFeatId = s_FindHighestFeatId(seh);
-
+    BOOST_CHECK(maxFeatId == 0);
 
     CBioseq_CI b_iter(seh, CSeq_inst::eMol_na);
     CBioseq_Handle src_bseq = *b_iter;

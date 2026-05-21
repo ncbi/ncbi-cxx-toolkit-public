@@ -1628,7 +1628,7 @@ CRef<CSeq_entry> MakeMultiSeqCDS(bool good_end, bool is_minus, bool already_part
 void TruncateTransSplicedCDSForExtension(CRef<CSeq_entry> entry, bool on_5, bool on_3)
 {
     CRef<CSeq_feat> cds = entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
-    CBioseq& first_seq = entry->SetSet().SetSeq_set().front()->SetSeq();
+    // CBioseq& first_seq = entry->SetSet().SetSeq_set().front()->SetSeq();
     CBioseq& last_seq = entry->SetSet().SetSeq_set().back()->SetSeq();
     CRef<CSeq_loc> l1 = cds->SetLocation().SetMix().Set().front();
     CRef<CSeq_loc> l2 = cds->SetLocation().SetMix().Set().back();

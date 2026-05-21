@@ -393,37 +393,42 @@ bool CCleanup::s_AddNumToUserField(CUser_field &field)
         return false;
     }
     bool any_change = false;
+    CUser_field::TNum num;
     switch (field.GetData().Which()) {
-        case CUser_field::TData::e_Strs:
-            if (!field.IsSetNum() || field.GetNum() != field.GetData().GetStrs().size()) {
-                field.SetNum(field.GetData().GetStrs().size());
-                any_change = true;
-            }
-            break;
-         case CUser_field::TData::e_Ints:
-            if (!field.IsSetNum() || field.GetNum() != field.GetData().GetInts().size()) {
-                field.SetNum(field.GetData().GetInts().size());
-                any_change = true;
-            }
-            break;
-        case CUser_field::TData::e_Reals:
-            if (!field.IsSetNum() || field.GetNum() != field.GetData().GetReals().size()) {
-                field.SetNum(field.GetData().GetReals().size());
-                any_change = true;
-            }
-            break;
-        case CUser_field::TData::e_Oss:
-            if (!field.IsSetNum() || field.GetNum() != field.GetData().GetOss().size()) {
-                field.SetNum(field.GetData().GetOss().size());
-                any_change = true;
-            }
-            break;
-        default:
-            if (field.IsSetNum() && field.GetNum() != 1) {
-                field.SetNum(1);
-                any_change = true;
-            }
-            break;
+    case CUser_field::TData::e_Strs:
+        num = CUser_field::TNum(field.GetData().GetStrs().size());
+        if (! field.IsSetNum() || field.GetNum() != num) {
+            field.SetNum(num);
+            any_change = true;
+        }
+        break;
+    case CUser_field::TData::e_Ints:
+        num = CUser_field::TNum(field.GetData().GetInts().size());
+        if (! field.IsSetNum() || field.GetNum() != num) {
+            field.SetNum(num);
+            any_change = true;
+        }
+        break;
+    case CUser_field::TData::e_Reals:
+        num = CUser_field::TNum(field.GetData().GetReals().size());
+        if (! field.IsSetNum() || field.GetNum() != num) {
+            field.SetNum(num);
+            any_change = true;
+        }
+        break;
+    case CUser_field::TData::e_Oss:
+        num = CUser_field::TNum(field.GetData().GetOss().size());
+        if (! field.IsSetNum() || field.GetNum() != num) {
+            field.SetNum(num);
+            any_change = true;
+        }
+        break;
+    default:
+        if (field.IsSetNum() && field.GetNum() != 1) {
+            field.SetNum(1);
+            any_change = true;
+        }
+        break;
     }
     return any_change;
 }
