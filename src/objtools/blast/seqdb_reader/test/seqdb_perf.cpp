@@ -35,6 +35,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbistr.hpp>
+#include <util/random_gen.hpp>
 #include <objtools/blast/seqdb_reader/seqdbexpert.hpp>
 #ifdef _OPENMP
 #include <omp.h>
@@ -76,7 +77,7 @@ class CSeqDBPerfApp : public CNcbiApplication
 {
 public:
     /** @inheritDoc */
-    CSeqDBPerfApp() {}
+    CSeqDBPerfApp() :m_NumThreads(1){}
 private:
     /** @inheritDoc */
     virtual void Init();
@@ -92,6 +93,7 @@ private:
     TDbHandles m_DbHandles;
     /// Container of memory usage objects
     vector<SMemUsage> m_MemoryUsage;
+    int m_NumThreads;
 
     /// Initializes the application's data members
     void x_InitApplicationData();
@@ -105,6 +107,9 @@ private:
     /// Processes all requests except printing the BLAST database information
     /// @return 0 on success; 1 if some sequences were not retrieved
     int x_ScanDatabase();
+
+    /// Time to retrieve a set of random seqs
+    int x_RandomSeqs();
 };
 
 void
@@ -151,7 +156,7 @@ CSeqDBPerfApp::x_ScanDatabase()
         thread_id = omp_get_thread_num();
 #endif
         #pragma omp for schedule(static, (oids2iterate.size()/m_DbHandles.size())) nowait
-        for (ssize_t i = 0; i < oids2iterate.size(); i++) {
+        for (size_t i = 0; i < oids2iterate.size(); i++) {
             int oid = oids2iterate[i];
             const char* buffer = NULL;
             int seqlen = 0;
@@ -193,45 +198,38 @@ CSeqDBPerfApp::x_InitApplicationData()
     const CSeqDB::ESeqType kSeqType = ParseMoleculeTypeString(args["dbtype"].AsString());
     const string& kDbName(args["db"].AsString());
 
-    int kNumThreads = 1;
 #if (defined(_OPENMP) && defined(NCBI_THREADS))
-    kNumThreads = args["num_threads"].AsInteger();
+    m_NumThreads = args["num_threads"].AsInteger();
 #endif
-
-    // To test the use of CSeqDB::SetMmapStrategy, uncomment one of the two
-    // pairs of statements below.
-
-//    CSeqDB::SetMmapStrategy(CSeqDB::eMmap_IndexFile, CSeqDB::eMmap_Sequential);
-//    CSeqDB::SetMmapStrategy(CSeqDB::eMmap_SequenceFile, CSeqDB::eMmap_Sequential);
-
-//    CSeqDB::SetMmapStrategy(CSeqDB::eMmap_IndexFile, CSeqDB::eMmap_WillNeed);
-//    CSeqDB::SetMmapStrategy(CSeqDB::eMmap_SequenceFile, CSeqDB::eMmap_WillNeed);
-
 
     if (args["multi_threaded_creation"]) {
 #if (defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION >= 900)) || \
     (defined(NCBI_COMPILER_ICC) && (NCBI_COMPILER_VERSION >= 2100))
-        #pragma omp parallel default(none) shared(kDbName, kNumThreads, kSeqType) num_threads(kNumThreads)
+        #pragma omp parallel default(none) shared(kDbName, m_NumThreads, kSeqType) num_threads(m_NumThreads)
 #else
-        #pragma omp parallel default(none) shared(kDbName, kNumThreads) num_threads(kNumThreads)
+        #pragma omp parallel default(none) shared(kDbName, m_NumThreads) num_threads(m_NumThreads)
 #endif
-        for (int i = 0; i < kNumThreads; i++)
+        for (int i = 0; i < m_NumThreads; i++)
             CSeqDBExpert(kDbName, kSeqType);
         
     } else {
 
         m_BlastDb.Reset(new CSeqDBExpert(kDbName, kSeqType));
+
+        if (args["mm_random"]) {
+        	m_BlastDb->SetMMapStrategy(CMemoryFile_Base::eMMA_Random);
+        }
         m_DbIsProtein = static_cast<bool>(m_BlastDb->GetSequenceType() == CSeqDB::eProtein);
 
-        m_DbHandles.reserve(kNumThreads);
+        m_DbHandles.reserve(m_NumThreads);
         m_DbHandles.push_back(m_BlastDb);
-        if (kNumThreads > 1) {
-            for (int i = 1; i < kNumThreads; i++) {
+        if (m_NumThreads > 1) {
+            for (int i = 1; i < m_NumThreads; i++) {
                 m_BlastDb.Reset(new CSeqDBExpert(kDbName, kSeqType));
                 m_DbHandles.push_back(m_BlastDb);
             }
         }
-        m_MemoryUsage.assign(kNumThreads, SMemUsage());
+        m_MemoryUsage.assign(m_NumThreads, SMemUsage());
     }
 
     sw.Stop();
@@ -280,6 +278,58 @@ CSeqDBPerfApp::x_PrintBlastDatabaseInformation()
     return 0;
 }
 
+int CSeqDBPerfApp::x_RandomSeqs()
+{
+	int num_oids = m_BlastDb->GetNumOIDs();
+	int num_seqs = m_BlastDb->GetNumSeqs();
+	if (m_NumThreads > 1) {
+		m_BlastDb->SetNumberOfThreads(m_NumThreads, true);
+	}
+
+	size_t test_size = 5000;
+	CNcbiEnvironment env;
+	const string & env_test_size = env.Get("RANDOM_TEST_SIZE");
+	if (env_test_size != kEmptyStr) {
+		test_size = NStr::StringToInt(env_test_size);
+	}
+
+	vector<int> test_oids(test_size);
+	CRandom r(num_oids%23);
+	for (size_t i=0; i < test_size; i++) {
+		int oid = r.GetRandIndex(num_oids);
+		if (num_oids != num_seqs) {
+			m_BlastDb->CheckOrFindOID(oid);
+		}
+		test_oids.push_back(oid);
+	}
+    CStopWatch sw;
+    sw.Start();
+#pragma omp parallel for default(none) num_threads(m_NumThreads) schedule(guided) if (m_NumThreads > 1) \
+        shared( m_BlastDb, m_NumThreads, test_size, test_oids)
+	for (size_t i=0; i < test_size; i++) {
+		int thread_id = 0;
+#ifdef _OPENMP
+		thread_id = omp_get_thread_num();
+#endif
+		int oid = test_oids[i];
+		CRef<CBioseq> b = m_BlastDb->GetBioseq(oid);
+		CRef<CBlast_def_line_set> df_set = m_BlastDb->ExtractBlastDefline(*b);
+		const char * buffer = NULL;
+		if (m_DbIsProtein) {
+			TSeqPos length = m_BlastDb->GetSequence(oid, &buffer);
+			m_BlastDb->RetSequence(&buffer);
+		}
+		else {
+			TSeqPos length = m_BlastDb->GetAmbigSeq(oid, &buffer, kSeqDBNuclNcbiNA8);
+			m_BlastDb->RetAmbigSeq(&buffer);
+		}
+		x_UpdateMemoryUsage(thread_id);
+	}
+    sw.Stop();
+    cout << "Time to retrieve " << test_size << " seqs: " << sw.AsSmartString() << endl;
+    return 0;
+}
+
 void CSeqDBPerfApp::Init()
 {
     HideStdArgs(fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
@@ -313,6 +363,8 @@ void CSeqDBPerfApp::Init()
                       "Do a full database scan of uncompressed sequence data", true);
     arg_desc->AddFlag("scan_compressed",
                       "Do a full database scan of compressed sequence data", true);
+    arg_desc->AddFlag("random_seqs",
+                      "Retrieve random seq data", true);
     arg_desc->AddFlag("get_metadata",
                       "Retrieve BLAST database metadata", true);
 
@@ -320,8 +372,14 @@ void CSeqDBPerfApp::Init()
                             "scan_uncompressed");
     arg_desc->SetDependency("scan_compressed", CArgDescriptions::eExcludes,
                             "get_metadata");
+    arg_desc->SetDependency("scan_compressed", CArgDescriptions::eExcludes,
+                            "random_seqs");
     arg_desc->SetDependency("scan_uncompressed", CArgDescriptions::eExcludes,
                             "get_metadata");
+    arg_desc->SetDependency("scan_uncompressed", CArgDescriptions::eExcludes,
+                            "random_seqs");
+
+    arg_desc->AddFlag("mm_random", "Set madvise random", true);
 
     arg_desc->AddDefaultKey("num_threads", "number",
                             "Number of threads to use (requires OpenMP)",
@@ -348,6 +406,8 @@ int CSeqDBPerfApp::Run(void)
             return status;
         if (args["get_metadata"]) {
             status = x_PrintBlastDatabaseInformation();
+        } else if (args["random_seqs"]) {
+        	status = x_RandomSeqs();
         } else {
             status = x_ScanDatabase();
         }
