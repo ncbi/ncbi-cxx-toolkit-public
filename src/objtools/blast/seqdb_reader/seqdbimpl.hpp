@@ -1056,6 +1056,13 @@ public:
     ///                 internal mmap. [in]
     void SetNumberOfThreads(int num_threads, bool force_mt = false);
 
+    /// Set the memory mapping strategy for BLAST DB files.
+    /// @param strategy The desired access pattern hint.
+    void SetMMapStrategy(CMemoryFile_Base::EMemMapAdvise strategy)
+    {
+        m_Atlas.SetMMapStrategy(strategy);
+    }
+
     /// Set the membership bit of all volumes
     void SetVolsMemBit(int mbit);
 
