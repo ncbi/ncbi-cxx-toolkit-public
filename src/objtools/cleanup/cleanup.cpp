@@ -2743,7 +2743,7 @@ static bool s_CleanupIsShortrRNA(const CSeq_feat& f, CScope* scope) // used in f
     return is_bad;
 }
 
-bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_proteins, Uint4 options, bool run_extended_cleanup, bool also_fix_location)
+bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_proteins, Uint4 options, bool run_extended_cleanup, bool /*also_fix_location*/)
 {
     bool any_changes = false;
 
@@ -2962,7 +2962,7 @@ bool CCleanup::x_HasShortIntron(const CSeq_loc& loc, size_t min_len)
                 this_strand = eNa_strand_plus;
             }
             if (this_strand == prev_strand) {
-                if (abs((long int)this_start - (long int)prev_end) < min_len) {
+                if ((unsigned long)abs((long)this_start - (long)prev_end) < min_len) {
                     return true;
                 }
             }
@@ -4700,9 +4700,9 @@ size_t CCleanup::MakeSmallGenomeSet(CSeq_entry_Handle entry)
     }
     // now create sets
     size_t added = 0;
-    for (auto& entry : flu_map) {
-        if (entry.second->OkToMakeSet()) {
-            entry.second->MakeSet();
+    for (auto& i : flu_map) {
+        if (i.second->OkToMakeSet()) {
+            i.second->MakeSet();
             added++;
         }
     }
