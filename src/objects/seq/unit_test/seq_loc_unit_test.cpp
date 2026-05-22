@@ -1433,4 +1433,72 @@ BOOST_AUTO_TEST_CASE(TestTotalRange)
         tt[i]->Join(&exit_data);
     }
 }
+
+static void s_TestStartStop(const char* loc_asn,
+                            TSeqPos bio_from,
+                            TSeqPos bio_to,
+                            TSeqPos pos_from,
+                            TSeqPos pos_to)
+{
+    auto loc = MakeLoc(loc_asn);
+    BOOST_CHECK_EQUAL(loc->GetStart(eExtreme_Biological), bio_from);
+    BOOST_CHECK_EQUAL(loc->GetStop (eExtreme_Biological), bio_to);
+    BOOST_CHECK_EQUAL(loc->GetStart(eExtreme_Positional), pos_from);
+    BOOST_CHECK_EQUAL(loc->GetStop (eExtreme_Positional), pos_to);
+}
+
+BOOST_AUTO_TEST_CASE(TestStartStop)
+{
+    s_TestStartStop("mix {"
+                    " int { from 10, to 20, id gi 1 },"
+                    " int { from 30, to 40, id gi 1 },"
+                    " int { from 50, to 60, id gi 1 }"
+                    "}", 10, 60, 10, 60);
+    s_TestStartStop("mix {"
+                    " int { from 30, to 40, id gi 1 },"
+                    " int { from 50, to 60, id gi 1 },"
+                    " int { from 10, to 20, id gi 1 }"
+                    "}", 30, 20, 30, 20);
+    s_TestStartStop("mix {"
+                    " int { from 50, to 60, strand minus, id gi 1 },"
+                    " int { from 30, to 40, strand minus, id gi 1 },"
+                    " int { from 10, to 20, strand minus, id gi 1 }"
+                    "}", 60, 10, 10, 60);
+    s_TestStartStop("mix {"
+                    " int { from 30, to 40, strand minus, id gi 1 },"
+                    " int { from 10, to 20, strand minus, id gi 1 },"
+                    " int { from 50, to 60, strand minus, id gi 1 }"
+                    "}", 40, 50, 50, 40);
+    s_TestStartStop("mix {"
+                    " int { from 50, to 60, strand minus, id gi 1 },"
+                    " int { from 30, to 40, strand minus, id gi 1 },"
+                    " int { from 10, to 20, id gi 1 }"
+                    "}", 60, 20, 10, 60);
+    s_TestStartStop("packed-int {"
+                    " { from 50489, to 50873, strand plus, id gi 94502557 },"
+                    " { from 320927, to 322594, strand plus, id gi 94502557 },"
+                    " { from 548713, to 548771, strand plus, id gi 94502557 },"
+                    " { from 266973, to 267231, strand minus, id gi 94502557 }"
+                    "}", 50489, 266973, 50489, 548771);
+    s_TestStartStop("mix {"
+                    " int { from 50489, to 50873, strand plus, id gi 94502557 },"
+                    " int { from 320927, to 322594, strand plus, id gi 94502557 },"
+                    " int { from 548713, to 548771, strand plus, id gi 94502557 },"
+                    " int { from 266973, to 267231, strand minus, id gi 94502557 }"
+                    "}", 50489, 266973, 50489, 548771);
+    s_TestStartStop("mix {"
+                    " int { from 1113339, to 1125494, strand plus, id gi 253510047 },"
+                    " int { from 1141919, to 1155743, strand plus, id gi 253510047 },"
+                    " int { from 718691, to 732877, strand minus, id gi 253510047 }"
+                    "}", 1113339, 718691, 718691, 1155743);
+    s_TestStartStop("packed-pnt {"
+                    " id gi 94502557,"
+                    " points { 50489, 320927, 548713, 26673 }"
+                    "}", 50489, 26673, 50489, 26673);
+    s_TestStartStop("packed-pnt {"
+                    " strand minus,"
+                    " id gi 94502557,"
+                    " points { 548713, 320927, 50489, 1266973 }"
+                    "}", 548713, 1266973, 1266973, 548713);
+}
 #endif
