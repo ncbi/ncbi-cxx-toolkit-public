@@ -207,7 +207,7 @@ MAKE_CONST_SET(kMiscPIR6, ct::packed_fixed_string<6>,
 
 // Cannot assume precapitalization
 static constexpr ctll::fixed_string kAccessionLike{
-    "[A-Za-z][A-Za-z_]*(?:\\d{2}[PSps]\\d)?\\d{5,}(?:\\.0*[1-9]\\d*)?"
+    "[A-Za-z][A-Za-z_]*(?:\\d{2}[PSps]\\d)?\\d{5,}(?:\\.0*[1-9]\\d{0,8})?"
 };
 
 
@@ -1837,14 +1837,15 @@ static CSafeStatic<CRef<SAccGuide> > s_Guide(s_CreateGuide, NULL);
 CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const CTempString& acc,
                                                    TParseFlags flags)
 {
-    SIZE_TYPE main_size = acc.find('.');
+    SIZE_TYPE main_size = acc.find('.'), nz_pos;
     bool has_version = true;
     if (main_size == NPOS) {
         has_version = false;
         main_size = acc.size();
     } else if (main_size >= acc.size() - 1
-               ||  acc.find_first_not_of("0", main_size + 1) == NPOS
-               ||  acc.find_first_not_of(kDigits, main_size + 1) != NPOS) {
+               ||  (nz_pos = acc.find_first_not_of("0", main_size + 1)) == NPOS
+               ||  acc.size() > nz_pos + 9
+               ||  acc.find_first_not_of(kDigits, nz_pos) != NPOS) {
         return eAcc_unknown; // non-numeric "version"
     }
 
