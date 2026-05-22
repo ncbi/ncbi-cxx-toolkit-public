@@ -187,7 +187,7 @@ bool CPacked_seqint::IsSetStrand(EIsSetStrand flag) const
 }
 
 
-ENa_strand CPacked_seqint::GetStrand(void) const
+pair<ENa_strand, CPacked_seqint::EIdType> CPacked_seqint::GetStrandAndCheckId(void) const
 {
     ENa_strand strand = eNa_strand_unknown;
     bool strand_set = false;
@@ -197,7 +197,7 @@ ENa_strand CPacked_seqint::GetStrand(void) const
         if (id == NULL) {
             id = &((*i)->GetId());
         } else if (id->Compare((*i)->GetId()) != CSeq_id::e_YES) {
-            return eNa_strand_other;
+            return make_pair(eNa_strand_other, eId_multi);
         }
 
         ENa_strand istrand = (*i)->IsSetStrand() ? (*i)->GetStrand() : eNa_strand_unknown;
@@ -210,10 +210,28 @@ ENa_strand CPacked_seqint::GetStrand(void) const
             strand = istrand;
             strand_set = true;
         } else if (istrand != strand) {
-            return eNa_strand_other;
+            strand = eNa_strand_other;
+            strand_set = true;
         }
     }
-    return strand;
+    return make_pair(strand, (id? eId_single: eId_none));
+}
+
+
+ENa_strand CPacked_seqint::GetStrand(void) const
+{
+    return GetStrandAndCheckId().first;
+}
+
+
+CRange<TSeqPos> CPacked_seqint::GetTotalRange() const
+{
+    CRange<TSeqPos> total_range;
+    for ( auto& int_ref : Get() ) {
+        const CSeq_interval& seq_int = *int_ref;
+        total_range += CRange<TSeqPos>(seq_int.GetFrom(), seq_int.GetTo());
+    }
+    return total_range;
 }
 
 
@@ -221,6 +239,14 @@ TSeqPos CPacked_seqint::GetStart(ESeqLocExtremes ext) const
 {
     if (Get().empty()) {
         return kInvalidSeqPos;
+    }
+    if ( ext == eExtreme_Positional ) {
+        auto [ strand, id_type ] = GetStrandAndCheckId();
+        if ( strand == eNa_strand_other && id_type == eId_single ) {
+            // special case - mixed strands on the same sequence - use GetTotalRange()
+            return GetTotalRange().GetFrom();
+        }
+        return (IsReverse(strand)? Get().back(): Get().front())->GetStart(ext);
     }
     return GetStartInt(ext)->GetStart(ext);
 }
@@ -230,6 +256,14 @@ TSeqPos CPacked_seqint::GetStop(ESeqLocExtremes ext) const
 {
     if (Get().empty()) {
         return kInvalidSeqPos;
+    }
+    if ( ext == eExtreme_Positional ) {
+        auto [ strand, id_type ] = GetStrandAndCheckId();
+        if ( strand == eNa_strand_other && id_type == eId_single ) {
+            // special case - mixed strands on the same sequence - use GetTotalRange()
+            return GetTotalRange().GetTo();
+        }
+        return (IsReverse(strand)? Get().front(): Get().back())->GetStop(ext);
     }
     return GetStopInt(ext)->GetStop(ext);
 }

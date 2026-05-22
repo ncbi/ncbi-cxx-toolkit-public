@@ -41,6 +41,7 @@
 #include <objects/seqloc/Seq_loc_mix_.hpp>
 
 #include <objects/seqloc/Na_strand.hpp>
+#include <util/range.hpp>
 
 // generated classes
 
@@ -94,6 +95,13 @@ public:
                      ENa_strand strand = eNa_strand_unknown);
         
     bool IsSetStrand(EIsSetStrand flag = eIsSetStrand_Any) const;
+    enum EIdType {
+        eId_none,
+        eId_single,
+        eId_multi
+    };
+    pair<ENa_strand, EIdType> GetStrandAndCheckId(void) const;
+    CRange<TSeqPos> GetTotalRange() const;
     ENa_strand GetStrand(void) const;
     bool IsReverseStrand(void) const;
     TSeqPos GetStart(ESeqLocExtremes ext) const;
