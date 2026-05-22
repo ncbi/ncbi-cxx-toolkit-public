@@ -1856,14 +1856,14 @@ bool CFeatureTableReader_Imp::x_AddQualifierToBioSrc(
     case eOrgRef_gcode: {
         CBioSource::TOrg&   orp  = bsp.SetOrg();
         COrg_ref::TOrgname& onp  = orp.SetOrgname();
-        int                 code = x_StringToLongNoThrow(val, feat_name, "gcode");
+        int                 code = static_cast<int>(x_StringToLongNoThrow(val, feat_name, "gcode"));
         onp.SetGcode(code);
         return true;
     }
     case eOrgRef_mgcode: {
         CBioSource::TOrg&   orp  = bsp.SetOrg();
         COrg_ref::TOrgname& onp  = orp.SetOrgname();
-        int                 code = x_StringToLongNoThrow(val, feat_name, "mgcode");
+        int                 code = static_cast<int>(x_StringToLongNoThrow(val, feat_name, "mgcode"));
         onp.SetMgcode(code);
         return true;
     }
