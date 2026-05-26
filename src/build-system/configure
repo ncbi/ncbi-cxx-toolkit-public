@@ -10782,6 +10782,8 @@ fi
 $as_echo "$ncbi_cv_lib_cxx20_format" >&6; }
 if test "$ncbi_cv_lib_cxx20_format" = yes; then
              WithFeatures="$WithFeatures${WithFeaturesSep}Cxx2020_format_api"; WithFeaturesSep=" "
+else
+   as_fn_error $? "The C++ Toolkit requires <format> support nowadays." "$LINENO" 5
 fi
 
 
