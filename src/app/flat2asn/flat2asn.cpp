@@ -41,7 +41,12 @@
 #include <serial/objostrasn.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
-#include <objtools/flatfile/flatfile_parser.hpp>
+#if __has_include(<flatfile_parser.hpp>)
+    #include <flatfile_parser.hpp>
+#else
+    #include <objtools/flatfile/flatfile_parser.hpp>
+#endif
+
 #include <objtools/logging/listener.hpp>
 
 #ifdef THIS_FILE
