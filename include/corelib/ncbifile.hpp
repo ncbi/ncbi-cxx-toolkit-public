@@ -2486,7 +2486,8 @@ public:
         eMMA_DoFork      = eMADV_DoFork,
         eMMA_DontFork    = eMADV_DontFork,
         eMMA_Mergeable   = eMADV_Mergeable,
-        eMMA_Unmergeable = eMADV_Unmergeable
+        eMMA_Unmergeable = eMADV_Unmergeable,
+        eMMA_NoReuse     = eMADV_NoReuse
     } EMemMapAdvise;
 
     /// Advise on memory map usage for specified region.
