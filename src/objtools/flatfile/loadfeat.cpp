@@ -452,6 +452,7 @@ static string_view ncRNA_class_values[] = {
     "ribozyme",
     "scRNA",
     "siRNA",
+    "sgRNA",
     "miRNA",
     "piRNA",
     "pre_miRNA",
