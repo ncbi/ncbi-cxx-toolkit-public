@@ -311,6 +311,9 @@ static string_view GenomicSourceFeatQual[] = {
     "",              /* 20 */
     "",              /* 21 */
     "chromatophore", /* 22 */
+    "",              /* 23 */
+    "",              /* 24 */
+    "nitroplast",    /* 25 */
 };
 
 static string_view OrganelleFirstToken[] = {
