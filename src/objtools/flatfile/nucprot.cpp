@@ -1554,7 +1554,8 @@ static Int2 EndAdded(CSeq_feat& feat, CScope& scope, GeneRefFeats& gene_refs)
             continue;
 
         const CGene_ref& cur_gene_ref = (*gene)->GetData().GetGene();
-        if (! NStr::EqualNocase(cur_gene_ref.GetLocus(), name)) {
+        if (! cur_gene_ref.IsSetLocus() ||
+            ! NStr::EqualNocase(cur_gene_ref.GetLocus(), name)) {
             if (! cur_gene_ref.IsSetSyn())
                 continue;
 
