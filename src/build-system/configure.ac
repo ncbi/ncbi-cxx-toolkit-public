@@ -2340,6 +2340,8 @@ AC_CACHE_CHECK([whether $CXX supports C++20 <format>],
       [ncbi_cv_lib_cxx20_format=no])])
 if test "$ncbi_cv_lib_cxx20_format" = yes; then
    NCBI_FEATURE(Cxx2020_format_api)
+else
+   AC_MSG_ERROR([The C++ Toolkit requires <format> support nowadays.])
 fi
 
 
