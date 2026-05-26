@@ -507,14 +507,9 @@ static CRef<CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
     } else
         cit_pat->SetAuthors(*auth_list);
 
-    if (auth_list.NotEmpty()) {
-        CAffil& affil = auth_list->SetAffil();
-
-        s += 13;
-        if (s < eptr && *s != '\0')
-            affil.SetStr(s);
-        else
-            affil.SetStr("");
+    s += 13;
+    if (s < eptr && *s != '\0') {
+        cit_pat->SetAuthors().SetAffil().SetStr(s);
     }
 
     if (ibp->is_pat && ibp->psip.Empty()) {
@@ -2442,7 +2437,8 @@ CRef<CPubdesc> DescrRefs(ParserPtr pp, DataBlk& dbp, Uint2 col_data)
     if (no_auth) {
         if (pp->source == Parser::ESource::EMBL)
             FtaErrPost(SEV_ERROR, ERR_REFERENCE_MissingAuthors, "Reference has no author names.");
-        else {
+        else if (pp->source != Parser::ESource::DDBJ ||
+                 ! pp->entrylist[pp->curindx]->is_pat) {
             FtaErrPost(SEV_REJECT, ERR_REFERENCE_MissingAuthors, "Reference has no author names. Entry dropped.");
             pp->entrylist[pp->curindx]->drop = true;
         }
