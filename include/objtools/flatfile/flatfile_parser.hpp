@@ -34,7 +34,7 @@
 #ifndef __FLATFILE_PARSER_HPP__
 #define __FLATFILE_PARSER_HPP__
 
-#include <objtools/flatfile/flatfile_parse_info.hpp>
+#include "flatfile_parse_info.hpp"
 
 #define ParFlat_EMBL_AC  "AFVXYZ" /* patent is "A" */
 #define ParFlat_LANL_AC  "JKLM"
