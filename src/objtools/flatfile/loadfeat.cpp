@@ -388,7 +388,6 @@ static string_view DbxrefTagInt[] = {
     "BDGP_INS",
     "ESTLIB",
     "GENEID",
-    "GI",
     "GO",
     "GREENGENES",
     "INTREPIDBIO",
@@ -703,7 +702,7 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
     }
 
     const string& val = qual.GetVal();
-    if (NStr::EqualNocase(val, "taxon"))
+    if (NStr::EqualNocase(val, "taxon") || StringEquNI(val.c_str(), "GI:", 3))
         return tag;
 
     string line = val;
