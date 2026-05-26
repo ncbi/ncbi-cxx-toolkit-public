@@ -563,7 +563,7 @@ static int/*bool*/ x_SetHostPort(SConnNetInfo* net_info,
             len = (size_t)(end - vhost);
         } else
             len = (size_t) info->vhost;
-        assert(len <= info->vhost  &&  info->vhost < sizeof(net_info->host));
+        assert(len <= info->vhost  &&  len < sizeof(net_info->host));
         strncpy0(net_info->host, vhost, len);
     } else if (info->host == SOCK_HostToNetLong((unsigned int)(-1))) {
         int/*bool*/ ipv6 = !NcbiIsIPv4(&info->addr);
