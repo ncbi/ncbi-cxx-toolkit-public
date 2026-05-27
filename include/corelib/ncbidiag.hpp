@@ -2840,11 +2840,16 @@ public:
     virtual string GetLogName(void);
     virtual void Reopen(TReopenFlags flags);
 
+    size_t GetDroppedMessagesCount(void) const { return m_DroppedMessages.load(); }
+    size_t GetDroppedRequestsCount(void) const { return m_DroppedRequests.load(); }
+
 private:
     /// Thread handling all physical printing of log messages
     CAsyncDiagThread* m_AsyncThread;
     string m_ThreadSuffix;
     bool m_DiscardOnOverflow = false;
+    atomic<size_t> m_DroppedMessages;
+    atomic<size_t> m_DroppedRequests;
 };
 
 
