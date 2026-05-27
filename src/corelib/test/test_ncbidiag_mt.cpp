@@ -144,7 +144,7 @@ bool CTestDiagApp::TestApp_Init(void)
              << NcbiEndl;
     SetDiagStream(&s_Sout);
     if (m_UseAsync) {
-        //if (m_AsyncDiscard) m_Handler.SetDiscardOnOverflow();
+        if (m_AsyncDiscard) m_Handler.SetDiscardOnOverflow();
         m_Handler.InstallToDiag();
     }
     return true;
@@ -175,6 +175,10 @@ bool CTestDiagApp::TestApp_Exit(void)
         NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     if (m_UseAsync) {
+        if (m_Handler.GetDroppedMessagesCount()) {
+            cout << "Dropped " << m_Handler.GetDroppedMessagesCount() << " messages, "
+                << m_Handler.GetDroppedRequestsCount() << " requests" << endl;
+        }
         int msg_per_request = kAsyncRepeats * 2;
         if (!old_format) msg_per_request += 2; // start/stop
         int msg_per_thread = kAsyncRequests * msg_per_request + 1;

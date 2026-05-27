@@ -7369,6 +7369,7 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
         bool is_req_start = (mess.m_Flags & eDPF_AppLog) && mess.m_Event == SDiagMessage::eEvent_RequestStart;
         // Ignore message if request-start has not been posted.
         if (!old_format && m_DiscardOnOverflow && !rctx.IsRequestStartPosted() && !is_req_start) {
+            m_DroppedMessages++;
             return;
         }
         CFastMutexGuard guard(thr->m_QueueLock);
@@ -7378,6 +7379,10 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
                 // In new format post request-stop immediately if start was posted, discard anything else.
                 if (!old_format && rctx.IsRequestStartPosted() && is_req_stop) {
                     break;
+                }
+                m_DroppedMessages++;
+                if (is_req_start) {
+                    m_DroppedRequests++;
                 }
                 return;
             }
@@ -7391,7 +7396,7 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
 #endif
             --thr->m_CntWaiters;
         }
-        thr->m_MsgQueue.push_back(move(async_message));
+        thr->m_MsgQueue.push_back(std::move(async_message));
         // Mark request as posted.
         if (!old_format && m_DiscardOnOverflow && is_req_start) {
             rctx.SetRequestStartPosted(true);
