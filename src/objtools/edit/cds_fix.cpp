@@ -356,39 +356,6 @@ bool SetTranslExcept(CSeq_feat& cds, const string& comment, bool strict, bool ex
 }
 
 
-/// AdjustProteinMolInfoToMatchCDS
-/// A function to change an existing MolInfo to match a coding region
-/// @param molinfo  The MolInfo to be adjusted (if necessary)
-/// @param cds      The CDS to match
-///
-/// @return         Boolean to indicate whether molinfo was changed
-
-bool AdjustProteinMolInfoToMatchCDS(CMolInfo& molinfo, const CSeq_feat& cds)
-{
-    bool rval = false;
-    if (!molinfo.IsSetBiomol() || molinfo.GetBiomol() != CMolInfo::eBiomol_peptide) {
-        molinfo.SetBiomol(CMolInfo::eBiomol_peptide);
-        rval = true;
-    }
-
-    bool partial5 = cds.GetLocation().IsPartialStart(eExtreme_Biological);
-    bool partial3 = cds.GetLocation().IsPartialStop(eExtreme_Biological);
-    CMolInfo::ECompleteness completeness = CMolInfo::eCompleteness_complete;
-    if (partial5 && partial3) {
-        completeness = CMolInfo::eCompleteness_no_ends;
-    } else if (partial5) {
-        completeness = CMolInfo::eCompleteness_no_left;
-    } else if (partial3) {
-        completeness = CMolInfo::eCompleteness_no_right;
-    }
-    if (!molinfo.IsSetCompleteness() || molinfo.GetCompleteness() != completeness) {
-        molinfo.SetCompleteness(completeness);
-        rval = true;
-    }
-    return rval;
-}
-
-
 /// AdjustProteinFeaturePartialsToMatchCDS
 /// A function to change an existing MolInfo to match a coding region
 /// @param new_prot  The protein feature to be adjusted (if necessary)
@@ -409,62 +376,6 @@ bool AdjustProteinFeaturePartialsToMatchCDS(CSeq_feat& new_prot, const CSeq_feat
         any_change = true;
     }
     any_change |= feature::AdjustFeaturePartialFlagForLocation(new_prot);
-    return any_change;
-}
-
-
-/// AdjustForCDSPartials
-/// A function to make all of the necessary related changes to
-/// a Seq-entry after the partialness of a coding region has been
-/// changed.
-/// @param cds        The feature for which adjustments are to be made
-/// @param seh        The Seq-entry-handle to be adjusted (if necessary)
-///
-/// @return           Boolean to indicate whether the Seq-entry-handle was changed
-bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh)
-{
-    if (!cds.IsSetProduct() || !seh) {
-        return false;
-    }
-
-    // find Bioseq for product
-    CBioseq_Handle product = seh.GetScope().GetBioseqHandle(cds.GetProduct());
-    if (!product) {
-        return false;
-    }
-
-    bool any_change = false;
-    // adjust protein feature
-    CFeat_CI f(product, SAnnotSelector(CSeqFeatData::eSubtype_prot));
-    if (f) {
-        // This is necessary, to make sure that we are in "editing mode"
-        const CSeq_annot_Handle& annot_handle = f->GetAnnot();
-        CSeq_entry_EditHandle eh = annot_handle.GetParentEntry().GetEditHandle();
-        CSeq_feat_EditHandle feh(*f);
-        CRef<CSeq_feat> new_feat(new CSeq_feat());
-        new_feat->Assign(*(f->GetSeq_feat()));
-        if (AdjustProteinFeaturePartialsToMatchCDS(*new_feat, cds)) {
-            feh.Replace(*new_feat);
-            any_change = true;
-        }
-    }
-
-    // change or create molinfo on protein bioseq
-    bool found = false;
-    CBioseq_EditHandle beh = product.GetEditHandle();
-    NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, beh.SetDescr().Set()) {
-        if ((*it)->IsMolinfo()) {
-            any_change |= AdjustProteinMolInfoToMatchCDS((*it)->SetMolinfo(), cds);
-            found = true;
-        }
-    }
-    if (!found) {
-        CRef<CSeqdesc> new_molinfo_desc( new CSeqdesc );
-        AdjustProteinMolInfoToMatchCDS(new_molinfo_desc->SetMolinfo(), cds);
-        beh.SetDescr().Set().push_back(new_molinfo_desc);
-        any_change = true;
-    }
-
     return any_change;
 }
 
@@ -657,43 +568,6 @@ CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope)
         new_mrna->SetPartial(new_mrna->GetLocation().IsPartialStart(eExtreme_Positional) || new_mrna->GetLocation().IsPartialStop(eExtreme_Positional));
     }
     return new_mrna;
-}
-
-/// GetmRNAforCDS
-/// A function to find a CSeq_feat representing the
-/// appropriate mRNA for a given CDS.
-/// @param cds        The feature for which the mRNA to be found
-/// @param scope      The scope
-///
-/// @return           CConstRef<CSeq_feat> for new mRNA (will be NULL if none is found)
-
-CConstRef<CSeq_feat> GetmRNAforCDS(const CSeq_feat& cds, CScope& scope)
-{
-    CConstRef<CSeq_feat> mrna;
-    bool has_xref = false;
-    if (cds.IsSetXref()) {
-        /* using FeatID from feature cross-references:
-        * if CDS refers to an mRNA by feature ID, use that feature
-        */
-        CBioseq_Handle bsh = scope.GetBioseqHandle(cds.GetLocation());
-        CTSE_Handle tse = bsh.GetTSE_Handle();
-        FOR_EACH_SEQFEATXREF_ON_SEQFEAT (it, cds) {
-            if ((*it)->IsSetId() && (*it)->GetId().IsLocal() && (*it)->GetId().GetLocal().IsId()) {
-                CSeq_feat_Handle mrna_h = tse.GetFeatureWithId(CSeqFeatData::eSubtype_mRNA, (*it)->GetId().GetLocal().GetId());
-                if (mrna_h) {
-                    mrna = mrna_h.GetSeq_feat();
-                }
-                has_xref = true;
-            }
-        }
-    }
-    if (!has_xref) {
-        /* using original location to find mRNA:
-        * mRNA must include the CDS location and the internal interval boundaries need to be identical
-        */
-        mrna = sequence::GetBestOverlappingFeat( cds.GetLocation(), CSeqFeatData::eSubtype_mRNA, sequence::eOverlap_CheckIntRev, scope);
-    }
-    return mrna;
 }
 
 /// GetGeneticCodeForBioseq
