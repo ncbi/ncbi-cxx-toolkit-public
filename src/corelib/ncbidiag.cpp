@@ -7363,21 +7363,32 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
     static CSafeStatic<NCBI_PARAM_TYPE(Diag, Max_Async_Queue_Size)> s_MaxAsyncQueueSizeParam;
     if (mess.m_Severity < GetDiagDieLevel()) {
         // When using old format, request-start is not watched and any message can be posted
-        bool old_format = GetDiagContext().IsSetOldPostFormat();
-        // If queue is full, only allow request-stop messages from already posted requests.
-        bool is_req_stop = (mess.m_Flags & eDPF_AppLog) && mess.m_Event == SDiagMessage::eEvent_RequestStop;
-        bool is_req_start = (mess.m_Flags & eDPF_AppLog) && mess.m_Event == SDiagMessage::eEvent_RequestStart;
-        // Ignore message if request-start has not been posted.
-        if (!old_format && m_DiscardOnOverflow && !rctx.IsRequestStartPosted() && !is_req_start) {
-            m_DroppedMessages++;
-            return;
+        bool is_req_start = false;
+        bool is_req_stop = false;
+        bool new_format = !GetDiagContext().IsSetOldPostFormat();
+        if (new_format && m_DiscardOnOverflow) {
+            auto app_state = mess.GetAppState();
+            bool is_req = app_state == eDiagAppState_RequestBegin ||
+                app_state == eDiagAppState_Request ||
+                app_state == eDiagAppState_RequestEnd;
+            // If queue is full, only allow request-stop messages from already posted requests.
+            is_req_stop = (mess.m_Flags & eDPF_AppLog) && mess.m_Event == SDiagMessage::eEvent_RequestStop;
+            // Some extra messages (e.g. ncbi_phid) may be logged before request-start,
+            // so have to check both event and app state.
+            is_req_start = ((mess.m_Flags & eDPF_AppLog) && mess.m_Event == SDiagMessage::eEvent_RequestStart)
+                || app_state == eDiagAppState_RequestBegin;
+            // Ignore message if request-start has not been posted.
+            if (is_req && !is_req_start && !rctx.IsRequestStartPosted()) {
+                m_DroppedMessages++;
+                return;
+            }
         }
         CFastMutexGuard guard(thr->m_QueueLock);
         while (Uint4(thr->m_MsgsInQueue.Get()) >= s_MaxAsyncQueueSizeParam->Get())
         {
             if (m_DiscardOnOverflow) {
                 // In new format post request-stop immediately if start was posted, discard anything else.
-                if (!old_format && rctx.IsRequestStartPosted() && is_req_stop) {
+                if (new_format && is_req_stop && rctx.IsRequestStartPosted()) {
                     break;
                 }
                 m_DroppedMessages++;
@@ -7398,7 +7409,7 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
         }
         thr->m_MsgQueue.push_back(std::move(async_message));
         // Mark request as posted.
-        if (!old_format && m_DiscardOnOverflow && is_req_start) {
+        if (new_format && m_DiscardOnOverflow && is_req_start) {
             rctx.SetRequestStartPosted(true);
         }
         if (thr->m_MsgsInQueue.Add(1) == 1) {
