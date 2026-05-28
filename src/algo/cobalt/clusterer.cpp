@@ -1052,7 +1052,7 @@ bool CClusterer::x_CanJoinClusters(int cluster1_id, int cluster2_id,
 
 int CClusterer::GetClusterId(int elem) const
 {
-    if (elem < 0 || elem >= m_ClusterId.size()) {
+    if (elem < 0 || static_cast<size_t>(elem) >= m_ClusterId.size()) {
         NCBI_THROW(CClustererException, eInvalidInput, "Element index out of "
                    "range");
     }

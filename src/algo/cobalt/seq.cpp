@@ -312,7 +312,7 @@ void CSequence::CreateMsa(const objects::CSeq_align& seq_align,
 
         TSeqPos seg_len = lens[seg_index];
 
-        _ASSERT(from + seg_len - 1 < (int)seq_length);
+        _ASSERT(from + seg_len - 1 < (TSeqPos)seq_length);
 
         // for each sequence start position
         for (int i=0;i < num_seqs;i++) {

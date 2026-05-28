@@ -1983,7 +1983,7 @@ CMultiAligner::x_BuildAlignmentIterative(
 
         m_Score = best_score;
     }
-    catch (std::bad_alloc ex) {
+    catch (const std::bad_alloc& ex) {
         // memory clean up
         s_CleanUpConstraints(pair_info, (int)m_QueryData.size());
 

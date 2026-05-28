@@ -135,7 +135,7 @@ CSparseKmerCounts::TCount* CSparseKmerCounts::ReserveCountsMem(
         try {
             counts = new TCount[num_elements];
         }
-        catch (std::bad_alloc) {
+        catch (const std::bad_alloc&) {
             sm_ForceSmallerMem = true;
             num_elements = (Uint4)pow((double)sm_AlphabetSize,
                                       (double)sm_KmerLength);
@@ -143,7 +143,7 @@ CSparseKmerCounts::TCount* CSparseKmerCounts::ReserveCountsMem(
             try {
                 counts = new TCount[num_elements];
             }
-            catch (std::bad_alloc) {
+            catch (const std::bad_alloc&) {
                 NCBI_THROW(CKmerCountsException, eMemoryAllocation,
                            "Memory cannot be allocated for k-mer counting."
                            " Try using compressed alphabet or smaller k.");
