@@ -1,6 +1,9 @@
 if(NCBI_COMPONENT_Boost_DISABLED OR NCBI_COMPONENT_Boost_FOUND)
     return()
 endif()
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
 # Boost: headers and libs
 set(Boost_USE_MULTITHREADED     ON)
 set(Boost_REQUESTED_COMPONENTS
