@@ -150,7 +150,7 @@ class NCBI_XALGOWINMASK_EXPORT CWinMaskUtil
 
             /**\internal\brief Match an id by string.
                \param id_str string to match against.
-               \return true if some id in the id set is a whole word substring 
+               \return true if some id in the id set is a whole word substring
                        of id_str, false otherwise
             */
             bool find( const string & id_str ) const;
@@ -173,7 +173,7 @@ class NCBI_XALGOWINMASK_EXPORT CWinMaskUtil
     class NCBI_XALGOWINMASK_EXPORT CInputBioseq_CI
     {
     public:
-        CInputBioseq_CI(const string & input_file, const string & input_format);
+        CInputBioseq_CI(const string & input_file, const string & input_format, const string & input_compression);
 
         /// Move to the next object in iterated sequence
         CInputBioseq_CI& operator++ (void);
@@ -196,7 +196,7 @@ class NCBI_XALGOWINMASK_EXPORT CWinMaskUtil
     };
 
         /**
-	  \brief Check if the given bioseq should be considered for 
+	  \brief Check if the given bioseq should be considered for
 	  processing.
 
             ids and exclude_ids should not be simultaneousely non empty.
@@ -209,7 +209,7 @@ class NCBI_XALGOWINMASK_EXPORT CWinMaskUtil
                             exclude_ids;
                     false otherwise
          */
-        static bool consider( 
+        static bool consider(
             const objects::CBioseq_Handle & bsh,
             const CIdSet * ids,
             const CIdSet * exclude_ids );

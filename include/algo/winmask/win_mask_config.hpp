@@ -38,6 +38,7 @@
 #include <sstream>
 
 #include <corelib/ncbistre.hpp>
+#include <util/compress/stream_util.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbiargs.hpp>
 
@@ -67,7 +68,7 @@ public:
     enum EErrCode
     {
         eInputOpenFail, /**< Can not open input file. */
-        eReaderAllocFail,     /**< Memory allocation for input 
+        eReaderAllocFail,     /**< Memory allocation for input
                                     reader object failed. */
         eInconsistentOptions    /**< Option validation failure. */
     };
@@ -95,6 +96,7 @@ public:
 class NCBI_XALGOWINMASK_EXPORT CWinMaskConfig
 {
 public:
+    static CNcbiIstream* to_compressed(CNcbiIstream* is, const std::string& compression_type);
 
     typedef CWinMaskUtil::CIdSet CIdSet;
     typedef CWinMaskUtil::CIdSet_SeqId CIdSet_SeqId;
@@ -148,7 +150,7 @@ public:
     /**
      **\brief Get the average unit score threshold.
      **
-     **\return the current value of average unit score 
+     **\return the current value of average unit score
      **        that triggers masking.
      **
      **/
@@ -229,7 +231,7 @@ public:
     /**
      **\brief Average unit score triggering the interval merging.
      **
-     ** For each pair of consequtive mask intervals winmasker 
+     ** For each pair of consequtive mask intervals winmasker
      ** that are candidates for merging (see description of
      ** CWinMaskConfig::MeanMergeCutoffDist()) winmasker evaluates
      ** the mean unit score of all units in the interval starting
@@ -238,7 +240,7 @@ public:
      ** than the value returned by this function the intervals are
      ** merged.
      **
-     **\return the value of the mean unit score triggering 
+     **\return the value of the mean unit score triggering
      **        merging of masked intervals which is the value
      **        of -mscore command line option to winmasker.
      **
@@ -250,7 +252,7 @@ public:
      **
      **\return The distance in base pairs such that if two consequtive
      **        masked intervals are closer to each other than that
-     **        distance then they are merged unconditionally. This is 
+     **        distance then they are merged unconditionally. This is
      **        the value of -mabs command line option to winmasker.
      **
      **/
@@ -261,8 +263,8 @@ public:
      **       merging.
      **
      **\return The distance in base pairs such that if two consequtive
-     **        masked intervals are closer to each other tham that 
-     **        distance then they are considered candidates for 
+     **        masked intervals are closer to each other tham that
+     **        distance then they are considered candidates for
      **        merging. They have to pass mean average unit score
      **        test to be merged (see description of
      **        CWinMaskConfig::MergeCutoffScore()). This is the
@@ -337,7 +339,7 @@ public:
      **\brief Unit step to use for interval merging.
      **
      **\return the distance between units used to estimate
-     **        average unit score of the span of two 
+     **        average unit score of the span of two
      **        intervals that are candidates for merging.
      **
      **/
@@ -406,12 +408,12 @@ public:
     /**
      **\brief Percentage thresholds.
      **
-     ** Comma separated list of floating point numbers 
+     ** Comma separated list of floating point numbers
      ** between 0.0 and 100.0 used to compute winmask
-     ** score thresholds. The corresponding score 
+     ** score thresholds. The corresponding score
      ** thresholds will be added as comments to the
      ** end of the output. For each number the program
-     ** finds the score such that the corresponding 
+     ** finds the score such that the corresponding
      ** fraction of different n-mers has the lower score.
      **
      **\return comma separated list of values
@@ -459,16 +461,16 @@ public:
      **\return unit counts file format
      **
      **/
-    const string SFormat() const 
-    { 
+    const string SFormat() const
+    {
         ostringstream r;
         r << sformat << smem;
-        return r.str(); 
+        return r.str();
     }
 
     /**
      ** \brief Input file format.
-     ** 
+     **
      ** \return string indicating input file format.
      **/
     const string InFmt() const
@@ -479,7 +481,7 @@ public:
     /**
      **\brief The set of query ids to process.
      **
-     ** Only the sequences from the input file that match 
+     ** Only the sequences from the input file that match
      ** one of the ids in this list will be processed.
      **
      **\return the set of query ids to process
@@ -497,7 +499,7 @@ public:
      **/
     const CIdSet * ExcludeIds() const { return exclude_ids; }
 
-    /**\brief Whether to use bit array optimization for 
+    /**\brief Whether to use bit array optimization for
      **       optimized binary counts format.
      **\return true if optimization should be used; false otherwise
      **/
@@ -505,14 +507,17 @@ public:
 
     /**\brief Use CSeq_id objects to match/print sequence ids.
      **
-     **\return true if CSeq_id objects should be used; 
+     **\return true if CSeq_id objects should be used;
      **        false if strings should be used
      **/
     bool MatchId() const { return !text_match; }
 
-    /**\brief Get metadata string to be added to the counts file. 
+    /**\brief Get metadata string to be added to the counts file.
     */
     string const GetMetaData() const { return metadata; }
+
+    ///\brief Get input compression string
+    string const & GetInputCompression() const { return input_compression; }
 
     static void AddWinMaskArgs(CArgDescriptions &arg_desc,
                                EAppType type = eAny,
@@ -529,13 +534,24 @@ private:
     CWinMaskConfig& operator=(const CWinMaskConfig& rhs);
 
     /**\internal
-     **\brief This class is the resource allocator/initializer for 
+     **\brief This class is the resource allocator/initializer for
      **       winmasker input streams (used for safe exception
      **       handling).
      **
      **/
     class CIstreamProxy
     {
+
+        /**\internal
+         * \brief stop managing the resource, delete it, if owned
+         *          (i.e. if not stdin)
+         **/
+        void destroy()
+        {
+            if( resource && resource != &NcbiCin ) delete resource;
+            resource = NULL;
+        }
+
     public:
 
         /**\internal
@@ -556,8 +572,26 @@ private:
          ** Frees the resource unless it points to the standard input.
          **
          **/
-        ~CIstreamProxy()
-        { if( resource && resource != &NcbiCin ) delete resource; }
+        ~CIstreamProxy() { destroy(); }
+
+        /**\internal
+         **\brief start managing the new resource (will destroy owned resource)
+         **/
+        void Reset( CNcbiIstream * newResource = NULL )
+        {
+            if( newResource != resource ) destroy();
+            resource = newResource;
+        }
+
+        /**\internal
+         **\brief stop managing the resource and return it
+         **/
+        CNcbiIstream * Release()
+        {
+            auto res( resource );
+            resource = NULL;
+            return res;
+        }
 
         /**\internal
          **\brief Cast to bool operator.
@@ -606,15 +640,15 @@ private:
      **\param file_name file to read the ids from
      **\param id_list where to store the ids
      **/
-    static void FillIdList( const string & file_name, 
+    static void FillIdList( const string & file_name,
                             CIdSet & id_list );
 
-    /** 
+    /**
      * @brief Create the CMaskWriter instance for this class
-     * 
+     *
      * @param args command line arguments
      * @param format format of the output to be written
-     * 
+     *
      * @return writer based on the format requested
      * @throws runtime_error if the output format is not recognized
      */
@@ -671,6 +705,7 @@ private:
     bool use_ba;                    /**< use bit array based optimization */
     bool text_match;                /**< identify seq ids by string matching */
     string metadata;                /**< metadata associated with counts file */
+    string input_compression;       /**< input compression type */
     //@}
 };
 

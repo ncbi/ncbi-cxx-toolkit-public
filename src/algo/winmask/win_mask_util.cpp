@@ -36,6 +36,7 @@
 
 #include <objmgr/util/sequence.hpp>
 #include <algo/winmask/win_mask_util.hpp>
+#include <algo/winmask/win_mask_config.hpp>
 
 #include <objtools/seqmasks_io/mask_fasta_reader.hpp>
 #include <objtools/seqmasks_io/mask_bdb_reader.hpp>
@@ -57,7 +58,7 @@ void CWinMaskUtil::CIdSet_SeqId::insert( const string & id_str )
 }
 
 //----------------------------------------------------------------------------
-bool CWinMaskUtil::CIdSet_SeqId::find( 
+bool CWinMaskUtil::CIdSet_SeqId::find(
         const objects::CBioseq_Handle & bsh ) const
 {
     const CBioseq_Handle::TId & syns = bsh.GetId();
@@ -73,7 +74,7 @@ bool CWinMaskUtil::CIdSet_SeqId::find(
 }
 
 //----------------------------------------------------------------------------
-const vector< Uint4 > 
+const vector< Uint4 >
 CWinMaskUtil::CIdSet_TextMatch::split( const string & id_str )
 {
     vector< Uint4 > result;
@@ -117,18 +118,18 @@ void CWinMaskUtil::CIdSet_TextMatch::insert( const string & id_str )
     if( id_str[id_str.length() - 1] != '|' ) {
         nword_sets_[nwords - 1].insert( id_str );
     }else {
-        nword_sets_[nwords - 1].insert( 
+        nword_sets_[nwords - 1].insert(
                 id_str.substr( 0, id_str.length() - 1 ) );
     }
 }
 
 //----------------------------------------------------------------------------
-bool CWinMaskUtil::CIdSet_TextMatch::find( 
+bool CWinMaskUtil::CIdSet_TextMatch::find(
         const objects::CBioseq_Handle & bsh ) const
 {
     CConstRef< CBioseq > seq = bsh.GetCompleteBioseq();
     string id_str = sequence::GetTitle( bsh );
-    
+
     if( !id_str.empty() ) {
         string::size_type pos = id_str.find_first_of( " \t" );
         id_str = id_str.substr( 0, pos );
@@ -143,7 +144,7 @@ bool CWinMaskUtil::CIdSet_TextMatch::find(
 }
 
 //----------------------------------------------------------------------------
-inline bool CWinMaskUtil::CIdSet_TextMatch::find( 
+inline bool CWinMaskUtil::CIdSet_TextMatch::find(
         const string & id_str, Uint4 nwords ) const
 {
     return nword_sets_[nwords].find( id_str ) != nword_sets_[nwords].end();
@@ -154,7 +155,7 @@ bool CWinMaskUtil::CIdSet_TextMatch::find( const string & id_str ) const
 {
     vector< Uint4 > word_starts = split( id_str );
 
-    for( Uint4 i = 0; 
+    for( Uint4 i = 0;
             i < nword_sets_.size() && i < word_starts.size() - 1; ++i ) {
         if( !nword_sets_[i].empty() ) {
             for( Uint4 j = 0; j < word_starts.size() - i - 1; ++j ) {
@@ -173,10 +174,11 @@ bool CWinMaskUtil::CIdSet_TextMatch::find( const string & id_str ) const
 }
 
 CWinMaskUtil::CInputBioseq_CI::CInputBioseq_CI(const string & input_file,
-                                 const string & input_format)
+                                 const string & input_format, const string & incompr )
   : m_InputFile(new CNcbiIfstream(input_file.c_str()))
 {
     if( input_format == "fasta" ) {
+        m_InputFile.reset( CWinMaskConfig::to_compressed( m_InputFile.release(), incompr ) );
         m_Reader.reset( new CMaskFastaReader( *m_InputFile, true, false ) );
     }
     else if( input_format == "blastdb" ) {
@@ -218,7 +220,7 @@ CWinMaskUtil::CInputBioseq_CI& CWinMaskUtil::CInputBioseq_CI::operator++ (void)
 bool CWinMaskUtil::consider( const objects::CBioseq_Handle & bsh,
                              const CIdSet * ids, const CIdSet * exclude_ids )
 {
-    if( (ids == 0 || ids->empty()) && 
+    if( (ids == 0 || ids->empty()) &&
         (exclude_ids == 0 || exclude_ids->empty()) ) {
         return true;
     }

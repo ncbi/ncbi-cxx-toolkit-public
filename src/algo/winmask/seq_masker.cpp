@@ -56,7 +56,7 @@ USING_SCOPE(objects);
 
 #define WIN_MASK_ALGO_NAME "window-masker-algorithm"
 #define WIN_MASK_ALGO_VER_MAJOR 1
-#define WIN_MASK_ALGO_VER_MINOR 0
+#define WIN_MASK_ALGO_VER_MINOR 1
 #define WIN_MASK_ALGO_VER_PATCH 0
 
 //-------------------------------------------------------------------------
@@ -153,10 +153,10 @@ CSeqMasker::CSeqMasker( const string & lstat_name,
 
 //-------------------------------------------------------------------------
 CSeqMasker::~CSeqMasker()
-{ 
+{
     if( trigger_score != score ) delete trigger_score;
 
-    delete score; 
+    delete score;
     delete score_p3;
 }
 
@@ -167,7 +167,7 @@ CSeqMasker::operator()( const CSeqVector& data ) const
 
 //-------------------------------------------------------------------------
 CSeqMasker::TMaskList *
-CSeqMasker::DoMask( 
+CSeqMasker::DoMask(
     const CSeqVector& data, TSeqPos begin, TSeqPos stop ) const
 {
     ustat->total_ = 0;
@@ -177,11 +177,11 @@ CSeqMasker::DoMask(
     Uint1 nbits = discontig ? CSeqMaskerUtil::BitCount( pattern ) : 0;
     Uint4 unit_size = ustat->UnitSize() + nbits;
     unique_ptr<CSeqMaskerWindow> window_ptr
-        (discontig ? new CSeqMaskerWindowPattern( data, unit_size, 
-                                                  window_size, window_step, 
+        (discontig ? new CSeqMaskerWindowPattern( data, unit_size,
+                                                  window_size, window_step,
                                                   pattern, unit_step )
-         : new CSeqMaskerWindow( data, unit_size, 
-                                 window_size, window_step, 
+         : new CSeqMaskerWindow( data, unit_size,
+                                 window_size, window_step,
                                  unit_step, begin, stop ));
     CSeqMaskerWindow & window = *window_ptr;
     score->SetWindow( window );
@@ -190,7 +190,7 @@ CSeqMasker::DoMask(
 
     Uint4 start = 0, end = 0, cend = 0;
     Uint4 limit = textend;
-    const CSeqMaskerIstat::optimization_data * od 
+    const CSeqMaskerIstat::optimization_data * od
         = ustat->get_optimization_data();
 
     CSeqMaskerCacheBoost booster( window, od );
@@ -245,18 +245,18 @@ CSeqMasker::DoMask(
                 }
             }
             else start = window.Start();
-    
+
             cend = end = window.End();
         }
 
-        
+
         if( adv == window_step )
             ++window;
 
         score->PostAdvance( adv );
     }
 
-    if( end > start ) 
+    if( end > start )
         mask->push_back( TMaskedInterval( start, end ) );
 
     window_ptr.reset();
@@ -272,18 +272,18 @@ CSeqMasker::DoMask(
         TMaskList::iterator jtmp = mask->end();
 
         {{
-             for( TMaskList::iterator i = mask->begin(), j = --jtmp; 
+             for( TMaskList::iterator i = mask->begin(), j = --jtmp;
                   i != j; )
              {
-                 masked.push_back( mitem( i->first, i->second, unit_size, 
+                 masked.push_back( mitem( i->first, i->second, unit_size,
                                           data, *this ) );
                  Uint4 nstart = (i++)->second - unit_size + 2;
-                 unmasked.push_back( mitem( nstart, i->first + unit_size - 2, 
+                 unmasked.push_back( mitem( nstart, i->first + unit_size - 2,
                                             unit_size, data, *this ) );
              }
 
              masked.push_back( mitem( (mask->rbegin())->first,
-                                      (mask->rbegin())->second, 
+                                      (mask->rbegin())->second,
                                       unit_size, data, *this ) );
          }}
 
@@ -334,9 +334,9 @@ CSeqMasker::DoMask(
                     {
                         --count;
                         k->avg = MergeAvg( k, --j, unit_size );
-                        _TRACE( "Merging " 
+                        _TRACE( "Merging "
                                 << k->start << " - " << k->end
-                                << " and " 
+                                << " and "
                                 << ii->start << " - " << ii->end );
                         Merge( masked, k, unmasked, j );
 
@@ -360,9 +360,9 @@ CSeqMasker::DoMask(
             {
                 --count;
                 k->avg = MergeAvg( k, --j, unit_size );
-                _TRACE( "Merging " 
+                _TRACE( "Merging "
                         << k->start << " - " << k->end
-                        << " and " 
+                        << " and "
                         << ii->start << " - " << ii->end );
                 Merge( masked, k, unmasked, j );
 
@@ -382,18 +382,18 @@ CSeqMasker::DoMask(
             }
         }
 
-        for( ii = masked.begin(), j = unmasked.begin(), k = ii++; 
+        for( ii = masked.begin(), j = unmasked.begin(), k = ii++;
              ii != masked.end(); (k = ii++), j++ )
         {
             if( k->end + abs_merge_cutoff_dist >= ii->start )
             {
-                _TRACE( "Unconditionally merging " 
+                _TRACE( "Unconditionally merging "
                         << k->start << " - " << k->end
-                        << " and " 
+                        << " and "
                         << ii->start << " - " << ii->end );
                 k->avg = MergeAvg( k, j, unit_size );
                 Merge( masked, k, unmasked, j );
-                ii = k; 
+                ii = k;
 
                 if( ++ii == masked.end() ) break;
             }
@@ -409,7 +409,7 @@ CSeqMasker::DoMask(
 }
 
 //-------------------------------------------------------------------------
-double CSeqMasker::MergeAvg( TMList::iterator mi, 
+double CSeqMasker::MergeAvg( TMList::iterator mi,
                              const TMList::iterator & umi,
                              Uint4 unit_size ) const
 {
@@ -423,7 +423,7 @@ double CSeqMasker::MergeAvg( TMList::iterator mi,
 }
 
 //-------------------------------------------------------------------------
-void CSeqMasker::Merge( TMList & m, TMList::iterator mi, 
+void CSeqMasker::Merge( TMList & m, TMList::iterator mi,
                         TMList & um, TMList::iterator & umi ) const
 {
     TMList::iterator tmp = mi++;
@@ -462,7 +462,7 @@ const char * CSeqMasker::CSeqMaskerException::GetErrCodeString() const
 
         return "validation error";
 
-    default: 
+    default:
 
         return CException::GetErrCodeString();
     }
@@ -479,15 +479,15 @@ CSeqMasker::mitem::mitem( Uint4 arg_start, Uint4 arg_end, Uint1 unit_size,
     CSeqMaskerWindow * window = NULL;
 
     if( owner.discontig )
-        window = new CSeqMaskerWindowPatternAmbig( data, unit_size, window_size, 
+        window = new CSeqMaskerWindowPatternAmbig( data, unit_size, window_size,
                                                    owner.merge_unit_step,
-                                                   owner.pattern, ambig_unit, 
-                                                   start, 
+                                                   owner.pattern, ambig_unit,
+                                                   start,
                                                    owner.merge_unit_step );
     else
-        window = new CSeqMaskerWindowAmbig( data, unit_size, window_size, 
-                                            owner.merge_unit_step, 
-                                            ambig_unit, start, 
+        window = new CSeqMaskerWindowAmbig( data, unit_size, window_size,
+                                            owner.merge_unit_step,
+                                            ambig_unit, start,
                                             owner.merge_unit_step );
 
     score->SetWindow( *window );
@@ -543,7 +543,7 @@ void CSeqMasker::MergeMaskInfo( TMaskList * dest, const TMaskList * src )
         if( seg.second + 1 < next_seg.first ) {
             res.push_back( seg );
             seg = next_seg;
-        } 
+        }
         else if( seg.second < next_seg.second ) {
             seg.second = next_seg.second;
         }

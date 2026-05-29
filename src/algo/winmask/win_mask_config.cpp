@@ -43,6 +43,8 @@
 #include <objtools/seqmasks_io/mask_writer_blastdb_maskinfo.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <util/compress/stream_util.hpp>
+#include <util/compress/stream.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -78,7 +80,7 @@ void CWinMaskConfig::AddWinMaskArgs(CArgDescriptions &arg_desc,
             arg_desc.AddDefaultKey( "fa_list", "input_is_a_list",
                                      "indicates that -input represents a file containing "
                                      "a list of names of fasta files to process, one name "
-                                     " per line", 
+                                     " per line",
                                  CArgDescriptions::eBoolean, "false" );
         arg_desc.AddDefaultKey( "mem", "available_memory",
                                  "memory available for mk_counts option in megabytes",
@@ -98,7 +100,7 @@ void CWinMaskConfig::AddWinMaskArgs(CArgDescriptions &arg_desc,
     if(type == eAny || type >= eGenerateMasks){
         arg_desc.AddOptionalKey( "window", "window_size", "window size",
                                   CArgDescriptions::eInteger );
-        arg_desc.AddOptionalKey( "t_extend", "T_extend", 
+        arg_desc.AddOptionalKey( "t_extend", "T_extend",
                                   "window score above which it is allowed to extend masking",
                                   CArgDescriptions::eInteger );
         arg_desc.AddOptionalKey( "t_thres", "T_threshold",
@@ -134,6 +136,9 @@ void CWinMaskConfig::AddWinMaskArgs(CArgDescriptions &arg_desc,
         arg_desc.SetConstraint( kOutputFormat, strings_allowed );
     }
     if(type != eConvertCounts){
+        arg_desc.AddDefaultKey( "compression", "CompressionType",
+                                "one of [none, gz, bz2, zstd]",
+                                CArgDescriptions::eString, "none" );
         arg_desc.AddOptionalKey( "t_high", "T_high",
                                   "maximum useful unit score",
                                   CArgDescriptions::eInteger );
@@ -143,7 +148,7 @@ void CWinMaskConfig::AddWinMaskArgs(CArgDescriptions &arg_desc,
         arg_desc.AddOptionalKey( "t_thres_pct", "T_threshold_pct",
                                   "window score threshold used to trigger masking as percentage",
                                   CArgDescriptions::eDouble );
-        arg_desc.AddOptionalKey( "t_extend_pct", "T_extend_pct", 
+        arg_desc.AddOptionalKey( "t_extend_pct", "T_extend_pct",
                                   "window score above which it is allowed to extend masking as percentage",
                                   CArgDescriptions::eDouble );
         arg_desc.AddOptionalKey( "t_low", "T_low",
@@ -299,13 +304,13 @@ CWinMaskConfig::x_GetWriter(const CArgs& args)
         retval = new CMaskWriterSeqLoc(output, format);
     } else if (NStr::StartsWith(format, "maskinfo_asn1_binary")) {
         CNcbiOstream& output = args[kOutput].AsOutputFile(CArgValue::fBinary);
-        retval = 
+        retval =
             new CMaskWriterBlastDbMaskInfo(output, format, 3,
                                eBlast_filter_program_windowmasker,
                                BuildAlgorithmParametersString(args));
     } else if (NStr::StartsWith(format, "maskinfo_")) {
         CNcbiOstream& output = args[kOutput].AsOutputFile();
-        retval = 
+        retval =
             new CMaskWriterBlastDbMaskInfo(output, format, 3,
                                eBlast_filter_program_windowmasker,
                                BuildAlgorithmParametersString(args));
@@ -315,20 +320,39 @@ CWinMaskConfig::x_GetWriter(const CArgs& args)
     return retval;
 }
 
+CNcbiIstream* CWinMaskConfig::to_compressed(CNcbiIstream* is, const std::string& compression_type)
+{
+    if (compression_type == "none") {
+        return is;
+    } else if (compression_type == "gz") {
+        return new CDecompressIStream(*is, CCompressStream::eGZipFile,
+                                      CCompressStream::fDefault, eTakeOwnership);
+    } else if (compression_type == "bz2") {
+        return new CDecompressIStream(*is, CCompressStream::eBZip2,
+                                      CCompressStream::fDefault, eTakeOwnership);
+    } else if (compression_type == "zstd") {
+        return new CDecompressIStream(*is, CCompressStream::eZstd,
+                                      CCompressStream::fDefault, eTakeOwnership);
+    } else {
+        NCBI_THROW(CWinMaskConfigException, eInputOpenFail,
+                   "Unknown compression type: " + compression_type);
+    }
+}
+
 //----------------------------------------------------------------------------
 CWinMaskConfig::CWinMaskConfig( const CArgs & args, EAppType type, bool determine_input )
     : app_type(s_DetermineAppType(args, type)),
       is( app_type >= eGenerateMasks && args[kInputFormat].AsString() != "blastdb"
-                                     && determine_input ? 
+                                     && determine_input ?
           ( !(args[kInput].AsString() == "-")
-            ? new CNcbiIfstream( args[kInput].AsString().c_str() ) 
+            ? new CNcbiIfstream( args[kInput].AsString().c_str() )
             : static_cast<CNcbiIstream*>(&NcbiCin) ) : NULL ), reader( NULL ), writer( NULL ),
       lstat_name( app_type >= eGenerateMasks ? args["ustat"].AsString() : "" ),
       t_low_pct( app_type != eConvertCounts && args["t_low_pct"] ? args["t_low_pct"].AsDouble() : -1.0 ),
       t_extend_pct( app_type != eConvertCounts && args["t_extend_pct"] ? args["t_extend_pct"].AsDouble() : -1.0 ),
       t_thres_pct( app_type != eConvertCounts && args["t_thres_pct"] ? args["t_thres_pct"].AsDouble() : -1.0 ),
       t_high_pct( app_type != eConvertCounts && args["t_high_pct"] ? args["t_high_pct"].AsDouble() : -1.0 ),
-      textend( app_type >= eGenerateMasks && args["t_extend"] ? args["t_extend"].AsInteger() : 0 ), 
+      textend( app_type >= eGenerateMasks && args["t_extend"] ? args["t_extend"].AsInteger() : 0 ),
       cutoff_score( app_type >= eGenerateMasks && args["t_thres"] ? args["t_thres"].AsInteger() : 0 ),
       max_score( app_type != eConvertCounts && args["t_high"] ? args["t_high"].AsInteger() : 0 ),
       min_score( app_type != eConvertCounts && args["t_low"] ? args["t_low"].AsInteger() : 0 ),
@@ -359,7 +383,8 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args, EAppType type, bool determin
       smem( app_type < eGenerateMasks ? args["smem"].AsInteger() : 0 ),
       ids( 0 ), exclude_ids( 0 ),
       use_ba( app_type != eConvertCounts ),
-      text_match( app_type != eConvertCounts && args["text_match"].AsBoolean() )
+      text_match( app_type != eConvertCounts && args["text_match"].AsBoolean() ),
+      input_compression( args["compression"].AsString() )
 {
     if (args.Exist("meta")  &&  args["meta"]) {
         metadata = args["meta"].AsString();
@@ -379,6 +404,10 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args, EAppType type, bool determin
             NCBI_THROW( CWinMaskConfigException,
                         eInputOpenFail,
                         args[kInput].AsString() );
+        }
+        else if( is )
+        {
+            is.Reset( CWinMaskConfig::to_compressed( is.Release(), input_compression ) );
         }
 
         if(determine_input && iformatstr != "seqids"){
@@ -416,7 +445,7 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args, EAppType type, bool determin
         if( text_match ) {
             ids = new CIdSet_TextMatch;
         }else {
-            if( iformatstr == "blastdb" ) 
+            if( iformatstr == "blastdb" )
                 ids = new CIdSet_SeqId;
             else
                 NCBI_THROW( CWinMaskConfigException, eInconsistentOptions,
@@ -431,7 +460,7 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args, EAppType type, bool determin
         if( text_match ) {
             exclude_ids = new CIdSet_TextMatch;
         }else {
-            if( iformatstr == "blastdb" ) 
+            if( iformatstr == "blastdb" )
                 exclude_ids = new CIdSet_SeqId;
             else
                 NCBI_THROW( CWinMaskConfigException, eInconsistentOptions,
@@ -464,7 +493,7 @@ CMaskReader & CWinMaskConfig::Reader() {
  }
 
 //----------------------------------------------------------------------------
-void CWinMaskConfig::FillIdList( const string & file_name, 
+void CWinMaskConfig::FillIdList( const string & file_name,
                                  CIdSet & id_list )
 {
     CNcbiIfstream file( file_name.c_str() );
@@ -486,7 +515,7 @@ const char * CWinMaskConfigException::GetErrCodeString() const
 {
     switch( GetErrCode() )
     {
-    case eInputOpenFail: 
+    case eInputOpenFail:
 
         return "can not open input stream";
 
@@ -498,7 +527,7 @@ const char * CWinMaskConfigException::GetErrCodeString() const
 
         return "inconsistent program options";
 
-    default: 
+    default:
 
         return CException::GetErrCodeString();
     }

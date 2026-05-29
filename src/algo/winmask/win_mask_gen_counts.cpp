@@ -84,14 +84,14 @@ string mkdata( const CSeq_entry & entry )
 {
     const CBioseq & bioseq( entry.GetSeq() );
 
-    if(    bioseq.CanGetInst() 
+    if(    bioseq.CanGetInst()
            && bioseq.GetInst().CanGetLength()
            && bioseq.GetInst().CanGetSeq_data() )
     {
         TSeqPos len( bioseq.GetInst().GetLength() );
         const CSeq_data & seqdata( bioseq.GetInst().GetSeq_data() );
         unique_ptr< CSeq_data > dest( new CSeq_data );
-        CSeqportUtil::Convert( seqdata, dest.get(), CSeq_data::e_Iupacna, 
+        CSeqportUtil::Convert( seqdata, dest.get(), CSeq_data::e_Iupacna,
                                0, len );
         return dest->GetIupacna().Get();
     }
@@ -105,7 +105,7 @@ Uint8 CWinMaskCountsGenerator::fastalen( const string & fname ) const
 {
     Uint8 result = 0;
 
-    for(CWinMaskUtil::CInputBioseq_CI bs_iter(fname, infmt); bs_iter; ++bs_iter)
+    for(CWinMaskUtil::CInputBioseq_CI bs_iter(fname, infmt, incompr); bs_iter; ++bs_iter)
     {
         CBioseq_Handle bsh = *bs_iter;
 
@@ -121,7 +121,7 @@ static Uint4 reverse_complement( Uint4 seq, Uint1 size )
 { return CSeqMaskerUtil::reverse_complement( seq, size ); }
 
 //------------------------------------------------------------------------------
-CWinMaskCountsGenerator::CWinMaskCountsGenerator( 
+CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     const string & arg_input,
     CNcbiOstream & os,
     const string & infmt_arg,
@@ -137,24 +137,31 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     const CWinMaskUtil::CIdSet * arg_ids,
     const CWinMaskUtil::CIdSet * arg_exclude_ids,
     bool use_ba, string const & metadata,
-    double min_pct, double extend_pct, double thres_pct, double max_pct )
+    double min_pct, double extend_pct, double thres_pct, double max_pct,
+    const string & input_compression )
 :   input( arg_input ),
-    ustat( CSeqMaskerOstatFactory::create( 
+    ustat( CSeqMaskerOstatFactory::create(
                 sformat, os, use_ba, metadata ) ),
     max_mem( mem_avail*1024*1024ULL ), unit_size( arg_unit_size ),
     genome_size( arg_genome_size ),
-    min_count( arg_min_count == 0 ? 1 : arg_min_count ), 
+    min_count( arg_min_count == 0 ? 1 : arg_min_count ),
     // max_count( 1024*1024UL ),
     max_count( 500 ),
     t_high( arg_max_count ),
     has_min_count( arg_min_count != 0 ),
     no_extra_pass( arg_min_count != 0 && arg_max_count != 0 ),
-    check_duplicates( arg_check_duplicates ),use_list( arg_use_list ), 
-    total_ecodes( 0 ), 
+    check_duplicates( arg_check_duplicates ),use_list( arg_use_list ),
+    total_ecodes( 0 ),
     score_counts( max_count, 0 ),
     ids( arg_ids ), exclude_ids( arg_exclude_ids ),
-    infmt( infmt_arg )
+    infmt( infmt_arg ), incompr( input_compression )
 {
+    if( input == "-" ) {
+        NCBI_THROW(
+            GenCountsException, eBadOption,
+            "input file name must be non-empty" );
+    }
+
     // Parse arg_th to set up th[].
     string::size_type pos( 0 );
     Uint1 count( 0 );
@@ -165,10 +172,15 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
         th[count++] = atof( arg_th.substr( pos, newpos - pos ).c_str() );
         pos = (newpos == string::npos ) ? newpos : newpos + 1;
     }
+
+    if( min_pct >= 0.0 ) th[0] = min_pct;
+    if( extend_pct >= 0.0 ) th[1] = extend_pct;
+    if( thres_pct >= 0.0 ) th[2] = thres_pct;
+    if( max_pct >= 0.0 ) th[3] = max_pct;
 }
 
 //------------------------------------------------------------------------------
-CWinMaskCountsGenerator::CWinMaskCountsGenerator( 
+CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     const string & arg_input,
     const string & output,
     const string & infmt_arg,
@@ -184,9 +196,10 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     const CWinMaskUtil::CIdSet * arg_ids,
     const CWinMaskUtil::CIdSet * arg_exclude_ids,
     bool use_ba, string const & metadata,
-    double min_pct, double extend_pct, double thres_pct, double max_pct )
+    double min_pct, double extend_pct, double thres_pct, double max_pct,
+    const string & input_compression )
 :   input( arg_input ),
-    ustat( CSeqMaskerOstatFactory::create( 
+    ustat( CSeqMaskerOstatFactory::create(
                 sformat, output, use_ba, metadata ) ),
     max_mem( mem_avail*1024*1024ULL ), unit_size( arg_unit_size ),
     genome_size( arg_genome_size ),
@@ -196,11 +209,11 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     t_high( arg_max_count ),
     has_min_count( arg_min_count != 0 ),
     no_extra_pass( arg_min_count != 0 && arg_max_count != 0 ),
-    check_duplicates( arg_check_duplicates ),use_list( arg_use_list ), 
-    total_ecodes( 0 ), 
+    check_duplicates( arg_check_duplicates ),use_list( arg_use_list ),
+    total_ecodes( 0 ),
     score_counts( max_count, 0 ),
     ids( arg_ids ), exclude_ids( arg_exclude_ids ),
-    infmt( infmt_arg )
+    infmt( infmt_arg ), incompr( input_compression )
 {
     if( input == "-" ) {
         NCBI_THROW(
@@ -250,7 +263,7 @@ void CWinMaskCountsGenerator::operator()()
     // Check for duplicates, if necessary.
     if( check_duplicates )
     {
-        CheckDuplicates( file_list, infmt, ids, exclude_ids );
+        CheckDuplicates( file_list, infmt, ids, exclude_ids, incompr );
     }
 
     if( unit_size == 0 )
@@ -283,7 +296,7 @@ void CWinMaskCountsGenerator::operator()()
         _TRACE( "unit size is: " << unit_size );
     }
 
-    // Estimate the length of the prefix. 
+    // Estimate the length of the prefix.
     // Prefix length is unit_size - suffix length, where suffix length
     // is max N: (4**N) < max_mem.
     Uint1 prefix_size( 0 ), suffix_size( unit_size );
@@ -291,7 +304,7 @@ void CWinMaskCountsGenerator::operator()()
 
     while( suffix_size > 0 ) {
         Uint8 units_needed( 1ULL<<(2*suffix_size) );
-        if( units_needed <= n_units ) break; 
+        if( units_needed <= n_units ) break;
         --suffix_size;
     }
 
@@ -384,7 +397,7 @@ void CWinMaskCountsGenerator::operator()()
 
         for( Uint4 i( 1 ); i <= max_count; ++i )
         {
-            current 
+            current
                 = 100.0*(((double)(score_counts[i - 1] + offset))
                   /((double)total_ecodes));
             ostringstream s;
@@ -412,8 +425,8 @@ void CWinMaskCountsGenerator::operator()()
 }
 
 //------------------------------------------------------------------------------
-void CWinMaskCountsGenerator::process( Uint4 prefix, 
-                                       Uint1 prefix_size, 
+void CWinMaskCountsGenerator::process( Uint4 prefix,
+                                       Uint1 prefix_size,
                                        const vector< string > & input_list,
                                        bool do_output )
 {
@@ -455,7 +468,7 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
     for( vector< string >::const_iterator it( input_list.begin() );
          it != input_list.end(); ++it )
     {
-        for(CWinMaskUtil::CInputBioseq_CI bs_iter(*it, infmt); bs_iter; ++bs_iter)
+        for(CWinMaskUtil::CInputBioseq_CI bs_iter(*it, infmt, incompr); bs_iter; ++bs_iter)
         {
             CBioseq_Handle bsh = *bs_iter;
 
@@ -549,14 +562,14 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
             else score_counts[counts[i] - 1] += 2;
 
             if( do_output )
-                ustat->setUnitCount( 
+                ustat->setUnitCount(
                         u, (counts[i] > t_high) ? t_high : counts[i] );
         }
     }
 }
 
 //------------------------------------------------------------------------------
-const char * 
+const char *
 CWinMaskCountsGenerator::GenCountsException::GetErrCodeString() const
 {
     switch( GetErrCode() ) {

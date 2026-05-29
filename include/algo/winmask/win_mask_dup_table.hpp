@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
  ** input contains the list of input file names. The files should be in
  ** the fasta format. The function checks the input sequences for
  ** duplication and reports possible duplicates to the standard error.
- ** 
+ **
  **\param input list of input file names
  **\param infmt input format
  **\param ids set of ids to check
@@ -65,7 +65,8 @@ BEGIN_NCBI_SCOPE
 void CheckDuplicates( const vector< string > & input,
                       const string & infmt,
                       const CWinMaskUtil::CIdSet * ids,
-                      const CWinMaskUtil::CIdSet * exclude_ids );
+                      const CWinMaskUtil::CIdSet * exclude_ids,
+                      const string & input_compression = "none" );
 
 END_NCBI_SCOPE
 

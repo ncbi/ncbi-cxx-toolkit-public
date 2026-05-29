@@ -90,9 +90,9 @@ public:
      ** Creates an instance based on configuration parameters.
      **
      **\param input input file name or a name of the file containing
-     **             a list of input files (one per line) depending 
+     **             a list of input files (one per line) depending
      **             on the value of use_list parameter
-     **\param output name of the output file (empty means standard 
+     **\param output name of the output file (empty means standard
      **              output)
      **\param infmt input format
      **\param sformat counts format
@@ -100,10 +100,10 @@ public:
      **          used to compute winmask score thresholds
      **\param mem_avail memory (in megabytes) available to the function
      **\param unit_size n-mer size (value of n)
-     **\param min_count do not consider n-mers with counts less than 
+     **\param min_count do not consider n-mers with counts less than
      **                 the value this parameter
      **\param max_count maximum n-mer count to consider in winmask
-     **                 thresholds computations 
+     **                 thresholds computations
      **\param check_duplicates true if input checking for duplicates is
      **                        requested; false otherwise
      **\param use_list true if input file contains the list of fasta
@@ -139,7 +139,8 @@ public:
                              double min_pct = -1.0,
                              double extend_pct = -1.0,
                              double thres_pct = -1.0,
-                             double max_pct = -1.0 );
+                             double max_pct = -1.0,
+                             const string & input_compression = "none" );
 
     /**
      **\brief Constructor.
@@ -147,7 +148,7 @@ public:
      ** Creates an instance based on configuration parameters.
      **
      **\param input input file name or a name of the file containing
-     **             a list of input files (one per line) depending 
+     **             a list of input files (one per line) depending
      **             on the value of use_list parameter
      **\param os the output stream
      **\param infmt input format
@@ -156,10 +157,10 @@ public:
      **          used to compute winmask score thresholds
      **\param mem_avail memory (in megabytes) available to the function
      **\param unit_size n-mer size (value of n)
-     **\param min_count do not consider n-mers with counts less than 
+     **\param min_count do not consider n-mers with counts less than
      **                 the value this parameter
      **\param max_count maximum n-mer count to consider in winmask
-     **                 thresholds computations 
+     **                 thresholds computations
      **\param check_duplicates true if input checking for duplicates is
      **                        requested; false otherwise
      **\param use_list true if input file contains the list of fasta
@@ -195,7 +196,8 @@ public:
                              double min_pct = -1.0,
                              double extend_pct = -1.0,
                              double thres_pct = -1.0,
-                             double max_pct = -1.0 );
+                             double max_pct = -1.0,
+                             const string & input_compression = "none" );
 
     /**
      **\brief Object destructor.
@@ -222,7 +224,7 @@ private:
      **\param input list of input fasta files
      **
      **/
-    void process( Uint4 prefix, Uint1 prefix_size, 
+    void process( Uint4 prefix, Uint1 prefix_size,
                   const vector< string > & input,
                   bool do_output );
 
@@ -257,6 +259,7 @@ private:
     const CWinMaskUtil::CIdSet * exclude_ids; /**<\internal set of ids to ignore */
 
     string infmt;                   /**<\internal input format */
+    string incompr;                 ///<\internal input compression
 };
 
 END_NCBI_SCOPE

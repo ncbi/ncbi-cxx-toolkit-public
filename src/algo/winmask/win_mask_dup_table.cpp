@@ -57,7 +57,7 @@ USING_SCOPE(objects);
 
 const Uint4 SAMPLE_LENGTH    = 100; /**<\internal length of a sample segment */
 const Uint4 SAMPLE_SKIP      = 10000;   /**<\internal distance between subsequent samples */
-const Uint4 MIN_SEQ_LENGTH   = 50000;   /**<\internal sequences of length below MIN_SEQ_LENGTH are not considered for 
+const Uint4 MIN_SEQ_LENGTH   = 50000;   /**<\internal sequences of length below MIN_SEQ_LENGTH are not considered for
                                           duplication check */
 const Uint4 MAX_OFFSET_ERROR = 5;   /**<\internal fuzziness in distance between consequtive matches */
 const Uint4 MIN_MATCH_COUNT  = 4;   /**<\internal minimal number of successful consequtive sample matches that
@@ -133,7 +133,7 @@ public:
 private:
 
     /**\internal
-     **\brief Type representing a list of sequence id strings for all 
+     **\brief Type representing a list of sequence id strings for all
      **       sequences that have been read so far.
      **/
     typedef vector< string > seq_id_list_type;
@@ -207,7 +207,7 @@ private:
  **\param rhs the second sample location
  **\return true if lhs < rhs; false otherwise
  **/
-inline bool operator<( const dup_lookup_table::sample_loc & lhs, 
+inline bool operator<( const dup_lookup_table::sample_loc & lhs,
                        const dup_lookup_table::sample_loc & rhs )
 {
     return lhs.seqnum < rhs.seqnum ? true  :
@@ -225,7 +225,7 @@ inline bool operator<( const dup_lookup_table::sample_loc & lhs,
  **\param rhs the second sample location
  **\return true if lhs > rhs; false otherwise
  **/
-inline bool operator>( const dup_lookup_table::sample_loc & lhs, 
+inline bool operator>( const dup_lookup_table::sample_loc & lhs,
                        const dup_lookup_table::sample_loc & rhs )
 { return rhs < lhs; }
 
@@ -244,7 +244,7 @@ inline bool operator==( const dup_lookup_table::sample_loc & lhs,
 { return !(lhs < rhs) && !(rhs < lhs); }
 
 //------------------------------------------------------------------------------
-void dup_lookup_table::add_seq_info( const string & seq_id, 
+void dup_lookup_table::add_seq_info( const string & seq_id,
                                      const objects::CSeqVector & seq_data )
 {
     static TSeqPos next_offset( 0 );
@@ -304,13 +304,13 @@ private:
          **\param new_count initial value of match count
          **/
         result( const sample_loc & newloc,
-                string::size_type new_offset, 
+                string::size_type new_offset,
                 Uint4 new_count = 1 )
             : count( new_count ), loc( newloc ), s_offset( new_offset ) {}
     };
 
     /**\internal
-     **\brief type used to store the set of currently tracked matches. 
+     **\brief type used to store the set of currently tracked matches.
      **/
     typedef vector< result > result_list_type;
 
@@ -322,7 +322,7 @@ public:
      **\param the_table the lookup table to search against
      **\param the_subject_id the id string for the subject sequence
      **/
-    tracker( const dup_lookup_table & the_table, const string & the_subject_id  ) 
+    tracker( const dup_lookup_table & the_table, const string & the_subject_id  )
         : table( the_table ), subject_id( the_subject_id ) {}
 
     /**\internal \brief Object destructor. */
@@ -361,7 +361,7 @@ private:
      **\param s_off last position in the subject sequence
      **\param q_off last position in the query sequence
      **/
-    void report_match( Uint4 queryseq, 
+    void report_match( Uint4 queryseq,
                        Uint4 match_count,
                        string::size_type s_off,
                        string::size_type q_off );
@@ -376,7 +376,7 @@ void tracker::report_match( Uint4 queryseq, Uint4 match_count,
                             string::size_type q_off )
 {
     string query_id( table.seqid( queryseq ) );
-    LOG_POST( Warning << 
+    LOG_POST( Warning <<
            "Possible duplication of sequences:\n"
         << "subject: " << subject_id << " and query: " << query_id << "\n"
         << "at intervals\n"
@@ -397,7 +397,7 @@ tracker::~tracker()
     while( riter != rend )
     {
         if( riter->count >= MIN_MATCH_COUNT )
-            report_match( riter->loc.seqnum, riter->count, 
+            report_match( riter->loc.seqnum, riter->count,
                           riter->s_offset + SAMPLE_SKIP, riter->loc.offset );
 
         ++riter;
@@ -405,7 +405,7 @@ tracker::~tracker()
 }
 
 //------------------------------------------------------------------------------
-void tracker::operator()( const string & index, 
+void tracker::operator()( const string & index,
                           Uint4 seqnum,
                           string::size_type subject_offset,
                           dup_lookup_table::iterator iter,
@@ -425,8 +425,8 @@ void tracker::operator()( const string & index,
                 break;
             else
             {
-                aux_list.push_back( result( sample_loc( iter->seqnum, 
-                                                        iter->offset + SAMPLE_SKIP ), 
+                aux_list.push_back( result( sample_loc( iter->seqnum,
+                                                        iter->offset + SAMPLE_SKIP ),
                                             subject_offset ) );
                 ++iter;
             }
@@ -471,7 +471,7 @@ void tracker::operator()( const string & index,
                 {
                     if( subject_offset < riter->s_offset + SAMPLE_SKIP - MAX_OFFSET_ERROR )
                         aux_list.push_back( *riter );
-                    else if( subject_offset > riter->s_offset + SAMPLE_SKIP 
+                    else if( subject_offset > riter->s_offset + SAMPLE_SKIP
                              + MAX_OFFSET_ERROR )
                     {
                         if( riter->count >= MIN_MATCH_COUNT )
@@ -502,7 +502,7 @@ void tracker::operator()( const string & index,
 #if 0
 //------------------------------------------------------------------------------
 /**\internal
- **\brief Get a FASTA formatted id string (the first available) from the 
+ **\brief Get a FASTA formatted id string (the first available) from the
  **       CSeq_entry structure.
  **
  **\param entry sequence description structure
@@ -513,13 +513,13 @@ static const string GetIdString( const CSeq_entry & entry )
     CRef<CObjectManager> om(CObjectManager::GetInstance());
     const CBioseq & seq = entry.GetSeq();
     CRef<CScope> scope(new CScope(*om));
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry( 
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(
         const_cast< CSeq_entry & >( entry ) );
     return CWinMaskSeqTitle::GetId( seh, seq );
 /*
     list< CRef< CSeq_id > > idlist = seq.GetId();
 
-    if( idlist.empty() ) 
+    if( idlist.empty() )
         return "???";
     else
     {
@@ -535,7 +535,8 @@ static const string GetIdString( const CSeq_entry & entry )
 void CheckDuplicates( const vector< string > & input,
                       const string & infmt,
                       const CWinMaskUtil::CIdSet * ids,
-                      const CWinMaskUtil::CIdSet * exclude_ids )
+                      const CWinMaskUtil::CIdSet * exclude_ids,
+                      const string & incompr )
 {
     typedef vector< string >::const_iterator input_iterator;
 
@@ -546,7 +547,7 @@ void CheckDuplicates( const vector< string > & input,
     {
         Uint4 seqnum( 0 );
 
-        for(CWinMaskUtil::CInputBioseq_CI bs_iter(*i, infmt); bs_iter; ++bs_iter)
+        for(CWinMaskUtil::CInputBioseq_CI bs_iter(*i, infmt, incompr); bs_iter; ++bs_iter)
         {
             CBioseq_Handle bsh = *bs_iter;
 

@@ -68,11 +68,11 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 #define WIN_MASK_APP_VER_MAJOR 1
-#define WIN_MASK_APP_VER_MINOR 0
+#define WIN_MASK_APP_VER_MINOR 1
 #define WIN_MASK_APP_VER_PATCH 0
 
 //-------------------------------------------------------------------------
-const char * const 
+const char * const
 CWinMaskApplication::USAGE_LINE = "Window based sequence masker";
 
 //-------------------------------------------------------------------------
@@ -81,17 +81,17 @@ CWinMaskApplication::CWinMaskApplication() {
     version->SetVersionInfo( WIN_MASK_APP_VER_MAJOR,
                              WIN_MASK_APP_VER_MINOR,
                              WIN_MASK_APP_VER_PATCH );
-    version->AddComponentVersion( new CSeqMaskerVersion( 
+    version->AddComponentVersion( new CSeqMaskerVersion(
                 CSeqMasker::AlgoVersion ) );
-    version->AddComponentVersion( new CSeqMaskerVersion( 
+    version->AddComponentVersion( new CSeqMaskerVersion(
                 CSeqMaskerOstat::StatAlgoVersion ) );
-    version->AddComponentVersion( new CSeqMaskerVersion( 
+    version->AddComponentVersion( new CSeqMaskerVersion(
                 CSeqMaskerOstatAscii::FormatVersion ) );
-    version->AddComponentVersion( new CSeqMaskerVersion( 
+    version->AddComponentVersion( new CSeqMaskerVersion(
                 CSeqMaskerOstatBin::FormatVersion ) );
-    version->AddComponentVersion( new CSeqMaskerVersion( 
+    version->AddComponentVersion( new CSeqMaskerVersion(
                 CSeqMaskerOstatOptAscii::FormatVersion ) );
-    version->AddComponentVersion( new CSeqMaskerVersion( 
+    version->AddComponentVersion( new CSeqMaskerVersion(
                 CSeqMaskerOstatOptBin::FormatVersion ) );
     SetFullVersion(version);
 }
@@ -124,7 +124,7 @@ int CWinMaskApplication::Run (void)
     if( aConfig.AppType() == CWinMaskConfig::eConvertCounts )
     {
         if( aConfig.Output() == "-" ) {
-            CWinMaskCountsConverter converter( 
+            CWinMaskCountsConverter converter(
                     aConfig.Input(),
                     NcbiCout,
                     aConfig.SFormat(),
@@ -132,7 +132,7 @@ int CWinMaskApplication::Run (void)
             return converter();
         }
         else {
-            CWinMaskCountsConverter converter( 
+            CWinMaskCountsConverter converter(
                     aConfig.Input(),
                     aConfig.Output(),
                     aConfig.SFormat(),
@@ -169,7 +169,8 @@ int CWinMaskApplication::Run (void)
                                         aConfig.MinScorePct(),
                                         aConfig.ExtendScorePct(),
                                         aConfig.ThresScorePct(),
-                                        aConfig.MaxScorePct() );
+                                        aConfig.MaxScorePct(),
+                                        aConfig.GetInputCompression() );
             cg();
         }
         else {
@@ -192,7 +193,8 @@ int CWinMaskApplication::Run (void)
                                         aConfig.MinScorePct(),
                                         aConfig.ExtendScorePct(),
                                         aConfig.ThresScorePct(),
-                                        aConfig.MaxScorePct() );
+                                        aConfig.MaxScorePct(),
+                                        aConfig.GetInputCompression() );
             cg();
         }
 
@@ -266,7 +268,7 @@ int CWinMaskApplication::Run (void)
 
                 if( duster != 0 ) // Dust and merge with mask_info
                 {
-                    unique_ptr< CSeqMasker::TMaskList > dust_info( 
+                    unique_ptr< CSeqMasker::TMaskList > dust_info(
                         (*duster)( data, *mask_info.get() ) );
                     CSeqMasker::MergeMaskInfo( mask_info.get(), dust_info.get() );
                 }
