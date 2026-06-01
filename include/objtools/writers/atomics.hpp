@@ -39,6 +39,10 @@
 namespace ncbi {
 
 // never blocking stack
+// NOTE: The stack should not be used with nodes which can be deallocated while
+// using the stack. Its pop_front() method has no protection against node
+// deallocation/reallocation scenario, which may result in memory access
+// violation.
 template<typename _T>
 class TAtomicStack
 {
@@ -77,7 +81,9 @@ public:
             expected = m_head.load();
             if (expected == nullptr)
                 break;
-
+            // It is possible that 'expected' node is popped and deallocated by another
+            // thread between loading and dereferencing. For this reason the class
+            // should not be used with nodes which can be deallocated while using the stack.
             next = expected->m_next;
         } while (!m_head.compare_exchange_strong(expected, next));
 

@@ -55,9 +55,6 @@ public:
 
     ~TPreAllocatedResourcePool()
     {
-        auto ptr = m_pool.release();
-        if (ptr)
-            delete[] ptr;
     }
 
     template<typename...TArgs>
@@ -79,16 +76,13 @@ public:
     [[nodiscard]] value_type* allocate()
     {
         auto node = m_stack.pop_front();
-
-        while (node == nullptr)
+        if (node == nullptr)
         {
             std::unique_lock<std::mutex> lock(m_mutex);
-            while ((node = m_stack.pop_front()) == nullptr)
-                m_cv.wait(lock);
+            m_cv.wait(lock, [&]{ return (node = m_stack.pop_front()) != nullptr; });
         }
 
-        value_type& v = *node;
-        return &v;
+        return &static_cast<value_type&>(*node);
     }
 
     void reuse(value_type* vv)
@@ -99,7 +93,10 @@ public:
             value_type& v = node;
             if (&v == vv)
             {
-                m_stack.push_front(&node);
+                {
+                    std::unique_lock<std::mutex> lock(m_mutex);
+                    m_stack.push_front(&node);
+                }
                 m_cv.notify_one();
                 return;
             }
@@ -107,11 +104,11 @@ public:
     }
 
 private:
-    size_t                  m_pool_size = 0;
-    std::unique_ptr<TNode>  m_pool = nullptr;
-    TStack                  m_stack;
-    std::mutex              m_mutex;
-    std::condition_variable m_cv;
+    size_t                    m_pool_size = 0;
+    std::unique_ptr<TNode[]>  m_pool;
+    TStack                    m_stack;
+    std::mutex                m_mutex;
+    std::condition_variable   m_cv;
 };
 
 class CThreadPoolCore
@@ -160,9 +157,9 @@ public:
         typename = std::enable_if_t<!std::is_void_v<_Token>>,  // prevents void(...) functions
         typename = std::enable_if_t<std::is_void_v<std::invoke_result_t<_Deliver, _Token&&>>>
         >
-    void schedule(_Deliver deliver, _Function f, TArgs&&...args)
+    void schedule(_Deliver deliver, _Function&& f, TArgs&&...args)
     {
-        auto task = make_task(f, std::forward<TArgs>(args)...);
+        auto task = make_task(std::forward<_Function>(f), std::forward<TArgs>(args)...);
         x_schedule<_Token>(task, deliver);
     }
 
@@ -192,7 +189,7 @@ public:
             tuple_type params{std::forward<TArgs>(args)...};
             static constexpr auto size = std::tuple_size<tuple_type>::value;
 
-            auto task = [params, f] () {
+            auto task = [params, f = std::forward<_Function>(f)] () {
                 return x_call_func(f, params, std::make_index_sequence<size>{});
             };
             return task;
@@ -314,8 +311,13 @@ private:
                 }
 
                 if (work) {
-                    m_cv.notify_one();
-                    work.value()();
+                    try {
+                        work.value()();
+                    }
+                    catch (...) {
+                        // Do not terminate thread without returning it to the pool and updating counter.
+                        // TODO: Pass the exception to the caller via std::promise.
+                    }
                     m_owner->x_return_worker(this);
                 }
             }
@@ -388,11 +390,13 @@ private:
 
     void x_try_start()
     {
-        if (m_thread_pool.is_cancelled())
-            throw std::runtime_error("Thread pool already cancelled");
+        std::call_once(m_once_flag, [this](){
+            if (m_thread_pool.is_cancelled())
+                throw std::runtime_error("Thread pool already cancelled");
 
-        if (!m_push_thread.valid())
-            m_push_thread = std::async([this](){ x_process_input(); });
+            if (!m_push_thread.valid())
+                m_push_thread = std::async([this](){ x_process_input(); });
+        });
     }
 
     void x_process_input()
@@ -424,6 +428,7 @@ private:
         m_product_queue.push_back({});
     }
 
+    std::once_flag m_once_flag;
     pool_type m_thread_pool;
     CMessageQueue<std::optional<token_type>> m_product_queue; // the queue of threads products
     CMessageQueue<std::optional<TWork>>      m_works;         // the queue of work to do
