@@ -288,6 +288,11 @@ NCBI_PARAM_DEF_EX(int, PSG_LOADER, NO_ID_EXPIRATION_TIMEOUT, kDefaultNoDataCache
                   eParam_NoThread, PSG_LOADER_NO_ID_EXPIRATION_TIMEOUT);
 typedef NCBI_PARAM_TYPE(PSG_LOADER, NO_ID_EXPIRATION_TIMEOUT) TPSG_NoIdExpirationTimeout;
 
+NCBI_PARAM_DECL(bool, PSG_LOADER, ALWAYS_LOAD_EXTERNAL);
+NCBI_PARAM_DEF_EX(bool, PSG_LOADER, ALWAYS_LOAD_EXTERNAL, false,
+                  eParam_NoThread, PSG_LOADER_ALWAYS_LOAD_EXTERNAL);
+typedef NCBI_PARAM_TYPE(PSG_LOADER, ALWAYS_LOAD_EXTERNAL) TPSG_AlwaysLoadExternal;
+
 NCBI_PARAM_DECL(bool, PSG_LOADER, ADD_WGS_MASTER);
 NCBI_PARAM_DEF_EX(bool, PSG_LOADER, ADD_WGS_MASTER, true,
                   eParam_NoThread, PSG_LOADER_ADD_WGS_MASTER);
@@ -372,6 +377,7 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
                                 CPSG_Request_Biodata::eSmartTSE);
     }
     
+    m_AlwaysLoadExternal = GET_PARAM(ALWAYS_LOAD_EXTERNAL, psg_params);
     m_AddWGSMasterDescr = GET_PARAM(ADD_WGS_MASTER, psg_params);
 
     m_RetryCount = GET_PARAM(RETRY_COUNT, psg_params);
@@ -1777,10 +1783,11 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNA(
     CDataSource* data_source,
     const TIds& ids,
     const SAnnotSelector* sel,
-    CDataLoader::TProcessedNAs* processed_nas)
+    CDataLoader::TProcessedNAs* processed_nas,
+    EAnnotRecordsType annot_records_type)
 {
     return CallWithRetry(bind(&CPSGDataLoader_Impl::GetAnnotRecordsNAOnce, this,
-                              data_source, cref(ids), sel, processed_nas),
+                              data_source, cref(ids), sel, processed_nas, annot_records_type),
                          "GetAnnotRecordsNA");
 }
 
@@ -1827,10 +1834,12 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
     CDataSource* data_source,
     const TIds& ids,
     const SAnnotSelector* sel,
-    CDataLoader::TProcessedNAs* processed_nas)
+    CDataLoader::TProcessedNAs* processed_nas,
+    EAnnotRecordsType annot_records_type)
 {
     CDataLoader::TTSE_LockSet locks;
-    if ( !data_source  ||  ids.empty() ) {
+    if ( !data_source  ||  ids.empty()  ||
+         (annot_records_type == EAnnotRecordsType::orphan && !m_AlwaysLoadExternal) ) {
         return locks;
     }
 
