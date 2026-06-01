@@ -5328,6 +5328,8 @@ bool CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
             continue;
 		if(cds_trans.Cds().GetTo()-start_trans.GetTo() < 75)
 			continue;
+        if(amap.MapEditedToOrig(start_trans.GetTo()+1) < 0)
+            continue;
 
         list<TSignedSeqRange> align_introns;
         for(int i = 1; i < (int)align.Exons().size(); ++i) {
@@ -5385,6 +5387,8 @@ bool CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
 					continue;
 				if(cds_trans.Cds().GetTo()-start_trans.GetTo() < 75)
 					continue;
+                if(amap.MapEditedToOrig(start_trans.GetTo()+1) < 0)
+                    continue;
 
 				bool after = (start_trans.GetFrom() >= llimit_on_transcript);
 
