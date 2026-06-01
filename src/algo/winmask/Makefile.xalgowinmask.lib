@@ -24,4 +24,4 @@ LDFLAGS  = $(FAST_LDFLAGS)
 
 
 USES_LIBRARIES =  \
-    seqmasks_io
+    seqmasks_io xcompress
