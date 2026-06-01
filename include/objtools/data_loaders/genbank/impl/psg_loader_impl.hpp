@@ -135,14 +135,21 @@ public:
     void GetCDDAnnotsOnce(CDataSource* data_source,
                           const TBioseq_InfoSet& seq_set, TLoaded& loaded, TCDD_Locks& ret);
 
+    enum class EAnnotRecordsType {
+        external,
+        orphan
+    };
+        
     CDataLoader::TTSE_LockSet GetAnnotRecordsNA(CDataSource* data_source,
                                                 const TIds& ids,
                                                 const SAnnotSelector* sel,
-                                                CDataLoader::TProcessedNAs* processed_nas);
+                                                CDataLoader::TProcessedNAs* processed_nas,
+                                                EAnnotRecordsType annot_records_type);
     CDataLoader::TTSE_LockSet GetAnnotRecordsNAOnce(CDataSource* data_source,
                                                     const TIds& ids,
                                                     const SAnnotSelector* sel,
-                                                    CDataLoader::TProcessedNAs* processed_nas);
+                                                    CDataLoader::TProcessedNAs* processed_nas,
+                                                    EAnnotRecordsType annot_records_type);
 
     void DropTSE(const CPsgBlobId& blob_id);
 
@@ -247,6 +254,7 @@ private:
     
     CPSG_Request_Biodata::EIncludeData m_TSERequestMode = CPSG_Request_Biodata::eSmartTSE;
     CPSG_Request_Biodata::EIncludeData m_TSERequestModeBulk = CPSG_Request_Biodata::eWholeTSE;
+    bool m_AlwaysLoadExternal = false;
     bool m_AddWGSMasterDescr = true;
     CRef<CPSGL_Dispatcher> m_Dispatcher;
     CRef<CRequestContext> m_RequestContext;

@@ -305,7 +305,8 @@ CPSGDataLoader::TTSE_LockSet CPSGDataLoader::GetExternalAnnotRecordsNA(const CBi
 {
     TIds ids = bioseq.GetId();
     sort(ids.begin(), ids.end(), SBetterId());
-    return m_Impl->GetAnnotRecordsNA(GetDataSource(), ids, sel, processed_nas);
+    return m_Impl->GetAnnotRecordsNA(GetDataSource(), ids, sel, processed_nas,
+                                     CPSGDataLoader_Impl::EAnnotRecordsType::external);
 }
 
 
@@ -315,7 +316,8 @@ CPSGDataLoader::TTSE_LockSet CPSGDataLoader::GetOrphanAnnotRecordsNA(const TSeq_
 {
     TIds ids(seq_ids.begin(), seq_ids.end());
     sort(ids.begin(), ids.end(), SBetterId());
-    return m_Impl->GetAnnotRecordsNA(GetDataSource(), ids, sel, processed_nas);
+    return m_Impl->GetAnnotRecordsNA(GetDataSource(), ids, sel, processed_nas,
+                                     CPSGDataLoader_Impl::EAnnotRecordsType::orphan);
 }
 
 
