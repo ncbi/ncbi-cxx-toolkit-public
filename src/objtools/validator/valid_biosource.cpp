@@ -691,6 +691,22 @@ const CSeq_entry *ctx)
                 PostObjErr(eDiag_Info, eErr_SEQ_DESCR_ProkaryoteShouldNotHaveChromosome,
                     "Prokaryote should not have chromosome qualifier",
                     obj, ctx);
+                if ((*ssit)->IsSetName()) {
+                    string name = (**ssit).GetName();
+                    bool hasLetter = false;
+                    string::iterator it = name.begin();
+                    while (it != name.end()) {
+                        if (isalpha (*it)) {
+                            hasLetter = true;
+                        }
+                        ++it;
+                    }
+                    if (hasLetter) {
+                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_ProkaryoteChromosomeHasLetters,
+                            "Prokaryote chromosome name (" + name + ") should not have letters",
+                            obj, ctx);
+                    }
+                }
             }
             break;
 

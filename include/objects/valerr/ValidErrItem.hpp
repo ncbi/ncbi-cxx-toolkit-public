@@ -374,6 +374,7 @@ enum EErrType {
     eErr_SEQ_DESCR_BadAssemblyString,
     eErr_SEQ_DESCR_EmptySubSourceList,
     eErr_SEQ_DESCR_EmptyOrgModList,
+    eErr_SEQ_DESCR_ProkaryoteChromosomeHasLetters,
     ERR_CODE_END(SEQ_DESCR),
 
 

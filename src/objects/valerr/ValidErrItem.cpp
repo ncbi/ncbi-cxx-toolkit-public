@@ -1040,7 +1040,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_EmptyOrgModList,
     { "EmptyOrgModList",
         "OrgMod list is present but empty" }},
-
+    { eErr_SEQ_DESCR_ProkaryoteChromosomeHasLetters,
+    { "ProkaryoteChromosomeHasLetters",
+        "Prokaryote chromosome name should not have letters" }},
 
     /* SEQ_GENERIC */
 
