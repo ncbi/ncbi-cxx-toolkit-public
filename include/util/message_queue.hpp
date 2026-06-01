@@ -83,7 +83,7 @@ public:
             m_cv.wait(lock, [this]()->bool
             { // the user supposed to limit the m_queue size by some measure
                 const auto& const_ref = m_queue;
-                return m_trottle(const_ref);
+                return m_trottle(const_ref) || m_canceled;
             });
 
             if (!m_canceled) {
@@ -118,8 +118,11 @@ public:
             std::unique_lock<std::mutex> lock(m_mutex);
             m_cv.wait(lock, [this]()->bool
             {
-                return !m_queue.empty();
+                return m_canceled || !m_queue.empty();
             });
+            if (m_canceled) {
+                return message;
+            }
             assert(!m_queue.empty());
             message = std::move(m_queue.front());
             m_queue.pop_front();
