@@ -18,6 +18,8 @@ SRC = seq_masker seq_masker_score_mean seq_masker_score_mean_glob \
     win_mask_counts_converter win_mask_dup_table win_mask_gen_counts \
     win_mask_util win_mask_config seq_masker_istat
 
+DLL_LIB = xcompress
+
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
