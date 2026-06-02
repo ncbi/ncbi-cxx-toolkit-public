@@ -196,6 +196,7 @@ public:
     static void SetSNP_Scale_Limit(CSeq_id::ESNPScaleLimit value);
 
 private:
+    friend class CPSGDataLoader_Impl;
     friend class CGBLoaderMaker<CPSGDataLoader>;
 
     TRealBlobId x_GetRealBlobId(const TBlobId& blob_id) const override;
