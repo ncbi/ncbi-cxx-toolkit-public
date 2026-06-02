@@ -32,6 +32,7 @@
 */
 
 
+#include <corelib/ncbitime.hpp>
 #include <util/thread_pool_old.hpp>
 
 
@@ -47,17 +48,24 @@ class CQueueItemBase_ForServer : public CObject {
 public:
     typedef CQueueItemBase::EStatus EStatus;
 
-    CQueueItemBase_ForServer(void) 
-        : m_Status(CQueueItemBase::ePending)
+    CQueueItemBase_ForServer(unsigned int initial_position)
+        : m_StopWatch(CStopWatch::eStart), m_InitialPosition(initial_position),
+          m_Status(CQueueItemBase::ePending)
     {}
 
     const EStatus&   GetStatus(void) const       { return m_Status; }
+    // 0-based
+    unsigned int GetInitialPosition(void) const { return m_InitialPosition; }
+    // in seconds
+    double       GetTimeInQueue(void) const { return m_StopWatch.Elapsed(); }
 
     void MarkAsComplete(void)        { x_SetStatus(CQueueItemBase::eComplete); }
     void MarkAsForciblyCaught(void)  { x_SetStatus(CQueueItemBase::eForciblyCaught); }
 
 protected:
-    EStatus   m_Status;
+    CStopWatch   m_StopWatch;
+    unsigned int m_InitialPosition;
+    EStatus      m_Status;
 
     virtual void x_SetStatus(EStatus new_status)
     { m_Status = new_status; }
@@ -105,12 +113,19 @@ public:
     /// Blocks politely if empty.
     TItemHandle  GetHandle(void);
 
+    struct SBacklogStats
+    {
+        size_t count;    ///< Current queue length
+        double duration; ///< How many seconds the front item has been there
+    };
+    void GetBacklogStats(SBacklogStats& stats) const;
+
     class CQueueItem : public CQueueItemBase_ForServer
     {
     public:
         // typedef CBlockingQueue<TRequest> TQueue;
-        CQueueItem(TRequest request)
-            : m_Request(request)
+        CQueueItem(TRequest request, unsigned int initial_position)
+            : CQueueItemBase_ForServer(initial_position), m_Request(request)
         {}
 
         const TRequest& GetRequest(void) const { return m_Request; } 
@@ -163,8 +178,9 @@ public:
     ///   A pool where this thead is placed
     /// @param mode
     ///   A running mode of this thread
-    CThreadInPool_ForServer(TPool* pool) 
-        : m_Pool(pool), m_Counted(false)
+    CThreadInPool_ForServer(TPool* pool, bool start_applog_requests) 
+        : m_Pool(pool), m_Counted(false),
+          m_StartApplogRequests(start_applog_requests)
     {}
     void CountSelf(void);
 
@@ -206,6 +222,7 @@ private:
 
     TPool*   m_Pool;     ///< The pool that holds this thread
     bool     m_Counted;
+    bool     m_StartApplogRequests;
 };
 
 
@@ -222,7 +239,9 @@ public:
     ///
     /// @param max_threads
     ///   The maximum number of threads that this pool can run
-    CPoolOfThreads_ForServer(unsigned int max_threads, const string& thr_suffix);
+    CPoolOfThreads_ForServer(unsigned int max_threads,
+                             const string& thr_suffix,
+                             bool start_applog_requests);
 
     /// Destructor
     virtual ~CPoolOfThreads_ForServer(void);
@@ -247,12 +266,16 @@ public:
     ///    If true will wait until all thread in the pool finish their job
     void KillAllThreads(bool wait);
 
+    typedef CBlockingQueue_ForServer::SBacklogStats TBacklogStats;
+    void GetBacklogStats(TBacklogStats& stats)
+    { m_Queue.GetBacklogStats(stats); }
+
 private:
     friend class CThreadInPool_ForServer;
 
     /// Create a new thread
     TThread* NewThread(void)
-    { return new CThreadInPool_ForServer(this); }
+    { return new CThreadInPool_ForServer(this, m_StartApplogRequests); }
 
     /// Register a thread. It is called by TThread::Main.
     ///
@@ -284,6 +307,7 @@ private:
     typedef list<CRef<TThread> > TThreads;
     TThreads                m_Threads;
     bool                    m_KilledAll;
+    bool                    m_StartApplogRequests;
 };
 
 
