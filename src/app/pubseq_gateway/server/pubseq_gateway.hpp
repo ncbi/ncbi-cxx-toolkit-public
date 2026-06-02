@@ -36,6 +36,7 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbidiag.hpp>
 #include <util/checksum.hpp>
 
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
@@ -256,6 +257,22 @@ public:
 
     shared_ptr<CPSG_MyNCBIFactory> GetMyNCBIFactory(void)
     { return m_MyNCBIFactory; }
+
+    size_t GetAsyncLogDroppedMessagesCount(void) const
+    {
+        if (m_AsyncDiagHandler != nullptr) {
+            return m_AsyncDiagHandler->GetDroppedMessagesCount();
+        }
+        return 0;
+    }
+
+    size_t GetAsyncLogDroppedRequestsCount(void) const
+    {
+        if (m_AsyncDiagHandler != nullptr) {
+            return m_AsyncDiagHandler->GetDroppedRequestsCount();
+        }
+        return 0;
+    }
 
 private:
     struct SRequestParameter
@@ -595,6 +612,12 @@ private:
     // My NCBI periodic check support
     bool                                m_LastMyNCBIResolveOK;
     bool                                m_LastMyNCBITestOk;
+
+    CAsyncDiagHandler *                 m_AsyncDiagHandler;
+    size_t                              m_AsyncLogDroppedMessagesOffset;
+    size_t                              m_AsyncLogDroppedRequestsOffset;
+    size_t                              m_AsyncLogDroppedMessagesLastVal;
+    size_t                              m_AsyncLogDroppedRequestsLastVal;
 
 private:
     static CPubseqGatewayApp *          sm_PubseqApp;

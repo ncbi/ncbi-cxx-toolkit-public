@@ -212,7 +212,7 @@ class CMonotonicCounterSeries : public CTimeSeriesBase
             Reset();
         }
 
-        void Add(void);
+        void Add(uint64_t  cnt = 1);
         void Rotate(void);
         void Reset(void);
         CJsonNode  Serialize(const vector<pair<int, int>> &  time_series,

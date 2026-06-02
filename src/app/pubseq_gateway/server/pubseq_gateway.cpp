@@ -35,7 +35,6 @@
 #include <sys/prctl.h>
 
 #include <corelib/ncbithr.hpp>
-#include <corelib/ncbidiag.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbifile.hpp>
 #include <connect/services/grid_app_version_info.hpp>
@@ -112,7 +111,12 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_StartupDataState(ePSGS_NoCassConnection),
     m_LogFields("http"),
     m_LastMyNCBIResolveOK(false),
-    m_LastMyNCBITestOk(false)
+    m_LastMyNCBITestOk(false),
+    m_AsyncDiagHandler(nullptr),
+    m_AsyncLogDroppedMessagesOffset(0),
+    m_AsyncLogDroppedRequestsOffset(0),
+    m_AsyncLogDroppedMessagesLastVal(0),
+    m_AsyncLogDroppedRequestsLastVal(0)
 {
     sm_PubseqApp = this;
 
@@ -442,11 +446,10 @@ int CPubseqGatewayApp::Run(void)
 
     // Set the async diag handler right after the settings were read in
     // ParseArgs()
-    CAsyncDiagHandler *     async_diag_handler = nullptr;
     if (m_Settings.m_AsyncLogEnabled) {
-        async_diag_handler = new CAsyncDiagHandler();
-        async_diag_handler->SetCustomThreadSuffix("_l");
-        async_diag_handler->InstallToDiag();
+        m_AsyncDiagHandler = new CAsyncDiagHandler();
+        m_AsyncDiagHandler->SetCustomThreadSuffix("_l");
+        m_AsyncDiagHandler->InstallToDiag();
     }
 
 
@@ -798,6 +801,13 @@ int CPubseqGatewayApp::Run(void)
                             GetActiveProcGroupCounter(),
                             GetBacklogSize()
                                 );
+                        size_t  dropped_msg_curr = GetAsyncLogDroppedMessagesCount();
+                        size_t  dropped_req_curr = GetAsyncLogDroppedRequestsCount();
+                        this->m_Timing->CollectAsyncLoggingStat(
+                            dropped_msg_curr - m_AsyncLogDroppedMessagesLastVal,
+                            dropped_req_curr - m_AsyncLogDroppedRequestsLastVal);
+                        m_AsyncLogDroppedMessagesLastVal = dropped_msg_curr;
+                        m_AsyncLogDroppedRequestsLastVal = dropped_req_curr;
                     }
 
                     if (++s_TickNoFor1Min % 60 == 0) {
@@ -835,8 +845,8 @@ int CPubseqGatewayApp::Run(void)
     CloseCass();
 
     if (m_Settings.m_AsyncLogEnabled) {
-        async_diag_handler->RemoveFromDiag();
-        delete async_diag_handler;
+        m_AsyncDiagHandler->RemoveFromDiag();
+        delete m_AsyncDiagHandler;
     }
     return ret_code;
 }

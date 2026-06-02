@@ -365,6 +365,8 @@ class COperationTiming
         void CollectMomentousStat(size_t  tcp_conn_count,
                                   size_t  active_request_count,
                                   size_t  backlog_count);
+        void CollectAsyncLoggingStat(size_t  async_log_dropped_messages_count,
+                                     size_t  async_log_dropped_requests_count);
         void Reset(void);
         CJsonNode Serialize(int  most_ancient_time,
                             int  most_recent_time,
@@ -511,6 +513,9 @@ class COperationTiming
         CMonotonicCounterSeries                             m_WarningTimeSeries;
         vector<unique_ptr<CMonotonicCounterSeries>>         m_OpTooLongByProc;
         vector<unique_ptr<COpTooLongTiming>>                m_OpTooLongTimingByProc;
+
+        CMonotonicCounterSeries                             m_AsyncLogDroppedMessagesTimeSeries;
+        CMonotonicCounterSeries                             m_AsyncLogDroppedRequestsTimeSeries;
 
         // The first index is a request kind
         // The second index is a processor kind

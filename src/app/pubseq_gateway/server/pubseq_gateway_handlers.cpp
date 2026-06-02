@@ -1560,6 +1560,17 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  http_req,
             status, CPSGSCounters::ePSGS_ActiveProcessorGroups,
             static_cast<uint64_t>(GetActiveProcGroupCounter()));
 
+        m_Counters->AppendValueNode(
+            status, CPSGSCounters::ePSGS_AsyncLogDroppedMessages,
+            static_cast<uint64_t>
+                (GetAsyncLogDroppedMessagesCount() -
+                 m_AsyncLogDroppedMessagesOffset));
+        m_Counters->AppendValueNode(
+            status, CPSGSCounters::ePSGS_AsyncLogDroppedRequests,
+            static_cast<uint64_t>
+                (GetAsyncLogDroppedRequestsCount() -
+                 m_AsyncLogDroppedRequestsOffset));
+
         if (g_ShutdownData.m_ShutdownRequested) {
             auto        now = psg_clock_t::now();
             uint64_t    sec = chrono::duration_cast<chrono::seconds>
@@ -1942,6 +1953,9 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  http_req,
         if (reset) {
             m_Timing->Reset();
             m_Counters->Reset();
+
+            m_AsyncLogDroppedMessagesOffset = GetAsyncLogDroppedMessagesCount();
+            m_AsyncLogDroppedRequestsOffset = GetAsyncLogDroppedRequestsCount();
 
             reply->SetContentType(ePSGS_PlainTextMime);
             reply->SendOk(nullptr, 0, true);

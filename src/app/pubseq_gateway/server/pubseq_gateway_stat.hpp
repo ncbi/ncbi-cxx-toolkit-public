@@ -193,6 +193,9 @@ class CPSGSCounters
             ePSGS_MyNCBINotFoundCacheSize,
             ePSGS_MyNCBIErrorCacheSize,
 
+            ePSGS_AsyncLogDroppedMessages,
+            ePSGS_AsyncLogDroppedRequests,
+
             // Used to reserve an array for individual counters
             ePSGS_MaxIndividualCounter,
 
@@ -250,10 +253,15 @@ class CPSGSCounters
                 ePSGS_Monotonic,    // Monotonically growing counter,
                                     // needs to be generically sent to the
                                     // client
-                ePSGS_Arbitrary     // The value is set from outside at the moment
+                ePSGS_Arbitrary,    // The value is set from outside at the moment
                                     // of sending a reply. Can float arbitrary.
                                     // Basically a storage for the identifier,
                                     // name, and description
+                ePSGS_External      // The counter is collected by another
+                                    // component like a library. The counter
+                                    // could be arbitrary or not. Similar to
+                                    // ePSGS_Arbitrary it is here for a name,
+                                    // identifier and description
             };
 
             string                  m_Identifier;

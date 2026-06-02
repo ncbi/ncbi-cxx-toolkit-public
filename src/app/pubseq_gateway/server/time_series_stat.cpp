@@ -632,11 +632,11 @@ CAvgPerformanceSeries::x_SerializeOneSeries(const vector<pair<int, int>> &  time
 }
 
 
-void CMonotonicCounterSeries::Add(void)
+void CMonotonicCounterSeries::Add(uint64_t  cnt)
 {
     size_t      current_index = m_CurrentIndex.load();
-    ++m_Values[current_index];
-    ++m_TotalValues;
+    m_Values[current_index] += cnt;
+    m_TotalValues += cnt;
 
     if (m_Values[current_index] > m_MaxValue) {
         m_MaxValue = m_Values[current_index];

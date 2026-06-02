@@ -753,6 +753,35 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
             size_t      proc_index = item.second;
             string      req_name = CPSGS_Request::TypeToString(
                                         static_cast<CPSGS_Request::EPSGS_Type>(req_index));
+
+            if (item.first == "CDD") {
+                if (req_name != "AnnotationRequest") {
+                    // CDD processor can handle only /ID/get_na requests
+                    continue;
+                }
+            }
+
+            if (item.first == "SNP") {
+                if (req_name != "AnnotationRequest" &&
+                    req_name != "BlobBySatSatKeyRequest" &&
+                    req_name != "TSEChunkRequest") {
+                    // SNP processor can handle only /ID/get_na, /ID/get_blob
+                    // and /ID/get_tse_chunk requests
+                    continue;
+                }
+            }
+
+            if (item.first == "WGS") {
+                if (req_name != "ResolveRequest" &&
+                    req_name != "BlobBySeqIdRequest" &&
+                    req_name != "BlobBySatSatKeyRequest" &&
+                    req_name != "TSEChunkRequest") {
+                    // WGS processor can handle only /ID/resolve, /ID/get,
+                    // /ID/get_blob and /ID/get_tse_chunk requests
+                    continue;
+                }
+            }
+
             string      prefix = item.first + "_" +
                                  NStr::Replace(req_name, "Request", "") + "_";
             string      suffix = "_ProcessorPerformance";
@@ -1513,6 +1542,8 @@ void COperationTiming::RotateRequestStat(void)
     m_BacklogStat.Rotate();
     m_ErrorTimeSeries.Rotate();
     m_WarningTimeSeries.Rotate();
+    m_AsyncLogDroppedMessagesTimeSeries.Rotate();
+    m_AsyncLogDroppedRequestsTimeSeries.Rotate();
 }
 
 
@@ -1594,6 +1625,10 @@ void COperationTiming::RotateAvgPerfTimeSeries(void)
             m_ErrorProcPerformance[req_index][proc_index]->RotateAvgTimeSeries();
         }
     }
+
+    for (size_t  proc_index = 0; proc_index < m_ProcGroupToIndex.size(); ++proc_index) {
+        m_OpTooLongTimingByProc[proc_index]->RotateAvgTimeSeries();
+    }
 }
 
 
@@ -1605,6 +1640,16 @@ void COperationTiming::CollectMomentousStat(size_t  tcp_conn_count,
     m_TCPConnectionsStat.Add(tcp_conn_count);
     m_ActiveRequestsStat.Add(active_request_count);
     m_BacklogStat.Add(backlog_count);
+}
+
+
+void COperationTiming::CollectAsyncLoggingStat(
+                                size_t  async_log_dropped_messages_count,
+                                size_t  async_log_dropped_requests_count)
+{
+    // Once per 5 seconds collect
+    m_AsyncLogDroppedMessagesTimeSeries.Add(async_log_dropped_messages_count);
+    m_AsyncLogDroppedRequestsTimeSeries.Add(async_log_dropped_requests_count);
 }
 
 
@@ -1701,6 +1746,8 @@ void COperationTiming::Reset(void)
     m_BacklogStat.Reset();
     m_ErrorTimeSeries.Reset();
     m_WarningTimeSeries.Reset();
+    m_AsyncLogDroppedMessagesTimeSeries.Reset();
+    m_AsyncLogDroppedRequestsTimeSeries.Reset();
 
     for (auto &  item : m_IdGetDoneByProc)
         item->Reset();
@@ -1938,6 +1985,16 @@ COperationTiming::Serialize(int  most_ancient_time,
                                                        most_ancient_time,
                                                        most_recent_time,
                                                        loop, current_index));
+            ret.SetByKey("async_log_dropped_messages_time_series",
+                         m_AsyncLogDroppedMessagesTimeSeries.Serialize(time_series,
+                                                                       most_ancient_time,
+                                                                       most_recent_time,
+                                                                       loop, current_index));
+            ret.SetByKey("async_log_dropped_requests_time_series",
+                         m_AsyncLogDroppedRequestsTimeSeries.Serialize(time_series,
+                                                                       most_ancient_time,
+                                                                       most_recent_time,
+                                                                       loop, current_index));
         }
     } else {
         lock_guard<mutex>       guard(m_Lock);

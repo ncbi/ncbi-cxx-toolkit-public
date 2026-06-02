@@ -629,6 +629,18 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
             "Graceful shutdown expiration in seconds from now",
             SCounterInfo::ePSGS_Arbitrary);
 
+    m_Counters[ePSGS_AsyncLogDroppedMessages] =
+        new SCounterInfo(
+            "AsyncLogDroppedMessages", "Async log dropped messages",
+            "Number of messages were discarded by async log due too overload",
+            SCounterInfo::ePSGS_External);
+
+    m_Counters[ePSGS_AsyncLogDroppedRequests] =
+        new SCounterInfo(
+            "AsyncLogDroppedRequests", "Async log dropped requests",
+            "Number of requests were discarded by async log due too overload",
+            SCounterInfo::ePSGS_External);
+
 
     // Counters below must be per processor
     size_t  counter = static_cast<size_t>(ePSGS_LastCounter) - 1;
