@@ -34,6 +34,7 @@
 #include "connection_pool.hpp"
 #include <connect/error_codes.hpp>
 #include <corelib/ncbi_param.hpp>
+#include <corelib/request_ctx.hpp>
 #include <connect/ncbi_buffer.h>
 
 #define NCBI_USE_ERRCODE_X   Connect_ThrServer
@@ -47,6 +48,13 @@ NCBI_PARAM_DEF_EX(bool, server, Catch_Unhandled_Exceptions, true, 0,
                   CSERVER_CATCH_UNHANDLED_EXCEPTIONS);
 typedef NCBI_PARAM_TYPE(server, Catch_Unhandled_Exceptions) TParamServerCatchExceptions;
 static CSafeStatic<TParamServerCatchExceptions> s_ServerCatchExceptions;
+
+
+class ILogCandidate : public CStdRequest
+{
+public:
+    virtual bool ShouldLog() const = 0;
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -127,7 +135,8 @@ CBlockingQueue_ForServer::Put(const TRequest& data)
     if (m_Queue.empty()) {
         m_GetCond.SignalAll();
     }
-    TItemHandle handle(new CQueueItem(data));
+    TItemHandle handle(new CQueueItem
+                       (data, static_cast<unsigned int>(m_Queue.size())));
     m_Queue.push_back(handle);
     return handle;
 }
@@ -148,6 +157,18 @@ CBlockingQueue_ForServer::GetHandle(void)
     guard.Release(); // avoid possible deadlocks from x_SetStatus
     handle->x_SetStatus(CQueueItemBase::eActive);
     return handle;
+}
+
+
+void CBlockingQueue_ForServer::GetBacklogStats(SBacklogStats& stats) const
+{
+    CMutexGuard guard(m_Mutex);
+    stats.count = m_Queue.size();
+    if (stats.count == 0) {
+        stats.duration = 0.0;
+    } else {
+        stats.duration = m_Queue.front()->GetTimeInQueue();
+    }
 }
 
 
@@ -207,6 +228,10 @@ CThreadInPool_ForServer::x_HandleOneRequest(bool catch_all)
     else {
         ProcessRequest(handle);
     }
+    auto &dctx = GetDiagContext();
+    if (dctx.GetAppState() == eDiagAppState_Request) {
+        dctx.PrintRequestStop();
+    }
 }
 
 
@@ -238,16 +263,32 @@ CThreadInPool_ForServer::Main(void)
 void
 CThreadInPool_ForServer::ProcessRequest(TItemHandle handle)
 {
+    auto req = handle->GetRequest();
+    auto *lc = dynamic_cast<ILogCandidate*>(req.GetPointerOrNull());
+    if (m_StartApplogRequests  &&  lc != nullptr  &&  lc->ShouldLog()) {
+        auto &dctx = GetDiagContext();
+        auto &rctx = dctx.GetRequestContext();
+        rctx.SetRequestID();
+        rctx.SetAppState(eDiagAppState_RequestBegin);
+        auto extra = dctx.PrintRequestStart();
+        extra.Print("initial_position", handle->GetInitialPosition())
+            .Print("queue_time_msec",
+                   (Uint8)(handle->GetTimeInQueue() * 1000))
+            .Flush();
+        rctx.SetAppState(eDiagAppState_Request);
+    }
     TCompletingHandle completer = handle;
-    ProcessRequest(completer->GetRequest());
+    ProcessRequest(req);
 }
 
 
 CPoolOfThreads_ForServer::CPoolOfThreads_ForServer(unsigned int max_threads,
-                                                   const string& thr_suffix)
+                                                   const string& thr_suffix,
+                                                   bool start_applog_requests)
     : m_MaxThreads(max_threads),
       m_ThrSuffix(thr_suffix),
-      m_KilledAll(false)
+      m_KilledAll(false),
+      m_StartApplogRequests(start_applog_requests)
 {
     m_ThreadCount.Set(0);
 }
@@ -352,7 +393,7 @@ CPoolOfThreads_ForServer::UnRegister(TThread& thread)
 
 /////////////////////////////////////////////////////////////////////////////
 // Abstract class for CAcceptRequest and CServerConnectionRequest
-class CServer_Request : public CStdRequest
+class CServer_Request : public ILogCandidate
 {
 public:
     CServer_Request(EServIO_Event event,
@@ -381,6 +422,8 @@ public:
                    CServer_Listener* listener);
     virtual void Process(void);
     virtual void Cancel(void);
+    bool ShouldLog(void) const { return m_Connection != nullptr; }
+
 private:
     void x_DoProcess(void);
 
@@ -477,6 +520,8 @@ public:
     { }
     virtual void Process(void);
     virtual void Cancel(void);
+    bool ShouldLog(void) const;
+
 private:
     void x_Process(void);
     CServer_Connection* m_Connection;
@@ -519,6 +564,20 @@ void CServerConnectionRequest::Cancel(void)
     // Return socket to poll vector
     m_ConnPool.SetConnType(m_Connection, eInactiveSocket);
 }
+
+
+bool CServerConnectionRequest::ShouldLog(void) const
+{
+    switch (m_Event) {
+    case eServIO_ClientClose:
+    case eServIO_OurClose:
+        return m_Connection->GetStatus(eIO_Open) == eIO_Success;
+    case eServIO_Delete:
+        return false;
+    default:
+        return true;
+    }
+}  
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -794,8 +853,9 @@ void CServer::Run(void)
 {
     StartListening(); // detect unavailable ports ASAP
 
-    m_ThreadPool = new CPoolOfThreads_ForServer(m_Parameters->max_threads,
-                                                m_ThreadSuffix);
+    m_ThreadPool = new CPoolOfThreads_ForServer(
+        m_Parameters->max_threads, m_ThreadSuffix,
+        m_Parameters->start_applog_requests);
     if (s_ServerCatchExceptions->Get()) {
         try {
             x_DoRun();
@@ -878,6 +938,7 @@ static const STimeout k_DefaultIdleTimeout = { 600, 0 };
 SServer_Parameters::SServer_Parameters() :
     max_connections(10000),
     temporarily_stop_listening(false),
+    start_applog_requests(false),
     accept_timeout(kInfiniteTimeout),
     idle_timeout(&k_DefaultIdleTimeout),
     init_threads(5),

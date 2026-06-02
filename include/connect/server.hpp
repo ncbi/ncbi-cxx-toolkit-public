@@ -166,6 +166,10 @@ public:
     ///  currently listened ports
     vector<unsigned short>  GetListenerPorts(void);
 
+    typedef CBlockingQueue_ForServer::SBacklogStats TBacklogStats;
+    void GetBacklogStats(TBacklogStats& stats)
+    { m_ThreadPool->GetBacklogStats(stats); }
+
 protected:
     /// Initialize the server
     ///
@@ -436,6 +440,11 @@ struct NCBI_XCONNECT_EXPORT SServer_Parameters
     unsigned int    max_connections;
     /// Temporarily close listener when queue fills?
     bool            temporarily_stop_listening;
+    /// Whether to start Applog requests (and seed them with
+    /// initial_position and queue_time_msec values; provisional client_ip
+    /// is also possible in principle but would require extra plumbing).
+    /// NB: Applies only to CServer's native requests.
+    bool            start_applog_requests;
     /// Maximum t between exit checks
     const STimeout* accept_timeout;
     /// For how long to keep inactive non-listening sockets open
