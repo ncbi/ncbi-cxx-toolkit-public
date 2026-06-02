@@ -127,8 +127,13 @@ public:
     }
 };
 
+enum class EAlwaysLoadExternal {
+    no,
+    yes
+};
 
-static CRef<CScope> s_InitScope(bool reset_loader = true)
+static CRef<CScope> s_InitScope(bool reset_loader = true,
+                                EAlwaysLoadExternal external = EAlwaysLoadExternal::no)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     if ( reset_loader ) {
@@ -152,6 +157,8 @@ static CRef<CScope> s_InitScope(bool reset_loader = true)
     GenBankReaders_Register_Pubseq2();
 #endif
     CGBDataLoader::RegisterInObjectManager(*om);
+    dynamic_cast<CGBDataLoader*>(om->FindDataLoader(CGBDataLoader::GetLoaderNameFromArgs()))->
+        SetAlwaysLoadExternal(external == EAlwaysLoadExternal::yes);
 
     CRef<CScope> scope(new CTestScope(*om));
     scope->AddDefaults();
@@ -162,6 +169,12 @@ static CRef<CScope> s_InitScope(bool reset_loader = true)
         scope->AddDataLoader(om->RegisterDataLoader(0, "wgs")->GetName());
     }
     return scope;
+}
+
+
+static CRef<CScope> s_InitScope(EAlwaysLoadExternal external)
+{
+    return s_InitScope(true, external);
 }
 
 
@@ -2981,6 +2994,81 @@ BOOST_AUTO_TEST_CASE(TestPirMatching)
         BOOST_CHECK_EQUAL(idh.Which(), CSeq_id::e_Pir);
         auto bsh = scope->GetBioseqHandle(idh);
         BOOST_CHECK(bsh);
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(TestAlwaysLoadExternal)
+{
+    if ( !s_HaveMongoDBCDD() ) {
+        LOG_POST("Skipping test for always_load_external configuration without CDDs");
+        return;
+    }
+    LOG_POST("Checking always_load_external configuration");
+    
+    // GI 6 in ID has 2 CDD annotations.
+    // They should be visible on a sequence loaded from ID.
+    // For a separately loaded sequence the CDD annotations
+    // should be visible only with always_load_external=true
+
+    // selector to filter CDD annotations only
+    SAnnotSelector sel;
+    sel.AddNamedAnnots("CDD");
+
+    // location to search for CDD annotations
+    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 6));
+    CRef<CSeq_loc> loc(new CSeq_loc());
+    loc->SetWhole(*id);
+
+    // artificial separate sequence to hide the one from ID
+    CRef<CBioseq> seq(new CBioseq());
+    {
+        auto& inst = seq->SetInst();
+        inst.SetRepr(CSeq_inst::eRepr_virtual);
+        inst.SetMol(CSeq_inst::eMol_aa);
+        inst.SetLength(342);
+        /*
+        inst.SetSeq_data().SetNcbieaa(
+            "PALVLLLGFLCHVAIAGRTCPKPDELPFSTVVPLKRTYEPGEQIVFSCQPGYVSRG"
+            "GIRRFTCPLTGLWPINTLKCMPRVCPFAGILENGTVRYTTFEYPNTISFSCHTGFYLKGASSAKCTEEGKWSPDLPVC"
+            "APITCPPPPIPKFASLSVYKPLAGNNSFYGSKAVFKCLPHHAMFGNDTVTCTEHGNWTQLPECREVRCPFPSRPDNGF"
+            "VNHPANPVLYYKDTATFGCHETYSLDGPEEVECSKFGNWSAQPSCKASCKLSIKRATVIYEGERVAIQNKFKNGMLHG"
+            "QKVSFFCKHKEKKCSYTEDAQCIDGTIEIPKCFKEHSSLAFWKTDASDVKPC");
+        */
+    }
+    
+    // check with default always_load_external=false
+    if ( 1 ) {
+        // Sequence from ID
+        CRef<CScope> scope = s_InitScope();
+        CFeat_CI it(*scope, *loc, sel);
+        BOOST_CHECK_EQUAL(it.GetSize(), 2u);
+        if ( seq->GetId().empty() ) {
+            seq->SetId() = scope->GetBioseqHandle(*id).GetCompleteObject()->GetId();
+        }
+    }
+    if ( 1 ) {
+        // Separate sequence
+        CRef<CScope> scope = s_InitScope();
+        auto bh = scope->AddBioseq(*seq);
+        BOOST_CHECK_EQUAL(scope->GetBioseqHandle(*id).GetCompleteObject(), seq);
+        CFeat_CI it(*scope, *loc, sel);
+        BOOST_CHECK_EQUAL(it.GetSize(), 0u);
+    }
+    // check with always_load_external=true
+    if ( 1 ) {
+        // Sequence from ID
+        CRef<CScope> scope = s_InitScope(EAlwaysLoadExternal::yes);
+        CFeat_CI it(*scope, *loc, sel);
+        BOOST_CHECK_EQUAL(it.GetSize(), 2u);
+    }
+    if ( 1 ) {
+        // Separate sequence
+        CRef<CScope> scope = s_InitScope(EAlwaysLoadExternal::yes);
+        scope->AddBioseq(*seq);
+        BOOST_CHECK_EQUAL(scope->GetBioseqHandle(*id).GetCompleteObject(), seq);
+        CFeat_CI it(*scope, *loc, sel);
+        BOOST_CHECK_EQUAL(it.GetSize(), 2u);
     }
 }
 
