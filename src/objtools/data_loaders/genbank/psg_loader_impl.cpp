@@ -141,6 +141,9 @@ public:
 
     void Stop()
     {
+        if ( !m_ReadResultsThread.joinable() ) {
+            return;
+        }
         RequestToCancel();
         m_QueueGuard.CancelAll(); // wake up from GetNextResult()
         m_AddRequestSemaphore.Post(); // wake up from waiting for new requests
@@ -347,8 +350,10 @@ static typename TParamDescription::TValueType s_GetParamValue(const TPluginManag
 #define GET_PARAM(name, params) s_GetParamValue<X_NCBI_PARAM_DECLNAME(PSG_LOADER, name)>(params)
 
 
-CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
-    : m_WaitTime(s_WaitTimeParams)
+CPSGDataLoader_Impl::CPSGDataLoader_Impl(CPSGDataLoader* loader,
+                                         const CGBLoaderParams& params)
+    : m_Loader(loader),
+      m_WaitTime(s_WaitTimeParams)
 {
     unique_ptr<CPSGDataLoader::TParamTree> app_params;
     const CPSGDataLoader::TParamTree* psg_params = 0;
@@ -377,8 +382,8 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
                                 CPSG_Request_Biodata::eSmartTSE);
     }
     
-    m_AlwaysLoadExternal = GET_PARAM(ALWAYS_LOAD_EXTERNAL, psg_params);
-    m_AddWGSMasterDescr = GET_PARAM(ADD_WGS_MASTER, psg_params);
+    loader->SetAlwaysLoadExternal(GET_PARAM(ALWAYS_LOAD_EXTERNAL, psg_params));
+    loader->SetAddWGSMasterDescr(GET_PARAM(ADD_WGS_MASTER, psg_params));
 
     m_RetryCount = GET_PARAM(RETRY_COUNT, psg_params);
     m_BulkRetryCount = GET_PARAM(BULK_RETRY_COUNT, psg_params);
@@ -444,8 +449,20 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
 
 CPSGDataLoader_Impl::~CPSGDataLoader_Impl(void)
 {
-    m_CDDPrefetchTask.Reset();
-    m_Dispatcher->Stop();
+    Stop();
+}
+
+
+void CPSGDataLoader_Impl::Stop()
+{
+    if ( m_CDDPrefetchTask ) {
+        m_CDDPrefetchTask->Stop();
+        m_CDDPrefetchTask.Reset();
+    }
+    if ( m_Dispatcher ) {
+        m_Dispatcher->Stop();
+        m_Dispatcher.Reset();
+    }
 }
 
 
@@ -797,22 +814,22 @@ CPSGDataLoader_Impl::GetSequenceTypeOnce(const CSeq_id_Handle& idh)
 }
 
 
-int CPSGDataLoader_Impl::GetSequenceState(CDataSource* data_source, const CSeq_id_Handle& idh)
+int CPSGDataLoader_Impl::GetSequenceState(const CSeq_id_Handle& idh)
 {
     return CallWithRetry(bind(&CPSGDataLoader_Impl::GetSequenceStateOnce, this,
-                              data_source, cref(idh)),
+                              cref(idh)),
                          "GetSequenceState");
 }
 
 
-int CPSGDataLoader_Impl::GetSequenceStateOnce(CDataSource* data_source, const CSeq_id_Handle& idh)
+int CPSGDataLoader_Impl::GetSequenceStateOnce(const CSeq_id_Handle& idh)
 {
     const int kNotFound = (CBioseq_Handle::fState_not_found |
                            CBioseq_Handle::fState_no_data);
     if ( CannotProcess(idh) ) {
         return kNotFound;
     }
-    auto info = x_GetBioseqAndBlobInfo(data_source, idh);
+    auto info = x_GetBioseqAndBlobInfo(idh);
     return x_MakeSequenceState(info);
 }
 
@@ -841,19 +858,17 @@ int CPSGDataLoader_Impl::x_MakeSequenceState(const TBioseqAndBlobInfo& info)
 
 
 CDataLoader::TTSE_LockSet
-CPSGDataLoader_Impl::GetRecords(CDataSource* data_source,
-                                const CSeq_id_Handle& idh,
+CPSGDataLoader_Impl::GetRecords(const CSeq_id_Handle& idh,
                                 CDataLoader::EChoice choice)
 {
     return CallWithRetry(bind(&CPSGDataLoader_Impl::GetRecordsOnce, this,
-                              data_source, cref(idh), choice),
+                              cref(idh), choice),
                          "GetRecords");
 }
 
 
 CDataLoader::TTSE_LockSet
-CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
-                                    const CSeq_id_Handle& idh,
+CPSGDataLoader_Impl::GetRecordsOnce(const CSeq_id_Handle& idh,
                                     CDataLoader::EChoice choice)
 {
     CDataLoader::TTSE_LockSet locks;
@@ -873,7 +888,7 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
             // no blob
             return locks;
         }
-        locks.insert(GetBlobByIdOnce(data_source, *bioseq_info->GetDLBlobId()));
+        locks.insert(GetBlobByIdOnce(*bioseq_info->GetDLBlobId()));
         return locks;
     }
     if ( m_Caches->m_NoBioseqInfoCache.Find(idh) ) {
@@ -890,6 +905,7 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
         CPSG_BioId bio_id(idh);
         auto request = make_shared<CPSG_Request_Biodata>(std::move(bio_id),
                                                          CPSGL_TrackerMap::CreateUserContext());
+        auto data_source = m_Loader->GetDataSource();
         if ( data_source ) {
             CDataSource::TLoadedBlob_ids loaded_blob_ids;
             data_source->GetLoadedBlob_ids(idh, CDataSource::fKnown_bioseqs, loaded_blob_ids);
@@ -906,7 +922,7 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
             (new CPSGL_Get_Processor(idh,
                                      data_source,
                                      m_Caches.get(),
-                                     m_AddWGSMasterDescr));
+                                     m_Loader->GetAddWGSMasterDescr()));
         
         queue.AddRequest(request, processor);
     }}
@@ -936,7 +952,7 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
     }
     else {
         // we can get only blob id without blob
-        locks.insert(GetBlobByIdOnce(data_source, *processor->GetDLBlobId()));
+        locks.insert(GetBlobByIdOnce(*processor->GetDLBlobId()));
     }
     if ( m_CDDPrefetchTask ) {
         if ( bioseq_info ) {
@@ -980,7 +996,7 @@ CConstRef<CPsgBlobId> CPSGDataLoader_Impl::GetBlobIdOnce(const CSeq_id_Handle& i
                 (new CPSGL_Get_Processor(idh,
                                          nullptr,
                                          m_Caches.get(),
-                                         m_AddWGSMasterDescr));
+                                         m_Loader->GetAddWGSMasterDescr()));
             queue.AddRequest(request, processor);
         }}
         auto result = queue.GetNextResult();
@@ -1022,17 +1038,18 @@ bool CPSGDataLoader_Impl::GetGetBlobByIdShouldFail()
 }
 
 
-CTSE_Lock CPSGDataLoader_Impl::GetBlobById(CDataSource* data_source, const CPsgBlobId& blob_id)
+CTSE_Lock CPSGDataLoader_Impl::GetBlobById(const CPsgBlobId& blob_id)
 {
     return CallWithRetry(bind(&CPSGDataLoader_Impl::GetBlobByIdOnce, this,
-                              data_source, cref(blob_id)),
+                              cref(blob_id)),
                          "GetBlobById",
                          GetGetBlobByIdShouldFail()? 1: 0);
 }
 
 
-CTSE_Lock CPSGDataLoader_Impl::GetBlobByIdOnce(CDataSource* data_source, const CPsgBlobId& blob_id)
+CTSE_Lock CPSGDataLoader_Impl::GetBlobByIdOnce(const CPsgBlobId& blob_id)
 {
+    auto data_source = m_Loader->GetDataSource();
     if (!data_source) return CTSE_Lock();
 
     if ( GetGetBlobByIdShouldFail() ) {
@@ -1065,7 +1082,7 @@ CTSE_Lock CPSGDataLoader_Impl::GetBlobByIdOnce(CDataSource* data_source, const C
                 (new CPSGL_GetBlob_Processor(blob_id,
                                              data_source,
                                              m_Caches.get(),
-                                             m_AddWGSMasterDescr));
+                                             m_Loader->GetAddWGSMasterDescr()));
             queue.AddRequest(request, processor);
         }}
         auto result = queue.GetNextResult();
@@ -1101,22 +1118,21 @@ CTSE_Lock CPSGDataLoader_Impl::GetBlobByIdOnce(CDataSource* data_source, const C
 }
 
 
-vector<CTSE_Lock> CPSGDataLoader_Impl::GetBlobsById(CDataSource* data_source,
-                                                    const vector<CDataLoader::TBlobId>& blob_ids)
+vector<CTSE_Lock> CPSGDataLoader_Impl::GetBlobsById(const vector<CDataLoader::TBlobId>& blob_ids)
 {
     vector<CTSE_Lock> ret(blob_ids.size());
     CallWithRetry(bind(&CPSGDataLoader_Impl::GetBlobsByIdOnce, this,
-                       data_source, cref(blob_ids), ref(ret)),
+                       cref(blob_ids), ref(ret)),
                   "GetBlobsById",
                   m_BulkRetryCount);
     return ret;
 }
 
 
-void CPSGDataLoader_Impl::GetBlobsByIdOnce(CDataSource* data_source,
-                                           const vector<CDataLoader::TBlobId>& blob_ids,
+void CPSGDataLoader_Impl::GetBlobsByIdOnce(const vector<CDataLoader::TBlobId>& blob_ids,
                                            vector<CTSE_Lock>& ret)
 {
+    auto data_source = m_Loader->GetDataSource();
     CPSGL_QueueGuard queue(m_Dispatcher);
     for ( size_t i = 0; i < blob_ids.size(); ++i ) {
         if ( ret[i] ) {
@@ -1150,7 +1166,7 @@ void CPSGDataLoader_Impl::GetBlobsByIdOnce(CDataSource* data_source,
                 (new CPSGL_GetBlob_Processor(*psg_blob_id,
                                              data_source,
                                              m_Caches.get(),
-                                             m_AddWGSMasterDescr));
+                                             m_Loader->GetAddWGSMasterDescr()));
             queue.AddRequest(request, processor, i);
         }
     }
@@ -1205,11 +1221,11 @@ void CPSGDataLoader_Impl::GetBlobsByIdOnce(CDataSource* data_source,
 }
 
 
-void CPSGDataLoader_Impl::GetBlobs(CDataSource* data_source, TTSE_LockSets& tse_sets)
+void CPSGDataLoader_Impl::GetBlobs(TTSE_LockSets& tse_sets)
 {
     TLoadedSeqIds loaded;
     CallWithRetry(bind(&CPSGDataLoader_Impl::GetBlobsOnce, this,
-                       data_source, ref(loaded), ref(tse_sets)),
+                       ref(loaded), ref(tse_sets)),
                   "GetBlobs",
                   m_BulkRetryCount);
 }
@@ -1219,12 +1235,12 @@ class CPSGDataLoader_Impl::CGetRequests : public CPSGL_QueueGuard
 {
 public:
     CGetRequests(CPSGDataLoader_Impl& loader,
-                 CDataSource* data_source,
                  CPSG_Request_Biodata::EIncludeData include_data)
         : CPSGL_QueueGuard(loader.m_Dispatcher),
           m_Loader(loader),
-          m_DataSource(data_source),
-          m_IncludeData(include_data)
+          m_DataSource(loader.m_Loader->GetDataSource()),
+          m_IncludeData(include_data),
+          m_AddWGSMasterDescr(loader.m_Loader->GetAddWGSMasterDescr())
     {
     }
 
@@ -1282,6 +1298,7 @@ private:
     CPSGDataLoader_Impl& m_Loader;
     CDataSource* m_DataSource;
     CPSG_Request_Biodata::EIncludeData m_IncludeData;
+    bool m_AddWGSMasterDescr;
     
     // we need to remember the reason for recursive getblob requests, blob_id to requesting seq ids
     map<string, TRequests> m_GetBlob2Reqs;
@@ -1335,7 +1352,7 @@ CPSGDataLoader_Impl::CGetRequests::CreateGetRequests(const CSeq_id_Handle& idh)
         (new CPSGL_Get_Processor(idh,
                                  m_DataSource,
                                  m_Loader.m_Caches.get(),
-                                 m_Loader.m_AddWGSMasterDescr));
+                                 m_AddWGSMasterDescr));
     AddRequest(request, processor, eRequestGet);
     return NotReady();
 }
@@ -1398,7 +1415,7 @@ CPSGDataLoader_Impl::CGetRequests::CreateReGetRequest(const CSeq_id_Handle& idh,
         (new CPSGL_GetBlob_Processor(*dl_blob_id,
                                      m_DataSource,
                                      m_Loader.m_Caches.get(),
-                                     m_Loader.m_AddWGSMasterDescr));
+                                     m_AddWGSMasterDescr));
     AddRequest(request, processor2, eRequestGetBlob);
     return NotReady();
 }
@@ -1476,11 +1493,10 @@ void CPSGDataLoader_Impl::CGetRequests::ReportFailures()
 }
 
 
-void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source,
-                                       TLoadedSeqIds& loaded,
+void CPSGDataLoader_Impl::GetBlobsOnce(TLoadedSeqIds& loaded,
                                        TTSE_LockSets& tse_sets)
 {
-    CGetRequests queue(*this, data_source, m_TSERequestModeBulk);
+    CGetRequests queue(*this, m_TSERequestModeBulk);
     if ( s_GetDebugLevel() >= 5 ) {
         LOG_POST(Info<<"PSG loader: GetBlobs() with "<<tse_sets.size()<<" ids");
     }
@@ -1517,29 +1533,26 @@ void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source,
 }
 
 
-void CPSGDataLoader_Impl::GetCDDAnnots(CDataSource* data_source,
-                                       const TBioseq_InfoSet& seq_set,
+void CPSGDataLoader_Impl::GetCDDAnnots(const TBioseq_InfoSet& seq_set,
                                        TLoaded& loaded,
                                        TCDD_Locks& ret)
 {
     CallWithRetry(bind(&CPSGDataLoader_Impl::GetCDDAnnotsOnce, this,
-                       data_source, ref(seq_set), ref(loaded), ref(ret)),
+                       ref(seq_set), ref(loaded), ref(ret)),
                   "GetCDDAnnots",
                   m_BulkRetryCount);
 }
 
 
-void CPSGDataLoader_Impl::LoadChunk(CDataSource* data_source,
-                                    CTSE_Chunk_Info& chunk_info)
+void CPSGDataLoader_Impl::LoadChunk(CTSE_Chunk_Info& chunk_info)
 {
     CDataLoader::TChunkSet chunks;
     chunks.push_back(Ref(&chunk_info));
-    LoadChunks(data_source, chunks);
+    LoadChunks(chunks);
 }
 
 
-bool CPSGDataLoader_Impl::x_ReadCDDChunk(CDataSource* data_source,
-                                         CDataLoader::TChunk chunk,
+bool CPSGDataLoader_Impl::x_ReadCDDChunk(CDataLoader::TChunk chunk,
                                          const CPSG_BlobInfo& blob_info,
                                          const CPSG_BlobData& blob_data)
 {
@@ -1547,7 +1560,8 @@ bool CPSGDataLoader_Impl::x_ReadCDDChunk(CDataSource* data_source,
     _DEBUG_ARG(const CPsgBlobId& blob_id = dynamic_cast<const CPsgBlobId&>(*chunk->GetBlobId()));
     _ASSERT(x_IsLocalCDDEntryId(blob_id));
     _ASSERT(!chunk->IsLoaded());
-    
+
+    auto data_source = m_Loader->GetDataSource();
     CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(chunk->GetBlobId());
     if ( !load_lock ||
          !load_lock.IsLoaded() ||
@@ -1583,20 +1597,19 @@ bool CPSGDataLoader_Impl::x_ReadCDDChunk(CDataSource* data_source,
 }
 
 
-void CPSGDataLoader_Impl::LoadChunks(CDataSource* data_source,
-                                     const CDataLoader::TChunkSet& chunks)
+void CPSGDataLoader_Impl::LoadChunks(const CDataLoader::TChunkSet& chunks)
 {
     CallWithRetry(bind(&CPSGDataLoader_Impl::LoadChunksOnce, this,
-                       data_source, cref(chunks)),
+                       cref(chunks)),
                   "LoadChunks");
 }
 
 
-void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
-                                         const CDataLoader::TChunkSet& chunks)
+void CPSGDataLoader_Impl::LoadChunksOnce(const CDataLoader::TChunkSet& chunks)
 {
     if (chunks.empty()) return;
 
+    auto data_source = m_Loader->GetDataSource();
     CPSGL_QueueGuard queue(m_Dispatcher);
 
     enum ERequestType {
@@ -1636,7 +1649,7 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
                                                       cdd_ids,
                                                       data_source,
                                                       m_Caches.get(),
-                                                      m_AddWGSMasterDescr));
+                                                      m_Loader->GetAddWGSMasterDescr()));
                 queue.AddRequest(request, processor, eRequestCDD);
             }
             else {
@@ -1647,7 +1660,7 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
                     (new CPSGL_GetBlob_Processor(blob_id,
                                                  data_source,
                                                  m_Caches.get(),
-                                                 m_AddWGSMasterDescr));
+                                                 m_Loader->GetAddWGSMasterDescr()));
                 processor->SetLockedDelayedChunkInfo(blob_id.ToPsgId(), chunk);
                 queue.AddRequest(request, processor, eRequestDelayedTSE);
             }
@@ -1662,7 +1675,7 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
                 (new CPSGL_GetChunk_Processor(chunk,
                                               data_source,
                                               m_Caches.get(),
-                                              m_AddWGSMasterDescr));
+                                              m_Loader->GetAddWGSMasterDescr()));
             queue.AddRequest(request, processor, eRequestChunk);
         }
     }
@@ -1698,7 +1711,7 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
                        FormatBulkError("chunks", first_failed_processor));
     }
     for ( auto& it : wgs_master_chunks ) {
-        CWGSMasterSupport::LoadWGSMaster(data_source->GetDataLoader(), it);
+        CWGSMasterSupport::LoadWGSMaster(m_Loader, it);
     }
 }
 
@@ -1780,14 +1793,13 @@ s_CreateNAChunk(const CPSG_NamedAnnotInfo& psg_annot_info)
 
 
 CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNA(
-    CDataSource* data_source,
     const TIds& ids,
     const SAnnotSelector* sel,
     CDataLoader::TProcessedNAs* processed_nas,
     EAnnotRecordsType annot_records_type)
 {
     return CallWithRetry(bind(&CPSGDataLoader_Impl::GetAnnotRecordsNAOnce, this,
-                              data_source, cref(ids), sel, processed_nas, annot_records_type),
+                              cref(ids), sel, processed_nas, annot_records_type),
                          "GetAnnotRecordsNA");
 }
 
@@ -1796,7 +1808,6 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNA(
 bool CPSGDataLoader_Impl::x_CheckAnnotCache(
     const string& name,
     const TIds& ids,
-    CDataSource* data_source,
     CDataLoader::TProcessedNAs* processed_nas,
     CDataLoader::TTSE_LockSet& locks)
 {
@@ -1809,6 +1820,7 @@ bool CPSGDataLoader_Impl::x_CheckAnnotCache(
             auto chunk_info = s_CreateNAChunk(*info);
             CRef<CPsgBlobId> blob_id(new CPsgBlobId(info->GetBlobId().GetId()));
             blob_id->SetTSEName(name);
+            auto data_source = m_Loader->GetDataSource();
             CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(CBlobIdKey(blob_id));
             if ( load_lock ) {
                 if ( !load_lock.IsLoaded() ) {
@@ -1831,20 +1843,20 @@ bool CPSGDataLoader_Impl::x_CheckAnnotCache(
 
 
 CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
-    CDataSource* data_source,
     const TIds& ids,
     const SAnnotSelector* sel,
     CDataLoader::TProcessedNAs* processed_nas,
     EAnnotRecordsType annot_records_type)
 {
     CDataLoader::TTSE_LockSet locks;
+    auto data_source = m_Loader->GetDataSource();
     if ( !data_source  ||  ids.empty()  ||
-         (annot_records_type == EAnnotRecordsType::orphan && !m_AlwaysLoadExternal) ) {
+         (annot_records_type == EAnnotRecordsType::orphan && !m_Loader->GetAlwaysLoadExternal()) ) {
         return locks;
     }
 
     CPSG_Request_NamedAnnotInfo::TAnnotNames annot_names;
-    if ( !kCreateLocalCDDEntries && !x_CheckAnnotCache(kCDDAnnotName, ids, data_source, processed_nas, locks) ) {
+    if ( !kCreateLocalCDDEntries && !x_CheckAnnotCache(kCDDAnnotName, ids, processed_nas, locks) ) {
         annot_names.push_back(kCDDAnnotName);
     }
     auto snp_scale_limit = CSeq_id::eSNPScaleLimit_Default;
@@ -1873,7 +1885,7 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
                     name = snp_name;
                 }
             }
-            if ( !x_CheckAnnotCache(name, ids, data_source, processed_nas, locks) ) {
+            if ( !x_CheckAnnotCache(name, ids, processed_nas, locks) ) {
                 annot_names.push_back(it->first);
             }
         }
@@ -1894,7 +1906,7 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
                     (new CPSGL_NA_Processor(ids,
                                             data_source,
                                             m_Caches.get(),
-                                            m_AddWGSMasterDescr));
+                                            m_Loader->GetAddWGSMasterDescr()));
                 queue.AddRequest(request, processor, eRequestNA);
             }}
 
@@ -1926,7 +1938,7 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
                                 (new CPSGL_GetBlob_Processor(*dl_blob_id,
                                                              data_source,
                                                              m_Caches.get(),
-                                                             m_AddWGSMasterDescr));
+                                                             m_Loader->GetAddWGSMasterDescr()));
                             getblob2reqs[processor2].push_back(r.m_NA);
                             queue.AddRequest(request, processor2, eRequestGetBlob);
                         }
@@ -1961,8 +1973,7 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
 }
 
 
-void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
-                                           const TBioseq_InfoSet& seq_set,
+void CPSGDataLoader_Impl::GetCDDAnnotsOnce(const TBioseq_InfoSet& seq_set,
                                            TLoaded& loaded,
                                            TCDD_Locks& ret)
 {
@@ -1974,6 +1985,7 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
 
     CPSGL_QueueGuard queue(m_Dispatcher);
 
+    auto data_source = m_Loader->GetDataSource();
     vector<SCDDIds> cdd_ids(seq_set.size());
     for (size_t i = 0; i < seq_set.size(); ++i) {
         if ( loaded[i] ) {
@@ -2026,7 +2038,7 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
         }
         // lookup in annot cache
         CDataLoader::TTSE_LockSet locks;
-        if ( x_CheckAnnotCache(kCDDAnnotName, ids, data_source, nullptr, locks) ) {
+        if ( x_CheckAnnotCache(kCDDAnnotName, ids, nullptr, locks) ) {
             _ASSERT(locks.size() == 1);
             const CTSE_Lock& tse = *locks.begin();
             // check if delayed TSE chunk is loaded
@@ -2272,26 +2284,24 @@ void CPSGDataLoader_Impl::GetSequenceTypesOnce(const TIds& ids, TLoaded& loaded,
 }
 
 
-void CPSGDataLoader_Impl::GetSequenceStates(CDataSource* data_source,
-                                            const TIds& ids,
+void CPSGDataLoader_Impl::GetSequenceStates(const TIds& ids,
                                             TLoaded& loaded,
                                             TSequenceStates& ret)
 {
     CallWithRetry(bind(&CPSGDataLoader_Impl::GetSequenceStatesOnce, this,
-                       data_source, cref(ids), ref(loaded), ref(ret)),
+                       cref(ids), ref(loaded), ref(ret)),
                   "GetSequenceStates",
                   m_BulkRetryCount);
 }
 
 
-void CPSGDataLoader_Impl::GetSequenceStatesOnce(CDataSource* data_source,
-                                                const TIds& ids,
+void CPSGDataLoader_Impl::GetSequenceStatesOnce(const TIds& ids,
                                                 TLoaded& loaded,
                                                 TSequenceStates& ret)
 {
     TBioseqAndBlobInfos infos;
     infos.resize(ret.size());
-    auto [ load_count, failed_processor ] = x_GetBulkBioseqAndBlobInfo(data_source, ids, loaded, infos);
+    auto [ load_count, failed_processor ] = x_GetBulkBioseqAndBlobInfo(ids, loaded, infos);
     if ( load_count ) {
         // have loaded infos
         for (size_t i = 0; i < infos.size(); ++i) {
@@ -2505,8 +2515,7 @@ END_LOCAL_NAMESPACE;
 
         
 CPSGDataLoader_Impl::TBioseqAndBlobInfo
-CPSGDataLoader_Impl::x_GetBioseqAndBlobInfo(CDataSource* /*data_source*/,
-                                            const CSeq_id_Handle& idh)
+CPSGDataLoader_Impl::x_GetBioseqAndBlobInfo(const CSeq_id_Handle& idh)
 {
     TBioseqAndBlobInfo ret;
 
@@ -2675,13 +2684,13 @@ CPSGDataLoader_Impl::x_ProcessBioseqAndBlobInfoResult(CPSGL_QueueGuard& queue,
 }
 
 
-shared_ptr<SPsgBlobInfo> CPSGDataLoader_Impl::x_GetBlobInfo(CDataSource* data_source,
-                                                            const string& blob_id)
+shared_ptr<SPsgBlobInfo> CPSGDataLoader_Impl::x_GetBlobInfo(const string& blob_id)
 {
     // lookup cached blob info
     if ( shared_ptr<SPsgBlobInfo> ret = m_Caches->m_BlobInfoCache.Find(blob_id) ) {
         return ret;
     }
+    auto data_source = m_Loader->GetDataSource();
     // use blob info from already loaded TSE
     if ( data_source ) {
         CDataLoader::TBlobId dl_blob_id(new CPsgBlobId(blob_id));
@@ -2806,8 +2815,7 @@ CPSGDataLoader_Impl::x_GetBulkBioseqInfo(const TIds& ids,
 
 
 pair<size_t, CRef<CPSGL_Processor>>
-CPSGDataLoader_Impl::x_GetBulkBioseqAndBlobInfo(CDataSource* /*data_source*/,
-                                                const TIds& ids,
+CPSGDataLoader_Impl::x_GetBulkBioseqAndBlobInfo(const TIds& ids,
                                                 const TLoaded& loaded,
                                                 TBioseqAndBlobInfos& ret)
 {

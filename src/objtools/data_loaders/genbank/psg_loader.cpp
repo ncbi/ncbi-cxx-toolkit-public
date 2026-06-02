@@ -201,12 +201,13 @@ CPSGDataLoader::CPSGDataLoader(const string& loader_name,
                                const CGBLoaderParams& params)
     : CGBDataLoader(loader_name, params)
 {
-    m_Impl.Reset(new CPSGDataLoader_Impl(params));
+    m_Impl.Reset(new CPSGDataLoader_Impl(this, params));
 }
 
 
 CPSGDataLoader::~CPSGDataLoader(void)
 {
+    m_Impl->m_Loader = nullptr;
 }
 
 
@@ -245,7 +246,7 @@ CDataLoader::TTSE_LockSet
 CPSGDataLoader::GetRecords(const CSeq_id_Handle& idh,
                            EChoice choice)
 {
-    return m_Impl->GetRecords(GetDataSource(), idh, choice);
+    return m_Impl->GetRecords(idh, choice);
 }
 
 
@@ -305,7 +306,7 @@ CPSGDataLoader::TTSE_LockSet CPSGDataLoader::GetExternalAnnotRecordsNA(const CBi
 {
     TIds ids = bioseq.GetId();
     sort(ids.begin(), ids.end(), SBetterId());
-    return m_Impl->GetAnnotRecordsNA(GetDataSource(), ids, sel, processed_nas,
+    return m_Impl->GetAnnotRecordsNA(ids, sel, processed_nas,
                                      CPSGDataLoader_Impl::EAnnotRecordsType::external);
 }
 
@@ -316,47 +317,46 @@ CPSGDataLoader::TTSE_LockSet CPSGDataLoader::GetOrphanAnnotRecordsNA(const TSeq_
 {
     TIds ids(seq_ids.begin(), seq_ids.end());
     sort(ids.begin(), ids.end(), SBetterId());
-    return m_Impl->GetAnnotRecordsNA(GetDataSource(), ids, sel, processed_nas,
+    return m_Impl->GetAnnotRecordsNA(ids, sel, processed_nas,
                                      CPSGDataLoader_Impl::EAnnotRecordsType::orphan);
 }
 
 
 void CPSGDataLoader::GetChunk(TChunk chunk)
 {
-    m_Impl->LoadChunk(GetDataSource(), *chunk);
+    m_Impl->LoadChunk(*chunk);
 }
 
 
 void CPSGDataLoader::GetChunks(const TChunkSet& chunks)
 {
-    m_Impl->LoadChunks(GetDataSource(), chunks);
+    m_Impl->LoadChunks(chunks);
 }
 
 
 void CPSGDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
 {
-    m_Impl->GetBlobs(GetDataSource(), tse_sets);
+    m_Impl->GetBlobs(tse_sets);
 }
 
 
 void CPSGDataLoader::GetCDDAnnots(const TBioseq_InfoSet& seq_set, TLoaded& loaded, TCDD_Locks& ret)
 {
-    m_Impl->GetCDDAnnots(GetDataSource(), seq_set, loaded, ret);
+    m_Impl->GetCDDAnnots(seq_set, loaded, ret);
 }
 
 
 CDataLoader::TTSE_Lock
 CPSGDataLoader::GetBlobById(const TBlobId& blob_id)
 {
-    return m_Impl->GetBlobById(GetDataSource(),
-                               *CPsgBlobId::GetPsgBlobId(*blob_id));
+    return m_Impl->GetBlobById(*CPsgBlobId::GetPsgBlobId(*blob_id));
 }
 
 
 vector<CDataLoader::TTSE_Lock>
 CPSGDataLoader::GetBlobsById(const vector<TBlobId>& blob_ids)
 {
-    return m_Impl->GetBlobsById(GetDataSource(), blob_ids);
+    return m_Impl->GetBlobsById(blob_ids);
 }
 
 
@@ -415,7 +415,7 @@ CPSGDataLoader::GetSequenceTypeFound(const CSeq_id_Handle& idh)
 
 int CPSGDataLoader::GetSequenceState(const CSeq_id_Handle& idh)
 {
-    return m_Impl->GetSequenceState(GetDataSource(), idh);
+    return m_Impl->GetSequenceState(idh);
 }
 
 
@@ -463,7 +463,7 @@ void CPSGDataLoader::GetSequenceTypes(const TIds& ids, TLoaded& loaded, TSequenc
 
 void CPSGDataLoader::GetSequenceStates(const TIds& ids, TLoaded& loaded, TSequenceStates& ret)
 {
-    m_Impl->GetSequenceStates(GetDataSource(), ids, loaded, ret);
+    m_Impl->GetSequenceStates(ids, loaded, ret);
 }
 
 
