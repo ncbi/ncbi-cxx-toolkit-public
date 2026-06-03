@@ -1003,6 +1003,10 @@ CPSGL_Blob_Processor::Chunk_ToOM(const CPSG_ChunkId* chunk_id,
         chunk_load_lock = chunk_info->GetLoadInitGuard();
     }
     if ( !chunk_info->IsLoaded() ) {
+        if ( s_GetDebugLevel() >= 8 ) {
+            LOG_POST(Info<<"PSGBlobProcessor("<<this<<"): chunk "<<chunk_id->GetId2Info()<<"."<<chunk_id->GetId2Chunk()<<" "<<
+                     MSerial_AsnText<<*chunk);
+        }
         CSplitParser::Load(*chunk_info, static_cast<CID2S_Chunk&>(*chunk));
         chunk_info->SetLoaded();
     }
