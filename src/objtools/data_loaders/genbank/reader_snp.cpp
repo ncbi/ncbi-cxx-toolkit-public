@@ -504,7 +504,7 @@ void StoreIndexedOctetStringsTo(CNcbiOstream& stream,
     if ( element_size ) {
         size_t total_size = strings.GetTotalSize();
         write_size(stream, total_size);
-        stream.write(&strings.GetTotalString()[0], total_size);
+        stream.write(strings.GetTotalString().data(), total_size);
     }
 }
 
@@ -707,7 +707,7 @@ void CSeq_annot_SNP_Info_Reader::x_Write(CNcbiOstream& stream,
     // simple Set_Info
     size_t count = snp_info.m_SNP_Set.size();
     write_size(stream, count);
-    stream.write(reinterpret_cast<const char*>(&snp_info.m_SNP_Set[0]),
+    stream.write(reinterpret_cast<const char*>(snp_info.m_SNP_Set.data()),
                  count*sizeof(SSNP_Info));
 }
 
