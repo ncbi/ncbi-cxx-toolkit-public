@@ -384,7 +384,7 @@ string CNetCacheKey::KeyToCompoundID(const string& key_str,
     nc_key_cid.AppendID(key_obj.GetId());
 
     string host(key_obj.GetHost());
-    if (CSocketAPI::isip(host, true))
+    if (CSocketAPI::isip(host, CSocketAPI::eIP_FullQuadIPv4))
         nc_key_cid.AppendIPv4SockAddr(
                 CSocketAPI::gethostbyname(host), key_obj.GetPort());
     else {

@@ -173,7 +173,7 @@ CNetScheduleKeyGenerator::CNetScheduleKeyGenerator(
 {
     limits::Check<limits::SQueueName>(queue_name);
 
-    m_UseIPv4Addr = CSocketAPI::isip(host, true);
+    m_UseIPv4Addr = CSocketAPI::isip(host, CSocketAPI::eIP_FullQuadIPv4);
     if (m_UseIPv4Addr)
         m_HostIPv4Addr = CSocketAPI::gethostbyname(host);
     else
