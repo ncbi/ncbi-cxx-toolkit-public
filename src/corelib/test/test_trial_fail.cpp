@@ -122,7 +122,7 @@ int CTestApplication::Run(void)
     toupper("catch-all");  // catch the reminder
 #  endif
 
-    NcbiCerr << "Passed (BUT IT SHOULD NOT HAVE EVEN COMPILED. BAD!!!) "
+    NcbiCerr << "Passed (BUT IT SHOULD NOT HAVE EVEN BEEN COMPILED. BAD!!!) "
              << NcbiEndl
              << "NCBI_RANDOM_VALUE_1 = " << NCBI_RANDOM_VALUE_1
              << NcbiEndl;
