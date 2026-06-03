@@ -556,7 +556,7 @@ bool CCleanup::CleanupAuthList(CAuth_list& al, bool fix_initials)
     }
     // if no remaining authors, put in default author for legal ASN.1
     if (!al.IsSetNames()) {
-        al.SetNames().SetStr().push_back("");
+        al.SetNames().SetStr().push_back("?");
         rval = true;
     }
     return rval;
@@ -569,7 +569,7 @@ void CCleanup::ResetAuthorNames(CAuth_list::TNames& names)
     names.Reset();
     list< string > &auth_list = names.SetStr();
     auth_list.clear();
-    auth_list.push_back("");
+    auth_list.push_back("?");
 }
 
 
