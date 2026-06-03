@@ -936,8 +936,8 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
             // does not contain up-to-date server list, thus it needs
             // to be created anew.
 
-            const TSERV_Type types = fSERV_Standalone | fSERV_IncludeStandby |
-                fSERV_IncludeReserved | fSERV_IncludeSuppressed;
+            const TSERV_Type types = (TSERV_Type) fSERV_Standalone | (TSERV_Type) fSERV_IncludeStandby
+                | (TSERV_Type) fSERV_IncludeReserved | (TSERV_Type) fSERV_IncludeSuppressed;
 
             auto discovered = CServiceDiscovery::DiscoverImpl(m_ServiceName, types, m_NetInfo, m_ServerPool->m_LBSMAffinity,
                     TServConn_MaxFineLBNameRetries::GetDefault(), m_ConnectionRetryDelay);
