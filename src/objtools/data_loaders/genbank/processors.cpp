@@ -1843,7 +1843,7 @@ void CProcessor_ID2::x_FixCompression(CID2_Reply_Data& data)
                                    new CZipStreamCompressor(ICompression::eLevel_Lowest),
                                    CCompressionIStream::fOwnProcessor);
         ITERATE ( CID2_Reply_Data::TData, it, data.GetData() ) {
-            stream.write(&(**it)[0], (*it)->size());
+            stream.write((*it)->data(), (*it)->size());
         }
     }}
     data.SetData().swap(new_data.SetData());
