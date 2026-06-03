@@ -159,7 +159,7 @@ CServiceDiscovery::TServers CServiceDiscovery::operator()()
         return *static_pointer_cast<TServers>(m_Data);
     }
 
-    const TSERV_Type types = fSERV_Standalone | fSERV_IncludeStandby;
+    const TSERV_Type types = (TSERV_Type) fSERV_Standalone | (TSERV_Type) fSERV_IncludeStandby;
     return DiscoverImpl(m_ServiceName, types, m_Data, {}, 0, 0);
 }
 
