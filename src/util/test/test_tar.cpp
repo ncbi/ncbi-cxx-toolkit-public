@@ -234,7 +234,8 @@ void CTarTest::Init(void)
     args->AddFlag("S", "Treat PAX GNU/1.0 sparse files as unsupported");
     args->AddFlag("I", "Ignore unsupported entries (w/o extracting them)");
     args->AddOptionalKey("X", "exclude",
-                         "Exclude pattern", CArgDescriptions::eString,
+                         "Exclude pattern(s) [multiple allowed] for files/entries",
+                         CArgDescriptions::eString,
                          CArgDescriptions::fAllowMultiple);
     args->AddFlag("z", "Use GZIP compression (aka tgz), subsumes NOT -r / -u");
     args->AddFlag("e", "Enable exceptions on the underlying stream(s)"
@@ -247,9 +248,9 @@ void CTarTest::Init(void)
                   " [non-stdandard]");
     args->AddFlag("G", "Always supplement long names with addt'l GNU header(s)"
                   " [non-stdandard]");
-    args->AddFlag("F", "Pipe the archive through"
+    args->AddFlag("F", "Pipe[Flow!] the archive through (to standard output)"
                   " [non-standard]");
-    args->AddFlag("Q", "Ignore file open errors when adding to the archive"
+    args->AddFlag("Q", "Ignore[Quiet!] file open errors when adding to the archive"
                   " [non-standard]");
     args->AddFlag("Z", "No NCBI signature in headers"
                   " [non-standard]");
