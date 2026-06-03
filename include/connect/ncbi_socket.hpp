@@ -976,8 +976,7 @@ public:
 
     /// For IPv4 only
     NCBI_XSOCK_DEPRECATED
-    static bool   isip(const string& host,
-                       bool fullquad = false);
+    static bool   isip(const string& host, bool fullquad);
     /// Broader string classificator
     enum EIP_StringKind {
         eIP_HistoricIPv4 = 0,       ///< Accept old-fashioned IPv4 notations
