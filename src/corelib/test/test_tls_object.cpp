@@ -558,14 +558,14 @@ private:
     CObjectWithTLS(const CObjectWithTLS&);
     void operator=(CObjectWithTLS&);
 };
-void* CObjectWithTLS::operator new(size_t s)
+inline void* CObjectWithTLS::operator new(size_t s)
 {
     add_alloc(1);
     CObjectWithTLS* ptr = (CObjectWithTLS*)::operator new(s);
     RegisterNew(ptr);
     return ptr;
 }
-void CObjectWithTLS::operator delete(void* ptr)
+inline void CObjectWithTLS::operator delete(void* ptr)
 {
     add_alloc(-1);
     RegisterDelete((CObjectWithTLS*)ptr);
