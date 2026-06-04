@@ -405,7 +405,7 @@ struct CDeleter
 /// @sa
 ///   Deleter(), ArrayDeleter(), CDeleter()
 
-#define DEPRECATE_AUTO_PTR 0
+#define DEPRECATE_AUTO_PTR 1
 
 template< class X, class Del = Deleter<X> >
 class AutoPtr
