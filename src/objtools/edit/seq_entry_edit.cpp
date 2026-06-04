@@ -1755,7 +1755,7 @@ void s_AddLiteral(CSeq_inst& inst, const string& element)
 }
 
 
-void s_AddGap(CSeq_inst& inst, size_t n_len, bool is_unknown, bool is_assembly_gap = false, int gap_type = CSeq_gap::eType_unknown, int linkage = -1, int linkage_evidence = -1 )
+void s_AddGap(CSeq_inst& inst, TSeqPos n_len, bool is_unknown, bool is_assembly_gap = false, int gap_type = CSeq_gap::eType_unknown, int linkage = -1, int linkage_evidence = -1)
 {
     CRef<CDelta_seq> gap(new CDelta_seq());
     if (is_assembly_gap)
@@ -1836,7 +1836,7 @@ void ConvertRawToDeltaByNs(CSeq_inst& inst,
     }
 
     string element;
-    size_t n_len = 0;
+    TSeqPos n_len = 0;
     ITERATE(string, it, iupacna) {
         if ((*it) == 'N') {
             n_len++;
@@ -2107,7 +2107,7 @@ void s_BasicValidation(CBioseq_Handle bsh,
         const TRange& cut = *cit;
         TSeqPos cut_from = cut.GetFrom();
         TSeqPos cut_to = cut.GetTo();
-        if (cut_from < 0 || cut_to < 0 || cut_from >= nuc_len || cut_to >= nuc_len) {
+        if (cut_from >= nuc_len || cut_to >= nuc_len) {
             stringstream ss;
             ss << "Cut location is invalid = [" << cut_from << " - " << cut_to << "]";
             NCBI_THROW(CEditException, eInvalid, ss.str());
@@ -2490,6 +2490,8 @@ void UpdateSeqLength(CAutoInitRef<CDelta_ext>& pDeltaExt,
         new_length += seqmap_ci.GetLength();
     }
     break;
+    default:
+        break;
     }
 }
 
@@ -2873,7 +2875,7 @@ bool s_FindSegment(const CDense_seg& denseg,
         TSignedSeqPos start = denseg.GetStarts()[seg * denseg.GetDim() + row];
         TSignedSeqPos len   = denseg.GetLens()[seg];
         if (start != -1) {
-            if (pos >= start  &&  pos < start + len) {
+            if (pos >= TSeqPos(start) && pos < TSeqPos(start) + len) {
                 seg_start = start;
                 return true;
             }
@@ -2951,8 +2953,8 @@ void s_CutDensegSegment(CRef<CSeq_align> align,
     // Split segment at pos
     // First find the lengths of the split segments, first_len and second_len
     TSeqPos first_len, second_len;
-    TSeqPos index = foundseg * denseg.GetDim() + row;
-    if ( !denseg.IsSetStrands() || denseg.GetStrands()[index] != eNa_strand_minus )
+    TSeqPos indx = foundseg * denseg.GetDim() + row;
+    if ( !denseg.IsSetStrands() || denseg.GetStrands()[indx] != eNa_strand_minus )
     {
         first_len  = pos - seg_start;
         second_len = denseg.GetLens()[foundseg] - first_len;
@@ -3035,18 +3037,18 @@ void TrimSeqAlign(CBioseq_Handle bsh,
 {
     // Assumption:  only DENSEG type is supported so caller should
     // ensure only denseg alignments are passed in.
-    const CDense_seg& denseg = align->GetSegs().GetDenseg();
+    const CDense_seg& den_seg = align->GetSegs().GetDenseg();
 
-    // On which "row" of the denseg does the bsh seqid lie?
-    const CDense_seg::TIds& ids = denseg.GetIds();
+    // On which "row" of the den_seg does the bsh seqid lie?
+    const CDense_seg::TIds& ids = den_seg.GetIds();
     CDense_seg::TDim row = -1;
-    for (CDense_seg::TIds::size_type rr = 0; rr < ids.size(); ++rr) {
+    for (TSeqPos rr = 0; rr < ids.size(); ++rr) {
         if (ids[rr]->Match( *(bsh.GetSeqId()) )) {
             row = rr;
             break;
         }
     }
-    if ( row < 0 || !denseg.CanGetDim() || row >= denseg.GetDim() ) {
+    if (row < 0 || ! den_seg.CanGetDim() || row >= den_seg.GetDim()) {
         return;
     }
 

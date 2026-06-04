@@ -70,12 +70,12 @@ unsigned char GetCodeBreakCharacter(const CCode_break& cbr)
     switch (cbr.GetAa().Which()) {
         case CCode_break::C_Aa::e_Ncbi8aa:
             str = cbr.GetAa().GetNcbi8aa();
-            CSeqConvert::Convert(str, CSeqUtil::e_Ncbi8aa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+            CSeqConvert::Convert(str, CSeqUtil::e_Ncbi8aa, 0, TSeqPos(str.size()), seqData, CSeqUtil::e_Ncbieaa);
             ex = seqData[0];
             break;
         case CCode_break::C_Aa::e_Ncbistdaa:
             str = cbr.GetAa().GetNcbi8aa();
-            CSeqConvert::Convert(str, CSeqUtil::e_Ncbistdaa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+            CSeqConvert::Convert(str, CSeqUtil::e_Ncbistdaa, 0, TSeqPos(str.size()), seqData, CSeqUtil::e_Ncbieaa);
             ex = seqData[0];
             break;
         case CCode_break::C_Aa::e_Ncbieaa:
@@ -597,13 +597,13 @@ CRef<CGenetic_code> GetGeneticCodeForBioseq(CBioseq_Handle bh)
 }
 
 
-static CRef<CSeq_loc> TruncateSeqLoc (const CSeq_loc& orig_loc, size_t new_len)
+static CRef<CSeq_loc> TruncateSeqLoc (const CSeq_loc& orig_loc, TSeqPos new_len)
 {
     CRef<CSeq_loc> new_loc;
 
-    size_t len = 0;
+    TSeqPos len = 0;
     for (CSeq_loc_CI it(orig_loc); it && len < new_len; ++it) {
-        size_t this_len = it.GetRange().GetLength();
+        TSeqPos this_len = it.GetRange().GetLength();
         CConstRef<CSeq_loc> this_loc = it.GetRangeAsSeq_loc();
         if (len + this_len <= new_len) {
             if (new_loc) {
@@ -615,8 +615,8 @@ static CRef<CSeq_loc> TruncateSeqLoc (const CSeq_loc& orig_loc, size_t new_len)
             len += this_len;
         } else {
             CRef<CSeq_loc> partial_loc(new CSeq_loc());
-            size_t len_wanted = new_len - len;
-            size_t start = this_loc->GetStart(eExtreme_Biological);
+            TSeqPos len_wanted = new_len - len;
+            TSeqPos start = this_loc->GetStart(eExtreme_Biological);
             if (len_wanted == 1) {
                 // make a point
                 partial_loc->SetPnt().SetPoint(start);
@@ -668,7 +668,7 @@ bool TruncateCDSAtStop(CSeq_feat& cds, CScope& scope)
         size_t pos = NStr::Find(prot_str, "*");
         if (pos != string::npos) {
             // want to truncate the location and retranslate
-            size_t len_wanted =  3 * (pos + 1);
+            TSeqPos len_wanted =  3 * TSeqPos(pos + 1);
             if (cds.GetData().GetCdregion().IsSetFrame()) {
                 CCdregion::EFrame frame = cds.GetData().GetCdregion().GetFrame();
                 if (frame == CCdregion::eFrame_two) {
@@ -724,10 +724,10 @@ bool ExtendCDSToStopCodon (CSeq_feat& cds, CScope& scope)
         code = &(cds.GetData().GetCdregion().GetCode());
     }
 
-    size_t stop = loc.GetStop(eExtreme_Biological);
+    TSeqPos stop = loc.GetStop(eExtreme_Biological);
     // figure out if we have a partial codon at the end
-    size_t orig_len = sequence::GetLength(loc, &scope);
-    size_t len = orig_len;
+    TSeqPos orig_len = sequence::GetLength(loc, &scope);
+    TSeqPos len      = orig_len;
     if (cds.IsSetData() && cds.GetData().IsCdregion() && cds.GetData().GetCdregion().IsSetFrame()) {
         CCdregion::EFrame frame = cds.GetData().GetCdregion().GetFrame();
         if (frame == CCdregion::eFrame_two) {
@@ -736,7 +736,7 @@ bool ExtendCDSToStopCodon (CSeq_feat& cds, CScope& scope)
             len -= 2;
         }
     }
-    size_t mod = len % 3;
+    TSeqPos mod = len % 3;
     CRef<CSeq_loc> vector_loc(new CSeq_loc());
     vector_loc->SetInt().SetId().Assign(*(loc.GetId()));
 
@@ -751,7 +751,7 @@ bool ExtendCDSToStopCodon (CSeq_feat& cds, CScope& scope)
 
     CSeqVector seq(*vector_loc, scope, CBioseq_Handle::eCoding_Iupac);
     // reserve our space
-    const size_t usable_size = seq.size();
+    const TSeqPos usable_size = seq.size();
 
     // get appropriate translation table
     const CTrans_table & tbl =
@@ -761,16 +761,14 @@ bool ExtendCDSToStopCodon (CSeq_feat& cds, CScope& scope)
     // main loop through bases
     CSeqVector::const_iterator start = seq.begin();
 
-    size_t i;
-    size_t k;
-    size_t state = 0;
-    size_t length = usable_size / 3;
+    TSeqPos state  = 0;
+    TSeqPos length = usable_size / 3;
 
     CRef<CSeq_loc> new_loc;
 
-    for (i = 0;  i < length;  ++i) {
+    for (TSeqPos i = 0; i < length; ++i) {
         // loop through one codon at a time
-        for (k = 0;  k < 3;  ++k, ++start) {
+        for (unsigned k = 0; k < 3; ++k, ++start) {
             state = tbl.NextCodonState(state, *start);
         }
 
@@ -791,9 +789,9 @@ bool ExtendCDSToStopCodon (CSeq_feat& cds, CScope& scope)
             }
             CRef<CSeq_loc> last_interval(new CSeq_loc());
             CConstRef<CSeq_loc> this_loc = it.GetRangeAsSeq_loc();
-            size_t this_start = this_loc->GetStart(eExtreme_Positional);
-            size_t this_stop = this_loc->GetStop(eExtreme_Positional);
-            size_t extension = ((i + 1) * 3) - mod;
+            TSeqPos this_start = this_loc->GetStart(eExtreme_Positional);
+            TSeqPos this_stop = this_loc->GetStop(eExtreme_Positional);
+            TSeqPos extension = ((i + 1) * 3) - mod;
             last_interval->SetInt().SetId().Assign(*(this_loc->GetId()));
             if (this_loc->IsSetStrand() && this_loc->GetStrand() == eNa_strand_minus) {
                 last_interval->SetStrand(eNa_strand_minus);
