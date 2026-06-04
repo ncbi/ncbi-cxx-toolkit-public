@@ -101,7 +101,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self._default_requires("pcre2/10.42")
         self._default_requires("protobuf/[>=3.21.12 <=6.30.1]")
         self._default_requires("sqlite3/[>=3.40.0 <=3.50.4]")
-        self._optional_requires("wxwidgets/3.2.8")
+        self._optional_requires("wxwidgets/3.3.2")
         self._default_requires("zlib/[>=1.2.11 <2]")
         self._default_requires("zstd/[>=1.5.2 <=1.5.5]")
 
