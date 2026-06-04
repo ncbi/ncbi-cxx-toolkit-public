@@ -775,6 +775,13 @@ int CPubseqGatewayApp::Run(void)
                                          CDeadline::eInfinite);
 
 
+    // Trigger the accession guide loading so that the first resolve request
+    // (or many if they come simultaneously) do not wait for it
+    try {
+        CSeq_id::RefreshAccessionGuide();
+    } catch (...) {
+    }
+
     // The classification thread is conditional
     std::thread     seq_id_classification_monitoring_thread;
     if (m_Settings.m_SeqIdRefreshSec > 0) {
