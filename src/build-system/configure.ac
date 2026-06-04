@@ -6100,7 +6100,7 @@ if test "$with_boost" != "no"; then
       BOOST_LIBPATH_=/usr/lib
       for x in ${multiarch:+/$multiarch} $bit64_sfx ''; do
          if test -d $BOOST_LIBPATH_$x && \
-            ls $BOOST_LIBPATH_$x/libboost_*[[!0-9]]; then
+            ls $BOOST_LIBPATH_$x/libboost_*[[!0-9]] >/dev/null 2>&1; then
                BOOST_LIBPATH_=$BOOST_LIBPATH_$x
                break
          fi
