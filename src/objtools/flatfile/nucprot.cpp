@@ -451,7 +451,8 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     else
         db = "WGS:";
 
-    db.append(ibp->mAccNum.substr(0, 4));
+    db.append(ibp->mAccNum.substr(0,
+              ibp->mAccNum.find_first_of("0123456789", 0)));
     ids.push_back(seq_id);
 }
 
