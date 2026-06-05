@@ -5174,21 +5174,24 @@ void CChain::CalculateSupportAndWeightFromMembers(bool keep_all_evidence) {
     SetType(Type() & (~(eSR | eEST | emRNA | eProt | eNotForChaining)));
 
 	CSupportInfoSet support;
-	if(m_gapped_helper_align.ID())
+	if(m_gapped_helper_align.ID()) {
 		support.emplace(m_gapped_helper_align.ID(),true);
+        protreadingframe = m_gapped_helper_align.GetCdsInfo().ProtReadingFrame();
+        SetType(Type() | eProt);
+    }
     for(SLinker& sl : linkers) {
         SChainMember* mi = sl.m_member;
 		if(mi == nullptr)
 			continue;
         CGeneModel& align = *mi->m_align;
+        Int8 id = align.ID();
 		bool core = sp_core.count(&sl);
-		bool keep = !sl.m_not_wanted || core || keep_all_evidence;
+		bool keep = !sl.m_not_wanted || core || keep_all_evidence || (id == m_gapped_helper_align.ID());
 		if(keep) {
 			SetType(Type() | (align.Type() & (eSR | eEST | emRNA | eProt | eNotForChaining)));
             protreadingframe += align.GetCdsInfo().ProtReadingFrame();       
             m_splice_weight += mi->m_splice_weight;            
 			weight += align.Weight();
-			Int8 id = align.ID();
 			if(id != m_gapped_helper_align.ID()) {                    // ghelper is already included
 				if(core && support.emplace(id, true).second)
 					support.erase(CSupportInfo(id, false));           // remove not core part, if included core part
