@@ -238,7 +238,7 @@ struct SResponse
         m_Err(cerr)
     {}
 
-    void DataOnly(const SOneRequestParams::SDataOnly& data_only)
+    void DataOnly(const SDataOnly& data_only)
     {
         if (data_only.enabled) {
             m_Format = data_only.output_format;

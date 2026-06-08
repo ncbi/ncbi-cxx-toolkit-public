@@ -164,6 +164,13 @@ private:
     inline static auto sm_PreviewSize = numeric_limits<size_t>::max();
 };
 
+struct SDataOnly
+{
+    const bool enabled;
+    const bool messages_only;
+    const ESerialDataFormat output_format;
+};
+
 struct SParams
 {
     const string service;
@@ -186,13 +193,6 @@ struct SOneRequestParams : SParams
     {
         const CLogLatencies::EWhich which;
         const bool debug;
-    };
-
-    struct SDataOnly
-    {
-        const bool enabled;
-        const bool messages_only;
-        const ESerialDataFormat output_format;
     };
 
     SLatency latency;

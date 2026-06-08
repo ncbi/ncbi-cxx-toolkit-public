@@ -546,7 +546,7 @@ void SMetrics::OutputItems(ostream& os) const
 
 struct SDataOnlyCopy
 {
-    SDataOnlyCopy(const SOneRequestParams::SDataOnly& params) : m_Params(params) {}
+    SDataOnlyCopy(const SDataOnly& params) : m_Params(params) {}
 
     void ItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
     void ReplyComplete(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
@@ -562,7 +562,7 @@ private:
     template <class TItem>
     bool ReportErrors(EPSG_Status status, TItem item, const char* prefix);
 
-    const SOneRequestParams::SDataOnly& m_Params;
+    const SDataOnly& m_Params;
     unordered_map<string, pair<shared_ptr<CPSG_BlobInfo>, shared_ptr<CPSG_BlobData>>> m_Data;
     EPSG_Status m_Status = EPSG_Status::eSuccess;
 };
