@@ -546,7 +546,10 @@ void SMetrics::OutputItems(ostream& os) const
 
 struct SDataOnlyCopy
 {
-    SDataOnlyCopy(const SDataOnly& params) : m_Params(params) {}
+    SDataOnlyCopy(const SDataOnly& params) :
+        m_MessagesOnly(params.messages_only),
+        m_Deserializer(params.output_format)
+    {}
 
     void ItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
     void ReplyComplete(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
@@ -554,28 +557,11 @@ struct SDataOnlyCopy
     operator int() const { return int(m_Status); }
 
 private:
-    using TKey = pair<CPSG_Reply*, string>;
-
-    struct SKeyHash
-    {
-        size_t operator()(const TKey& key) const
-        {
-            size_t hash_value = 0;
-            hash_combine(hash_value, key.first);
-            hash_combine(hash_value, key.second);
-            return hash_value;
-        }
-    };
-
-    void Process(shared_ptr<CPSG_BlobInfo> blob_info);
-    bool Deserialize(const shared_ptr<CPSG_BlobData>& blob_data, ostream& os);
-    void Deserialize(const shared_ptr<CPSG_NamedAnnotInfo>& named_annot_info, ostream& os);
-
     template <class TItem>
     bool ReportErrors(EPSG_Status status, TItem item, const char* prefix);
 
-    const SDataOnly& m_Params;
-    unordered_map<TKey, shared_ptr<CPSG_BlobInfo>, SKeyHash> m_Data;
+    const bool m_MessagesOnly;
+    SDataDeserializer m_Deserializer;
     EPSG_Status m_Status = EPSG_Status::eSuccess;
 };
 
@@ -590,7 +576,7 @@ bool SDataOnlyCopy::ReportErrors(EPSG_Status status, TItem item, const char* pre
 
     stringstream ss;
 
-    if (m_Params.messages_only) {
+    if (m_MessagesOnly) {
         auto delim = "";
 
         for (;;) {
@@ -625,20 +611,20 @@ void SDataOnlyCopy::ItemComplete(EPSG_Status status, const shared_ptr<CPSG_Reply
         return;
 
     } else if (item->GetType() == CPSG_ReplyItem::eBlobInfo) {
-        Process(static_pointer_cast<CPSG_BlobInfo>(item));
+        m_Deserializer(static_pointer_cast<CPSG_BlobInfo>(item));
 
     } else if (item->GetType() == CPSG_ReplyItem::eBlobData) {
         auto blob_data = static_pointer_cast<CPSG_BlobData>(item);
 
-        if ((m_Params.output_format == eSerial_None) || !Deserialize(blob_data, cout)) {
+        if (!m_Deserializer || !m_Deserializer(blob_data, cout)) {
             cout << blob_data->GetStream().rdbuf();
         }
 
     } else if (item->GetType() == CPSG_ReplyItem::eNamedAnnotInfo) {
         auto named_annot_info = static_pointer_cast<CPSG_NamedAnnotInfo>(item);
 
-        if (m_Params.output_format != eSerial_None) {
-            Deserialize(named_annot_info, cout);
+        if (m_Deserializer) {
+            m_Deserializer(named_annot_info, cout);
         } else {
             cout << NStr::Base64Decode(named_annot_info->GetId2AnnotInfo());
         }
@@ -650,7 +636,7 @@ void SDataOnlyCopy::ReplyComplete(EPSG_Status status, const shared_ptr<CPSG_Repl
     ReportErrors(status, reply, "Reply error: ");
 }
 
-ESerialDataFormat s_GetInputFormat(const string& format)
+ESerialDataFormat SDataDeserializer::GetInputFormat(const string& format)
 {
     if (format == "asn1-text") return eSerial_AsnText;
     if (format == "xml")       return eSerial_Xml;
@@ -659,7 +645,7 @@ ESerialDataFormat s_GetInputFormat(const string& format)
     return eSerial_AsnBinary;
 }
 
-TTypeInfo s_GetInputType(const shared_ptr<CPSG_BlobData>& blob_data)
+TTypeInfo SDataDeserializer::GetInputType(const shared_ptr<CPSG_BlobData>& blob_data)
 {
     using namespace objects;
 
@@ -670,13 +656,13 @@ TTypeInfo s_GetInputType(const shared_ptr<CPSG_BlobData>& blob_data)
     return CSeq_entry::GetTypeInfo();
 }
 
-void SDataOnlyCopy::Process(shared_ptr<CPSG_BlobInfo> blob_info)
+void SDataDeserializer::operator()(const shared_ptr<CPSG_BlobInfo>& blob_info)
 {
     auto key = make_pair(blob_info->GetReply().get(), blob_info->GetId()->Repr());
     m_Data[std::move(key)] = std::move(blob_info);
 }
 
-bool SDataOnlyCopy::Deserialize(const shared_ptr<CPSG_BlobData>& blob_data, ostream& os)
+bool SDataDeserializer::operator()(const shared_ptr<CPSG_BlobData>& blob_data, ostream& os)
 {
     auto key = make_pair(blob_data->GetReply().get(), blob_data->GetId()->Repr());
     auto node = m_Data.extract(key);
@@ -688,7 +674,7 @@ bool SDataOnlyCopy::Deserialize(const shared_ptr<CPSG_BlobData>& blob_data, ostr
     auto& blob_info = node.mapped();
     auto& is = blob_data->GetStream();
 
-    auto input_format = s_GetInputFormat(blob_info->GetFormat());
+    auto input_format = GetInputFormat(blob_info->GetFormat());
     unique_ptr<CObjectIStream> in;
 
     if (blob_info->GetCompression().find("zip") == string::npos) {
@@ -702,11 +688,11 @@ bool SDataOnlyCopy::Deserialize(const shared_ptr<CPSG_BlobData>& blob_data, ostr
     _ASSERT(in);
     in->UseMemoryPool();
 
-    unique_ptr<CObjectOStream> out(CObjectOStream::Open(m_Params.output_format, os));
+    unique_ptr<CObjectOStream> out(CObjectOStream::Open(m_OutputFormat, os));
     CObjectStreamCopier copier(*in, *out);
 
     try {
-        copier.Copy(s_GetInputType(blob_data));
+        copier.Copy(GetInputType(blob_data));
     }
     catch (CException& ex) {
         cerr << "Failed to process blob '" << blob_data->GetId()->Repr() << "': " << ex.ReportThis() << endl;
@@ -715,10 +701,10 @@ bool SDataOnlyCopy::Deserialize(const shared_ptr<CPSG_BlobData>& blob_data, ostr
     return true;
 }
 
-void SDataOnlyCopy::Deserialize(const shared_ptr<CPSG_NamedAnnotInfo>& named_annot_info, ostream& os)
+void SDataDeserializer::operator()(const shared_ptr<CPSG_NamedAnnotInfo>& named_annot_info, ostream& os)
 {
     for (const auto& info : named_annot_info->GetId2AnnotInfoList() ) {
-        os << MSerial_Format(m_Params.output_format) << *info;
+        os << MSerial_Format(m_OutputFormat) << *info;
     }
 }
 

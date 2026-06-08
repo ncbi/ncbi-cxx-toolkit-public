@@ -92,6 +92,37 @@ inline void hash_combine(size_t& seed, const T& v)
     seed ^= hash + 0x9e3779b97f4a7c13ULL + (seed << 6) + (seed >> 2);
 }
 
+struct SDataDeserializer
+{
+    SDataDeserializer(const ESerialDataFormat& output_format) : m_OutputFormat(output_format) {}
+
+    operator auto() const { return m_OutputFormat; }
+
+    void operator()(const shared_ptr<CPSG_BlobInfo>& blob_info);
+    bool operator()(const shared_ptr<CPSG_BlobData>& blob_data, ostream& os);
+    void operator()(const shared_ptr<CPSG_NamedAnnotInfo>& named_annot_info, ostream& os);
+
+private:
+    using TKey = pair<CPSG_Reply*, string>;
+
+    struct SKeyHash
+    {
+        size_t operator()(const TKey& key) const
+        {
+            size_t hash_value = 0;
+            hash_combine(hash_value, key.first);
+            hash_combine(hash_value, key.second);
+            return hash_value;
+        }
+    };
+
+    static ESerialDataFormat GetInputFormat(const string& format);
+    static TTypeInfo GetInputType(const shared_ptr<CPSG_BlobData>& blob_data);
+
+    ESerialDataFormat m_OutputFormat = eSerial_None;
+    unordered_map<TKey, shared_ptr<CPSG_BlobInfo>, SKeyHash> m_Data;
+};
+
 class CJsonResponse : public CJson_Document
 {
 public:
