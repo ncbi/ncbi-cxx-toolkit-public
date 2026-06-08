@@ -37,6 +37,8 @@
 #include "psgs_reply.hpp"
 #include "timing.hpp"
 #include "wgs_client.hpp"
+#include "psgs_thread_pool_task.hpp"
+#include <util/thread_pool.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 
 
@@ -57,6 +59,7 @@ BEGIN_NAMESPACE(wgs);
 
 
 const string    kWGSProcessorEvent = "WGS";
+
 
 class CPSGS_WGSProcessor : public IPSGS_Processor
 {
@@ -101,7 +104,6 @@ private:
 
     void x_LoadConfig(void);
     bool x_IsEnabled(CPSGS_Request& request) const;
-    void x_InitClient(void) const;
 
     void x_ProcessResolveRequest(void);
     void x_ProcessBlobBySeqIdRequest(void);
@@ -154,7 +156,6 @@ private:
         return obj.IsSetBlob_state() ? obj.GetBlob_state() : 0;
     }
 
-    void x_UnlockRequest(void);
     void x_WaitForOtherProcessors(void);
     void x_Finish(EPSGS_Status status);
     bool x_IsCanceled();
@@ -164,7 +165,6 @@ private:
     void x_RemoveFromExcludedCache(void);
     void x_SetExcludedCacheCompleted(void);
 
-    CFastMutex m_Mutex;
     shared_ptr<SWGSProcessor_Config> m_Config;
     mutable shared_ptr<CWGSClient> m_Client;
     psg_time_point_t m_Start;
@@ -182,8 +182,8 @@ private:
     shared_ptr<SWGSData> m_WGSData;
     string m_WGSDataError;
     EOutputFormat m_OutputFormat;
-    bool m_Unlocked;
     shared_ptr<ncbi::CThreadPool> m_ThreadPool;
+    CPSGS_ThreadPoolTask<CPSGS_WGSProcessor>* m_PoolTask = nullptr;
 };
 
 

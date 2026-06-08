@@ -45,7 +45,6 @@
 #include <serial/serial.hpp>
 #include <serial/objostrasnb.hpp>
 #include <util/compress/zlib.hpp>
-#include <util/thread_pool.hpp>
 #include <objects/general/general__.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqset/seqset__.hpp>
@@ -107,70 +106,6 @@ private:
 };
 
 
-class CWGSThreadPoolTask_ResolveSeqId: public CThreadPool_Task
-{
-public:
-    CWGSThreadPoolTask_ResolveSeqId(CPSGS_WGSProcessor& processor) : m_Processor(processor) {}
-
-    virtual EStatus Execute(void) override
-    {
-        m_Processor.ResolveSeqId();
-        return eCompleted;
-    }
-
-private:
-    CPSGS_WGSProcessor& m_Processor;
-};
-
-
-class CWGSThreadPoolTask_GetBlobBySeqId: public CThreadPool_Task
-{
-public:
-    CWGSThreadPoolTask_GetBlobBySeqId(CPSGS_WGSProcessor& processor) : m_Processor(processor) {}
-
-    virtual EStatus Execute(void) override
-    {
-        m_Processor.GetBlobBySeqId();
-        return eCompleted;
-    }
-
-private:
-    CPSGS_WGSProcessor& m_Processor;
-};
-
-
-class CWGSThreadPoolTask_GetBlobByBlobId: public CThreadPool_Task
-{
-public:
-    CWGSThreadPoolTask_GetBlobByBlobId(CPSGS_WGSProcessor& processor) : m_Processor(processor) {}
-
-    virtual EStatus Execute(void) override
-    {
-        m_Processor.GetBlobByBlobId();
-        return eCompleted;
-    }
-
-private:
-    CPSGS_WGSProcessor& m_Processor;
-};
-
-
-class CWGSThreadPoolTask_GetChunk: public CThreadPool_Task
-{
-public:
-    CWGSThreadPoolTask_GetChunk(CPSGS_WGSProcessor& processor) : m_Processor(processor) {}
-
-    virtual EStatus Execute(void) override
-    {
-        m_Processor.GetChunk();
-        return eCompleted;
-    }
-
-private:
-    CPSGS_WGSProcessor& m_Processor;
-};
-
-
 END_LOCAL_NAMESPACE;
 
 
@@ -224,10 +159,10 @@ CPSGS_WGSProcessor::CPSGS_WGSProcessor(void)
       m_Status(ePSGS_NotFound),
       m_Canceled(false),
       m_ChunkId(0),
-      m_OutputFormat(SPSGS_ResolveRequest::ePSGS_NativeFormat),
-      m_Unlocked(true)
+      m_OutputFormat(SPSGS_ResolveRequest::ePSGS_NativeFormat)
 {
     x_LoadConfig();
+    m_Client = make_shared<CWGSClient>(*m_Config);
 }
 
 
@@ -243,7 +178,6 @@ CPSGS_WGSProcessor::CPSGS_WGSProcessor(
       m_Canceled(false),
       m_ChunkId(0),
       m_OutputFormat(SPSGS_ResolveRequest::ePSGS_NativeFormat),
-      m_Unlocked(true),
       m_ThreadPool(thread_pool)
 {
     m_Request = request;
@@ -255,7 +189,6 @@ CPSGS_WGSProcessor::CPSGS_WGSProcessor(
 CPSGS_WGSProcessor::~CPSGS_WGSProcessor(void)
 {
     _ASSERT(m_Status != ePSGS_InProgress);
-    x_UnlockRequest();
 }
 
 
@@ -287,7 +220,6 @@ bool CPSGS_WGSProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
                                     shared_ptr<CPSGS_Reply> /*reply*/) const
 {
     if ( !x_IsEnabled(*request) ) return false;
-    x_InitClient();
     _ASSERT(m_Client);
     return m_Client->CanProcessRequest(*request);
 }
@@ -299,10 +231,7 @@ CPSGS_WGSProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
                                     TProcessorPriority priority) const
 {
     if ( !x_IsEnabled(*request) ) return nullptr;
-    x_InitClient();
     _ASSERT(m_Client);
-    if ( !m_Client->CanProcessRequest(*request) ) return nullptr;
-
     return new CPSGS_WGSProcessor(m_Client, m_ThreadPool, request, reply, priority);
 }
 
@@ -328,11 +257,7 @@ void CPSGS_WGSProcessor::Process()
     }
 
     try {
-        {
-            CFastMutexGuard guard(m_Mutex);
-            m_Unlocked = false;
-        }
-        if (m_Request) m_Request->Lock(kWGSProcessorEvent);
+        GetRequest()->Lock(kWGSProcessorEvent);
         auto req_type = GetRequest()->GetRequestType();
         switch (req_type) {
         case CPSGS_Request::ePSGS_ResolveRequest:
@@ -377,18 +302,6 @@ bool CPSGS_WGSProcessor::x_IsEnabled(CPSGS_Request& request) const
 }
 
 
-inline
-void CPSGS_WGSProcessor::x_InitClient(void) const
-{
-    DEFINE_STATIC_FAST_MUTEX(s_ClientMutex);
-    if ( m_Client ) return;
-    CFastMutexGuard guard(s_ClientMutex);
-    if ( !m_Client ) {
-        m_Client = make_shared<CWGSClient>(*m_Config);
-    }
-}
-
-
 static void s_OnResolvedSeqId(void* data)
 {
     static_cast<CPSGS_WGSProcessor*>(data)->OnResolvedSeqId();
@@ -411,7 +324,8 @@ void CPSGS_WGSProcessor::x_ProcessResolveRequest(void)
             kWGSProcessorName + " processor is resolving seq-id " + m_SeqId->AsFastaString(),
             GetRequest()->GetStartTimestamp());
     }
-    m_ThreadPool->AddTask(new CWGSThreadPoolTask_ResolveSeqId(*this));
+    m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::ResolveSeqId);
+    m_ThreadPool->AddTask(m_PoolTask);
 }
 
 
@@ -419,18 +333,20 @@ void CPSGS_WGSProcessor::ResolveSeqId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    try {
-        m_WGSData = m_Client->ResolveSeqId(*m_SeqId);
-        if ( GetRequest()->NeedTrace() ) {
-            GetReply()->SendTrace(
-                kWGSProcessorName + " processor finished resolving seq-id " + m_SeqId->AsFastaString() + ", waiting for other processors",
-                GetRequest()->GetStartTimestamp());
+    x_WaitForOtherProcessors();
+    if ( !m_Canceled ) {
+        try {
+            m_WGSData = m_Client->ResolveSeqId(*m_SeqId);
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kWGSProcessorName + " processor finished resolving seq-id " + m_SeqId->AsFastaString() + ", waiting for other processors",
+                    GetRequest()->GetStartTimestamp());
+            }
         }
-        x_WaitForOtherProcessors();
-    }
-    catch (exception& exc) {
-        m_WGSDataError = "Exception when handling a request: "+string(exc.what());
-        m_WGSData.reset();
+        catch (exception& exc) {
+            m_WGSDataError = "Exception when handling a request: "+string(exc.what());
+            m_WGSData.reset();
+        }
     }
     PostponeInvoke(s_OnResolvedSeqId, this);
 }
@@ -440,6 +356,7 @@ void CPSGS_WGSProcessor::OnResolvedSeqId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    m_PoolTask = nullptr;
     if ( x_IsCanceled() ) {
         return;
     }
@@ -511,7 +428,8 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySeqIdRequest(void)
                 kWGSProcessorName + " processor is getting info for seq-id " + m_SeqId->AsFastaString(),
                 GetRequest()->GetStartTimestamp());
         }
-        m_ThreadPool->AddTask(new CWGSThreadPoolTask_ResolveSeqId(*this));
+        m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::ResolveSeqId);
+        m_ThreadPool->AddTask(m_PoolTask);
     }
     else {
         if ( GetRequest()->NeedTrace() ) {
@@ -521,7 +439,8 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySeqIdRequest(void)
         }
         m_ExcludedBlobs = get_request.m_ExcludeBlobs;
         m_ResendTimeoutMks = get_request.m_ResendTimeoutMks;
-        m_ThreadPool->AddTask(new CWGSThreadPoolTask_GetBlobBySeqId(*this));
+        m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::GetBlobBySeqId);
+        m_ThreadPool->AddTask(m_PoolTask);
     }
 }
 
@@ -530,25 +449,27 @@ void CPSGS_WGSProcessor::GetBlobBySeqId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    try {
-        CWGSClient::SWGSSeqInfo seq;
-        m_WGSData = m_Client->GetSeqInfoBySeqId(*m_SeqId, seq, m_ExcludedBlobs);
-        if ( m_WGSData ) {
-            if (x_CheckExcludedCache()  &&  m_WGSData->m_GetResult == SWGSData::eResult_Found) {
-                m_Client->GetWGSData(m_WGSData, seq);
+    x_WaitForOtherProcessors();
+    if ( !m_Canceled ) {
+        try {
+            CWGSClient::SWGSSeqInfo seq;
+            m_WGSData = m_Client->GetSeqInfoBySeqId(*m_SeqId, seq, m_ExcludedBlobs);
+            if ( m_WGSData ) {
+                if (x_CheckExcludedCache()  &&  m_WGSData->m_GetResult == SWGSData::eResult_Found) {
+                    m_Client->GetWGSData(m_WGSData, seq);
+                }
+            }
+
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kWGSProcessorName + " processor finished getting blob for seq-id " + m_SeqId->AsFastaString() + ", waiting for other processors",
+                    GetRequest()->GetStartTimestamp());
             }
         }
-
-        if ( GetRequest()->NeedTrace() ) {
-            GetReply()->SendTrace(
-                kWGSProcessorName + " processor finished getting blob for seq-id " + m_SeqId->AsFastaString() + ", waiting for other processors",
-                GetRequest()->GetStartTimestamp());
+        catch (exception& exc) {
+            m_WGSDataError = "Exception when handling a request: "+string(exc.what());
+            m_WGSData.reset();
         }
-        x_WaitForOtherProcessors();
-    }
-    catch (exception& exc) {
-        m_WGSDataError = "Exception when handling a request: "+string(exc.what());
-        m_WGSData.reset();
     }
     PostponeInvoke(s_OnGotBlobBySeqId, this);
 }
@@ -558,6 +479,7 @@ void CPSGS_WGSProcessor::OnGotBlobBySeqId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    m_PoolTask = nullptr;
     if ( x_IsCanceled() ) {
         return;
     }
@@ -619,7 +541,8 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySatSatKeyRequest(void)
             kWGSProcessorName + " processor is fetching blob " + m_PSGBlobId,
             GetRequest()->GetStartTimestamp());
     }
-    m_ThreadPool->AddTask(new CWGSThreadPoolTask_GetBlobByBlobId(*this));
+    m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::GetBlobByBlobId);
+    m_ThreadPool->AddTask(m_PoolTask);
 }
 
 
@@ -627,17 +550,20 @@ void CPSGS_WGSProcessor::GetBlobByBlobId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    try {
-        m_WGSData = m_Client->GetBlobByBlobId(m_PSGBlobId);
-        if ( GetRequest()->NeedTrace() ) {
-            GetReply()->SendTrace(
-                kWGSProcessorName + " processor finished fetching blob " + m_PSGBlobId,
-                GetRequest()->GetStartTimestamp());
+    // No need to wait for Cassandra since we should have checked that blob id belongs to WGS processor.
+    if ( !m_Canceled ) {
+        try {
+            m_WGSData = m_Client->GetBlobByBlobId(m_PSGBlobId);
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kWGSProcessorName + " processor finished fetching blob " + m_PSGBlobId,
+                    GetRequest()->GetStartTimestamp());
+            }
         }
-    }
-    catch (exception& exc) {
-        m_WGSDataError = "Exception when handling a request: "+string(exc.what());
-        m_WGSData.reset();
+        catch (exception& exc) {
+            m_WGSDataError = "Exception when handling a request: "+string(exc.what());
+            m_WGSData.reset();
+        }
     }
     PostponeInvoke(s_OnGotBlobByBlobId, this);
 }
@@ -647,6 +573,7 @@ void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    m_PoolTask = nullptr;
     if ( x_IsCanceled() ) {
         return;
     }
@@ -706,7 +633,8 @@ void CPSGS_WGSProcessor::x_ProcessTSEChunkRequest(void)
             kWGSProcessorName + " processor is fetching chunk " + m_Id2Info + "." + NStr::NumericToString(m_ChunkId),
             GetRequest()->GetStartTimestamp());
     }
-    m_ThreadPool->AddTask(new CWGSThreadPoolTask_GetChunk(*this));
+    m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::GetChunk);
+    m_ThreadPool->AddTask(m_PoolTask);
 }
 
 
@@ -714,17 +642,20 @@ void CPSGS_WGSProcessor::GetChunk(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    try {
-        m_WGSData = m_Client->GetChunk(m_Id2Info, m_ChunkId);
-        if ( GetRequest()->NeedTrace() ) {
-            GetReply()->SendTrace(
-                kWGSProcessorName + " processor finished fetching chunk " + m_Id2Info + "." + NStr::NumericToString(m_ChunkId),
-                GetRequest()->GetStartTimestamp());
+    // No need to wait for Cassandra since we should have checked that chunk id belongs to WGS processor.
+    if ( !m_Canceled ) {
+        try {
+            m_WGSData = m_Client->GetChunk(m_Id2Info, m_ChunkId);
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kWGSProcessorName + " processor finished fetching chunk " + m_Id2Info + "." + NStr::NumericToString(m_ChunkId),
+                    GetRequest()->GetStartTimestamp());
+            }
         }
-    }
-    catch (exception& exc) {
-        m_WGSDataError = "Exception when handling a request: "+string(exc.what());
-        m_WGSData.reset();
+        catch (exception& exc) {
+            m_WGSDataError = "Exception when handling a request: "+string(exc.what());
+            m_WGSData.reset();
+        }
     }
     PostponeInvoke(s_OnGotChunk, this);
 }
@@ -734,6 +665,7 @@ void CPSGS_WGSProcessor::OnGotChunk(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    m_PoolTask = nullptr;
     if ( x_IsCanceled() ) {
         return;
     }
@@ -1088,17 +1020,6 @@ void CPSGS_WGSProcessor::x_WriteData(CID2_Reply_Data& data,
 }
 
 
-void CPSGS_WGSProcessor::x_UnlockRequest(void)
-{
-    {
-        CFastMutexGuard guard(m_Mutex);
-        if (m_Unlocked) return;
-        m_Unlocked = true;
-    }
-    if (m_Request) m_Request->Unlock(kWGSProcessorEvent);
-}
-
-
 void CPSGS_WGSProcessor::x_WaitForOtherProcessors(void)
 {
     if (m_Canceled) return;
@@ -1112,9 +1033,15 @@ void CPSGS_WGSProcessor::Cancel()
     if (!IsUVThreadAssigned()) {
         m_Status = ePSGS_Canceled;
         x_Finish(ePSGS_Canceled);
+        return;
     }
-    else {
-        x_UnlockRequest();
+    if (m_PoolTask) {
+        m_ThreadPool->CancelTask(m_PoolTask);
+        if (m_PoolTask->TryFinish()) {
+            m_Status = ePSGS_Canceled;
+            x_Finish(ePSGS_Canceled);
+        }
+        m_PoolTask = nullptr;
     }
 }
 
@@ -1129,9 +1056,8 @@ bool CPSGS_WGSProcessor::x_IsCanceled()
 {
     if ( m_Canceled ) {
         x_Finish(ePSGS_Canceled);
-        return true;
     }
-    return false;
+    return m_Canceled;
 }
 
 
@@ -1153,7 +1079,6 @@ void CPSGS_WGSProcessor::x_Finish(EPSGS_Status status)
         x_RemoveFromExcludedCache();
     }
     m_Status = status;
-    x_UnlockRequest();
     SignalFinishProcessing();
 }
 
