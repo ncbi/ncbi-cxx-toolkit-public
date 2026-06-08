@@ -119,7 +119,7 @@ private:
     static ESerialDataFormat GetInputFormat(const string& format);
     static TTypeInfo GetInputType(const shared_ptr<CPSG_BlobData>& blob_data);
 
-    ESerialDataFormat m_OutputFormat = eSerial_None;
+    const ESerialDataFormat& m_OutputFormat;
     unordered_map<TKey, shared_ptr<CPSG_BlobInfo>, SKeyHash> m_Data;
 };
 
@@ -136,6 +136,7 @@ public:
     static void SetReplyType(bool value) { sm_SetReplyType = value; }
     static void SetDataLimit(size_t value) { sm_DataLimit = value; }
     static void SetPreviewSize(size_t value) { sm_PreviewSize = value; }
+    static void SetOutputFormat(ESerialDataFormat value) { m_OutputFormat = value; }
 
     static CJsonResponse NewItem(const shared_ptr<CPSG_ReplyItem>& reply_item);
 
@@ -208,6 +209,8 @@ private:
     static bool sm_SetReplyType;
     inline static auto sm_DataLimit = numeric_limits<size_t>::max();
     inline static auto sm_PreviewSize = numeric_limits<size_t>::max();
+    inline static auto m_OutputFormat = eSerial_None;
+    inline thread_local static SDataDeserializer tsm_Deserializer = m_OutputFormat;
 };
 
 struct SDataOnly
@@ -291,13 +294,15 @@ struct SInteractiveParams : SParallelProcessingParams
 {
     const size_t data_limit;
     const size_t preview_size;
+    const ESerialDataFormat output_format;
     const bool echo;
     const bool testing;
 
-    SInteractiveParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, double r, int wt, bool p, bool no, bool srv, size_t dl, size_t ps, bool e, bool os, bool t) :
+    SInteractiveParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, double r, int wt, bool p, bool no, bool srv, size_t dl, size_t ps, ESerialDataFormat of, bool e, bool os, bool t) :
         SParallelProcessingParams(GetService(std::move(s), os), rf, std::move(ua), r, wt, p, no, srv),
         data_limit(dl),
         preview_size(ps),
+        output_format(of),
         echo(e),
         testing(t)
     {}

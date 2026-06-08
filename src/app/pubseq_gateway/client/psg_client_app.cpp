@@ -303,6 +303,8 @@ void CPsgClientApp::s_InitRequest<SInteractive>(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey("input-file", "FILENAME", "File containing JSON-RPC requests (one per line)", CArgDescriptions::eInputFile, "-");
     arg_desc.AddOptionalKey("data-limit", "SIZE", "Show a data preview for any data larger the limit (if set)", CArgDescriptions::eDataSize);
     arg_desc.AddDefaultKey("preview-size", "SIZE", "How much of data to show as the preview", CArgDescriptions::eDataSize, "16");
+    arg_desc.AddOptionalKey("output-fmt", "FORMAT", "Output format for blob data/annot info (instead of raw); non-JSON formats are Base64-encoded", CArgDescriptions::eString);
+    arg_desc.SetConstraint("output-fmt", new CArgAllow_Strings{"asn", "asnb", "xml", "json"});
     arg_desc.AddFlag("server-mode", "Output one JSON-RPC response per line and always output reply statuses");
     arg_desc.AddFlag("echo", "Echo all incoming requests");
     arg_desc.AddFlag("one-server", "Use only one server from the service", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
@@ -503,6 +505,7 @@ struct SInteractive : SParallelProcessing<SInteractiveParams>
             args,
             GetDataLimit(args["data-limit"]),
             static_cast<size_t>(args["preview-size"].AsInt8()),
+            GetOutputFormat(args),
             args["echo"].HasValue(),
             args["one-server"].HasValue(),
             args["testing"].HasValue()

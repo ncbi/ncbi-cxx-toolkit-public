@@ -323,19 +323,33 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BlobData> blob_data)
     }
 
     Set("id", blob_data);
-    ostringstream os;
-    os << blob_data->GetStream().rdbuf();
-    auto data = os.str();
+    stringstream ss;
 
-    if (const auto data_size = data.size(); data_size <= sm_DataLimit) {
-        Set("data", NStr::Base64Encode(data));
-    } else {
+    if (!tsm_Deserializer || !tsm_Deserializer(blob_data, ss)) {
+        ss << blob_data->GetStream().rdbuf();
+    }
+
+    auto data = ss.str();
+
+    if (const auto data_size = data.size(); data_size > sm_DataLimit) {
         Set("length", static_cast<Uint8>(data_size)); // macOS requires static_cast, Set() would be ambiguous otherwise
         CHash hash;
         hash.Calculate(data.data(), data_size);
         Set("hash", hash.GetResultHex());
         data.erase(sm_PreviewSize);
         Set("preview", NStr::Base64Encode(data));
+
+    } else if ((tsm_Deserializer == eSerial_None) || (tsm_Deserializer == eSerial_AsnBinary)) {
+        Set("data", NStr::Base64Encode(data));
+
+    } else if (tsm_Deserializer != eSerial_Json) {
+        Set("data", ss.str());
+
+    } else if (CJson_Document json_doc; !json_doc.Read(ss)) {
+        Set("data", ss.str());
+
+    } else {
+        m_JsonObj["data"].AssignCopy(json_doc);
     }
 }
 
@@ -362,6 +376,10 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BlobInfo> blob_info)
     Set("username",           blob_info->GetUsername());
     Set("id2_info",           blob_info->GetId2Info());
     Set("n_chunks",           blob_info->GetNChunks());
+
+    if (tsm_Deserializer) {
+        tsm_Deserializer(blob_info);
+    }
 }
 
 string s_ReasonToString(CPSG_SkippedBlob::EReason reason)
@@ -406,7 +424,26 @@ void CJsonResponse::Fill(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)
 {
     Set("name", named_annot_info->GetName());
     Set("blob_id", named_annot_info->GetBlobId());
-    Set("id2_annot_info", named_annot_info->GetId2AnnotInfo());
+
+    if (!tsm_Deserializer) {
+        Set("id2_annot_info", named_annot_info->GetId2AnnotInfo());
+    } else {
+        stringstream ss;
+        tsm_Deserializer(named_annot_info, ss);
+
+        if (tsm_Deserializer == eSerial_AsnBinary) {
+            Set("id2_annot_info", NStr::Base64Encode(ss.str()));
+
+        } else if (tsm_Deserializer != eSerial_Json) {
+            Set("id2_annot_info", ss.str());
+
+        } else if (CJson_Document json_doc; !json_doc.Read(ss)) {
+            Set("id2_annot_info", ss.str());
+
+        } else {
+            m_JsonObj["id2_annot_info"].AssignCopy(json_doc);
+        }
+    }
 }
 
 void CJsonResponse::Fill(shared_ptr<CPSG_NamedAnnotStatus> named_annot_status)
@@ -961,6 +998,7 @@ void CParallelProcessing<SInteractiveParams>::SImpl::Init(const SInteractivePara
 {
     CJsonResponse::SetDataLimit(params.data_limit);
     CJsonResponse::SetPreviewSize(params.preview_size);
+    CJsonResponse::SetOutputFormat(params.output_format);
 }
 
 template <>
