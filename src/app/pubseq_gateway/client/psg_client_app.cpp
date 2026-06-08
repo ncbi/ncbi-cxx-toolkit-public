@@ -419,6 +419,20 @@ struct SBase : TParams
         TParams::min_severity = GetDiagPostLevel();
         TParams::verbose = args["verbose"].HasValue();
     }
+
+    static ESerialDataFormat GetOutputFormat(const CArgs& args)
+    {
+        if (args.Exist("output-fmt") && args["output-fmt"].HasValue()) {
+            const auto& format = args["output-fmt"].AsString();
+
+            if (format == "asn")  return eSerial_AsnText;
+            if (format == "asnb") return eSerial_AsnBinary;
+            if (format == "xml")  return eSerial_Xml;
+            if (format == "json") return eSerial_Json;
+        }
+
+        return eSerial_None;
+    }
 };
 
 struct SOneRequest : SBase<SOneRequestParams>
@@ -430,7 +444,7 @@ struct SOneRequest : SBase<SOneRequestParams>
             args["debug-printout"].HasValue(),
             GetDataOnlyEnabled(args),
             false,
-            GetDataOnlyOutputFormat(args)
+            GetOutputFormat(args)
         }
     {
     }
@@ -448,21 +462,6 @@ struct SOneRequest : SBase<SOneRequestParams>
         return (args.Exist("blob-only") && args["blob-only"].HasValue()) ||
             (args.Exist("annot-only") && args["annot-only"].HasValue());
     }
-
-    static ESerialDataFormat GetDataOnlyOutputFormat(const CArgs& args)
-    {
-        if (args.Exist("output-fmt") && args["output-fmt"].HasValue()) {
-            const auto& format = args["output-fmt"].AsString();
-
-            if (format == "asn")  return eSerial_AsnText;
-            if (format == "asnb") return eSerial_AsnBinary;
-            if (format == "xml")  return eSerial_Xml;
-            if (format == "json") return eSerial_Json;
-        }
-
-        return eSerial_None;
-    }
-
 };
 
 template <class TParams>
