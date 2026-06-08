@@ -563,7 +563,7 @@ private:
     bool ReportErrors(EPSG_Status status, TItem item, const char* prefix);
 
     const SDataOnly& m_Params;
-    unordered_map<string, pair<shared_ptr<CPSG_BlobInfo>, shared_ptr<CPSG_BlobData>>> m_Data;
+    unordered_map<string, shared_ptr<CPSG_BlobInfo>> m_Data;
     EPSG_Status m_Status = EPSG_Status::eSuccess;
 };
 
@@ -650,23 +650,17 @@ TTypeInfo s_GetInputType(const shared_ptr<CPSG_BlobData>& blob_data)
 
 void SDataOnlyCopy::Process(shared_ptr<CPSG_BlobInfo> blob_info)
 {
-    auto& p = m_Data[blob_info->GetId()->Repr()];
-
-    if (p.second) {
-        Process(std::move(blob_info), std::move(p.second));
-    } else {
-        p.first = std::move(blob_info);
-    }
+    auto key = blob_info->GetId()->Repr();
+    m_Data[std::move(key)] = std::move(blob_info);
 }
 
 void SDataOnlyCopy::Process(shared_ptr<CPSG_BlobData> blob_data)
 {
-    auto& p = m_Data[blob_data->GetId()->Repr()];
+    auto key = blob_data->GetId()->Repr();
+    auto node = m_Data.extract(key);
 
-    if (p.first) {
-        Process(std::move(p.first), std::move(blob_data));
-    } else {
-        p.second = std::move(blob_data);
+    if (!node.empty()) {
+        Process(std::move(node.mapped()), std::move(blob_data));
     }
 }
 
