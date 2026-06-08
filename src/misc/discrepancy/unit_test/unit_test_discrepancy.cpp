@@ -231,6 +231,8 @@ BOOST_AUTO_TEST_CASE(Test_RW2544_IsShortrRNA)
     pRrna->SetLocation(*pLoc);
 
     BOOST_CHECK(! pRrna->IsSetPartial());
+    pRrna->SetData().SetRna().SetExt().SetName("This is 12S rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr)); 
     pRrna->SetData().SetRna().SetExt().SetName("This is 16S rRNA");
     BOOST_CHECK(IsShortrRNA(*pRrna, nullptr)); 
     pRrna->SetData().SetRna().SetExt().SetName("This is 18S rRNA");
@@ -287,4 +289,14 @@ BOOST_AUTO_TEST_CASE(Test_RW2544_IsShortrRNA)
     BOOST_CHECK(IsShortrRNA(*pRrna, nullptr));
     pRrna->SetData().SetRna().SetExt().SetName("This is 5.8S rRNA");
     BOOST_CHECK(IsShortrRNA(*pRrna, nullptr));
+
+
+    pRrna->ResetPartial();
+    pRrna->SetData().SetRna().SetExt().SetName("This is 12S rRNA");
+    pRrna->SetLocation().SetInt().SetTo(799); // RW-2702 - minimum length for 12S 
+    BOOST_CHECK( ! IsShortrRNA(*pRrna, nullptr)); 
+
+    pRrna->SetLocation().SetInt().SetTo(798); // RW-2702 - just below minimum length
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr)); 
+
 }

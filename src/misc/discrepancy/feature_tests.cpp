@@ -98,7 +98,8 @@ bool IsShortrRNA(const CSeq_feat& f, CScope* scope) // N.B. doesn't check partia
         return false;
     }
 
-    static const array<pair<string, size_t>, 10> kRrnaMinLengths = {{ // Aggregate initialization requires '{{' here.
+    static const array<pair<string, size_t>, 11> kRrnaMinLengths = {{ // Aggregate initialization requires '{{' here.
+        { "12S", 800  },
         { "16S", 1000 },
         { "18S", 1000 },
         { "23S", 2000 },
