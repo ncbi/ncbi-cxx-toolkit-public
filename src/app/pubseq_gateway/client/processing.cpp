@@ -554,6 +554,19 @@ struct SDataOnlyCopy
     operator int() const { return int(m_Status); }
 
 private:
+    using TKey = pair<CPSG_Reply*, string>;
+
+    struct SKeyHash
+    {
+        size_t operator()(const TKey& key) const
+        {
+            size_t hash_value = 0;
+            hash_combine(hash_value, key.first);
+            hash_combine(hash_value, key.second);
+            return hash_value;
+        }
+    };
+
     void Process(shared_ptr<CPSG_BlobInfo> blob_info);
     void Process(shared_ptr<CPSG_BlobData> blob_data);
     void Process(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info);
@@ -563,7 +576,7 @@ private:
     bool ReportErrors(EPSG_Status status, TItem item, const char* prefix);
 
     const SDataOnly& m_Params;
-    unordered_map<string, shared_ptr<CPSG_BlobInfo>> m_Data;
+    unordered_map<TKey, shared_ptr<CPSG_BlobInfo>, SKeyHash> m_Data;
     EPSG_Status m_Status = EPSG_Status::eSuccess;
 };
 
@@ -650,13 +663,13 @@ TTypeInfo s_GetInputType(const shared_ptr<CPSG_BlobData>& blob_data)
 
 void SDataOnlyCopy::Process(shared_ptr<CPSG_BlobInfo> blob_info)
 {
-    auto key = blob_info->GetId()->Repr();
+    auto key = make_pair(blob_info->GetReply().get(), blob_info->GetId()->Repr());
     m_Data[std::move(key)] = std::move(blob_info);
 }
 
 void SDataOnlyCopy::Process(shared_ptr<CPSG_BlobData> blob_data)
 {
-    auto key = blob_data->GetId()->Repr();
+    auto key = make_pair(blob_data->GetReply().get(), blob_data->GetId()->Repr());
     auto node = m_Data.extract(key);
 
     if (!node.empty()) {

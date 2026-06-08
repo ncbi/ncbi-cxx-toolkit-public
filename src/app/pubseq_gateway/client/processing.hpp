@@ -77,6 +77,21 @@ private:
     const TJson_Write_Flags m_Flags;
 };
 
+template <class T>
+inline void hash_combine(size_t& seed, const T& v)
+{
+    std::hash<T> hasher;
+    size_t hash = hasher(v);
+
+    hash ^= hash >> 33;
+    hash *= 0xff51afd7ed558ccdULL;
+    hash ^= hash >> 33;
+    hash *= 0xc4ceb9fe1a85ec53ULL;
+    hash ^= hash >> 33;
+
+    seed ^= hash + 0x9e3779b97f4a7c13ULL + (seed << 6) + (seed >> 2);
+}
+
 class CJsonResponse : public CJson_Document
 {
 public:
