@@ -101,6 +101,7 @@ int CBioSource::GetGenCode(int def) const
         case eGenome_proplastid:
         case eGenome_chromatophore:
         case eGenome_plasmid_in_plastid:
+        case eGenome_nitroplast:
             {
                 // bacteria and plant plastid code
                 if (orn.IsSetPgcode()) {
@@ -144,6 +145,7 @@ static const TGenomeKey genome_key_to_subtype [] = {
     {  "macronuclear",              CBioSource::eGenome_macronuclear      },
     {  "mitochondrion",             CBioSource::eGenome_mitochondrion     },
     {  "mitochondrion:kinetoplast", CBioSource::eGenome_kinetoplast       },
+    {  "nitroplast",                CBioSource::eGenome_nitroplast        },
     {  "nucleomorph",               CBioSource::eGenome_nucleomorph       },
     {  "plasmid",                   CBioSource::eGenome_plasmid           },
     {  "plastid",                   CBioSource::eGenome_plastid           },

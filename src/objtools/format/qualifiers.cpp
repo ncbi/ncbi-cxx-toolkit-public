@@ -979,7 +979,6 @@ void CFlatOrganelleQVal::Format(TFlatQuals& q, string_view name,
     case CBioSource::eGenome_apicoplast:
     case CBioSource::eGenome_leucoplast:
     case CBioSource::eGenome_proplastid:
-    case CBioSource::eGenome_nitroplast:
         x_AddFQ(q, name, "plastid:" + organelle);
         break;
 
@@ -992,6 +991,7 @@ void CFlatOrganelleQVal::Format(TFlatQuals& q, string_view name,
     case CBioSource::eGenome_nucleomorph:
     case CBioSource::eGenome_hydrogenosome:
     case CBioSource::eGenome_chromatophore:
+    case CBioSource::eGenome_nitroplast:
         x_AddFQ(q, name, organelle);
         break;
 
