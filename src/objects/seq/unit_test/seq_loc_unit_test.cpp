@@ -1433,6 +1433,7 @@ BOOST_AUTO_TEST_CASE(TestTotalRange)
         tt[i]->Join(&exit_data);
     }
 }
+#endif
 
 static void s_TestStartStop(const char* loc_asn,
                             TSeqPos bio_from,
@@ -1501,4 +1502,75 @@ BOOST_AUTO_TEST_CASE(TestStartStop)
                     " points { 548713, 320927, 50489, 1266973 }"
                     "}", 548713, 1266973, 1266973, 548713);
 }
-#endif
+
+
+static void s_TestGetLabel(const char* loc_asn, const char* expected_label)
+{
+    auto loc = MakeLoc(loc_asn);
+    string label;
+    loc->GetLabel(&label);
+    BOOST_CHECK_EQUAL(label, expected_label);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestGetLabel)
+{
+    s_TestGetLabel("null NULL", "~");
+    s_TestGetLabel("empty gi 2", "{gi|2}");
+    s_TestGetLabel("whole local str \"LCL\"",
+                   "lcl|LCL");
+    s_TestGetLabel("int { from 5, to 55, id general { db \"prot\", tag id 3 } }",
+                   "gnl|prot|3:6-56");
+    s_TestGetLabel("packed-int {"
+                   " { from 0, to 5, id gi 3 },"
+                   " { from 10, to 20, strand minus, id gi 3 },"
+                   " { from 30, to 31, strand plus, id gi 3 },"
+                   " { from 35, to 37, strand both, id gi 4, fuzz-from p-m 1, fuzz-to lim unk }"
+                   "}",
+                   "(gi|3:1-6, c21-11, 31-32, gi|4:<+-1>36-<?>38)");
+    s_TestGetLabel("packed-int {"
+                   " { from 32, to 32, strand minus, id gi 9 },"
+                   " { from 22, to 22, strand minus, id gi 9 },"
+                   " { from 12, to 12, strand minus, id gi 9 }"
+                   "}",
+                   "(gi|9:c33-33, c23-23, c13-13)");
+    s_TestGetLabel("pnt { point 3, id gi 2 }",
+                   "gi|2:4");
+    s_TestGetLabel("pnt { point 3, strand minus, id gi 2 }",
+                   "gi|2:c4");
+    s_TestGetLabel("pnt { point 3, strand both-rev, id gi 2, fuzz p-m 1 }",
+                   "gi|2:c<+-1>4");
+    s_TestGetLabel("packed-pnt { id gi 9, points { 12, 22, 32 } }",
+                   "(gi|9:13, 23, 33)");
+    s_TestGetLabel("packed-pnt { strand minus, id gi 9, points { 32, 22, 12 } }",
+                   "(gi|9:c33, c23, c13)");
+    s_TestGetLabel("packed-pnt { strand minus, id gi 9, fuzz lim unk, points { 32, 22, 12 } }",
+                   "(gi|9:c<?>33, c<?>23, c<?>13)");
+    s_TestGetLabel("mix {"
+                   " pnt { point 32, strand minus, id gi 9 },"
+                   " pnt { point 22, strand minus, id gi 9 },"
+                   " pnt { point 12, strand minus, id gi 9 }"
+                   "}",
+                   "[gi|9:c33, c23, c13]");
+    s_TestGetLabel("mix {"
+                   " pnt { point 32, strand minus, id gi 9, fuzz lim unk },"
+                   " pnt { point 22, strand minus, id gi 9, fuzz lim unk },"
+                   " pnt { point 12, strand minus, id gi 9, fuzz lim unk }"
+                   "}",
+                   "[gi|9:c<?>33, c<?>23, c<?>13]");
+    s_TestGetLabel("equiv {"
+                   " pnt { point 32, strand minus, id gi 9, fuzz lim unk },"
+                   " pnt { point 22, strand minus, id gi 9, fuzz lim unk },"
+                   " pnt { point 12, strand minus, id gi 9, fuzz lim unk }"
+                   "}",
+                   "[gi|9:c<?>33, c<?>23, c<?>13]");
+    s_TestGetLabel("bond {"
+                   " a { point 32, strand minus, id gi 9, fuzz lim unk },"
+                   " b { point 22, strand minus, id gi 9, fuzz lim unk }"
+                   "}",
+                   "gi|9:c<?>33=c<?>23");
+    s_TestGetLabel("bond {"
+                   " a { point 32, id gi 9 }"
+                   "}",
+                   "gi|9:33=?");
+}
