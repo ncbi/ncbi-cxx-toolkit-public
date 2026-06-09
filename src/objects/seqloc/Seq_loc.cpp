@@ -3002,7 +3002,7 @@ void CSeq_loc_I::MakeBondB(void)
 
 
 // Append a string representation of a CSeq_id to label
-inline
+static inline
 void s_GetLabel(const CSeq_id& id, string* label)
 {
     CNcbiOstrstream os;
@@ -3012,7 +3012,7 @@ void s_GetLabel(const CSeq_id& id, string* label)
 
 
 // Append to label info for a CSeq_point
-inline
+static inline
 const CSeq_id* s_GetLabel
 (const CSeq_point& pnt,
  const CSeq_id*    last_id,
@@ -3025,9 +3025,8 @@ const CSeq_id* s_GetLabel
     }
 
     // Add strand info to label
-    if (pnt.IsSetStrand()) {
-        *label += GetTypeInfo_enum_ENa_strand()
-            ->FindName(pnt.GetStrand(), true);
+    if (pnt.IsSetStrand() && IsReverse(pnt.GetStrand())) {
+        *label += "c";
     }
 
     if (pnt.IsSetFuzz()) {
@@ -3044,8 +3043,44 @@ const CSeq_id* s_GetLabel
 }
 
 
+static inline
+const CSeq_id* s_GetLabel
+(const CPacked_seqpnt& pnts,
+ const CSeq_id*       last_id,
+ string*              label)
+{
+    *label += "(";
+    // If CSeq_id does not match last_id, then append id to label
+    if ( !last_id  ||  !last_id->Match(pnts.GetId()) ) {
+        s_GetLabel(pnts.GetId(), label);
+        *label += ":";
+    }
+    const char* prefix = pnts.IsSetStrand() && IsReverse(pnts.GetStrand())? "c": nullptr;
+    const CInt_fuzz* fuzz = pnts.IsSetFuzz()? &pnts.GetFuzz(): nullptr;
+    bool first = true;
+    ITERATE (CPacked_seqpnt::TPoints, iter, pnts.GetPoints()) {
+        if ( !first ) {
+            *label += ", ";
+        }
+        first = false;
+        if ( prefix ) {
+            *label += prefix;
+        }
+        if ( fuzz ) {
+            fuzz->GetLabel(label, *iter);
+        }
+        else {
+            *label += NStr::IntToString(*iter+1);
+        }
+    }
+    *label += ")";
+    last_id = &pnts.GetId();
+    return last_id;
+}
+
+
 // Append to label info for CSeq_interval
-inline
+static inline
 const CSeq_id* s_GetLabel
 (const CSeq_interval& itval,
  const CSeq_id*       last_id,
@@ -3056,14 +3091,8 @@ const CSeq_id* s_GetLabel
         *label += ":";
     }
     last_id = &itval.GetId();
-    //if (itval.IsSetStrand() && itval.GetStrand() != eNa_strand_unknown) {
-    if (itval.IsSetStrand() && (itval.GetStrand() == eNa_strand_minus || itval.GetStrand() == eNa_strand_both_rev)) {
-        //*label += GetTypeInfo_enum_ENa_strand()->FindName(itval.GetStrand(), true);
+    if (itval.IsSetStrand() && IsReverse(itval.GetStrand())) {
         *label += "c";
-    }
-    if (itval.IsSetStrand() &&
-        (itval.GetStrand() == eNa_strand_minus ||
-         itval.GetStrand() == eNa_strand_both_rev)) {
         if (itval.IsSetFuzz_to()) {
             itval.GetFuzz_to().GetLabel(label, itval.GetTo(), false);
         } else {
@@ -3093,8 +3122,27 @@ const CSeq_id* s_GetLabel
 }
 
 
-// Forward declaration
+static inline
 const CSeq_id* s_GetLabel
+(const CPacked_seqint::Tdata& ints,
+ const CSeq_id*       last_id,
+ string*              label)
+{
+    *label += "(";
+    bool first = true;
+    ITERATE(CPacked_seqint::Tdata, it, ints) {
+        if (!first) {
+            *label += ", ";
+        }
+        first = false;
+        last_id = s_GetLabel(**it, last_id, label);
+    }
+    *label += ")";
+    return last_id;
+}
+
+// Forward declaration
+static const CSeq_id* s_GetLabel
 (const CSeq_loc& loc,
  const CSeq_id*  last_id,
  string*         label,
@@ -3102,7 +3150,7 @@ const CSeq_id* s_GetLabel
 
 
 // Appends to label info for each CSeq_loc in a list of CSeq_locs
-inline
+static inline
 const CSeq_id* s_GetLabel
 (const list<CRef<CSeq_loc> >&  loc_list,
  const CSeq_id*                last_id,
@@ -3121,7 +3169,7 @@ const CSeq_id* s_GetLabel
 
 
 // Builds a label based upon a CSeq_loc and all embedded CSeq_locs
-const CSeq_id* s_GetLabel
+static const CSeq_id* s_GetLabel
 (const CSeq_loc& loc,
  const CSeq_id*  last_id,
  string*         label,
@@ -3157,37 +3205,13 @@ const CSeq_id* s_GetLabel
         last_id = s_GetLabel(loc.GetInt(), last_id, label);
         break;
     case CSeq_loc::e_Packed_int:
-    {
-        *label += "(";
-        bool frst = true;
-        ITERATE(CPacked_seqint::Tdata, it, loc.GetPacked_int().Get()) {
-            if (!frst) {
-                *label += ", ";
-            }
-            frst = false;
-            last_id = s_GetLabel(**it, last_id, label);
-        }
-        *label += ")";
+        last_id = s_GetLabel(loc.GetPacked_int().Get(), last_id, label);
         break;
-    }
     case CSeq_loc::e_Pnt:
         last_id = s_GetLabel(loc.GetPnt(), last_id, label);
         break;
     case CSeq_loc::e_Packed_pnt:
-        *label += "(" + loc.GetPacked_pnt().GetId().AsFastaString() + ":";
-        {{
-             string str;
-             ITERATE (CPacked_seqpnt::TPoints, iter,
-                      loc.GetPacked_pnt().GetPoints()) {
-                 if ( !str.empty() ) {
-                     str += ", ";
-                 }
-                 str += NStr::IntToString(*iter);
-             }
-             *label += str;
-         }}
-        *label += ")";
-        last_id = &loc.GetPacked_pnt().GetId();
+        last_id = s_GetLabel(loc.GetPacked_pnt(), last_id, label);
         break;
     case CSeq_loc::e_Mix:
         *label += "[";
