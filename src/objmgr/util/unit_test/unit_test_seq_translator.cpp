@@ -1009,9 +1009,9 @@ static void SetLocationSkipGap (CRef<CSeq_feat> feat, const CBioseq& bioseq)
 
     feat->ResetLocation();
     CDelta_ext::Tdata::const_iterator nuc_it = bioseq.GetInst().GetExt().GetDelta().Get().begin();
-    size_t pos = 0;
+    TSeqPos pos = 0;
     while (nuc_it != bioseq.GetInst().GetExt().GetDelta().Get().end()) {
-        size_t lit_len = (*nuc_it)->GetLiteral().GetLength();
+        TSeqPos lit_len = (*nuc_it)->GetLiteral().GetLength();
         if ((*nuc_it)->GetLiteral().IsSetSeq_data() && (*nuc_it)->GetLiteral().GetSeq_data().IsIupacna()) {
             CRef<CSeq_id> id(new CSeq_id());
             id->SetLocal().SetStr(local_id);
@@ -1161,7 +1161,7 @@ BOOST_AUTO_TEST_CASE(Test_Translate_CodeBreakForStopCodon)
 
             prot->SetInst().SetRepr(CSeq_inst::eRepr_raw);
             prot->SetInst().SetMol(CSeq_inst::eMol_aa);
-            prot->SetInst().SetLength(tmp.size());
+            prot->SetInst().SetLength(TSeqPos(tmp.size()));
             prot->SetInst().SetSeq_data().SetNcbieaa().Set(tmp);
         }
     }

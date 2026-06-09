@@ -127,10 +127,7 @@ const char * BIOSAMPLE_CHK_APP_VER = "1.0";
 class CBiosampleHandler
 {
 public:
-    CBiosampleHandler() :
-        m_ReportStream(0),
-        m_UseDevServer(false)
-        {}
+    CBiosampleHandler() {}
 
     virtual ~CBiosampleHandler() {}
 
@@ -141,8 +138,8 @@ public:
     void SetReportStream(CNcbiOstream* stream) { m_ReportStream = stream; }
 
 protected:
-    CNcbiOstream* m_ReportStream;
-    bool m_UseDevServer;
+    CNcbiOstream* m_ReportStream = nullptr;
+    bool m_UseDevServer = false;
 };
 
 
@@ -150,10 +147,10 @@ class CBiosampleStatusReport : public CBiosampleHandler
 {
 public:
     CBiosampleStatusReport() : CBiosampleHandler() {}
-    virtual ~CBiosampleStatusReport() {}
-    virtual void ProcessBioseq(CBioseq_Handle bh);
-    virtual bool NeedsReportStream() { return true; }
-    virtual void AddSummary();
+    ~CBiosampleStatusReport() override {}
+    void ProcessBioseq(CBioseq_Handle bh) override;
+    bool NeedsReportStream() override { return true; }
+    void AddSummary() override;
 
 protected:
     biosample_util::TStatuses m_Status;
@@ -194,10 +191,10 @@ void CBiosampleStatusReport::AddSummary()
 class CBiosampleChkApp : public CReadClassMemberHook, public CNcbiApplication
 {
 public:
-    CBiosampleChkApp(void);
+    CBiosampleChkApp();
 
-    virtual void Init(void);
-    virtual int  Run (void);
+    void Init() override;
+    int Run() override;
 
     void ReadClassMember(CObjectIStream& in,
         const CObjectInfo::CMemberIterator& member);
@@ -244,14 +241,14 @@ private:
 
     CRef<CObjectManager> m_ObjMgr;
     unique_ptr<CObjectIStream> m_In;
-    bool m_Continue;
+    bool m_Continue = false;
 
-    size_t m_Level;
+    size_t m_Level = 0;
 
-    CNcbiOstream* m_ReportStream;
-    bool m_NeedReportHeader;
-    CNcbiOfstream* m_AsnOut;
-    CNcbiOstream* m_LogStream;
+    CNcbiOstream* m_ReportStream = nullptr;
+    bool m_NeedReportHeader = true;
+    CNcbiOfstream* m_AsnOut = nullptr;
+    CNcbiOstream* m_LogStream = nullptr;
 
     enum E_Mode {
         e_report_diffs = 1,     // Default - report diffs between biosources on records with biosample accessions
@@ -271,13 +268,13 @@ private:
         e_files
     };
 
-    int m_Mode;
-    int m_ReturnCode;
+    int m_Mode = e_report_diffs;
+    int m_ReturnCode = 0;
     int m_ListType;
     string m_StructuredCommentPrefix;
-    bool m_CompareStructuredComments;
+    bool m_CompareStructuredComments = true;
     bool m_UseDevServer;
-    bool m_FirstSeqOnly;
+    bool m_FirstSeqOnly = false;
     string m_IDPrefix;
     string m_HUPDate;
     string m_BioSampleAccession;
@@ -287,28 +284,20 @@ private:
 
     string m_BioSampleWebAPIKey;
 
-    size_t m_Processed;
-    size_t m_Unprocessed;
+    size_t m_Processed = 0;
+    size_t m_Unprocessed = 0;
 
     biosample_util::TBiosampleFieldDiffList m_Diffs;
     CRef<CSeq_table> m_Table;
     vector<CRef<CSeqdesc> > m_Descriptors;
 
-    CBiosampleHandler * m_Handler;
+    CBiosampleHandler* m_Handler = nullptr;
 
     biosample_util::TBioSamples m_cache;
 };
 
 
-CBiosampleChkApp::CBiosampleChkApp(void) :
-    m_ObjMgr(0), m_Continue(false),
-    m_Level(0), m_ReportStream(0), m_NeedReportHeader(true), m_AsnOut(0),
-    m_LogStream(0), m_Mode(e_report_diffs), m_ReturnCode(0),
-    m_StructuredCommentPrefix(""), m_CompareStructuredComments(true),
-    m_FirstSeqOnly(false), m_IDPrefix(""), m_HUPDate(""),
-    m_BioSampleAccession(""), m_BioProjectAccession(""),
-    m_Owner(""), m_Comment(""),
-    m_Processed(0), m_Unprocessed(0), m_Handler(NULL)
+CBiosampleChkApp::CBiosampleChkApp()
 {
     SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
 }
@@ -494,7 +483,7 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
 
     if (!m_ReportStream &&
         (m_Mode == e_report_diffs || m_Mode == e_update_with || m_Mode == e_update_no || m_Mode == e_take_from_biosample || m_Mode == e_report_status ||
-         (m_Handler != NULL && m_Handler->NeedsReportStream()))) {
+         (m_Handler && m_Handler->NeedsReportStream()))) {
         string path = fname;
         size_t pos = NStr::Find(path, ".", NStr::eCase, NStr::eReverseSearch);
         if (pos != string::npos) {
@@ -553,7 +542,7 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
     } else if (m_Mode == e_update_no) {
         CreateBiosampleUpdateWebService(m_Diffs, false);
     }
-    if (m_Handler != NULL) {
+    if (m_Handler) {
         m_Handler->AddSummary();
     }
 
@@ -568,12 +557,12 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
             m_Table->SetNum_rows(0);
         }
         m_ReportStream->flush();
-        m_ReportStream = 0;
+        m_ReportStream = nullptr;
     }
     if (need_to_close_asn) {
         m_AsnOut->flush();
         m_AsnOut->close();
-        m_AsnOut = 0;
+        m_AsnOut = nullptr;
     }
 }
 
@@ -708,7 +697,7 @@ int CBiosampleChkApp::Run(void)
     if (args["o"]) {
         if (m_Mode == e_report_diffs || m_Mode == e_generate_biosample
             //|| m_Mode == e_take_from_biosample
-            || (m_Handler != NULL && m_Handler->NeedsReportStream())) {
+            || (m_Handler && m_Handler->NeedsReportStream())) {
             m_ReportStream = &(args["o"].AsOutputFile());
             if (!m_ReportStream)
             {
@@ -840,7 +829,6 @@ void CBiosampleChkApp::ReadClassMember
     m_Level++;
 
     if ( m_Level == 1 ) {
-        size_t n = 0;
         // Read each element separately to a local TSeqEntry,
         // process it somehow, and... not store it in the container.
         for ( CIStreamContainerIterator i(in, member); i; ++i ) {
@@ -860,8 +848,7 @@ void CBiosampleChkApp::ReadClassMember
                 if (m_ReportStream) {
                     *m_ReportStream << "Elapsed = " << sw.Elapsed() << endl;
                 }
-                n++;
-            } catch (std::exception& e) {
+            } catch (std::exception&) {
                 if ( !m_Continue ) {
                     throw;
                 }
@@ -1205,7 +1192,7 @@ void CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh)
             GetBioseqDiffs(bh);
             break;
         default:
-            if (m_Handler != NULL) {
+            if (m_Handler) {
                 m_Handler->ProcessBioseq(bh);
             }
             break;
