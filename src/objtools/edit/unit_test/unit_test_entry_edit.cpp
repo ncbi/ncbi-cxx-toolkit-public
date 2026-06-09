@@ -112,7 +112,7 @@ namespace {
 
             // split the name
             vector<string> tokens;
-            NStr::Split(file.GetName(), ".", tokens, 0);
+            NStr::Split(file.GetName(), ".", tokens);
 
             if( tokens.size() != 4u ) {
                 throw std::runtime_error("initialization failed trying to tokenize this file: " + file.GetName());
@@ -329,11 +329,11 @@ CRef<CSeq_entry> MakeEntryForDeltaConversion(vector<string> segs)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     CSeq_inst& inst = entry->SetSeq().SetInst();
-    string seq_str = "";
+    string seq_str;
     ITERATE(vector<string>, it, segs) {
         seq_str += *it;
     }
-    size_t orig_len = seq_str.length();
+    TSeqPos orig_len = TSeqPos(seq_str.length());
     inst.SetSeq_data().SetIupacna().Set(seq_str);
     inst.SetLength(orig_len);
 
@@ -371,16 +371,16 @@ CRef<CSeq_entry> MakeEntryForDeltaConversion(vector<string> segs)
     f3->SetData().SetRna().SetType(CRNA_ref::eType_tRNA);
 
     //make mix location that does not include gaps
-    size_t pos = 0;
+    TSeqPos pos = 0;
     ITERATE(vector<string>, it, segs) {
-        if (NStr::Find(*it, "N") == string::npos) {
+        if (it->find('N') == string::npos) {
             CRef<CSeq_loc> l1(new CSeq_loc());
             l1->SetInt().SetFrom(pos);
-            l1->SetInt().SetTo(pos +  it->length() - 1);
+            l1->SetInt().SetTo(pos + TSeqPos(it->length()) - 1);
             l1->SetInt().SetId().Assign(*id);
             f3->SetLocation().SetMix().Set().push_back(l1);
         }
-        pos += it->length();
+        pos += TSeqPos(it->length());
     }
     return entry;
 }
@@ -422,7 +422,7 @@ BOOST_AUTO_TEST_CASE(Test_ConvertRawToDeltaByNs)
     vector<size_t> lens;
     vector<bool> is_gap;
     ITERATE(vector<string>, it, segs) {
-        if (NStr::Find(*it, "N") != string::npos) {
+        if (it->find('N') != string::npos) {
             is_gap.push_back(true);
             if ((*it).length() == 5) {
                 lens.push_back(100);

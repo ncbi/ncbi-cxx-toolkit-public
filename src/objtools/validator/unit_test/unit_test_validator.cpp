@@ -17761,7 +17761,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SuspiciousFrame)
     scope.RemoveTopLevelSeqEntry(seh);
     CRef<CSeq_entry> prot = unit_test_util::GetProteinSequenceFromGoodNucProtSet(entry);
     prot->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set(tmp);
-    prot->SetSeq().SetInst().SetLength(tmp.length());
+    prot->SetSeq().SetInst().SetLength(TSeqPos(tmp.length()));
     unit_test_util::AdjustProtFeatForNucProtSet(entry);
     CRef<CSeq_feat> prot_feat = unit_test_util::GetProtFeatFromGoodNucProtSet(entry);
     seh = scope.AddTopLevelSeqEntry(*entry);
@@ -17781,7 +17781,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SuspiciousFrame)
     CSeqTranslator::Translate(*cds, scope, tmp, false, false);
     scope.RemoveTopLevelSeqEntry(seh);
     prot->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set(tmp);
-    prot->SetSeq().SetInst().SetLength(tmp.length());
+    prot->SetSeq().SetInst().SetLength(TSeqPos(tmp.length()));
     unit_test_util::AdjustProtFeatForNucProtSet(entry);
     unit_test_util::SetCompleteness(prot, CMolInfo::eCompleteness_no_left);
     prot_feat->SetLocation().SetPartialStart(true, eExtreme_Biological);
@@ -20730,27 +20730,27 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortExon)
 
     string nuc_str = first_exon + intron + second_exon + intron + third_exon;
     nseq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set(nuc_str);
-    nseq->SetSeq().SetInst().SetLength(nuc_str.length());
+    nseq->SetSeq().SetInst().SetLength(TSeqPos(nuc_str.length()));
 
     CRef<CSeq_loc> loc1(new CSeq_loc());
     loc1->SetInt().SetId().SetLocal().SetStr("nuc");
     loc1->SetInt().SetFrom(0);
-    TSeqPos offset = first_exon.length();
+    TSeqPos offset = TSeqPos(first_exon.length());
     loc1->SetInt().SetTo(offset - 1);
 
-    offset += intron.length();
+    offset += TSeqPos(intron.length());
     CRef<CSeq_loc> loc2(new CSeq_loc());
     loc2->SetInt().SetId().SetLocal().SetStr("nuc");
     loc2->SetInt().SetFrom(offset);
-    offset += second_exon.length();
+    offset += TSeqPos(second_exon.length());
     loc2->SetInt().SetTo(offset - 1);
 
 
-    offset += intron.length();
+    offset += TSeqPos(intron.length());
     CRef<CSeq_loc> loc3(new CSeq_loc());
     loc3->SetInt().SetId().SetLocal().SetStr("nuc");
     loc3->SetInt().SetFrom(offset);
-    offset += third_exon.length();
+    offset += TSeqPos(third_exon.length());
     loc3->SetInt().SetTo(offset - 1);
 
     cds->SetLocation().SetMix().Set().push_back(loc1);
@@ -20764,9 +20764,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortExon)
         prot_str = prot_str.substr(0, prot_str.length() - 1);
     }
     pseq->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set(prot_str);
-    pseq->SetSeq().SetInst().SetLength(prot_str.length());
+    pseq->SetSeq().SetInst().SetLength(TSeqPos(prot_str.length()));
 
-    prot->SetLocation().SetInt().SetTo(prot_str.length() - 1);
+    prot->SetLocation().SetInt().SetTo(TSeqPos(prot_str.length()) - 1);
 
     STANDARD_SETUP
 

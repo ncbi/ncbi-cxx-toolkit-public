@@ -990,7 +990,7 @@ BOOST_AUTO_TEST_CASE(TEST_ConvertPopToPhy)
 }
 
 
-CRef<CSeq_entry> BuildEntryForExceptText(CSeqFeatData::ESubtype subtype, ENa_strand strand, size_t distance)
+CRef<CSeq_entry> BuildEntryForExceptText(CSeqFeatData::ESubtype subtype, ENa_strand strand, TSeqPos distance)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     CRef<CSeq_feat> cds = unit_test_util::AddMiscFeature(entry);
@@ -1609,9 +1609,9 @@ void MakeMrnaGeneTripletForCDS(CRef<CSeq_entry> entry, CRef<CSeq_feat> cds)
 
 void AddNextCDSToNucProt(CRef<CSeq_entry> entry)
 {
-    auto cds_ftable = entry->SetSet().SetAnnot().front()->SetData().SetFtable();
-    auto last_cds = cds_ftable.back();
-    size_t num_cds = cds_ftable.size();
+    const auto& cds_ftable = entry->SetSet().SetAnnot().front()->SetData().SetFtable();
+    // auto last_cds = cds_ftable.back();
+    int num_cds = int(cds_ftable.size());
     string suffix = "_" + NStr::NumericToString(num_cds);
     auto seq_it = entry->GetSet().GetSeq_set().begin();
     // skip nuc
@@ -1935,7 +1935,7 @@ BOOST_AUTO_TEST_CASE(Test_StrainRemoval)
 }
 
 
-void AddCreateDate(CRef<CSeq_entry> entry, size_t year)
+void AddCreateDate(CRef<CSeq_entry> entry, int year)
 {
     CRef<CSeqdesc> cdate(new CSeqdesc());
     cdate->SetCreate_date().SetStd().SetYear(year);
@@ -1943,7 +1943,7 @@ void AddCreateDate(CRef<CSeq_entry> entry, size_t year)
 }
 
 
-void AddUpdateDate(CRef<CSeq_entry> entry, size_t year)
+void AddUpdateDate(CRef<CSeq_entry> entry, int year)
 {
     CRef<CSeqdesc> cdate(new CSeqdesc());
     cdate->SetUpdate_date().SetStd().SetYear(year);

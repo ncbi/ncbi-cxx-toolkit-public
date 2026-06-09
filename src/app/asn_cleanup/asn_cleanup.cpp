@@ -1018,7 +1018,7 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
         *debug_out << *(entry.GetCompleteSeq_entry());
     }
 
-    bool any_changes = false;
+    NCBI_UNUSED bool any_changes = false;
 
     if (args["T"]) {
         validator::CTaxValidationAndCleanup tval(m_tax_updater->GetUpdateFunc());
