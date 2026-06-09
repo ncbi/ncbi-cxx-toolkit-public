@@ -1051,6 +1051,7 @@ CCAA	s	Universidade Federal do Maranhao - UFMA
 CCAC<BRA>	s	Universidade Federal do Ceara, Centro Ciencias Agrarias			
 CCAC<DEU>	c	Culture Collection of Algae at the University of Cologne			
 CCALA	c	Culture Collection of Autotrophic Organisms			
+CCAM	c	Wellcome Collection of Bacteria, Burroughs Wellcome Research Laboratories			
 CCAP	c	Culture Collection of Algae and Protozoa		https://www.ccap.ac.uk/strain_info.php?Strain_No=	
 CCARM	c	Culture Collection of Antimirobial Resistant Microorganisms			
 CCAU	s	Central China Agricultural University			
@@ -1439,7 +1440,6 @@ CMW-IA	c	Culture collection of Innovation Africa at the University of Pretoria
 CMY	s	R. G. Kar Medical College, Botany Department			
 CN<CHN>	c	China Collection of Anaerobic Microorganisms			
 CN<FR>	s	Universite de Caen			
-CN<UK>	c	Wellcome Collection of Bacteria, Burroughs Wellcome Research Laboratories			
 CNARP	s	Centre National d' Application de Recherches Pharmaceutiques			
 CNBG	c	Chinese Academy of Sciences, Nanjing Botanical Garden			
 CNC	s	Canadian National Collection of Insects, Arachnids, and Nematodes	CNCI		

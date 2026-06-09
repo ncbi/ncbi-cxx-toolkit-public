@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Thu May 21 05:33:04 EDT 2026; formally
+/* time_t value corresponding to Tue Jun  9 05:33:04 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1779355984UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1780997584UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -1087,6 +1087,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CCAC<BRA>\ts\tUniversidade Federal do Ceara, Centro Ciencias Agrarias\t\t\t",
 "CCAC<DEU>\tc\tCulture Collection of Algae at the University of Cologne\t\t\t",
 "CCALA\tc\tCulture Collection of Autotrophic Organisms\t\t\t",
+"CCAM\tc\tWellcome Collection of Bacteria, Burroughs Wellcome Research Laboratories\t\t\t",
 "CCAP\tc\tCulture Collection of Algae and Protozoa\t\thttps://www.ccap.ac.uk/strain_info.php?Strain_No=\t",
 "CCARM\tc\tCulture Collection of Antimirobial Resistant Microorganisms\t\t\t",
 "CCAU\ts\tCentral China Agricultural University\t\t\t",
@@ -1475,7 +1476,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CMY\ts\tR. G. Kar Medical College, Botany Department\t\t\t",
 "CN<CHN>\tc\tChina Collection of Anaerobic Microorganisms\t\t\t",
 "CN<FR>\ts\tUniversite de Caen\t\t\t",
-"CN<UK>\tc\tWellcome Collection of Bacteria, Burroughs Wellcome Research Laboratories\t\t\t",
 "CNARP\ts\tCentre National d' Application de Recherches Pharmaceutiques\t\t\t",
 "CNBG\tc\tChinese Academy of Sciences, Nanjing Botanical Garden\t\t\t",
 "CNC\ts\tCanadian National Collection of Insects, Arachnids, and Nematodes\tCNCI\t\t",
