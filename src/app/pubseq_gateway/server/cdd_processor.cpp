@@ -72,58 +72,6 @@ static const double kDefaultCDDBackendTimeout = 5.0;
 // Helper classes
 /////////////////////////////////////////////////////////////////////////////
 
-BEGIN_LOCAL_NAMESPACE;
-
-class CCDDThreadPoolTask_GetBlobId : public CThreadPool_Task
-{
-public:
-    CCDDThreadPoolTask_GetBlobId(CPSGS_CDDProcessor& processor) : m_Processor(processor) {}
-
-    virtual EStatus Execute(void) override
-    {
-        m_Processor.GetBlobId();
-        return eCompleted;
-    }
-
-private:
-    CPSGS_CDDProcessor& m_Processor;
-};
-
-
-class CCDDThreadPoolTask_GetBlobBySeqId : public CThreadPool_Task
-{
-public:
-    CCDDThreadPoolTask_GetBlobBySeqId(CPSGS_CDDProcessor& processor) : m_Processor(processor) {}
-
-    virtual EStatus Execute(void) override
-    {
-        m_Processor.GetBlobBySeqId();
-        return eCompleted;
-    }
-
-private:
-    CPSGS_CDDProcessor& m_Processor;
-};
-
-
-class CCDDThreadPoolTask_GetBlobByBlobId : public CThreadPool_Task
-{
-public:
-    CCDDThreadPoolTask_GetBlobByBlobId(CPSGS_CDDProcessor& processor) : m_Processor(processor) {}
-
-    virtual EStatus Execute(void) override
-    {
-        m_Processor.GetBlobByBlobId();
-        return eCompleted;
-    }
-
-private:
-    CPSGS_CDDProcessor& m_Processor;
-};
-
-
-END_LOCAL_NAMESPACE;
-
 
 NCBI_PARAM_DECL(int, CDD_PROCESSOR, ERROR_RATE);
 NCBI_PARAM_DEF(int, CDD_PROCESSOR, ERROR_RATE, 0);
@@ -145,8 +93,7 @@ static bool s_SimulateError()
 CPSGS_CDDProcessor::CPSGS_CDDProcessor(void)
     : m_ClientPool(new CCDDClientPool()),
       m_Status(ePSGS_NotFound),
-      m_Canceled(false),
-      m_Unlocked(true)
+      m_Canceled(false)
 {
     const CNcbiRegistry& registry = CPubseqGatewayApp::GetInstance()->GetConfig();
     double timeout = registry.GetDouble(kCDDProcessorSection, kParamCDDBackendTimeout, kDefaultCDDBackendTimeout);
@@ -175,7 +122,6 @@ CPSGS_CDDProcessor::CPSGS_CDDProcessor(
       m_Start(psg_clock_t::now()),
       m_Status(ePSGS_InProgress),
       m_Canceled(false),
-      m_Unlocked(true),
       m_ThreadPool(thread_pool)
 {
     m_Request = request;
@@ -186,7 +132,6 @@ CPSGS_CDDProcessor::CPSGS_CDDProcessor(
 CPSGS_CDDProcessor::~CPSGS_CDDProcessor(void)
 {
     _ASSERT(m_Status != ePSGS_InProgress);
-    x_UnlockRequest();
 }
 
 
@@ -365,11 +310,6 @@ void CPSGS_CDDProcessor::Process()
     }
 
     try {
-        {
-            CFastMutexGuard guard(m_Mutex);
-            m_Unlocked = false;
-        }
-        GetRequest()->Lock(kCDDProcessorEvent);
         auto req_type = GetRequest()->GetRequestType();
         switch (req_type) {
         case CPSGS_Request::ePSGS_AnnotationRequest:
@@ -423,11 +363,13 @@ void CPSGS_CDDProcessor::x_ProcessResolveRequest(void)
         annot_request.m_TSEOption == SPSGS_BlobRequestBase::EPSGS_TSEOption::ePSGS_WholeTSE ||
         annot_request.m_TSEOption == SPSGS_BlobRequestBase::EPSGS_TSEOption::ePSGS_OrigTSE) {
         // Send whole TSE.
-        m_ThreadPool->AddTask(new CCDDThreadPoolTask_GetBlobBySeqId(*this));
+        m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_CDDProcessor::GetBlobByBlobId);
+        m_ThreadPool->AddTask(m_PoolTask);
     }
     else {
         // Send annot info only.
-        m_ThreadPool->AddTask(new CCDDThreadPoolTask_GetBlobId(*this));
+        m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_CDDProcessor::GetBlobId);
+        m_ThreadPool->AddTask(m_PoolTask);
     }
 }
 
@@ -447,7 +389,8 @@ void CPSGS_CDDProcessor::x_ProcessGetBlobRequest(void)
         x_Finish(ePSGS_NotFound);
         return;
     }
-    m_ThreadPool->AddTask(new CCDDThreadPoolTask_GetBlobByBlobId(*this));
+    m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_CDDProcessor::GetBlobByBlobId);
+    m_ThreadPool->AddTask(m_PoolTask);
 }
 
 
@@ -456,6 +399,7 @@ void CPSGS_CDDProcessor::GetBlobId(void)
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
     for (auto id : m_SeqIds) {
+        if (m_Canceled) break;
         try {
             if ( GetRequest()->NeedTrace() ) {
                 GetReply()->SendTrace(
@@ -485,6 +429,7 @@ void CPSGS_CDDProcessor::GetBlobBySeqId(void)
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
     for (auto id : m_SeqIds) {
+        if (m_Canceled) break;
         try {
             if ( GetRequest()->NeedTrace() ) {
                 GetReply()->SendTrace(
@@ -513,23 +458,25 @@ void CPSGS_CDDProcessor::GetBlobByBlobId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    try {
-        if ( GetRequest()->NeedTrace() ) {
-            GetReply()->SendTrace(
-                kCDDProcessorName + " processor trying to get blob by blob-id " + CCDDClientPool::BlobIdToString(*m_BlobId),
-                GetRequest()->GetStartTimestamp());
+    if (!m_Canceled) {
+        try {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kCDDProcessorName + " processor trying to get blob by blob-id " + CCDDClientPool::BlobIdToString(*m_BlobId),
+                    GetRequest()->GetStartTimestamp());
+            }
+            m_CDDBlob.data = m_ClientPool->GetBlobByBlobId(*m_BlobId);
         }
-        m_CDDBlob.data = m_ClientPool->GetBlobByBlobId(*m_BlobId);
-    }
-    catch (exception& exc) {
-        if ( GetRequest()->NeedTrace() ) {
-            GetReply()->SendTrace(
-                kCDDProcessorName + " processor failed to get blob by blob-id, exception: " + exc.what(),
-                GetRequest()->GetStartTimestamp());
+        catch (exception& exc) {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kCDDProcessorName + " processor failed to get blob by blob-id, exception: " + exc.what(),
+                    GetRequest()->GetStartTimestamp());
+            }
+            m_Error = "Exception when handling getblob request: " + string(exc.what());
+            m_CDDBlob.info.Reset();
+            m_CDDBlob.data.Reset();
         }
-        m_Error = "Exception when handling getblob request: " + string(exc.what());
-        m_CDDBlob.info.Reset();
-        m_CDDBlob.data.Reset();
     }
     PostponeInvoke(s_OnGotBlobByBlobId, this);
 }
@@ -781,9 +728,15 @@ void CPSGS_CDDProcessor::Cancel()
     if (!IsUVThreadAssigned()) {
         m_Status = ePSGS_Canceled;
         x_Finish(ePSGS_Canceled);
+        return;
     }
-    else {
-        x_UnlockRequest();
+    if (m_PoolTask) {
+        m_ThreadPool->CancelTask(m_PoolTask);
+        if (m_PoolTask->TryFinish()) {
+            m_Status = ePSGS_Canceled;
+            x_Finish(ePSGS_Canceled);
+        }
+        m_PoolTask = nullptr;
     }
 }
 
@@ -794,24 +747,12 @@ IPSGS_Processor::EPSGS_Status CPSGS_CDDProcessor::GetStatus()
 }
 
 
-void CPSGS_CDDProcessor::x_UnlockRequest(void)
-{
-    {
-        CFastMutexGuard guard(m_Mutex);
-        if (m_Unlocked) return;
-        m_Unlocked = true;
-    }
-    if (GetRequest()) GetRequest()->Unlock(kCDDProcessorEvent);
-}
-
-
 bool CPSGS_CDDProcessor::x_IsCanceled()
 {
     if ( m_Canceled ) {
         x_Finish(ePSGS_Canceled);
-        return true;
     }
-    return false;
+    return m_Canceled;
 }
 
 
@@ -898,7 +839,6 @@ void CPSGS_CDDProcessor::x_Finish(EPSGS_Status status)
 {
     _ASSERT(status != ePSGS_InProgress);
     m_Status = status;
-    x_UnlockRequest();
     SignalFinishProcessing();
 }
 

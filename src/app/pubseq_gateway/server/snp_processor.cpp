@@ -114,54 +114,6 @@ void s_SetBlobDataProps(CBlobRecord& blob_props, const CID2_Reply_Data& data)
 }
 
 
-class CSNPThreadPoolTask_GetBlobByBlobId: public CThreadPool_Task
-{
-public:
-    CSNPThreadPoolTask_GetBlobByBlobId(CPSGS_SNPProcessor& processor) : m_Processor(processor) {}
-
-    virtual EStatus Execute(void) override
-    {
-        m_Processor.GetBlobByBlobId();
-        return eCompleted;
-    }
-
-private:
-    CPSGS_SNPProcessor& m_Processor;
-};
-
-
-class CSNPThreadPoolTask_GetChunk: public CThreadPool_Task
-{
-public:
-    CSNPThreadPoolTask_GetChunk(CPSGS_SNPProcessor& processor) : m_Processor(processor) {}
-
-    virtual EStatus Execute(void) override
-    {
-        m_Processor.GetChunk();
-        return eCompleted;
-    }
-
-private:
-    CPSGS_SNPProcessor& m_Processor;
-};
-
-
-class CSNPThreadPoolTask_GetAnnotation: public CThreadPool_Task
-{
-public:
-    CSNPThreadPoolTask_GetAnnotation(CPSGS_SNPProcessor& processor) : m_Processor(processor) {}
-
-    virtual EStatus Execute(void) override
-    {
-        m_Processor.GetAnnotation();
-        return eCompleted;
-    }
-
-private:
-    CPSGS_SNPProcessor& m_Processor;
-};
-
-
 END_LOCAL_NAMESPACE;
 
 
@@ -214,11 +166,11 @@ static bool s_SimulateError()
 
 CPSGS_SNPProcessor::CPSGS_SNPProcessor(void)
     : m_Config(new SSNPProcessor_Config),
-      m_Unlocked(true),
       m_PreResolving(false),
       m_ScaleLimit(CSeq_id::eSNPScaleLimit_Default)
 {
     x_LoadConfig();
+    m_Client = make_shared<CSNPClient>(*m_Config);
 }
 
 
@@ -239,7 +191,6 @@ CPSGS_SNPProcessor::CPSGS_SNPProcessor(
       m_ThreadPool(parent.m_ThreadPool),
       m_Start(psg_clock_t::now()),
       m_Status(ePSGS_InProgress),
-      m_Unlocked(true),
       m_PreResolving(false),
       m_ScaleLimit(CSeq_id::eSNPScaleLimit_Default)
 {
@@ -254,7 +205,6 @@ CPSGS_SNPProcessor::CPSGS_SNPProcessor(
 CPSGS_SNPProcessor::~CPSGS_SNPProcessor(void)
 {
     _ASSERT(m_Status != ePSGS_InProgress);
-    x_UnlockRequest();
 }
 
 
@@ -310,25 +260,11 @@ bool CPSGS_SNPProcessor::x_IsEnabled(CPSGS_Request& request) const
 }
 
 
-inline
-void CPSGS_SNPProcessor::x_InitClient(void) const
-{
-    DEFINE_STATIC_FAST_MUTEX(s_InitMutex);
-    if (m_Client) return;
-    CFastMutexGuard guard(s_InitMutex);
-    if (!m_Client) {
-        m_Client = make_shared<CSNPClient>(*m_Config);
-    }
-}
-
-
 vector<string> CPSGS_SNPProcessor::WhatCanProcess(shared_ptr<CPSGS_Request> request,
                                                   shared_ptr<CPSGS_Reply> reply) const
 {
     try {
         if (!x_IsEnabled(*request)) return vector<string>();
-        x_InitClient();
-        _ASSERT(m_Client);
         return m_Client->WhatNACanProcess(request->GetRequest<SPSGS_AnnotRequest>());
     }
     catch ( exception& exc ) {
@@ -343,8 +279,6 @@ bool CPSGS_SNPProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
 {
     try {
         if (!x_IsEnabled(*request)) return false;
-        x_InitClient();
-        _ASSERT(m_Client);
         if (!m_Client->CanProcessRequest(*request, 0)) return false;
         return true;
     }
@@ -362,8 +296,6 @@ IPSGS_Processor* CPSGS_SNPProcessor::CreateProcessor(
 {
     try {
         if (!x_IsEnabled(*request)) return nullptr;
-        x_InitClient();
-        _ASSERT(m_Client);
         if (!m_Client->CanProcessRequest(*request, m_Priority)) return nullptr;
         return new CPSGS_SNPProcessor(*this, request, reply, priority);
     }
@@ -425,11 +357,6 @@ void CPSGS_SNPProcessor::Process()
     }
     
     try {
-        {
-            CFastMutexGuard guard(m_Mutex);
-            m_Unlocked = false;
-        }
-        if (GetRequest()) GetRequest()->Lock(kSNPProcessorEvent);
         auto req_type = GetRequest()->GetRequestType();
         switch (req_type) {
         case CPSGS_Request::ePSGS_AnnotationRequest:
@@ -533,7 +460,8 @@ void CPSGS_SNPProcessor::x_ProcessAnnotationRequest(void)
             return;
         }
     }
-    m_ThreadPool->AddTask(new CSNPThreadPoolTask_GetAnnotation(*this));
+    m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_SNPProcessor::GetAnnotation);
+    m_ThreadPool->AddTask(m_PoolTask);
 }
 
 
@@ -652,7 +580,8 @@ void CPSGS_SNPProcessor::x_ProcessBlobBySatSatKeyRequest(void)
 {
     SPSGS_BlobBySatSatKeyRequest& blob_request = GetRequest()->GetRequest<SPSGS_BlobBySatSatKeyRequest>();
     m_PSGBlobId = blob_request.m_BlobId.GetId();
-    m_ThreadPool->AddTask(new CSNPThreadPoolTask_GetBlobByBlobId(*this));
+    m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_SNPProcessor::GetBlobByBlobId);
+    m_ThreadPool->AddTask(m_PoolTask);
 }
 
 
@@ -660,21 +589,23 @@ void CPSGS_SNPProcessor::GetBlobByBlobId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    try {
-        if ( GetRequest()->NeedTrace() ) {
-            GetReply()->SendTrace(
-                kSNPProcessorName + " processor trying to get blob " + m_PSGBlobId,
-                GetRequest()->GetStartTimestamp());
+    if (!m_Canceled) {
+        try {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kSNPProcessorName + " processor trying to get blob " + m_PSGBlobId,
+                    GetRequest()->GetStartTimestamp());
+            }
+            m_SNPData.push_back(m_Client->GetBlobByBlobId(m_PSGBlobId));
         }
-        m_SNPData.push_back(m_Client->GetBlobByBlobId(m_PSGBlobId));
-    }
-    catch (...) {
-        if ( GetRequest()->NeedTrace() ) {
-            GetReply()->SendTrace(
-                kSNPProcessorName + " processor failed to get blob " + m_PSGBlobId,
-                GetRequest()->GetStartTimestamp());
+        catch (...) {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kSNPProcessorName + " processor failed to get blob " + m_PSGBlobId,
+                    GetRequest()->GetStartTimestamp());
+            }
+            m_SNPData.clear();
         }
-        m_SNPData.clear();
     }
     PostponeInvoke(s_OnGotBlobByBlobId, this);
 }
@@ -733,7 +664,8 @@ void CPSGS_SNPProcessor::x_ProcessTSEChunkRequest(void)
     SPSGS_TSEChunkRequest& chunk_request = GetRequest()->GetRequest<SPSGS_TSEChunkRequest>();
     m_Id2Info = chunk_request.m_Id2Info;
     m_ChunkId = chunk_request.m_Id2Chunk;
-    m_ThreadPool->AddTask(new CSNPThreadPoolTask_GetChunk(*this));
+    m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_SNPProcessor::GetChunk);
+    m_ThreadPool->AddTask(m_PoolTask);
 }
 
 
@@ -741,17 +673,19 @@ void CPSGS_SNPProcessor::GetChunk(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    try {
-        if ( GetRequest()->NeedTrace() ) {
-            GetReply()->SendTrace(
-                kSNPProcessorName + " processor trying to get chunk " + m_Id2Info + "." + NStr::NumericToString(m_ChunkId),
-                GetRequest()->GetStartTimestamp());
+    if (!m_Canceled) {
+        try {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kSNPProcessorName + " processor trying to get chunk " + m_Id2Info + "." + NStr::NumericToString(m_ChunkId),
+                    GetRequest()->GetStartTimestamp());
+            }
+            SSNPData data = m_Client->GetChunk(m_Id2Info, m_ChunkId);
+            m_SNPData.push_back(data);
         }
-        SSNPData data = m_Client->GetChunk(m_Id2Info, m_ChunkId);
-        m_SNPData.push_back(data);
-    }
-    catch (...) {
-        m_SNPData.clear();
+        catch (...) {
+            m_SNPData.clear();
+        }
     }
     PostponeInvoke(s_OnGotChunk, this);
 }
@@ -978,9 +912,15 @@ void CPSGS_SNPProcessor::Cancel()
     if (!IsUVThreadAssigned()) {
         m_Status = ePSGS_Canceled;
         x_Finish(ePSGS_Canceled);
+        return;
     }
-    else {
-        x_UnlockRequest();
+    if (m_PoolTask) {
+        m_ThreadPool->CancelTask(m_PoolTask);
+        if (m_PoolTask->TryFinish()) {
+            m_Status = ePSGS_Canceled;
+            x_Finish(ePSGS_Canceled);
+        }
+        m_PoolTask = nullptr;
     }
 }
 
@@ -991,24 +931,12 @@ IPSGS_Processor::EPSGS_Status CPSGS_SNPProcessor::GetStatus()
 }
 
 
-void CPSGS_SNPProcessor::x_UnlockRequest(void)
-{
-    {
-        CFastMutexGuard guard(m_Mutex);
-        if (m_Unlocked) return;
-        m_Unlocked = true;
-    }
-    if (GetRequest()) GetRequest()->Unlock(kSNPProcessorEvent);
-}
-
-
 bool CPSGS_SNPProcessor::x_IsCanceled()
 {
     if ( m_Canceled ) {
         x_Finish(ePSGS_Canceled);
-        return true;
     }
-    return false;
+    return m_Canceled;
 }
 
 
@@ -1031,7 +959,6 @@ void CPSGS_SNPProcessor::x_Finish(EPSGS_Status status)
 {
     _ASSERT(status != ePSGS_InProgress);
     m_Status = status;
-    x_UnlockRequest();
     SignalFinishProcessing();
 }
 
@@ -1066,8 +993,8 @@ void CPSGS_SNPProcessor::x_OnSeqIdResolveFinished(SBioseqResolution&& bioseq_res
             }
             m_SeqIds.push_back(CSeq_id_Handle::GetHandle(id));
         }
-
-        m_ThreadPool->AddTask(new CSNPThreadPoolTask_GetAnnotation(*this));
+        m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_SNPProcessor::GetAnnotation);
+        m_ThreadPool->AddTask(m_PoolTask);
     }
     catch (...) {
         x_Finish(ePSGS_Error);

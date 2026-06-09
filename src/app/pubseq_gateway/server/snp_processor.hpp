@@ -37,6 +37,7 @@
 #include "resolve_base.hpp"
 #include "psgs_request.hpp"
 #include "psgs_reply.hpp"
+#include "psgs_thread_pool_task.hpp"
 #include "snp_client.hpp"
 #include "timing.hpp"
 #include <objects/seq/seq_id_handle.hpp>
@@ -102,7 +103,6 @@ private:
 
     void x_LoadConfig(void);
     bool x_IsEnabled(CPSGS_Request& request) const;
-    void x_InitClient(void) const;
 
     void x_ProcessAnnotationRequest(void);
     void x_ProcessBlobBySatSatKeyRequest(void);
@@ -145,7 +145,6 @@ private:
     void x_SendError(const string& msg, const exception& exc);
     void x_ReportResultStatusForAllNA(SPSGS_AnnotRequest::EPSGS_ResultStatus status);
     
-    void x_UnlockRequest(void);
     void x_Finish(EPSGS_Status status);
     bool x_IsCanceled();
     bool x_SignalStartProcessing();
@@ -153,8 +152,8 @@ private:
     shared_ptr<SSNPProcessor_Config> m_Config;
     mutable shared_ptr<CSNPClient> m_Client;
     shared_ptr<ncbi::CThreadPool> m_ThreadPool;
+    CPSGS_ThreadPoolTask<CPSGS_SNPProcessor>* m_PoolTask = nullptr;
 
-    CFastMutex m_Mutex;
     psg_time_point_t m_Start;
     EPSGS_Status m_Status = ePSGS_NotFound;
     bool m_Canceled = false;
@@ -165,7 +164,6 @@ private:
     int m_ChunkId;  // requested chunk-id
     vector<SSNPData> m_SNPData;
     string m_SNPDataError;
-    bool m_Unlocked;
     bool m_PreResolving;
     objects::CSeq_id::ESNPScaleLimit m_ScaleLimit;
 };

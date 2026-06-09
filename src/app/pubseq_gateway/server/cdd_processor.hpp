@@ -35,6 +35,7 @@
 #include "ipsgs_processor.hpp"
 #include "psgs_request.hpp"
 #include "psgs_reply.hpp"
+#include "psgs_thread_pool_task.hpp"
 #include "timing.hpp"
 #include <objects/seq/seq_id_handle.hpp>
 #include <objtools/data_loaders/cdd/cdd_access/cdd_client.hpp>
@@ -115,11 +116,9 @@ private:
     void x_SendError(const string& msg);
     void x_SendError(const string& msg, const exception& exc);
     void x_ReportResultStatus(SPSGS_AnnotRequest::EPSGS_ResultStatus status);
-    void x_UnlockRequest(void);
     bool x_IsCanceled();
     bool x_SignalStartProcessing();
 
-    CFastMutex m_Mutex;
     shared_ptr<objects::CCDDClientPool> m_ClientPool;
     psg_time_point_t m_Start;
     EPSGS_Status m_Status;
@@ -128,8 +127,8 @@ private:
     CRef<objects::CCDDClientPool::TBlobId> m_BlobId;
     objects::CCDDClientPool::SCDDBlob m_CDDBlob;
     string m_Error;
-    bool m_Unlocked;
     shared_ptr<ncbi::CThreadPool> m_ThreadPool;
+    CPSGS_ThreadPoolTask<CPSGS_CDDProcessor>* m_PoolTask = nullptr;
 };
 
 
