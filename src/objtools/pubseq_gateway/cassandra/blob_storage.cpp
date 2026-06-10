@@ -42,6 +42,7 @@
 
 #include "sat_info_service_parser.hpp"
 
+#include <concepts>
 #include <type_traits>
 
 BEGIN_IDBLOB_SCOPE
@@ -180,17 +181,27 @@ set<string> ReadSecureSatUsers(
     return result;
 }
 
+template <typename T>
+concept has_ip_stringkind = requires {
+    typename T::EIP_StringKind;
+    requires std::is_enum_v<typename T::EIP_StringKind>;
+};
+
+template <typename T>
+bool CSocketAPIIsIp(string const& host) {
+    if constexpr (has_ip_stringkind<T>) {
+        auto value = T::eIP_HistoricIPv4;
+        return T::isip(host, value);
+    }
+    else {
+        return T::isip(host, false);
+    }
+}
+
 string GetAddressString(string const& host, bool is_host)
 {
-    bool is_ip{false};
-    if constexpr (std::is_enum_v<CSocketAPI::EIP_StringKind>) {
-        is_ip = CSocketAPI::isip(host, CSocketAPI::eIP_HistoricIPv4);
-    }
     // New connect lib version is not yet available in some CXX Conan builds
-    else {
-        is_ip = CSocketAPI::isip(host, false);
-    }
-    if (is_host && !is_ip) {
+    if (is_host && !CSocketAPIIsIp<CSocketAPI>(host)) {
         auto addr = CSocketAPI::gethostbyname(host);
         if (!addr) {
             return "";
