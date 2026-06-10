@@ -1,3 +1,7 @@
+Version 1.28.0 (2026-06-10):
+* Advance to version 30.0 of the stable C++ Toolkit components, notably
+  bringing in LBNULL (Istio) support.
+
 Version 1.27.2 (2026-04-10):
 * Fix crashes from basing generator expressions on cursor iterators under
   recent Python (3.13, maybe also 3.12).
