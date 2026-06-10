@@ -460,15 +460,18 @@ static void s_UnpackPrimitiveField(const TUFData& data, CObjectInfo obj)
             NCBI_THROW(CSerialException, eInvalidData,
                        "Bad User-object encoding.");
         }
+        break;
 
     case ePrimitiveValueOctetString:
         obj.SetPrimitiveValueOctetString(data.GetOs());
+        break;
 
     case ePrimitiveValueBitString:
     {
         CBitString bs;
         s_SetBSFromOS(bs, data.GetOs());
         obj.SetPrimitiveValueBitString(bs);
+        break;
     }
 
     case ePrimitiveValueAny:
@@ -476,6 +479,7 @@ static void s_UnpackPrimitiveField(const TUFData& data, CObjectInfo obj)
         CAnyContentObject aco;
         s_SetAnyContentFromFields(aco, data.GetFields());
         obj.SetPrimitiveValueAnyContent(aco);
+        break;
     }
 
     case ePrimitiveValueOther:
@@ -511,12 +515,14 @@ static void s_UnpackContainerField(const TUFData& data, CObjectInfo obj)
                 break;
             case ePrimitiveValueString:
                 obj2.SetPrimitiveValueString(*it);
+                break;
             case ePrimitiveValueEnum:
                 try {
                     obj2.SetPrimitiveValueInt(NStr::StringToInt(*it));
                 } catch (CStringException&) {
                     obj2.SetPrimitiveValueString(*it);
                 }
+                break;
             default:
                 NCBI_THROW(CSerialException, eInvalidData,
                            "Bad User-object encoding.");
@@ -705,6 +711,7 @@ void UnpackUserObject(const CUser_object& uo, CObjectInfo obj)
     s_UnpackUserField(*uo.GetData().front(), obj);
 }
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
 CObjectInfo UnpackUserObject(const CUser_object& uo, const CTypeInfo* ti)
 {
     _ASSERT(ti);
@@ -712,6 +719,7 @@ CObjectInfo UnpackUserObject(const CUser_object& uo, const CTypeInfo* ti)
     UnpackUserObject(uo, obj);
     return obj;
 }
+NCBI_RESUME_DEPRECATION_WARNINGS
 
 
 END_SCOPE(objects)

@@ -51,6 +51,7 @@ public:
     int Run(void);
 };
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
 int CUOConvTestApp::Run(void)
 {
     CObjectOStreamAsn  out(cout);
@@ -66,6 +67,7 @@ int CUOConvTestApp::Run(void)
 
     return 0;
 }
+NCBI_RESUME_DEPRECATION_WARNINGS
 
 int main(int argc, char** argv)
 {

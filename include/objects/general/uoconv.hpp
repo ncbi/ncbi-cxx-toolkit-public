@@ -40,13 +40,13 @@ BEGIN_SCOPE(objects)
 
 class CUser_object;
 
-NCBI_GENERAL_EXPORT
+NCBI_DEPRECATED NCBI_GENERAL_EXPORT
 CRef<CUser_object> PackAsUserObject(CConstObjectInfo obj);
 
-NCBI_GENERAL_EXPORT
+NCBI_DEPRECATED NCBI_GENERAL_EXPORT
 void UnpackUserObject(const CUser_object& uo, CObjectInfo obj);
 
-NCBI_GENERAL_EXPORT
+NCBI_DEPRECATED NCBI_GENERAL_EXPORT
 CObjectInfo UnpackUserObject(const CUser_object& uo, const CTypeInfo* ti);
 
 END_SCOPE(objects)
