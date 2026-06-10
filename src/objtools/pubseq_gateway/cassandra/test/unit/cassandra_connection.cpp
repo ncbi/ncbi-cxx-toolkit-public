@@ -265,7 +265,7 @@ TEST_F(CCassConnectionTest, LoadBlobRetryTimeout)
     [&call_count]
     (CRequestStatus::ECode status, int code, EDiagSev, const string & message)
     {
-        EXPECT_EQ(CRequestStatus::e502_BadGateway, status);
+        EXPECT_EQ(CRequestStatus::e504_GatewayTimeout, status);
         EXPECT_EQ(2007, code);
         ++call_count;
     };
