@@ -2642,6 +2642,7 @@ GNHS	s	Guildford Natural History Society
 GNM	s	Gothenburg Museum of Natural History (Goteborgs Naturhistoriska Museum)			
 GNNU	s	Nanling Herbarium, Gannan Normal University			
 GNU	s	Guangxi Normal University, Biology Department			
+GNU<KOR>	s	Gyeongsang National University			
 GNUB	s	Guizhou Normal University, Biology Department			
 GNUC	s	Gyeongsang National University, Biology Department			
 GNUG	s	Guizhou Normal University, Geography Department			
