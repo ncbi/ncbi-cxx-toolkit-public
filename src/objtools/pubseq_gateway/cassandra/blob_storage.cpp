@@ -42,6 +42,8 @@
 
 #include "sat_info_service_parser.hpp"
 
+#include <type_traits>
+
 BEGIN_IDBLOB_SCOPE
 
 const char* const SBlobStorageConstants::kChunkTableDefault = "blob_chunk";
@@ -180,7 +182,15 @@ set<string> ReadSecureSatUsers(
 
 string GetAddressString(string const& host, bool is_host)
 {
-    if (is_host && !CSocketAPI::isip(host, CSocketAPI::eIP_HistoricIPv4)) {
+    bool is_ip{false};
+    if constexpr (std::is_enum_v<CSocketAPI::EIP_StringKind>) {
+        is_ip = CSocketAPI::isip(host, CSocketAPI::eIP_HistoricIPv4);
+    }
+    // New connect lib version is not yet available in some CXX Conan builds
+    else {
+        is_ip = CSocketAPI::isip(host, false);
+    }
+    if (is_host && !is_ip) {
         auto addr = CSocketAPI::gethostbyname(host);
         if (!addr) {
             return "";

@@ -297,7 +297,7 @@ TEST_F(CBlobTaskLoadBlobTest, QueryTimeoutOverride) {
     [&timeout_function_called]
     (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
         timeout_function_called = true;
-        EXPECT_EQ(CRequestStatus::e502_BadGateway, status);
+        EXPECT_EQ(CRequestStatus::e504_GatewayTimeout, status);
         EXPECT_EQ(CCassandraException::eQueryTimeout, code);
         EXPECT_EQ(eDiag_Error, severity);
     };
@@ -317,7 +317,7 @@ TEST_F(CBlobTaskLoadBlobTest, BlobChunkTimeOutFailWithComment)
         [&timeout_called, &blob_finished]
         (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
             timeout_called = true;
-            EXPECT_EQ(CRequestStatus::e502_BadGateway, status);
+            EXPECT_EQ(CRequestStatus::e504_GatewayTimeout, status);
             EXPECT_EQ(CCassandraException::eQueryTimeout, code);
             EXPECT_EQ(eDiag_Error, severity);
             blob_finished = true;
@@ -445,7 +445,7 @@ TEST_F(CBlobTaskLoadBlobTest, LoadBlobRetryLogging)
         [&timeout_function_called]
         (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
             timeout_function_called = true;
-            EXPECT_EQ(CRequestStatus::e502_BadGateway, status);
+            EXPECT_EQ(CRequestStatus::e504_GatewayTimeout, status);
             EXPECT_EQ(CCassandraException::eQueryTimeout, code);
             EXPECT_EQ(eDiag_Error, severity);
         };

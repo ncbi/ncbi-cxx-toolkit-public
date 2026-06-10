@@ -130,15 +130,16 @@ public:
             case eNotFound:
                 return CRequestStatus::e404_NotFound;
             case eConvFailed:
-            case eConnTimeout:
             case eFailedToConn:
             case eRsrcFailed:
             case eQueryFailed:
             case eQueryFailedRestartable:
-            case eQueryTimeout:
                 return CRequestStatus::e502_BadGateway;
             case eRequestQueueFull:
                 return CRequestStatus::e503_ServiceUnavailable;
+            case eConnTimeout:
+            case eQueryTimeout:
+                return CRequestStatus::e504_GatewayTimeout;
             case eBindFailed:
             case eExtraFetch:
             case eFatal:
