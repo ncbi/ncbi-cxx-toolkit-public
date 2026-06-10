@@ -54,12 +54,7 @@ constexpr int kSatInfoReadRetry{5};
 
 bool CanRetry(CCassandraException const& e, int retries)
 {
-    return
-        (
-            e.GetErrCode() == CCassandraException::eQueryTimeout
-            || e.GetErrCode() == CCassandraException::eQueryFailedRestartable
-        )
-        && retries > 0;
+    return e.isRestartable() && retries > 0;
 }
 
 vector<SSatInfoEntry>

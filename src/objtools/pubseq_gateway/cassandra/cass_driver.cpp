@@ -70,6 +70,9 @@ USING_NCBI_SCOPE;
         else if (macro_error_code == CCassandraException::eQueryTimeout) {               \
             THROW_CASS_EXCEPTION(eQueryTimeout, driver_code, message);                   \
         }                                                                                \
+        else if (macro_error_code == CCassandraException::eRequestQueueFull) {           \
+            THROW_CASS_EXCEPTION(eRequestQueueFull, driver_code, message);               \
+        }                                                                                \
         THROW_CASS_EXCEPTION(eQueryFailed, driver_code, message);                        \
     } while(0)                                                                           \
 
@@ -173,10 +176,12 @@ BEGIN_SCOPE()
     inline CCassandraException::EErrCode GetErrorCodeByDriverRC(CassError rc)
     {
         if (rc == CASS_ERROR_SERVER_UNAVAILABLE
-            || rc == CASS_ERROR_LIB_REQUEST_QUEUE_FULL
             || rc == CASS_ERROR_LIB_NO_HOSTS_AVAILABLE
         ) {
             return CCassandraException::eQueryFailedRestartable;
+        }
+        else if (rc == CASS_ERROR_LIB_REQUEST_QUEUE_FULL) {
+            return CCassandraException::eRequestQueueFull;
         }
         else if (rc == CASS_ERROR_LIB_REQUEST_TIMED_OUT
             || rc == CASS_ERROR_SERVER_WRITE_TIMEOUT
@@ -257,25 +262,7 @@ atomic<CassUuidGen*> CCassConnection::m_CassUuidGen(nullptr);
 
 const unsigned int CCassQuery::DEFAULT_PAGE_SIZE = 4096;
 
-CCassConnection::CCassConnection()
-    : m_port(0)
-    , m_cluster(nullptr)
-    , m_session(nullptr)
-    , m_ctimeoutms(0)
-    , m_qtimeoutms(0)
-    , m_qtimeout_retry_ms(0)
-    , m_last_query_cnt(0)
-    , m_loadbalancing(LB_DCAWARE)
-    , m_tokenaware(true)
-    , m_latencyaware(false)
-    , m_numThreadsIo(0)
-    , m_numConnPerHost(0)
-    , m_keepalive(0)
-    , m_fallback_readconsistency(false)
-    , m_FallbackWriteConsistency(0)
-    , m_active_statements(0)
-{}
-
+CCassConnection::CCassConnection() = default;
 CCassConnection::~CCassConnection()
 {
     Close();
@@ -327,6 +314,16 @@ void CCassConnection::SetRtLimits(unsigned int numThreadsIo, unsigned int numCon
 {
     m_numThreadsIo = numThreadsIo;
     m_numConnPerHost = numConnPerHost;
+}
+
+unsigned int CCassConnection::GetQueueSizeIo() const
+{
+    return m_QueueSizeIo;
+}
+
+void CCassConnection::SetQueueSizeIo(unsigned int value)
+{
+    m_QueueSizeIo = value;
 }
 
 void CCassConnection::SetKeepAlive(unsigned int keepalive)
@@ -453,6 +450,9 @@ void CCassConnection::Connect()
     cass_cluster_set_latency_aware_routing(m_cluster, m_latencyaware ? cass_true : cass_false);
     cass_cluster_set_num_threads_io(m_cluster, m_numThreadsIo ? m_numThreadsIo : kDefaultIOThreads);
 
+    if (m_QueueSizeIo) {
+        cass_cluster_set_queue_size_io(m_cluster, m_QueueSizeIo);
+    }
     if (m_numConnPerHost) {
         cass_cluster_set_core_connections_per_host(m_cluster, m_numConnPerHost);
     }
@@ -782,7 +782,7 @@ vector<SCassSizeEstimate> CCassConnection::GetSizeEstimates(string const& datace
         }
         catch(CCassandraException const& ex) {
             /// We need to be able to tolerate one host down situation here
-            if (failed_peers_count > 0 || ex.GetErrCode() != CCassandraException::eQueryFailedRestartable) {
+            if (failed_peers_count > 0 || !ex.isRestartable()) {
                 throw;
             }
             else {
@@ -1093,9 +1093,14 @@ void CCassConnection::Perform(
 
             if (e.GetErrCode() == CCassandraException::eQueryTimeout && ++err_cnt < 10) {
                 ERR_POST(Info << "CAPTURED TIMEOUT: " << e.GetMsg() << ", RESTARTING OP");
-            } else if (e.GetErrCode() == CCassandraException::eQueryFailedRestartable) {
+            }
+            else if (e.GetErrCode() == CCassandraException::eQueryFailedRestartable) {
                 ERR_POST(Info << "CAPTURED RESTARTABLE EXCEPTION: " << e.GetMsg() << ", RESTARTING OP");
-            } else {
+            }
+            else if (e.GetErrCode() == CCassandraException::eRequestQueueFull) {
+                ERR_POST(Info << "CAPTURED REQUEST QUEUE FULL EXCEPTION: " << e.GetMsg() << ", RESTARTING OP");
+            }
+            else {
                 // timer exceeded (10 times we got timeout and havn't read
                 // anyting, or got another error -> try to reconnect
                 ERR_POST("2. CAPTURED " << e.GetMsg());

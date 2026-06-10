@@ -41,7 +41,6 @@
 #include <gtest/gtest.h>
 
 #include <chrono>
-#include <memory>
 #include <string>
 #include <thread>
 
@@ -63,6 +62,7 @@ protected:
         const string config_section = "TEST";
         CNcbiRegistry r;
         r.Set(config_section, "service", string(m_TestClusterName), IRegistry::fPersistent);
+        r.Set(config_section, "queuesizeio", "8000", IRegistry::fPersistent);
         sm_Env.Get().factory = CCassConnectionFactory::s_Create();
         sm_Env.Get().factory->LoadConfig(r, config_section);
     }
@@ -159,7 +159,7 @@ TEST_F(CCassConnectionTest, GetSizeEstimatesOneNodeDown) {
         peers = connection->GetLocalPeersAddressList("");
         auto true_estimates = connection->GetSizeEstimates("DC1", "idmain2", "si2csi");
         for (auto const& range : true_estimates) {
-            true_estimates_ranges.push_back(make_pair(range.range_start, range.range_end));
+            true_estimates_ranges.emplace_back(range.range_start, range.range_end);
             min_size = min(range.mean_partition_size, min_size);
             max_size = max(range.mean_partition_size, max_size);
             min_count = min(range.partitions_count, min_count);
@@ -167,7 +167,7 @@ TEST_F(CCassConnectionTest, GetSizeEstimatesOneNodeDown) {
         }
     }
     ASSERT_FALSE(peers.empty());
-    for (auto peer : peers) {
+    for (auto const& peer : peers) {
         auto connection = sm_Env.Get().factory->CreateInstance();
         connection->SetBlackList(peer);
         connection->Connect();
@@ -183,7 +183,7 @@ TEST_F(CCassConnectionTest, GetSizeEstimatesOneNodeDown) {
         }
         CCassConnection::TTokenRanges estimates_ranges;
         for (auto const& range : estimates) {
-            estimates_ranges.push_back(make_pair(range.range_start, range.range_end));
+            estimates_ranges.emplace_back(range.range_start, range.range_end);
             EXPECT_GE(range.partitions_count, min_count);
             EXPECT_GE(range.mean_partition_size, min_size);
             EXPECT_LE(range.partitions_count, max_count);
@@ -342,9 +342,9 @@ TEST_F(CCassConnectionTest, GetTokenRanges)
     }
     {
         set<CC::TTokenValue> start_tokens, end_tokens;
-        for (auto itr = ranges.begin(); itr != ranges.end(); ++itr) {
-            start_tokens.insert(itr->first);
-            end_tokens.insert(itr->second);
+        for (auto & range : ranges) {
+            start_tokens.insert(range.first);
+            end_tokens.insert(range.second);
         }
         vector<string> tokens;
         auto query = connection->NewQuery();
@@ -357,6 +357,42 @@ TEST_F(CCassConnectionTest, GetTokenRanges)
             EXPECT_FALSE(start_tokens.find(value) == start_tokens.end());
             EXPECT_FALSE(end_tokens.find(value) == end_tokens.end());
         }
+    }
+}
+
+TEST_F(CCassConnectionTest, SetQueueSizeIo)
+{
+    auto connection = sm_Env.Get().factory->CreateInstance();
+    EXPECT_EQ(8000, connection->GetQueueSizeIo()) << "Queue size io should be 8000 in configuration file";
+    connection->SetQueueSizeIo(1);
+    connection->SetRtLimits(1, 1);
+    connection->Connect();
+    vector<thread> threads;
+    atomic_bool thrown{false}, right_exception{true};
+    for (int i = 0; i < 10; ++i) {
+        threads.emplace_back([connection, &thrown, &right_exception](){
+            try {
+                auto query = connection->NewQuery();
+                query->SetSQL("select * from system.size_estimates where table_name = 'blob_prop' ALLOW FILTERING", 0);
+                query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, true);
+                while (!query->IsEOF()) {
+                    if (query->NextRow() != ar_dataready) {
+                        this_thread::sleep_for(chrono::milliseconds(1));
+                    }
+                }
+            }
+            catch (CCassandraException const& ex) {
+                thrown = true;
+                right_exception = right_exception && ex.GetErrCode() == CCassandraException::eRequestQueueFull;
+            }
+        });
+    }
+    for (auto & t : threads) {
+        t.join();
+    }
+    EXPECT_TRUE(thrown) << "Test should throw with queue size = 1";
+    if (thrown) {
+        EXPECT_TRUE(right_exception) << "CCassandraException::eRequestQueueFull is expected";
     }
 }
 

@@ -38,6 +38,7 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/request_status.hpp>
 
 #include "IdCassScope.hpp"
 
@@ -63,6 +64,7 @@ public:
         eMissData,
         eInconsistentData,
         eNotFound,
+        eRequestQueueFull,
 
         // Came from class EError (IdLogUtl.hpp)
         eSeqFailed,
@@ -112,8 +114,52 @@ public:
             case eGeneric:                return "eGeneric";
             case eMemory:                 return "eMemory";
             case eUserCancelled:          return "eUserCancelled";
+            case eRequestQueueFull:       return "eRequestQueueFull";
             default:                      return CException::GetErrCodeString();
         }
+    }
+
+    /**
+     * Provides baseline mapping from CCassandra::EErrCode to CRequestStatus::ECode.
+     *
+     * @return CRequestStatus::ECode
+     */
+    inline CRequestStatus::ECode GetErrorRequestStatus() const
+    {
+        switch (GetErrCode()) {
+            case eNotFound:
+                return CRequestStatus::e404_NotFound;
+            case eConvFailed:
+            case eConnTimeout:
+            case eFailedToConn:
+            case eRsrcFailed:
+            case eQueryFailed:
+            case eQueryFailedRestartable:
+            case eQueryTimeout:
+                return CRequestStatus::e502_BadGateway;
+            case eRequestQueueFull:
+                return CRequestStatus::e503_ServiceUnavailable;
+            case eBindFailed:
+            case eExtraFetch:
+            case eFatal:
+            case eFetchFailed:
+            case eGeneric:
+            case eInconsistentData:
+            case eMemory:
+            case eMissData:
+            case eSeqFailed:
+            case eUnknown:
+            case eUserCancelled:
+            default:
+                return CRequestStatus::e500_InternalServerError;
+        }
+    }
+
+    inline bool isRestartable() const
+    {
+        return GetErrCode() == CCassandraException::eQueryTimeout
+               || GetErrCode() == CCassandraException::eQueryFailedRestartable
+               || GetErrCode() == CCassandraException::eRequestQueueFull;
     }
 
     NCBI_EXCEPTION_DEFAULT(CCassandraException, CException);

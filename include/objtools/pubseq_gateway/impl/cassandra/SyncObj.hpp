@@ -85,14 +85,14 @@ public:
         return rv;
     }
 
-    int Value(void)
+    int Value()
     {
         return m_Value;
     }
 
     EWaitResult WaitWhile(int value, int timeout_mks = -1);
 
-    void Wake(void)
+    void Wake()
     {
         DoWake();
     }
@@ -121,15 +121,15 @@ public:
         return rv;
     }
 
-    int SemInc(void)
+    int SemInc()
     {
-        int     rv = atomic_fetch_add(&m_Value, 1);
+        int rv = atomic_fetch_add(&m_Value, 1);
         return rv;
     }
 
-    int SemDec(void)
+    int SemDec()
     {
-        int     rv = atomic_fetch_sub(&m_Value, 1);
+        int rv = atomic_fetch_sub(&m_Value, 1);
         if (rv < 0)
             DoWake();
         return rv;
