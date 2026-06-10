@@ -519,16 +519,11 @@ CCassQueryList::SQrySlot* CCassQueryList::CheckSlot(size_t index, bool discard)
             }
         }
         catch (const CCassandraException& e) {
-            if (
-                (
-                    e.GetErrCode() == CCassandraException::eQueryTimeout
-                    || e.GetErrCode() == CCassandraException::eQueryFailedRestartable
-                )
-                && --slot->m_retry_count > 0
-            ) {
+            if (e.isRestartable() && --slot->m_retry_count > 0) {
                 ex_msg = e.what();
                 need_restart = true;
-            } else {
+            }
+            else {
                 m_has_error = true;
                 if (slot->m_consumer) {
                     slot->m_consumer->Failed(slot->m_qry, *this, slot->m_index, &e);

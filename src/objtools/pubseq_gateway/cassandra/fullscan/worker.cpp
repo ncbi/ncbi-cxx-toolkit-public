@@ -164,11 +164,7 @@ bool CCassandraFullscanWorker::x_ProcessQueryResult(size_t index)
             (*m_ActiveQueries)--;
         }
     } catch (CCassandraException const & e) {
-        if ((
-                e.GetErrCode() == CCassandraException::eQueryTimeout
-                || e.GetErrCode() == CCassandraException::eQueryFailedRestartable
-            )
-            && m_Queries[index]->retires > 0
+        if (e.isRestartable() && m_Queries[index]->retires > 0
         ) {
             --m_Queries[index]->retires;
             restart_request = true;

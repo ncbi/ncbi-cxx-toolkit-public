@@ -108,7 +108,7 @@ TEST_F(CBlobTaskLoadBlobTest, StaleBlobRecordFromCache) {
         const string & message
     ) {
         ++call_count;
-        EXPECT_EQ(CRequestStatus::e502_BadGateway, status);
+        EXPECT_EQ(CRequestStatus::e500_InternalServerError, status);
         EXPECT_EQ(CCassandraException::eInconsistentData, code);
     };
     auto cache_blob = make_unique<CBlobRecord>();
@@ -214,7 +214,7 @@ TEST_F(CBlobTaskLoadBlobTest, ShouldFailOnWrongBigBlobFlag) {
     [&call_count]
     (CRequestStatus::ECode status, int, EDiagSev, const string &) {
         ++call_count;
-        EXPECT_EQ(502, status);
+        EXPECT_EQ(500, status);
     };
     CCassBlobTaskLoadBlob fetch1(sm_Env.Get().connection, m_KeyspaceName, std::move(blob), true, error_function);
     wait_function(fetch1);
@@ -248,7 +248,7 @@ TEST_F(CBlobTaskLoadBlobTest, ExplicitBlobProperties) {
     (CRequestStatus::ECode status, int, EDiagSev, const string &message)
     {
         ++call_count;
-        EXPECT_EQ(500, status);
+        EXPECT_EQ(502, status);
         EXPECT_NE(message.find("SELECT data FROM fake_keyspace.blob_chunk WHERE sat_key"), string::npos);
     };
     auto blob_prop = make_unique<CBlobRecord>();

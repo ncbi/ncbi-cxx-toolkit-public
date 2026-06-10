@@ -160,7 +160,7 @@ public:
                 Wait1();
             } catch (const CCassandraException& e) {
                 // We will not re-throw here as CassandraException is not fatal
-                Error(CRequestStatus::e500_InternalServerError, e.GetErrCode(), eDiag_Error, e.what());
+                Error(e.GetErrorRequestStatus(), e.GetErrCode(), eDiag_Error, e.what());
             } catch (const exception& e) {
                 // See ID-6241 There is a requirement to catch all exceptions and continue here
                 Error(CRequestStatus::e500_InternalServerError, CCassandraException::eUnknown, eDiag_Error, e.what());
@@ -296,7 +296,7 @@ protected:
     void Error(CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
     {
         m_State = eError;
-        m_LastError = message;
+        m_LastError = message.empty() ? "Unknown error" : message;
         if (m_ErrorCb) {
             m_ErrorCb(status, code, severity, message);
         }
@@ -348,15 +348,14 @@ protected:
             if (e.GetCassDriverErrorCode() >= 0) {
                 retry_message += "; driver_error=0x" + NStr::NumericToString(e.GetCassDriverErrorCode(), 0, 16);
             }
-            bool driver_error_allows_restart = (e.GetErrCode() == CCassandraException::eQueryTimeout
-                                         || e.GetErrCode() == CCassandraException::eQueryFailedRestartable);
+            bool driver_error_allows_restart = e.isRestartable();
             if (driver_error_allows_restart && CanRestart(qry, restart_counter)) {
                 Message(eDiag_Warning, retry_message + "; decision=retry_allowed");
                 need_repeat = true;
             }
             else {
                 Message(eDiag_Error, retry_message + "; decision=retry_forbidden");
-                Error(CRequestStatus::e502_BadGateway, e.GetErrCode(), eDiag_Error, e.what());
+                Error(e.GetErrorRequestStatus(), e.GetErrCode(), eDiag_Error, e.what());
             }
         }
         return false;

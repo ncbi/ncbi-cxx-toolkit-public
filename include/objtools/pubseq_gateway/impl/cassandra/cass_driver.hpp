@@ -64,22 +64,21 @@ USING_NCBI_SCOPE;
 
 #define CASS_DRV_TIMEOUT_MS 2000U
 
-typedef enum {
+enum async_rslt_t {
     ar_wait,
     ar_done,
     ar_dataready,
     ASYNC_RSLT_LAST_ENTRY
-} async_rslt_t;
+};
 
 
-typedef enum {
+enum loadbalancing_policy_t {
     LB_DCAWARE = 0,     // the default, per CPP driver comments on
                         // cass_cluster_set_load_balance_dc_aware function
     LB_ROUNDROBIN
-} loadbalancing_policy_t;
+};
 
-
-typedef enum {
+enum CCassDataType {
     dtNull,
     dtUnknown,
     dtBoolean,
@@ -94,12 +93,12 @@ typedef enum {
     dtCollection,
     dtCustom,
     dtDate
-} CCassDataType;
+};
 
 using TCassConsistency = CassConsistency;
 class CCassConsistency final
 {
- public:
+public:
     CCassConsistency() = delete;
 
     static constexpr TCassConsistency kUnknown = CASS_CONSISTENCY_UNKNOWN;
@@ -293,6 +292,9 @@ public:
 
     void SetRtLimits(unsigned int numThreadsIo, unsigned int numConnPerHost);
 
+    unsigned int GetQueueSizeIo() const;
+    void SetQueueSizeIo(unsigned int value);
+
     void SetKeepAlive(unsigned int keepalive);
 
     /// Warning! Not suitable for usage in multi-threaded environment in case of multiple keyspaces.
@@ -331,32 +333,32 @@ public:
 
 private:
     string                          m_hostlist;
-    int16_t                         m_port;
+    int16_t                         m_port{0};
     string                          m_user;
     string                          m_pwd;
     string                          m_blacklist;
     string                          m_keyspace;
     // access through atomic_load/atomic_store
     shared_ptr<string>              m_datacenter;
-    CassCluster *                   m_cluster;
-    CassSession *                   m_session;
-    unsigned int                    m_ctimeoutms;
-    unsigned int                    m_qtimeoutms;
+    CassCluster *                   m_cluster{nullptr};
+    CassSession *                   m_session{nullptr};
+    unsigned int                    m_ctimeoutms{0};
+    unsigned int                    m_qtimeoutms{0};
     unsigned int                    m_qtimeout_retry_ms{0};
     int                             m_maxretries{1};
-    unsigned int                    m_last_query_cnt;
-    loadbalancing_policy_t          m_loadbalancing;
-    bool                            m_tokenaware;
-    bool                            m_latencyaware;
-    unsigned int                    m_numThreadsIo;
-    unsigned int                    m_numConnPerHost;
-    unsigned int                    m_keepalive;
-    bool                            m_fallback_readconsistency;
-    unsigned int                    m_FallbackWriteConsistency;
+    loadbalancing_policy_t          m_loadbalancing{LB_DCAWARE};
+    bool                            m_tokenaware{true};
+    bool                            m_latencyaware{false};
+    unsigned int                    m_numThreadsIo{0};
+    unsigned int                    m_QueueSizeIo{0};
+    unsigned int                    m_numConnPerHost{0};
+    unsigned int                    m_keepalive{0};
+    bool                            m_fallback_readconsistency{false};
+    unsigned int                    m_FallbackWriteConsistency{0};
     static atomic<CassUuidGen*>     m_CassUuidGen;
     CSpinLock                       m_prepared_mux;
     TPreparedList                   m_prepared;
-    atomic<int64_t>                 m_active_statements;
+    atomic<int64_t>                 m_active_statements{0};
 
     static bool                     m_LoggingInitialized;
     static bool                     m_LoggingEnabled;
@@ -400,7 +402,7 @@ public:
         Clear();
     }
 
-    void Clear(void)
+    void Clear()
     {
         m_type = CASS_VALUE_TYPE_UNKNOWN;
         m_assigned = false;
@@ -530,13 +532,13 @@ public:
         m_assigned = true;
     }
 
-    void AssignNull(void)
+    void AssignNull()
     {
         m_type = CASS_VALUE_TYPE_UNKNOWN;
         m_assigned = true;
     }
 
-    bool IsAssigned(void) const
+    bool IsAssigned() const
     {
         return m_assigned;
     }
@@ -546,7 +548,7 @@ public:
         return m_type;
     }
 
-    int32_t AsInt8(void) const
+    int32_t AsInt8() const
     {
         switch (m_type) {
             case CASS_VALUE_TYPE_TINY_INT:
@@ -564,7 +566,7 @@ public:
         }
     }
 
-    int32_t AsInt16(void) const
+    int32_t AsInt16() const
     {
         switch (m_type) {
             case CASS_VALUE_TYPE_TINY_INT:
@@ -584,7 +586,7 @@ public:
         }
     }
 
-    int32_t AsInt32(void) const
+    int32_t AsInt32() const
     {
         switch (m_type) {
             case CASS_VALUE_TYPE_TINY_INT:
@@ -609,7 +611,7 @@ public:
         }
     }
 
-    int64_t AsInt64(void) const
+    int64_t AsInt64() const
     {
         switch (m_type) {
             case CASS_VALUE_TYPE_TINY_INT:
@@ -802,37 +804,37 @@ private:
     }
 
     shared_ptr<CCassConnection>     m_connection;
-    unsigned int                    m_qtimeoutms;
+    unsigned int                    m_qtimeoutms{0};
     bool                            m_use_per_request_timeout{false};
-    int64_t                         m_futuretime;
-    CassFuture *                    m_future;
-    CassBatch *                     m_batch;
-    CassStatement *                 m_statement;
-    const CassResult *              m_result;
-    CassIterator *                  m_iterator;
-    const CassRow *                 m_row;
-    unsigned int                    m_page_size;
-    bool                            m_EOF;
-    bool                            m_page_start;
+    bool                            m_page_start{false};
+    int64_t                         m_futuretime{0};
+    CassFuture *                    m_future{nullptr};
+    CassBatch *                     m_batch{nullptr};
+    CassStatement *                 m_statement{nullptr};
+    const CassResult *              m_result{nullptr};
+    CassIterator *                  m_iterator{nullptr};
+    const CassRow *                 m_row{nullptr};
+    unsigned int                    m_page_size{0};
+    bool                            m_EOF{false};
     CCassParams                     m_params;
     string                          m_sql;
-    bool                            m_results_expected;
-    bool                            m_async;
-    bool                            m_allow_prepare;
-    bool                            m_is_prepared;
-    TCassConsistency                m_serial_consistency;
+    bool                            m_results_expected{false};
+    bool                            m_async{false};
+    bool                            m_allow_prepare{true};
+    bool                            m_is_prepared{false};
+    TCassConsistency                m_serial_consistency{CASS_CONSISTENCY_ANY};
 
     shared_ptr<CCassQueryCbRef>     m_cb_ref;
 
     weak_ptr<CCassDataCallbackReceiver> m_ondata3;
 
-    TCassQueryOnExecuteCallback     m_onexecute;
-    void*                           m_onexecute_data;
+    TCassQueryOnExecuteCallback     m_onexecute{nullptr};
+    void*                           m_onexecute_data{nullptr};
 
     string                          m_execution_host;
 
     async_rslt_t Wait(unsigned int timeoutmks);
-    void Bind(void);
+    void Bind();
 
     template<typename F>
     const CassValue* GetColumn(F ifld) const
@@ -859,26 +861,8 @@ private:
     {};
 
 protected:
-    explicit CCassQuery(const shared_ptr<CCassConnection>& connection) :
-        m_connection(connection),
-        m_qtimeoutms(0),
-        m_futuretime(0),
-        m_future(nullptr),
-        m_batch(nullptr),
-        m_statement(nullptr),
-        m_result(nullptr),
-        m_iterator(nullptr),
-        m_row(nullptr),
-        m_page_size(0),
-        m_EOF(false),
-        m_page_start(false),
-        m_results_expected(false),
-        m_async(false),
-        m_allow_prepare(true),
-        m_is_prepared(false),
-        m_serial_consistency(CASS_CONSISTENCY_ANY),
-        m_onexecute(nullptr),
-        m_onexecute_data(nullptr)
+    explicit CCassQuery(const shared_ptr<CCassConnection>& connection)
+        : m_connection(connection)
     {
         if (!m_connection) {
             RAISE_DB_ERROR(eFatal, "Cassandra connection is not established");
@@ -887,20 +871,20 @@ protected:
 
 public:
     virtual ~CCassQuery();
-    virtual void Close(void);
+    virtual void Close();
 
     void SetTimeout();
     void SetTimeout(unsigned int t);
 
-    unsigned int Timeout(void) const;
+    unsigned int Timeout() const;
 
     // Switch to use per request timeout. Currently used just for Retry operations
     // @todo Switch to ExecutionProfiles
     void UsePerRequestTimeout(bool value);
     unsigned int GetRequestTimeoutMs() const;
 
-    bool IsReady(void);
-    void NewBatch(void);
+    bool IsReady();
+    void NewBatch();
     async_rslt_t RunBatch();
 
     void SetSQL(const string& sql, unsigned int PrmCount);
@@ -926,17 +910,17 @@ public:
 
     void SetSerialConsistency(TCassConsistency c);
 
-    bool IsActive(void) const
+    bool IsActive() const
     {
         return (m_row != nullptr) || (m_statement != nullptr) || (m_batch != nullptr);
     }
 
     virtual async_rslt_t WaitAsync(unsigned int timeoutmks);
     string GetSQL() const;
-    virtual string ToString(void) const;
+    virtual string ToString() const;
 
-    virtual bool IsEOF(void) const;
-    virtual bool IsAsync(void) const;
+    virtual bool IsEOF() const;
+    virtual bool IsAsync() const;
 
     void BindNull(int iprm);
     void BindInt8(int iprm, int8_t value);
@@ -982,7 +966,7 @@ public:
         m_params[iprm].Assign(value);
     }
 
-    size_t ParamCount(void) const
+    size_t ParamCount() const
     {
         return m_params.size();
     }
@@ -1466,7 +1450,7 @@ public:
         return outlen;
     }
 
-    shared_ptr<CCassConnection> GetConnection(void)
+    shared_ptr<CCassConnection> GetConnection()
     {
         return m_connection;
     }

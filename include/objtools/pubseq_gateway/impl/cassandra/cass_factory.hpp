@@ -49,7 +49,7 @@ USING_NCBI_SCOPE;
 class CCassConnectionFactory:
     public enable_shared_from_this<CCassConnectionFactory>
 {
- public:
+public:
     CCassConnectionFactory(const CCassConnectionFactory&) = delete;
     CCassConnectionFactory& operator=(const CCassConnectionFactory&) = delete;
     CCassConnectionFactory(CCassConnectionFactory&&) = delete;
@@ -83,12 +83,11 @@ class CCassConnectionFactory:
         m_LogSeverity = severity;
     }
 
- protected:
-    void ProcessParams(void);
+protected:
+    void ProcessParams();
 
- private:
-    void x_ValidateArgs(void);
-
+private:
+    void x_ValidateArgs();
 
     CFastMutex              m_RunTimeParams;
     string                  m_CfgName;
@@ -111,6 +110,7 @@ class CCassConnectionFactory:
     bool                    m_TokenAware;
     bool                    m_LatencyAware;
     unsigned int            m_NumThreadsIo;
+    unsigned int            m_QueueSizeIo{0};
     unsigned int            m_NumConnPerHost;
     unsigned int            m_Keepalive;
 

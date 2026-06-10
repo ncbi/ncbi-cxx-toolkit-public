@@ -283,7 +283,7 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentNotConfigured)
         (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
         {
             ++error_call_count;
-            EXPECT_EQ(CRequestStatus::e502_BadGateway, status);
+            EXPECT_EQ(CRequestStatus::e500_InternalServerError, status);
             EXPECT_EQ(CCassandraException::eMissData, code);
             EXPECT_EQ(eDiag_Error, severity);
         }
@@ -313,7 +313,7 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentWrongMessage)
         (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
         {
             ++error_call_count;
-            EXPECT_EQ(CRequestStatus::e502_BadGateway, status);
+            EXPECT_EQ(CRequestStatus::e500_InternalServerError, status);
             EXPECT_EQ(CCassandraException::eMissData, code);
             EXPECT_EQ(eDiag_Error, severity);
         }

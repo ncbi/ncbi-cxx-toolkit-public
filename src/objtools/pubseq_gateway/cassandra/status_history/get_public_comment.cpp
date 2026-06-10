@@ -224,12 +224,12 @@ void CCassStatusHistoryTaskGetPublicComment::Wait1()
                             if (comment.empty() && message_type != nullptr) {
                                 char msg[1024];
                                 snprintf(msg, sizeof(msg), "Message is empty for (%s)", message_type);
-                                Error(CRequestStatus::e502_BadGateway, CCassandraException::eMissData, eDiag_Error, msg);
+                                Error(CRequestStatus::e500_InternalServerError, CCassandraException::eMissData, eDiag_Error, msg);
                             } else {
                                 m_CommentCallback(std::move(comment), true);
                             }
                         } else {
-                            Error(CRequestStatus::e502_BadGateway, CCassandraException::eMissData,
+                            Error(CRequestStatus::e500_InternalServerError, CCassandraException::eMissData,
                                 eDiag_Error, "Messages provider not configured for Public Comment retrieval");
                         }
                     } else {

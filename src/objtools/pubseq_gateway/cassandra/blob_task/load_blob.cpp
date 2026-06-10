@@ -246,7 +246,7 @@ void CCassBlobTaskLoadBlob::Wait1()
                                          "key=" + GetKeySpace() + "." + to_string(GetKey()) +
                                          ", modified=" + to_string(m_Blob->GetModified()) +
                                          ", flags=0x" + NStr::NumericToString(flags, 16) + ")";
-                            Error(CRequestStatus::e502_BadGateway,
+                            Error(CRequestStatus::e500_InternalServerError,
                                   CCassandraException::eInconsistentData,
                                   eDiag_Error, msg);
                         }
@@ -302,7 +302,7 @@ void CCassBlobTaskLoadBlob::Wait1()
                              "Failed to fetch blob (key=%s.%d) result is "
                              "incomplete remaining %ld bytes",
                              keyspace.c_str(), GetKey(), m_RemainingSize);
-                        Error(CRequestStatus::e502_BadGateway,
+                        Error(CRequestStatus::e500_InternalServerError,
                               CCassandraException::eInconsistentData,
                               eDiag_Error, msg);
                         break;
@@ -352,7 +352,7 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
                         string keyspace = GetKeySpace();
                         snprintf(msg, sizeof(msg),
                              "Failed to fetch blob chunk (key=%s.%d, chunk=%d)", keyspace.c_str(), GetKey(), chunk_no);
-                        Error(CRequestStatus::e502_BadGateway, CCassandraException::eInconsistentData, eDiag_Error, msg);
+                        Error(CRequestStatus::e500_InternalServerError, CCassandraException::eInconsistentData, eDiag_Error, msg);
                         return;
                     } else {
                         const unsigned char * rawdata = nullptr;
@@ -365,7 +365,7 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
                             snprintf(msg, sizeof(msg),
                                  "Failed to fetch blob chunk (key=%s.%d, chunk=%d) size %ld "
                                  "is too large", keyspace.c_str(), GetKey(), chunk_no, len);
-                            Error(CRequestStatus::e502_BadGateway, CCassandraException::eInconsistentData, eDiag_Error, msg);
+                            Error(CRequestStatus::e500_InternalServerError, CCassandraException::eInconsistentData, eDiag_Error, msg);
                             return;
                         }
                         m_ProcessedChunks[chunk_no] = true;
@@ -423,7 +423,7 @@ void CCassBlobTaskLoadBlob::x_RequestChunk(CCassQuery& qry, int32_t chunk_no)
             snprintf(msg, sizeof(msg),
                  "Failed to setup data ready callback (expired) for blob chunk (key=%s.%d, chunk=%d)",
                  keyspace.c_str(), GetKey(), chunk_no);
-            Error(CRequestStatus::e502_BadGateway, CCassandraException::eUnknown, eDiag_Error, msg);
+            Error(CRequestStatus::e500_InternalServerError, CCassandraException::eUnknown, eDiag_Error, msg);
         }
     }
     qry.Query(GetReadConsistency(), true, m_UsePrepared);

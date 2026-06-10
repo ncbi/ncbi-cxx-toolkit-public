@@ -42,7 +42,7 @@ BEGIN_IDBLOB_SCOPE
 
 USING_NCBI_SCOPE;
 
-int64_t gettime(void);
+int64_t gettime();
 
 std::string TimeTmsToString(int64_t time);
 int64_t StringToTimeTms(const std::string& time);

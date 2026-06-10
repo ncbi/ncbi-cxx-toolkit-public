@@ -83,7 +83,6 @@ const map<string, loadbalancing_policy_t>     kPolicyArgMap = {
 CCassConnectionFactory::CCassConnectionFactory() :
     m_CassConnTimeoutMs(kCassConnTimeoutDefault),
     m_CassQueryTimeoutMs(kCassQueryTimeoutDefault),
-    m_CassQueryRetryTimeoutMs(0),
     m_MaxRetries(kMaxRetriesDefault),
     m_CassFallbackRdConsistency(false),
     m_CassFallbackWrConsistency(kCassFallbackWrConsistencyDefault),
@@ -108,7 +107,7 @@ void CCassConnectionFactory::AppParseArgs(const CArgs & /*args*/)
     ProcessParams();
 }
 
-void CCassConnectionFactory::ProcessParams(void)
+void CCassConnectionFactory::ProcessParams()
 {
     if (!m_PassFile.empty()) {
         filebuf fb;
@@ -195,6 +194,7 @@ void CCassConnectionFactory::ReloadConfig(IRegistry const* registry)
         m_TokenAware = registry->GetBool(m_Section, "tokenaware", true);
         m_LatencyAware = registry->GetBool(m_Section, "latencyaware", true);
         m_NumThreadsIo = registry->GetInt(m_Section, "numthreadsio", kNumThreadsIoDefault);
+        m_QueueSizeIo = registry->GetInt(m_Section, "queuesizeio", 0);
         m_NumConnPerHost = registry->GetInt(m_Section, "numconnperhost", kNumConnPerHostDefault);
         m_Keepalive = registry->GetInt(m_Section, "keepalive", kKeepaliveDefault);
         m_PassFile = registry->GetString(m_Section, "password_file", "");
@@ -289,6 +289,7 @@ shared_ptr<CCassConnection> CCassConnectionFactory::CreateInstance()
     rv->SetTokenAware(m_TokenAware);
     rv->SetLatencyAware(m_LatencyAware);
     rv->SetRtLimits(m_NumThreadsIo, m_NumConnPerHost);
+    rv->SetQueueSizeIo(m_QueueSizeIo);
     rv->SetKeepAlive(m_Keepalive);
 
     rv->SetTimeouts(m_CassConnTimeoutMs, m_CassQueryTimeoutMs);
@@ -318,7 +319,7 @@ shared_ptr<CCassConnection> CCassConnectionFactory::CreateInstance()
 }
 
 
-void CCassConnectionFactory::x_ValidateArgs(void)
+void CCassConnectionFactory::x_ValidateArgs()
 {
     if (m_CassConnTimeoutMs > kCassConnTimeoutMax) {
         ERR_POST("The cassandra connection timeout is out of range. Allowed "
@@ -349,8 +350,8 @@ void CCassConnectionFactory::x_ValidateArgs(void)
         m_MaxRetries = kMaxRetriesDefault;
     }
 
-    string      lowercase_policy = NStr::ToLower(m_LoadBalancingStr);
-    auto        policy_item = kPolicyArgMap.find(lowercase_policy);
+    string lowercase_policy = NStr::ToLower(m_LoadBalancingStr);
+    auto policy_item = kPolicyArgMap.find(lowercase_policy);
     if (policy_item != kPolicyArgMap.end()) {
         m_LoadBalancing = policy_item->second;
     } else {
