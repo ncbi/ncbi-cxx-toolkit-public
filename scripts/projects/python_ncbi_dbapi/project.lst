@@ -1,5 +1,5 @@
 corelib$
-corelib/boost_patches update-only
+corelib/boost_patches
 util$
 util/bitset$
 util/cache update-only
