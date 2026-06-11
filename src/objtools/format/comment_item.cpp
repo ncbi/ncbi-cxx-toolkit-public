@@ -1668,7 +1668,7 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
     } else if ( NStr::Equal (label_str, "Source Identifier") && NStr::Equal (source, "EMBL-EBI") ) {
         string accn = data_str;
         size_t pos = NStr::Find(accn, ".");
-        if (pos > 0) {
+        if (pos != string::npos && pos > 0) {
             accn.erase(pos);
         }
         result << "<a href=\"https://www.ebi.ac.uk/interpro/entry/pfam/"
