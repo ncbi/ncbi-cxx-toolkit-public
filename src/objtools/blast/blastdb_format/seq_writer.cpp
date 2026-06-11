@@ -44,6 +44,7 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
 CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
                  CNcbiOstream& out,
                  CSeqFormatterConfig config /* = CSeqFormatterConfig() */)
@@ -392,6 +393,7 @@ void CSeqFormatter::SetConfig(TSeqRange range, objects::ENa_strand strand,
 {
 	m_DataExtractor.SetConfig(range, strand, filt_algo_id);
 }
+NCBI_RESUME_DEPRECATION_WARNINGS
 
 
 END_NCBI_SCOPE
