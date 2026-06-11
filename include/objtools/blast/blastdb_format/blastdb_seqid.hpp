@@ -71,7 +71,9 @@ public:
 
     /// Copy constructor
     /// @param rhs object to copy [in]
-    CBlastDBSeqId(const CBlastDBSeqId& rhs) {
+    CBlastDBSeqId(const CBlastDBSeqId& rhs)
+        : CObject() // CObject needs explicit constructor call in a copy constructor
+    {
         do_copy(rhs);
     }
 
