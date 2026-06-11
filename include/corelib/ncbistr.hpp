@@ -639,7 +639,8 @@ public:
     ///     converted string value.
     ///   - Otherwise, set errno to non-zero and return empty string.
     template<typename TNumeric>
-    static typename enable_if< is_arithmetic<TNumeric>::value || is_convertible<TNumeric, Int8>::value, string>::type
+    requires std::integral<TNumeric> || std::floating_point<TNumeric> || std::convertible_to<TNumeric, Int8>
+    static string
     NumericToString(TNumeric value, TNumToStringFlags flags = 0, int base = 10)
     {
         string ret;
@@ -3537,14 +3538,16 @@ private:
     }
 
     template <typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_signed<TNumeric>::value && (sizeof(TNumeric) < sizeof(int)), TNumeric>::type
+    requires std::signed_integral<TNumeric> && (sizeof(TNumeric) < sizeof(int))
+    static TNumeric
     x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int base)
     {
         int n = StringToInt(str, flags, base);
         return x_VerifyIntLimits<TNumeric>(n, str, flags) ? (TNumeric)n : 0;
     }
     template <typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_unsigned<TNumeric>::value && (sizeof(TNumeric) < sizeof(unsigned int)), TNumeric>::type
+    requires std::unsigned_integral<TNumeric> && (sizeof(TNumeric) < sizeof(unsigned int))
+    static TNumeric
     x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int base)
     {
         unsigned int n = StringToUInt(str, flags, base);
@@ -3552,37 +3555,43 @@ private:
     }
 
     template <typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_signed<TNumeric>::value && (sizeof(TNumeric) == sizeof(int) && !is_same<TNumeric, long>::value), TNumeric>::type
+    requires std::signed_integral<TNumeric> && (sizeof(TNumeric) == sizeof(int)) && (!std::same_as<TNumeric, long>)
+    static TNumeric
     x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int base)
     {
         return StringToInt(str, flags, base);
     }
     template <typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_unsigned<TNumeric>::value && (sizeof(TNumeric) == sizeof(unsigned int) && !is_same<TNumeric, unsigned long>::value), TNumeric>::type
+    requires std::unsigned_integral<TNumeric> && (sizeof(TNumeric) == sizeof(unsigned int)) && (!std::same_as<TNumeric, unsigned long>)
+    static TNumeric
     x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int base)
     {
         return StringToUInt(str, flags, base);
     }
     template <typename TNumeric>
-    static typename enable_if< is_same<TNumeric, long>::value, TNumeric>::type
+    requires std::same_as<TNumeric, long>
+    static TNumeric
     x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int base)
     {
         return StringToLong(str, flags, base);
     }
     template <typename TNumeric>
-    static typename enable_if< is_same<TNumeric, unsigned long>::value, TNumeric>::type
+    requires std::same_as<TNumeric, unsigned long>
+    static TNumeric
     x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int base)
     {
         return StringToULong(str, flags, base);
     }
     template <typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_signed<TNumeric>::value && (sizeof(TNumeric) == sizeof(Int8) && !is_same<TNumeric, long>::value), TNumeric>::type
+    requires std::signed_integral<TNumeric> && (sizeof(TNumeric) == sizeof(Int8)) && (!std::same_as<TNumeric, long>)
+    static TNumeric
     x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int base)
     {
         return StringToInt8(str, flags, base);
     }
     template <typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_unsigned<TNumeric>::value && (sizeof(TNumeric) == sizeof(Uint8) && !is_same<TNumeric, unsigned long>::value), TNumeric>::type
+    requires std::unsigned_integral<TNumeric> && (sizeof(TNumeric) == sizeof(Uint8)) && (!std::same_as<TNumeric, unsigned long>)
+    static TNumeric
     x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int base)
     {
         return StringToUInt8(str, flags, base);
@@ -3595,21 +3604,24 @@ private:
     }
 
     template <typename TNumeric>
-    static typename enable_if< is_same<TNumeric, float>::value, TNumeric>::type
+    requires std::same_as<TNumeric, float>
+    static TNumeric
     x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int /*base*/)
     {
         double n = StringToDouble(str, flags);
         return x_VerifyFloatLimits<TNumeric>(n, str, flags) ? (TNumeric)n : 0;
     }
     template <typename TNumeric>
-    static typename enable_if< is_same<TNumeric, double>::value, TNumeric>::type
+    requires std::same_as<TNumeric, double>
+    static TNumeric
     x_StringToNumeric(const CTempString str, TStringToNumFlags flags, int /*base*/)
     {
         return StringToDouble(str, flags);
     }
 
     template <typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_signed<TNumeric>::value && (sizeof(TNumeric) < sizeof(int)), bool>::type
+    requires std::signed_integral<TNumeric> && (sizeof(TNumeric) < sizeof(int))
+    static bool
     x_StringToNumeric(const CTempString str, TNumeric* value, TStringToNumFlags flags, int base)
     {
         int n = StringToInt(str, flags, base);
@@ -3621,7 +3633,8 @@ private:
         return true;
     }
     template <typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_unsigned<TNumeric>::value && (sizeof(TNumeric) < sizeof(unsigned int)), bool>::type
+    requires std::unsigned_integral<TNumeric> && (sizeof(TNumeric) < sizeof(unsigned int))
+    static bool
     x_StringToNumeric(const CTempString str, TNumeric* value, TStringToNumFlags flags, int base)
     {
         unsigned int n = StringToUInt(str, flags, base);
@@ -3633,14 +3646,16 @@ private:
         return true;
     }
     template <typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_signed<TNumeric>::value && (sizeof(TNumeric) == sizeof(int) && !is_same<TNumeric, long>::value), bool>::type
+    requires std::signed_integral<TNumeric> && (sizeof(TNumeric) == sizeof(int)) && (!std::same_as<TNumeric, long>)
+    static bool
     x_StringToNumeric(const CTempString str, TNumeric* value, TStringToNumFlags flags, int base)
     {
         *value = StringToInt(str, flags, base);
         return (*value || !errno);
     }
     template <typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_unsigned<TNumeric>::value && (sizeof(TNumeric) == sizeof(unsigned int) && !is_same<TNumeric, unsigned long>::value), bool>::type
+    requires std::unsigned_integral<TNumeric> && (sizeof(TNumeric) == sizeof(unsigned int)) && (!std::same_as<TNumeric, unsigned long>)
+    static bool
     x_StringToNumeric(const CTempString str, TNumeric* value, TStringToNumFlags flags, int base)
     {
         *value = StringToUInt(str, flags, base);
@@ -3659,14 +3674,16 @@ private:
         return (*value || !errno);
     }
     template <typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_signed<TNumeric>::value && (sizeof(TNumeric) == sizeof(Int8) && !is_same<TNumeric, long>::value), bool>::type
+    requires std::signed_integral<TNumeric> && (sizeof(TNumeric) == sizeof(Int8)) && (!std::same_as<TNumeric, long>)
+    static bool
     x_StringToNumeric(const CTempString str, TNumeric* value, TStringToNumFlags flags, int base)
     {
         *value = StringToInt8(str, flags, base);
         return (*value || !errno);
     }
     template <typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_unsigned<TNumeric>::value && (sizeof(TNumeric) == sizeof(Uint8) && !is_same<TNumeric, unsigned long>::value), bool>::type
+    requires std::unsigned_integral<TNumeric> && (sizeof(TNumeric) == sizeof(Uint8)) && (!std::same_as<TNumeric, unsigned long>)
+    static bool
     x_StringToNumeric(const CTempString str, TNumeric* value, TStringToNumFlags flags, int base)
     {
         *value = StringToUInt8(str, flags, base);
@@ -3698,13 +3715,15 @@ private:
 
 // NumericToString
     template<typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_signed<TNumeric>::value && (sizeof(TNumeric) <= sizeof(int) && !is_same<TNumeric, long>::value), void>::type
+    requires std::signed_integral<TNumeric> && (sizeof(TNumeric) <= sizeof(int)) && (!std::same_as<TNumeric, long>)
+    static void
     x_NumericToString(string& out_str, TNumeric value, TNumToStringFlags flags, int base)
     {
         IntToString(out_str, value, flags, base);
     }
     template<typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_unsigned<TNumeric>::value && (sizeof(TNumeric) <= sizeof(unsigned int) && !is_same<TNumeric, unsigned long>::value), void>::type
+    requires std::unsigned_integral<TNumeric> && (sizeof(TNumeric) <= sizeof(unsigned int)) && (!std::same_as<TNumeric, unsigned long>)
+    static void
     x_NumericToString(string& out_str, TNumeric value, TNumToStringFlags flags, int base)
     {
         UIntToString(out_str, value, flags, base);
@@ -3732,19 +3751,22 @@ private:
     }
 #endif
     template<typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_signed<TNumeric>::value && (sizeof(TNumeric) == sizeof(Int8) && !is_same<TNumeric, long>::value), void>::type
+    requires std::signed_integral<TNumeric> && (sizeof(TNumeric) == sizeof(Int8)) && (!std::same_as<TNumeric, long>)
+    static void
     x_NumericToString(string& out_str, TNumeric value, TNumToStringFlags flags, int base)
     {
         Int8ToString(out_str, value, flags, base);
     }
     template<typename TNumeric>
-    static typename enable_if< is_integral<TNumeric>::value && is_unsigned<TNumeric>::value && (sizeof(TNumeric) == sizeof(Uint8) && !is_same<TNumeric, unsigned long>::value), void>::type
+    requires std::unsigned_integral<TNumeric> && (sizeof(TNumeric) == sizeof(Uint8)) && (!std::same_as<TNumeric, unsigned long>)
+    static void
     x_NumericToString(string& out_str, TNumeric value, TNumToStringFlags flags, int base)
     {
         UInt8ToString(out_str, value, flags, base);
     }
     template<typename TNumeric>
-    static typename enable_if< is_floating_point<TNumeric>::value, void>::type
+    requires std::floating_point<TNumeric>
+    static void
     x_NumericToString(string& out_str, TNumeric value, TNumToStringFlags flags, int /*base*/)
     {
         DoubleToString(out_str, value, -1, flags);
@@ -3762,38 +3784,43 @@ private:
     static string xx_Join( TIterator from, TIterator to, const CTempString& delim);
 
     template<typename TIterator>
-    static typename enable_if<is_same<typename TIterator::iterator_category, input_iterator_tag>::value &&
-                              is_convertible<typename TIterator::value_type, string>::value, string>::type
+    requires std::same_as<typename TIterator::iterator_category, std::input_iterator_tag> &&
+             std::convertible_to<typename TIterator::value_type, string>
+    static string
     x_Join( TIterator from, TIterator to, const CTempString& delim)
     {
         return TransformJoin(from, to, delim, [](const typename TIterator::value_type& i){ return i;});
     }
 
     template<typename TIterator>
-    static typename enable_if<is_convertible<typename TIterator::iterator_category, forward_iterator_tag>::value &&
-                              is_convertible<typename TIterator::value_type, string>::value, string>::type
+    requires std::convertible_to<typename TIterator::iterator_category, std::forward_iterator_tag> &&
+             std::convertible_to<typename TIterator::value_type, string>
+    static string
     x_Join( TIterator from, TIterator to, const CTempString& delim)
     {
         return xx_Join(from, to, delim);
     }
 
     template<typename TValue>
-    static typename enable_if<is_convertible<TValue, string>::value, string>::type
+    requires std::convertible_to<TValue, string>
+    static string
     x_Join( TValue* from, TValue* to, const CTempString& delim)
     {
         return xx_Join(from, to, delim);
     }
 
     template<typename TIterator>
-    static typename enable_if<is_convertible<typename TIterator::iterator_category, input_iterator_tag>::value &&
-                              is_arithmetic< typename TIterator::value_type>::value, string>::type
+    requires (std::integral<typename TIterator::value_type> || std::floating_point<typename TIterator::value_type>) &&
+              std::convertible_to<typename TIterator::iterator_category, std::input_iterator_tag>
+    static string
     x_Join( TIterator from, TIterator to, const CTempString& delim)
     {
         return TransformJoin( from, to, delim, [](const typename TIterator::value_type& i){ return NumericToString(i);});
     }
 
     template<typename TValue>
-    static typename enable_if<is_arithmetic<TValue>::value, string>::type
+    requires std::integral<TValue> || std::floating_point<TValue>
+    static string
     x_Join( TValue* from, TValue* to, const CTempString& delim)
     {
         return TransformJoin( from, to, delim, [](const TValue& i){ return NumericToString(i);});
@@ -3881,7 +3908,8 @@ public:
     /// @attention
     ///   Only for TStringUnicode, TStringUCS4, TStringUCS2, wstring types
     template <typename TChar>
-    static typename enable_if< is_integral<TChar>::value  && (1 < sizeof(TChar)), CStringUTF8>::type
+    requires integral<TChar> && (sizeof(TChar) > 1)
+    static CStringUTF8
     AsUTF8(const basic_string<TChar>& src)
     {
         CStringUTF8 u8;
@@ -3896,7 +3924,8 @@ public:
     ///   Number of characters in the buffer;
     ///   If it equals to NPOS, buffer is assumed to be zero-terminated
     template <typename TChar>
-    static typename enable_if< is_integral<TChar>::value  && (1 < sizeof(TChar)), CStringUTF8>::type
+    requires integral<TChar> && (sizeof(TChar) > 1)
+    static CStringUTF8
     AsUTF8(const TChar* src, SIZE_TYPE tchar_count = NPOS)
     {
         CStringUTF8 u8;
@@ -3912,7 +3941,8 @@ public:
     /// return
     ///   reference to modified dest string
     template <typename TChar>
-    static typename enable_if< is_integral<TChar>::value  && (1 < sizeof(TChar)), CStringUTF8& >::type
+    requires integral<TChar> && (sizeof(TChar) > 1)
+    static CStringUTF8
     AppendAsUTF8(CStringUTF8& dest, const basic_string<TChar>& src)
     {
         return x_Append(dest, src.data(), src.size());
@@ -3930,7 +3960,8 @@ public:
     /// return
     ///   reference to modified dest string
     template <typename TChar>
-    static typename enable_if< is_integral<TChar>::value  && (1 < sizeof(TChar)), CStringUTF8& >::type
+    requires integral<TChar> && (sizeof(TChar) > 1)
+    static CStringUTF8
     AppendAsUTF8(CStringUTF8& dest, const TChar* src, SIZE_TYPE tchar_count = NPOS)
     {
         return x_Append(dest, src, tchar_count);
@@ -3945,7 +3976,8 @@ public:
     /// return
     ///   reference to modified dest string
     template <typename TChar>
-    static typename enable_if< is_integral<TChar>::value  && (1 < sizeof(TChar)), CStringUTF8& >::type
+    requires integral<TChar> && (sizeof(TChar) > 1)
+    static CStringUTF8
     AppendAsUTF8(CStringUTF8& dest, TChar ch)
     {
         return  x_Append(dest, &ch, 1);
@@ -4070,14 +4102,16 @@ public:
     /// @attention
     ///   Only for TStringUnicode, TStringUCS4, TStringUCS2, wstring types
     template <typename TChar>
-    static typename enable_if< is_integral<TChar>::value  && (1 < sizeof(TChar)), basic_string<TChar> >::type
+    requires integral<TChar> && (sizeof(TChar) > 1)
+    static basic_string<TChar>
     AsBasicString(const CTempString& src, const TChar* substitute_on_error, EValidate validate = eNoValidate)
     {
         return x_AsBasicString(src,substitute_on_error,validate);
     }
 
     template <typename TChar>
-    static typename enable_if< is_integral<TChar>::value  && (1 < sizeof(TChar)), basic_string<TChar> >::type
+    requires integral<TChar> && (sizeof(TChar) > 1)
+    static basic_string<TChar>
     AsBasicString(const CTempString& src)
     {
         return x_AsBasicString<TChar>(src,nullptr,eNoValidate);
