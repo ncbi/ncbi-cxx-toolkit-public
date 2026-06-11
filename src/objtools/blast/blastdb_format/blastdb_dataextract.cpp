@@ -719,8 +719,8 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
         else {
 
             out << '>';
-            CRef<CSeq_id> id = FindBestChoice(m_Bioseq->GetId(), CSeq_id::Score);
-            out << GetBareId(*id);
+            CRef<CSeq_id> best_id = FindBestChoice(m_Bioseq->GetId(), CSeq_id::Score);
+            out << GetBareId(*best_id);
 
             string title = s_GetTitle(*m_Bioseq.GetNonNullPointer());
             out << ' ' << s_ConfigureDeflineTitle(title, m_UseCtrlA);
@@ -849,6 +849,9 @@ void CBlastDeflineUtil::ExtractDataFromBlastDefline(const CBlast_def_line & dl,
         	 results[CBlastDeflineUtil::seq_id] = theId->AsFastaString();
 		 }
 		 if(fields.accession == 1) {
+                     if (use_long_id)
+                         results[CBlastDeflineUtil::accession] = theId->AsFastaString();
+                     else
 			 results[CBlastDeflineUtil::accession] = GetBareId(*theId);
 		 }
 	}
