@@ -81,6 +81,7 @@ public:
     /// @param fmt_spec format specification [in]
     /// @param blastdb BLAST database from which to retrieve the data [in]
     /// @param out output stream to write the data [in]
+NCBI_SUSPEND_DEPRECATION_WARNINGS
     CSeqFormatter(const string& fmt_spec, CSeqDB& blastdb, CNcbiOstream& out,
                   CSeqFormatterConfig config = CSeqFormatterConfig());
 
@@ -94,6 +95,7 @@ public:
     /// This is an optimized version that does not support range and mask retrieval
     /// @throws CExcpetion derived classes on error
     void DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config = CSeqFormatterConfig());
+NCBI_RESUME_DEPRECATION_WARNINGS
 
     /// Set range, strand and filter algo for each seq id
     void SetConfig(TSeqRange range, objects::ENa_strand strand, int filt_algo_id);
