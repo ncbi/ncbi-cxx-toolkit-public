@@ -47,6 +47,7 @@ static const int kConvFlags =
     NStr::fAllowLeadingSymbols | 
     NStr::fAllowTrailingSymbols;
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
 BOOST_AUTO_TEST_CASE(TestNoFormatSpecifier)
 {
     CSeqDB db("data/mask-data-db", CSeqDB::eProtein);
@@ -373,5 +374,6 @@ BOOST_AUTO_TEST_CASE(TestMaskedSequenceData)
         BOOST_REQUIRE(isupper(buffer[i]));
     }
 }
+NCBI_RESUME_DEPRECATION_WARNINGS
 
 BOOST_AUTO_TEST_SUITE_END();
