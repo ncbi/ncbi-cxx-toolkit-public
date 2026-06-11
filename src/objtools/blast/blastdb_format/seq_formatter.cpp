@@ -550,7 +550,7 @@ CBlastDB_BioseqFormatter::CBlastDB_BioseqFormatter(CSeqDB& blastdb, CNcbiOstream
 {
 }
 
-int CBlastDB_BioseqFormatter::Write(CSeqDB::TOID oid, const CBlastDB_FormatterConfig & config, string target_id)
+int CBlastDB_BioseqFormatter::Write(CSeqDB::TOID oid, const CBlastDB_FormatterConfig & /*config*/, string target_id)
 {
 	int status = -1;
 	CRef<CBioseq> bioseq = m_BlastDb.GetBioseq(oid);
