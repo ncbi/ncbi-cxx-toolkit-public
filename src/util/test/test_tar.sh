@@ -76,7 +76,10 @@ if [ -n "$test_conn_tar" -o -f "$huge_tar" ]; then
   fi
 fi
 
-test_base="${TMPDIR:-/tmp}/test_tar.$$"
+temp_dir="$TMPDIR"
+test -z "$temp_dir"  &&  temp_dir="${TEMP:-/tmp}"
+find $temp_dir -maxdepth 2 -name "test_tar.[1-9]*" -mtime +1 -exec rm -rf {} \; >/dev/null 2>&1
+test_base="$temp_dir/test_tar.$$"
 trap 'rm -rf $test_base* & echo "`date`."' 0 1 2 15
 
 echo
@@ -271,10 +274,10 @@ if [ "`uname`" = "Linux" ]; then
   $test_tar -T -f $test_base.tar                                                                        ||  exit 1
 
   if $okay ; then
-    free="`df -k ${TMPDIR:-/tmp} | tail -1 | sed 's/  */ /g' | cut -f 4 -d ' '`"
+    free="`df -k $temp_dir | tail -1 | sed 's/  */ /g' | cut -f 4 -d ' '`"
     if [ "$free" -gt "4200000" ]; then
       echo
-      echo "`date` *** ${free}KiB available in ${TMPDIR:-/tmp}:  Checking 4GiB barrier"
+      echo "`date` *** ${free}KiB available in $temp_dir:  Checking 4GiB barrier"
       echo
 
       dd of=$test_base.1/newdir/huge-file bs=1 count="`expr 1 + $$ % 10000`" seek=4G if=/dev/urandom    ||  exit 1
