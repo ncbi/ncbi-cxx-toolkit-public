@@ -335,7 +335,7 @@ if ($location ne "NCBI") {
             print "$cmd\n" if $opt_verbose > 3;
             unless (system($cmd) == 0) {
                 print STDERR "Failed to run '$cmd': $!!\n";
-                return EXIT_FAILURE;
+                exit(EXIT_FAILURE);
             }
         }
     }
@@ -980,11 +980,6 @@ additional metadata if this is available to the program.
 This metadata is displayed in columnar format; the columns represent:
 
 name, description, size in gigabytes, date of last update (YYYY-MM-DD format).
-
-=item B<--blastdb_version>
-
-Specify which BLAST database version to download (default: 5).
-Supported values: 4, 5
 
 =item B<--timeout>
 
