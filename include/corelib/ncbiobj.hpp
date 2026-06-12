@@ -622,10 +622,6 @@ public:
     typedef Locker locker_type;         ///< Define alias for locking type
     typedef CRef<C, Locker> TThisType;  ///< Alias for this template type
 
-    /// Helper template to template enable methods only for derived types
-    template<class T>
-    using enable_if_derived =
-        typename std::enable_if<std::is_convertible<T*, TObjectType*>::value>;
     template<class TDerived, class TLocker> friend class CRef;
     template<class TDerived, class TLocker> friend class CConstRef;
     
@@ -663,8 +659,8 @@ public:
         }
 
     /// Copy constructor from an existing CRef object of derived type
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     CRef(const CRef<TDerived, Locker>& ref)
         : m_Data(ref.GetLocker(), ref.GetNCPointerOrNull())
         {
@@ -680,8 +676,8 @@ public:
         }
 
     /// Move constructor from an existing CRef object of derived type
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     CRef(CRef<TDerived, Locker>&& ref) noexcept
         : m_Data(ref.GetLocker(), ref.GetNCPointerOrNull())
         {
@@ -907,8 +903,8 @@ public:
         }
 
     /// Assignment operator for references of derived types
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     TThisType& operator=(const CRef<TDerived, Locker>& ref)
         {
             x_AssignFromRef(ref.m_Data.second());
@@ -931,8 +927,8 @@ public:
         }
 
     /// Move assignment operator for references of derived types
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     TThisType& operator=(CRef<TDerived, Locker>&& ref) noexcept
         {
             x_MoveAssign(ref.m_Data.first(), ref.m_Data.second());
@@ -1270,10 +1266,6 @@ public:
     typedef Locker locker_type;             ///< Define alias for locking type
     typedef CConstRef<C, Locker> TThisType; ///< Alias for this template type
 
-    /// Helper template to template enable methods only for derived types
-    template<class T>
-    using enable_if_derived =
-        typename std::enable_if<std::is_convertible<T*, TObjectType*>::value>;
     template<class TDerived, class TLocker> friend class CConstRef;
 
     /// Constructor for null pointer.
@@ -1310,8 +1302,8 @@ public:
         }
 
     /// Constructor from an existing CConstRef object of derived type
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     CConstRef(const CConstRef<TDerived, Locker>& ref)
         : m_Data(ref.GetLocker(), ref.GetPointerOrNull())
         {
@@ -1327,8 +1319,8 @@ public:
         }
 
     /// Move constructor from an existing CConstRef object of derived type
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     CConstRef(CConstRef<TDerived, Locker>&& ref) noexcept
         : m_Data(ref.GetLocker(), ref.GetPointerOrNull())
         {
@@ -1337,8 +1329,8 @@ public:
         }
 
     /// Constructor from an existing CRef object of derived type
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     CConstRef(const CRef<TDerived, Locker>& ref)
         : m_Data(ref.GetLocker(), ref.GetPointerOrNull())
         {
@@ -1346,8 +1338,8 @@ public:
         }
 
     /// Move constructor from an existing CRef object of derived type
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     CConstRef(CRef<TDerived, Locker>&& ref) noexcept
         : m_Data(ref.GetLocker(), ref.GetPointerOrNull())
         {
@@ -1573,8 +1565,8 @@ public:
         }
 
     /// Assignment operator for const references of derived types
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     TThisType& operator=(const CConstRef<TDerived, Locker>& ref)
         {
             // we cannot use internals of CRef of derived type
@@ -1598,8 +1590,8 @@ public:
         }
 
     /// Move assignment operator for const references of derived types
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     TThisType& operator=(CConstRef<TDerived, Locker>&& ref) noexcept
         {
             x_MoveAssign(ref.m_Data.first(), ref.m_Data.second());
@@ -1608,8 +1600,8 @@ public:
         }
 
     /// Assignment operator for assigning a reference of derived type
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     TThisType& operator=(const CRef<TDerived, Locker>& ref)
         {
             x_AssignFromRef(ref.m_Data.second());
@@ -1617,8 +1609,8 @@ public:
         }
 
     /// Move assignment operator for assigning a reference of derived type
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     TThisType& operator=(CRef<TDerived, Locker>&& ref) noexcept
         {
             x_MoveAssign(ref.m_Data.first(), ref.m_Data.second());
@@ -2037,11 +2029,6 @@ public:
     typedef typename TParent::locker_type locker_type;
     typedef CIRef<Interface, Locker> TThisType;
 
-    /// Helper template to template enable methods only for derived types
-    template<class T>
-    using enable_if_derived =
-        typename std::enable_if<std::is_convertible<T*, TObjectType*>::value>;
-    
     // We have to redefine all constructors and assignment operators
 
     /// Constructor for null pointer.
@@ -2067,8 +2054,8 @@ public:
         }
     
     /// Constructor from existing ref of derived type
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     CIRef(const CIRef<TDerived>& ref)
         : TParent(ref.GetNCPointerOrNull())
         {
@@ -2081,8 +2068,8 @@ public:
         }
     
     /// Move constructor from existing ref of derived type
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     CIRef(CIRef<TDerived>&& ref) noexcept
         : TParent(ref.GetPointerOrNull())
         {
@@ -2103,8 +2090,8 @@ public:
         }
 
     /// Assignment operator for references of derived types
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     TThisType& operator=(const CIRef<TDerived>& ref)
         {
             TParent::operator=(ref.GetNCPointerOrNull());
@@ -2119,8 +2106,8 @@ public:
         }
 
     /// Move assignment operator for references of derived types
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     TThisType& operator=(CIRef<TDerived>&& ref) noexcept
         {
             TParent::operator=(ref.GetNCPointerOrNull());
@@ -2162,11 +2149,6 @@ public:
     typedef typename TParent::TObjectType TObjectType;
     typedef typename TParent::locker_type locker_type;
     typedef CConstIRef<Interface, Locker> TThisType;
-
-    /// Helper template to template enable methods only for derived types
-    template<class T>
-    using enable_if_derived =
-        typename std::enable_if<std::is_convertible<T*, TObjectType*>::value>;
     
     // We have to redefine all constructors and assignment operators
 
@@ -2199,8 +2181,8 @@ public:
         }
     
     /// Constructor from an existing CConstRef object of derived type
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     CConstIRef(const CConstIRef<TDerived>& ref)
         : TParent(ref.GetPointerOrNull())
         {
@@ -2213,8 +2195,8 @@ public:
         }
     
     /// Move constructor from an existing CConstRef object of derived type
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     CConstIRef(CConstIRef<TDerived>&& ref) noexcept
         : TParent(ref.GetPointerOrNull())
         {
@@ -2222,16 +2204,16 @@ public:
         }
 
     /// Constructor from an existing CRef object of derived type
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     CConstIRef(const CIRef<TDerived>& ref)
         : TParent(ref.GetPointerOrNull())
         {
         }
 
     /// Move constructor from an existing CRef object of derived type
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     CConstIRef(CIRef<TDerived>&& ref) noexcept
         : TParent(ref.GetPointerOrNull())
         {
@@ -2246,8 +2228,8 @@ public:
         }
 
     /// Assignment operator for references of derived types
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     TThisType& operator=(const CConstIRef<TDerived>& ref)
         {
             TParent::operator=(ref.GetPointerOrNull());
@@ -2262,8 +2244,8 @@ public:
         }
 
     /// Move assignment operator for references of derived types
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     TThisType& operator=(CConstIRef<TDerived>&& ref) noexcept
         {
             TParent::operator=(ref.GetPointerOrNull());
@@ -2272,8 +2254,8 @@ public:
         }
 
     /// Assignment operator for assigning a reference to a const reference.
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     TThisType& operator=(const CIRef<TDerived>& ref)
         {
             TParent::operator=(ref.GetPointerOrNull());
@@ -2281,8 +2263,8 @@ public:
         }
 
     /// Move assignment operator for assigning a reference to a const reference.
-    template<class TDerived,
-             class = typename enable_if_derived<TDerived>::type>
+    template<class TDerived>
+    requires derived_from<TDerived, TObjectType>
     TThisType& operator=(CIRef<TDerived>&& ref) noexcept
         {
             TParent::operator=(ref.GetPointerOrNull());
