@@ -108,7 +108,7 @@ int CSampleNetCacheClient::Run(void)
 
 void CSampleNetCacheClient::DemoPutRead(void)
 {
-    cout << "\nPutData()/ReadData() example:" << endl;
+    cout << "\nPutData()/ProlongBlobLifetime()/ReadData() example:" << endl;
 
     // Configure based on the application registry.
     CNetCacheAPI nc_api(CNetCacheAPI::eAppRegistry);
@@ -122,10 +122,36 @@ void CSampleNetCacheClient::DemoPutRead(void)
         key = nc_api.PutData(message.c_str(), message.size());
     }}
 
+    auto report_ttl_and_expiration = [&](const auto ctx)
+    {
+        string blob_info;
+        CNetServerMultilineCmdOutput result(nc_api.GetBlobInfo(key));
+        cout << ctx << '\t';
+        while (result.ReadLine(blob_info)) {
+            if (NStr::StartsWith(blob_info, "TTL:"sv) || NStr::StartsWith(blob_info, "Expire:"sv)) {
+                cout << blob_info << '\t';
+            }
+        }
+        cout << endl;
+    };
+
     // Overwrite the data by reusing the key, and specify a time-to-live.
     {{
         string message("second message");
         nc_api.PutData(key, message.c_str(), message.size(), nc_blob_ttl = 600);
+        report_ttl_and_expiration("PutData with TTL=600");
+    }}
+
+    // Set a no-op (the diff is less than ttl_unit) time-to-live (TTL) and read it back
+    {{
+        nc_api.ProlongBlobLifetime(key, 899);
+        report_ttl_and_expiration("Prolong with TTL=899");
+    }}
+
+    // Set a really different time-to-live (TTL) and read it back
+    {{
+        nc_api.ProlongBlobLifetime(key, 900);
+        report_ttl_and_expiration("Prolong with TTL=900");
     }}
 
     // By not setting a time-to-live (TTL), the previously set TTL value
@@ -134,16 +160,7 @@ void CSampleNetCacheClient::DemoPutRead(void)
         string message("yet another message");
         nc_api.PutData(key, message.c_str(), message.size());
         cout << "Wrote: '" << message << "' to blob: " << key << endl;
-
-        // Use GetBlobInfo() to find out what TTL the server gave this blob.
-        string blob_info;
-        CNetServerMultilineCmdOutput result(nc_api.GetBlobInfo(key));
-        while (result.ReadLine(blob_info)) {
-            if (NStr::EqualNocase(blob_info, 0, 4, "TTL:")) {
-                cout << blob_info << endl;
-                break;
-            }
-        }
+        report_ttl_and_expiration("PutData without TTL");
     }}
 
     // Read back the data for the key.
