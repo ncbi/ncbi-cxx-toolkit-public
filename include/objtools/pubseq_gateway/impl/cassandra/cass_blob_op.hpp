@@ -154,6 +154,7 @@ public:
 
     bool Wait()
     {
+        m_WaitCallCounter.fetch_add(1, std::memory_order_relaxed);
         bool finished = Finished();
         while (!finished) {
             try {
@@ -266,8 +267,9 @@ public:
             }
             restart_count += q.restart_count;
         }
-        return format("State:{}, Queries:{}, Restarts:{}, Cancel:{}",
-            m_State.load(),
+        return format("State:{}, WaitCalls:{}, Queries:{}, Restarts:{}, Cancel:{}",
+            m_State.load(std::memory_order_relaxed),
+            m_WaitCallCounter.load(std::memory_order_relaxed),
             query_count,
             restart_count,
             m_Cancelled ? "true" : "false"
@@ -422,6 +424,7 @@ protected:
     bool                            m_Async{true};
     atomic_bool                     m_Cancelled{false};
     vector<SQueryRec>               m_QueryArr;
+    atomic<int64_t>                 m_WaitCallCounter{0};
 
 private:
     string                          m_Keyspace;
