@@ -806,20 +806,20 @@ private:
 };
 
 template<typename T> 
-typename std::enable_if< std::is_same<T, Int8>::value, T>::type
-xxx_Value(const CConstObjectInfo& oi)
+requires std::same_as<T, Int8>
+Int8 xxx_Value(const CConstObjectInfo& oi)
 {
     return oi.GetPrimitiveValueInt8();
 }
 template<typename T> 
-typename std::enable_if< std::is_same<T, Uint8>::value, T>::type
-xxx_Value(const CConstObjectInfo& oi)
+requires std::same_as<T, Uint8>
+Uint8 xxx_Value(const CConstObjectInfo& oi)
 {
     return oi.GetPrimitiveValueUint8();
 }
 template<typename T> 
-typename std::enable_if< std::is_same<T, double>::value, T>::type
-xxx_Value(const CConstObjectInfo& oi)
+requires std::same_as<T, double>
+double xxx_Value(const CConstObjectInfo& oi)
 {
     return oi.GetPrimitiveValueDouble();
 }
