@@ -723,7 +723,8 @@ NCBI_XSERIAL_EXPORT CNcbiIstream& ReadObject( CNcbiIstream& str, TObjectPtr     
 
 
 /// Read data from a stream to a CRef<CSerialObject>. The CRef is reset before reading.
-template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
+template<typename T>
+requires std::derived_from<T, CSerialObject>
 istream& operator>>(istream& in, CRef<T>& obj)
 {
     obj.Reset(new T);
@@ -750,7 +751,8 @@ string operator>>(const string& s, CSerialObject& obj)
 
 /// Read data from a c-string to a CRef<CSerialObject>. The CRef is reset before reading.
 /// Return the unread part of the string.
-template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
+template<typename T>
+requires std::derived_from<T, CSerialObject>
 const char* operator>>(const char* s, CRef<T>& obj)
 {
     obj.Reset(new T);
@@ -759,7 +761,8 @@ const char* operator>>(const char* s, CRef<T>& obj)
 
 /// Read data from an std::string to a CRef<CSerialObject>. The CRef is reset before reading.
 /// Return the unread part of the string.
-template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
+template<typename T>
+requires std::derived_from<T, CSerialObject>
 string operator>>(const string& s, CRef<T>& obj)
 {
     obj.Reset(new T);
@@ -768,14 +771,16 @@ string operator>>(const string& s, CRef<T>& obj)
 
 
 /// Write a CRef<CSerialObject> to a stream.
-template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
+template<typename T>
+requires std::derived_from<T, CSerialObject>
 ostream& operator<<(ostream& out, const CRef<T>& obj)
 {
     return out << *obj;
 }
 
 /// Write a CConstRef<CSerialObject> to a stream.
-template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
+template<typename T>
+requires std::derived_from<T, CSerialObject>
 ostream& operator<<(ostream& out, const CConstRef<T>& obj)
 {
     return out << *obj;
@@ -792,14 +797,16 @@ string& operator<<(string& s, const CSerialObject& obj)
 }
 
 /// Write a CRef<CSerialObject> to an std::string.
-template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
+template<typename T>
+requires std::derived_from<T, CSerialObject>
 string& operator<<(string& s, const CRef<T>& obj)
 {
     return s << *obj;
 }
 
 /// Write a CConstRef<CSerialObject> to an std::string.
-template<typename T, typename std::enable_if<std::is_base_of<CSerialObject, T>::value>::type* = nullptr>
+template<typename T>
+requires std::derived_from<T, CSerialObject>
 string& operator<<(string& s, const CConstRef<T>& obj)
 {
     return s << *obj;
