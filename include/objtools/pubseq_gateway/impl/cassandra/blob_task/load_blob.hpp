@@ -143,10 +143,21 @@ public:
         m_UsePrepared = value;
     }
 
- protected:
+    [[nodiscard]]
+    string GetDebugStateSnapshot() const override
+    {
+        return format("LoadBlob: LoadChunks:{}, PropsFound:{}, ExplicitBlob:{}, {}",
+            m_LoadChunks ? "true" : "false",
+            m_PropsFound ? "true" : "false",
+            m_ExplicitBlob ? "true" : "false",
+            CCassBlobWaiter::GetDebugStateSnapshot()
+        );
+    }
+
+protected:
     void Wait1() override;
 
- private:
+private:
     bool x_AreAllChunksProcessed() const;
     void x_CheckChunksFinished(bool& need_repeat);
     void x_RequestChunksAhead();
