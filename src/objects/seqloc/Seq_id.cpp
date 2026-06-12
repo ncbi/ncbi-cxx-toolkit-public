@@ -1645,7 +1645,7 @@ SAccGuide::SAccGuide(void)
     bool file_is_old = false;
     CTime builtin_timestamp(static_cast<time_t>(kBuiltInGuide_Timestamp));
     {{
-        string file = g_FindDataFile("accguide2.txt");
+        string file = g_FindDataFile("accguide3.txt");
         if ( !file.empty()  &&
              !(file_is_old = g_IsDataFileOld(file, builtin_timestamp)) ) {
             try {
