@@ -122,7 +122,10 @@ bool CCassBlobTaskLoadBlob::IsBlobPropsFound() const
 
 void CCassBlobTaskLoadBlob::SetChunkCallback(TBlobChunkCallbackEx callback)
 {
-    m_ChunkCallback = std::move(callback);
+    if (callback) {
+        m_ChunkCallbackExists = true;
+        m_ChunkCallback = std::move(callback);
+    }
 }
 
 void CCassBlobTaskLoadBlob::SetPropsCallback(TBlobPropsCallback callback)
@@ -307,6 +310,7 @@ void CCassBlobTaskLoadBlob::Wait1()
                               eDiag_Error, msg);
                         break;
                     }
+                    ++m_ChunkCallbackCalled;
                     m_ChunkCallback(*m_Blob, nullptr, 0, -1);
                     m_State = eDone;
                 }
@@ -369,6 +373,7 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
                             return;
                         }
                         m_ProcessedChunks[chunk_no] = true;
+                        ++m_ChunkCallbackCalled;
                         m_ChunkCallback(*m_Blob, rawdata, len, chunk_no);
                         it.query->Close();
                         it.query = nullptr;

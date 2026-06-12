@@ -267,9 +267,11 @@ public:
             }
             restart_count += q.restart_count;
         }
-        return format("State:{}, WaitCalls:{}, Queries:{}, Restarts:{}, Cancel:{}",
+        auto callback = m_DataReadyCb3.lock();
+        return format("State:{}, WaitCalls:{}, DataReadyCbExists:{} Queries:{}, Restarts:{}, Cancel:{}",
             m_State.load(std::memory_order_relaxed),
             m_WaitCallCounter.load(std::memory_order_relaxed),
+            callback ? "true" : "false",
             query_count,
             restart_count,
             m_Cancelled ? "true" : "false"
