@@ -146,10 +146,12 @@ public:
     [[nodiscard]]
     string GetDebugStateSnapshot() const override
     {
-        return format("LoadBlob: LoadChunks:{}, PropsFound:{}, ExplicitBlob:{}, {}",
+        return format("LoadBlob: LoadChunks:{}, PropsFound:{}, ExplicitBlob:{}, ChunkCbExist:{}, ChunkCbCalls:{}, {}",
             m_LoadChunks ? "true" : "false",
             m_PropsFound ? "true" : "false",
             m_ExplicitBlob ? "true" : "false",
+            m_ChunkCallbackExists ? "true" : "false",
+            m_ChunkCallbackCalled,
             CCassBlobWaiter::GetDebugStateSnapshot()
         );
     }
@@ -176,6 +178,8 @@ private:
     bool m_ExplicitBlob{false};
     bool m_UsePrepared{true};
     EBlobTaskMode m_Mode;
+    bool m_ChunkCallbackExists{false};
+    int m_ChunkCallbackCalled{0};
 };
 
 END_IDBLOB_SCOPE
