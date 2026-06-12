@@ -58,7 +58,7 @@ class CCassNAnnotTaskFetch
         eError = CCassBlobWaiter::eError
     };
 
- public:
+public:
     CCassNAnnotTaskFetch(
         shared_ptr<CCassConnection> connection,
         const string & keyspace,
@@ -127,10 +127,21 @@ class CCassNAnnotTaskFetch
         return m_RestartCounter;
     }
 
- protected:
+    [[nodiscard]]
+    string GetDebugStateSnapshot() const override
+    {
+        return format("NAnnotFetch: LastAnnotEmpty:{}, RestartCount:{}, Page:{}, {}",
+            m_LastConsumedAnnot.empty() ? "true" : "false",
+            m_RestartCounter,
+            m_PageSize,
+            CCassBlobWaiter::GetDebugStateSnapshot()
+        );
+    }
+
+protected:
     void Wait1() override;
 
- private:
+private:
     size_t x_AnnotNamesSize() const;
     size_t x_AnnotNamesCount(string const & more) const;
     void x_AnnotNamesBind(shared_ptr<CCassQuery>& query, string const & more, unsigned int first) const;
@@ -142,7 +153,7 @@ class CCassNAnnotTaskFetch
     vector<CTempString> m_AnnotNamesTemp;
     TNAnnotConsumeCallback m_Consume{nullptr};
     string m_LastConsumedAnnot;
- protected:
+protected:
     unsigned int m_PageSize{CCassQuery::DEFAULT_PAGE_SIZE};
     unsigned int m_RestartCounter{0};
 };

@@ -256,6 +256,24 @@ public:
         m_WriteConsistency = value;
     }
 
+    [[nodiscard]]
+    virtual string GetDebugStateSnapshot() const
+    {
+        int query_count{0}, restart_count{0};
+        for (auto const& q : m_QueryArr) {
+            if (q.query != nullptr) {
+                ++query_count;
+            }
+            restart_count += q.restart_count;
+        }
+        return format("State:{}, Queries:{}, Restarts:{}, Cancel:{}",
+            m_State.load(),
+            query_count,
+            restart_count,
+            m_Cancelled ? "true" : "false"
+        );
+    }
+
 protected:
     enum EBlobWaiterState {
         eInit = 0,
