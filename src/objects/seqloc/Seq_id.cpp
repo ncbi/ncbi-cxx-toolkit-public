@@ -1727,11 +1727,11 @@ SAccGuide::SAccGuide(TLoadFlags flags)
     bool file_is_old = false;
     CTime builtin_timestamp(static_cast<time_t>(kBuiltInGuide_Timestamp));
     {{
-        string file = g_FindDataFile("accguide3.txt");
-        if ( !file.empty()  &&
-             !(file_is_old = g_IsDataFileOld(file, builtin_timestamp)) ) {
+        filename = g_FindDataFile("accguide3.txt");
+        if ( !filename.empty()  &&
+             !(file_is_old = g_IsDataFileOld(filename, builtin_timestamp)) ) {
             try {
-                x_Load(file, flags);
+                x_Load(filename, flags);
             } STD_CATCH_ALL_X(1, "SAccGuide::SAccGuide")
         }
     }}
