@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 
 
 #if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
-wstring ncbi_Utf8ToWstring(const char *utf8)
+wstring CNcbiFstreamNameConverter::Utf8ToWstring(const char *utf8)
 {
     return _T_XSTRING(utf8);
 }
