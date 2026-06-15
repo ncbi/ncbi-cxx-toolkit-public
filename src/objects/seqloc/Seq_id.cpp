@@ -1001,6 +1001,15 @@ static const bm::bvector<>::size_type kBVSizes[kMaxSmallSpecialDigits + 1] = {
 struct SAccGuide : public CObject
 {
     typedef CSeq_id::EAccessionInfo TAccInfo;
+
+    struct SHints;
+    struct SDeferredSpecials {
+        string             prefix;
+        vector<string>     abbrev_ranges;
+        unique_ptr<SHints> hints;
+        size_t             longest_line;
+    };
+    
     typedef unordered_map<string, TAccInfo>   TPrefixes;
     typedef pair<string, TAccInfo>  TPair;
     typedef list<TPair>             TPairs; // not vector -- need stable ptrs
@@ -1010,14 +1019,17 @@ struct SAccGuide : public CObject
     typedef unsigned int            TFormatCode;
     typedef pair<string, string>    TFallback; // fallback, refinement
     typedef map<const TAccInfo*, TFallback> TFallbackMap;
+    typedef CSeq_id::TLoadFlags     TLoadFlags;
 
     struct SSubMap {
         TPrefixes         prefixes;
         TPairs            wildcards;
         TBigSpecialMap    big_specials;
         TSmallSpecialMap  small_specials;
+        vector<SDeferredSpecials> deferred_specials;
+        CFastMutex        lock;
     };
-    typedef unordered_map<TFormatCode, SSubMap> TMainMap;
+    typedef unordered_map<TFormatCode, shared_ptr<SSubMap>> TMainMap;
 
     struct SHints {
         struct SWhere {
@@ -1030,17 +1042,17 @@ struct SAccGuide : public CObject
             unsigned int offset;
         };
 
-        SHints(const string& filename)
+        SHints(const string& filename, TLoadFlags flags_in = 0)
             : prev_type(CSeq_id::eAcc_unknown), prev_submap(NULL),
               prev_special_format(0),
               prev_special_type(CSeq_id::eAcc_unknown),
               prev_special_base_type(CSeq_id::eAcc_unknown),
               specialN_submap(nullptr), specialN_end_pos(0),
-              specialN_version(0), version(1), where(filename)
+              specialN_version(0), version(1), where(filename), flags(flags_in)
             {}
 
         TAccInfo FindAccInfo(CTempString name);
-        TAccInfo FindSpecial(const SAccGuide& guide, TFormatCode fmt,
+        TAccInfo FindSpecial(SAccGuide& guide, TFormatCode fmt,
                              CTempString acc_or_range);
         SSubMap& FindSubMap(TMainMap& rules, TFormatCode fmt);
         
@@ -1061,26 +1073,28 @@ struct SAccGuide : public CObject
         TAccInfo              deferred_special_type;
         unordered_map<string, CTempString> default_fallbacks;
         string                specialN_name;
-        unique_ptr<string>    specialN_old_name;
+        shared_ptr<string>    specialN_old_name;
         SSubMap*              specialN_submap;
         SIZE_TYPE             specialN_end_pos;
         TAccInfo              specialN_type;
         unsigned int          specialN_version;
         unsigned int          version;
         SWhere                where;
+        TLoadFlags            flags;
     };
     
-    SAccGuide(void);
-    SAccGuide(const string& filename)
-        : count(0)
-        { x_Load(filename); }
-    SAccGuide(const string& filename, ILineReader& lr, const CTime& t)
-        : count(0)
-        { x_Load(filename, lr, t); }
+    SAccGuide(TLoadFlags flags);
+    SAccGuide(const string& filename, TLoadFlags flags)
+        : count(0), complete(false)
+        { x_Load(filename, flags); }
+    SAccGuide(const string& filename, ILineReader& lr, const CTime& t,
+              TLoadFlags flags)
+        : count(0), complete(false)
+        { x_Load(filename, lr, t, flags); }
 
     void AddRule(const CTempString& rule, SHints& hints);
     const TAccInfo& Find(TFormatCode fmt, const CTempString& acc_or_pfx,
-                         string* key_used = NULL) const;
+                         string* key_used = NULL);
     static TFormatCode s_Key(unsigned short letters, unsigned short digits)
         { return TFormatCode(letters) << 16 | digits; }
     static unsigned short s_Letters(TFormatCode fmt)
@@ -1094,10 +1108,12 @@ struct SAccGuide : public CObject
     TFallbackMap fallbacks;
     string       filename;
     CTime        timestamp;
+    bool         complete;
 
 private:
-    void x_Load(const string& fname);
-    void x_Load(const string& fname, ILineReader& lr, const CTime& t);
+    void x_Load(const string& fname, TLoadFlags flags);
+    void x_Load(const string& fname, ILineReader& lr, const CTime& t,
+                TLoadFlags flags);
     void x_CompleteInit(SHints& hints);
     void x_AddSpecial(SSubMap& submap, SHints& hints, TFormatCode fmt,
                       CTempString from, CTempString to, TAccInfo value,
@@ -1135,7 +1151,7 @@ SAccGuide::TAccInfo SAccGuide::SHints::FindAccInfo(CTempString name)
 }
 
 inline
-SAccGuide::TAccInfo SAccGuide::SHints::FindSpecial(const SAccGuide& guide,
+SAccGuide::TAccInfo SAccGuide::SHints::FindSpecial(SAccGuide& guide,
                                                    TFormatCode fmt,
                                                    CTempString acc_or_range)
 {
@@ -1160,16 +1176,17 @@ SAccGuide::SSubMap& SAccGuide::SHints::FindSubMap(SAccGuide::TMainMap& rules,
                                                   SAccGuide::TFormatCode fmt)
 {
     if (prev_submap != NULL  &&  prev_submap->first == fmt) {
-        return prev_submap->second;
+        return *prev_submap->second;
     } else {
         SAccGuide::TMainMap::iterator it = rules.find(fmt);
         if (it == rules.end()) {
-            it = rules.insert(it, make_pair(fmt, SAccGuide::SSubMap()));
+            it = rules.insert(it, make_pair(
+                                  fmt, make_shared<SAccGuide::SSubMap>()));
         }
         prev_submap = &*it;
-        prev_big_special   = it->second.big_specials.end();
-        prev_small_special = it->second.small_specials.end();
-        return it->second;
+        prev_big_special   = it->second->big_specials.end();
+        prev_small_special = it->second->small_specials.end();
+        return *it->second;
     }
 }
 
@@ -1495,6 +1512,14 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         }
         hints.prev_special_type_name.clear();
         hints.prev_special_type = CSeq_id::eAcc_unknown;
+        if ((hints.flags & CSeq_id::fFullyLoadSpecials) == 0) {
+            string prefix;
+            if (hints.specialN_version == 2) {
+                prefix = hints.prev_special_base_key;
+            }
+            hints.specialN_submap->deferred_specials.emplace_back
+                (prefix, vector<string>(), make_unique<SHints>(hints), 0);
+        }
     } else if (tokens.size() >= 2  &&  tokens[0] == ":") {
         if (hints.version < 2) {
             ERR_POST_X(19,
@@ -1509,11 +1534,31 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                        << ": ignoring misplaced specialN ranges line.");
             return;
         }
+        if ( !complete  &&  (hints.flags & CSeq_id::fFullyLoadSpecials) == 0) {
+            auto &target = hints.specialN_submap->deferred_specials.back();
+            if (target.prefix.empty()) {
+                target.prefix.assign(rule.data() + 2, 1);
+            }
+            target.abbrev_ranges.push_back(rule.substr(2));
+            target.longest_line = max(target.longest_line, rule.size());
+            return;
+        }
         string s;
         CTempString from;
         char *p = &hints.prev_specialN_acc[hints.specialN_end_pos];
         for (size_t i = 1;  i < tokens.size();  ++i) {
             pos = tokens[i].find('-');
+            if (hints.specialN_version == 3
+                &&  hints.prev_specialN_acc[0] != '_') {
+                auto n = s_Letters(hints.prev_special_format);
+                if (pos == n  // ||  (pos == NPOS  &&  tokens[i].size() == n)
+                    ||  tokens[i].size() - pos - 1 == n) {
+                    ERR_POST_X(39,
+                               "SAccGuide::AddRule: " << hints.where <<
+                               ": special3 details have multiple starting"
+                               " letters, breaking deferred loading.");
+                }
+            }
             if (pos == NPOS) {
                 pos = tokens[i].size();
                 memcpy(p - pos, tokens[i].data(), pos);
@@ -1588,7 +1633,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
 
 const SAccGuide::TAccInfo& SAccGuide::Find(TFormatCode fmt,
                                            const CTempString& acc_or_pfx,
-                                           string* key_used) const
+                                           string* key_used)
 {
     static const TAccInfo kUnknown = CSeq_id::eAcc_unknown;
     TMainMap::const_iterator it = rules.find(fmt);
@@ -1596,7 +1641,7 @@ const SAccGuide::TAccInfo& SAccGuide::Find(TFormatCode fmt,
         return kUnknown;
     }
 
-    const SSubMap&            submap = it->second;
+    SSubMap&                  submap = *it->second;
     const TAccInfo*           result = &kUnknown;
     CTempString               pfx     (acc_or_pfx, 0, fmt >> 16);
     TPrefixes::const_iterator pit    = submap.prefixes.find(pfx);
@@ -1627,6 +1672,23 @@ const SAccGuide::TAccInfo& SAccGuide::Find(TFormatCode fmt,
         }
     }
     if (acc_or_pfx != pfx  &&  (*result & CSeq_id::fAcc_specials) != 0) {
+        if (complete  &&  !submap.deferred_specials.empty() ) {
+            CFastMutexGuard guard(submap.lock);
+            ERASE_ITERATE(vector<SDeferredSpecials>, dsit,
+                          submap.deferred_specials) {
+                if (NStr::StartsWith(acc_or_pfx, dsit->prefix)) {
+                    vector<char> buf(dsit->longest_line);
+                    buf[0] = ':';
+                    buf[1] = ' ';
+                    for (const auto &ar : dsit->abbrev_ranges) {
+                        memcpy(buf.data() + 2, ar.data(), ar.size());
+                        AddRule(CTempString(buf.data(), ar.size() + 2),
+                                *dsit->hints);
+                    }
+                    VECTOR_ERASE(dsit, submap.deferred_specials);
+                }
+            }
+        }
         pfx = acc_or_pfx;
         auto n = x_SplitSpecial(pfx, fmt);
         for (auto ssit = submap.small_specials.lower_bound(pfx);
@@ -1659,8 +1721,8 @@ const SAccGuide::TAccInfo& SAccGuide::Find(TFormatCode fmt,
 }
 
 
-SAccGuide::SAccGuide(void)
-    : count(0)
+SAccGuide::SAccGuide(TLoadFlags flags)
+    : count(0), complete(false)
 {
     bool file_is_old = false;
     CTime builtin_timestamp(static_cast<time_t>(kBuiltInGuide_Timestamp));
@@ -1669,7 +1731,7 @@ SAccGuide::SAccGuide(void)
         if ( !file.empty()  &&
              !(file_is_old = g_IsDataFileOld(file, builtin_timestamp)) ) {
             try {
-                x_Load(file);
+                x_Load(file, flags);
             } STD_CATCH_ALL_X(1, "SAccGuide::SAccGuide")
         }
     }}
@@ -1698,11 +1760,11 @@ void SAccGuide::x_CompleteInit(SHints& hints)
     count = hints.where.line_no;
     AddRule("version 2", hints); // flush any last deferred special
     for (auto &rit : rules) {
-        ERASE_ITERATE(TSmallSpecialMap, sit, rit.second.small_specials) {
+        ERASE_ITERATE(TSmallSpecialMap, sit, rit.second->small_specials) {
             if (sit->second.first.any()) {
                 sit->second.first.optimize();
             } else {
-                rit.second.small_specials.erase(sit);
+                rit.second->small_specials.erase(sit);
             }
         }
     }
@@ -1717,20 +1779,22 @@ void SAccGuide::x_CompleteInit(SHints& hints)
             general[*p] = CSeq_id::eAcc_general_nuc;
         }
     }
+    complete = true;
 }
 
-void SAccGuide::x_Load(const string& fname)
+void SAccGuide::x_Load(const string& fname, TLoadFlags flags)
 {
     filename = fname;
     CRef<ILineReader> in(ILineReader::New(filename));
     CTime t;
     CFile(filename).GetTime(&t);
-    x_Load(fname, *in, t);
+    x_Load(fname, *in, t, flags);
 }
 
-void SAccGuide::x_Load(const string& fname, ILineReader& in, const CTime& t)
+void SAccGuide::x_Load(const string& fname, ILineReader& in, const CTime& t,
+                       TLoadFlags flags)
 {
-    SHints hints(fname);
+    SHints hints(fname, flags);
     timestamp = t;
     do {
         AddRule(*++in, hints);
@@ -1851,7 +1915,7 @@ bm::bvector_size_type SAccGuide::x_SplitSpecial(CTempString& acc,
 
 static CRef<SAccGuide>* s_CreateGuide(void)
 {
-    return new CRef<SAccGuide>(new SAccGuide);
+    return new CRef<SAccGuide>(new SAccGuide(0));
 }
 
 static CSafeStatic<CRef<SAccGuide> > s_Guide(s_CreateGuide, NULL);
@@ -2149,22 +2213,24 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(TParseFlags flags) const
 }
 
 
-void CSeq_id::LoadAccessionGuide(const string& filename)
+void CSeq_id::LoadAccessionGuide(const string& filename, TLoadFlags flags)
 {
-    s_Guide->Reset(new SAccGuide(filename));
+    s_Guide->Reset(new SAccGuide(filename, flags));
 }
 
-void CSeq_id::LoadAccessionGuide(ILineReader& in, const CTime& t)
+void CSeq_id::LoadAccessionGuide(ILineReader& in, const CTime& t,
+                                 TLoadFlags flags)
 {
-    s_Guide->Reset(new SAccGuide(kEmptyStr, in, t));
+    s_Guide->Reset(new SAccGuide(kEmptyStr, in, t, flags));
 }
 
-bool CSeq_id::RefreshAccessionGuide()
+bool CSeq_id::RefreshAccessionGuide(TLoadFlags flags)
 {
     auto guide = *s_Guide;
     if ( !guide->filename.empty()
-        &&  !g_IsDataFileOld(guide->filename, guide->timestamp) ) {
-        LoadAccessionGuide(guide->filename);
+        &&  ((flags & fAlwaysLoad) != 0
+             ||  !g_IsDataFileOld(guide->filename, guide->timestamp) )) {
+        LoadAccessionGuide(guide->filename, flags);
         return true;
     }
     return false;

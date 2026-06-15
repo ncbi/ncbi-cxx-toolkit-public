@@ -595,14 +595,22 @@ public:
     EAccessionInfo IdentifyAccession(TParseFlags flags
                                      = fParse_AnyRaw | fParse_AnyLocal) const;
 
-    static void LoadAccessionGuide(const string& filename);
+    enum ELoadFlags {
+        fFullyLoadSpecials = 1, ///< otherwise defer continuation lines
+        fAlwaysLoad        = 2  ///< skip refresh timestamp check
+    };
+    typedef int TLoadFlags; ///< binary OR of ELoadFlags
+
+    static void LoadAccessionGuide(const string& filename,
+                                   TLoadFlags flags = 0);
     static void LoadAccessionGuide(ILineReader& in,
-                                   const CTime& t = CCurrentTime());
+                                   const CTime& t = CCurrentTime(),
+                                   TLoadFlags flags = 0);
 
     /// Bails (returning false) if the file hasn't changed; otherwise,
     /// loads it and returns true (or throws an exception if loading
     /// somehow fails).
-    static bool RefreshAccessionGuide();
+    static bool RefreshAccessionGuide(TLoadFlags flags = fFullyLoadSpecials);
 
     enum EAssessment {
         eInvalid,      ///< Not even valid as a local ID
