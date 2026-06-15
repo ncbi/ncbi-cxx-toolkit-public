@@ -1020,13 +1020,23 @@ struct SAccGuide : public CObject
     typedef unordered_map<TFormatCode, SSubMap> TMainMap;
 
     struct SHints {
-        SHints()
+        struct SWhere {
+            SWhere(const string& fn, unsigned int l = 0)
+                : filename(fn), line_no(0), offset(l)
+                { }
+            
+            string       filename;
+            unsigned int line_no;
+            unsigned int offset;
+        };
+
+        SHints(const string& filename)
             : prev_type(CSeq_id::eAcc_unknown), prev_submap(NULL),
               prev_special_format(0),
               prev_special_type(CSeq_id::eAcc_unknown),
               prev_special_base_type(CSeq_id::eAcc_unknown),
               specialN_submap(nullptr), specialN_end_pos(0),
-              specialN_version(0), version(1)
+              specialN_version(0), version(1), where(filename)
             {}
 
         TAccInfo FindAccInfo(CTempString name);
@@ -1057,15 +1067,16 @@ struct SAccGuide : public CObject
         TAccInfo              specialN_type;
         unsigned int          specialN_version;
         unsigned int          version;
+        SWhere                where;
     };
     
     SAccGuide(void);
     SAccGuide(const string& filename)
         : count(0)
         { x_Load(filename); }
-    SAccGuide(ILineReader& lr, const CTime& t)
+    SAccGuide(const string& filename, ILineReader& lr, const CTime& t)
         : count(0)
-        { x_Load(lr, t); }
+        { x_Load(filename, lr, t); }
 
     void AddRule(const CTempString& rule, SHints& hints);
     const TAccInfo& Find(TFormatCode fmt, const CTempString& acc_or_pfx,
@@ -1086,7 +1097,7 @@ struct SAccGuide : public CObject
 
 private:
     void x_Load(const string& fname);
-    void x_Load(ILineReader& lr, const CTime& t);
+    void x_Load(const string& fname, ILineReader& lr, const CTime& t);
     void x_CompleteInit(SHints& hints);
     void x_AddSpecial(SSubMap& submap, SHints& hints, TFormatCode fmt,
                       CTempString from, CTempString to, TAccInfo value,
@@ -1094,6 +1105,14 @@ private:
     static bm::bvector_size_type x_SplitSpecial(CTempString& acc,
                                                 TFormatCode fmt);
 };
+
+ostream& operator << (ostream& os, const SAccGuide::SHints::SWhere& where)
+{
+    if ( !where.filename.empty() ) {
+        os << where.filename << ':';
+    }
+    return os << (where.line_no + where.offset);
+}
 
 static const SAccGuide::TAccInfo kUnrecognized
     = static_cast<SAccGuide::TAccInfo>(-1);
@@ -1160,7 +1179,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
     vector<CTempStringEx> tokens;
     SIZE_TYPE           pos, pos2;
 
-    ++count;
+    ++hints.where.line_no;
     tmp1.assign(rule, 0, rule.find('#')); // strip comment
     if (tmp1.empty())
         return;
@@ -1224,7 +1243,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         hints.specialN_submap = nullptr;
         hints.version = NStr::StringToUInt(tokens[1], NStr::fConvErr_NoThrow);
         if (hints.version > 3  ||  hints.version < 1) {
-            ERR_POST_X(2, "SAccGuide::AddRule: " << count
+            ERR_POST_X(2, "SAccGuide::AddRule: " << hints.where
                           << ": Unsupported version " << tokens[1]);
             return;
         }
@@ -1254,7 +1273,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                 if ( !key_used.empty() ) {
                     key_used = " (per " + key_used + ')';
                 }
-                ERR_POST_X(8, Info << "SAccGuide::AddRule: " << count
+                ERR_POST_X(8, Info << "SAccGuide::AddRule: " << hints.where
                            << ": ignoring refinement of " << tokens[1]
                            << " from " << *old_name << key_used
                            << " to unrecognized accession type " << tokens[2]);
@@ -1265,13 +1284,13 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                     value = TAccInfo(hints.FindAccInfo(*old_name)
                                      | CSeq_id::fAcc_fallback);
                     ERR_POST_X(17,
-                               Info << "SAccGuide::AddRule: " << count
+                               Info << "SAccGuide::AddRule: " << hints.where
                                << ": using default fallback from " << tokens[2]
                                << " to " << *old_name << " for " << tokens[1]);
                 } else {
                     *old_name = "unknown";
                     ERR_POST_X(3,
-                               "SAccGuide::AddRule: " << count
+                               "SAccGuide::AddRule: " << hints.where
                                << ": unrecognized accession type " << tokens[2]
                                << " for " << tokens[1]);
                 }
@@ -1331,7 +1350,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                     value = TAccInfo(hints.FindAccInfo(it->second)
                                      | CSeq_id::fAcc_fallback);
                     ERR_POST_X(17,
-                               Info << "SAccGuide::AddRule: " << count
+                               Info << "SAccGuide::AddRule: " << hints.where
                                << ": using default fallback from " << tokens[2]
                                << " to " << it->second << " for "
                                << tokens[1]);
@@ -1350,12 +1369,12 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                 if ( !key_used.empty() ) {
                     key_used = " (per " + key_used + ')';
                 }
-                ERR_POST_X(4, Info << "SAccGuide::AddRule: " << count
+                ERR_POST_X(4, Info << "SAccGuide::AddRule: " << hints.where
                            << ": unrecognized accession type " << tokens[2]
                            << " for special case " << tokens[1]
                            << "; falling back to " << old_name << key_used);
             } else if ( !found_default_fallback ) {
-                ERR_POST_X(9, Warning << "SAccGuide::AddRule: " << count
+                ERR_POST_X(9, Warning << "SAccGuide::AddRule: " << hints.where
                            << ": unrecognized accession type " << tokens[2]
                            << " for stray(!) special case " << tokens[1]);
             }
@@ -1374,7 +1393,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         if (hints.specialN_version == 2) {
             if (hints.version < 2) {
                 ERR_POST_X(18,
-                           Warning << "SAccGuide::AddRule: " << count
+                           Warning << "SAccGuide::AddRule: " << hints.where
                            << ": special2 valid only in version 2+ guides");
             }
             int digits = 0;
@@ -1402,7 +1421,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         } else if (hints.specialN_version == 3) {
             if (hints.version < 3) {
                 ERR_POST_X(22,
-                           Warning << "SAccGuide::AddRule: " << count
+                           Warning << "SAccGuide::AddRule: " << hints.where
                            << ": special3 valid only in version 3+ guides");
             }
             pos = tokens[1].find('+');
@@ -1457,7 +1476,8 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                     }
                 } else {
                     *hints.specialN_old_name = "unknown";
-                    ERR_POST_X(9, Warning << "SAccGuide::AddRule: " << count
+                    ERR_POST_X(9, Warning << "SAccGuide::AddRule: "
+                               << hints.where
                                << ": unrecognized accession type " << tokens[2]
                                << " for stray(!) special case " << tokens[1]);
                 }
@@ -1467,7 +1487,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
             hints.specialN_type
                 = TAccInfo(hints.specialN_type | CSeq_id::fAcc_fallback);
             ERR_POST_X(4,
-                       Info << "SAccGuide::AddRule: " << count
+                       Info << "SAccGuide::AddRule: " << hints.where
                        << ": unrecognized accession type " << tokens[2]
                        << " for special case " << tokens[1]
                        << "; falling back to " << *hints.specialN_old_name
@@ -1478,14 +1498,14 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
     } else if (tokens.size() >= 2  &&  tokens[0] == ":") {
         if (hints.version < 2) {
             ERR_POST_X(19,
-                       Warning << "SAccGuide::AddRule: " << count
+                       Warning << "SAccGuide::AddRule: " << hints.where
                        << ": specialN continuation lines valid only in"
                        " version 2+ guides");
         }
         if (hints.specialN_submap == nullptr) {
             ERR_POST_X(20,
                        Warning <<
-                       "SAccGuide::AddRule: " << count
+                       "SAccGuide::AddRule: " << hints.where
                        << ": ignoring misplaced specialN ranges line.");
             return;
         }
@@ -1528,7 +1548,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         if (value == kUnrecognized) {
             TPrefixes::iterator it2 = general.find(key);
             if (it2 == general.end()) {
-                ERR_POST_X(3, "SAccGuide::AddRule: " << count
+                ERR_POST_X(3, "SAccGuide::AddRule: " << hints.where
                            << ": unrecognized accession type " << tokens[2]
                            << " for " << key);
             } else {
@@ -1540,7 +1560,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                 }
                 it2->second = TAccInfo(it2->second | CSeq_id::fAcc_fallback);
                 fallbacks[&it2->second] = make_pair(old_name, tokens[2]);
-                ERR_POST_X(8, Info << "SAccGuide::AddRule: " << count
+                ERR_POST_X(8, Info << "SAccGuide::AddRule: " << hints.where
                            << ": ignoring refinement of " << key << " from "
                            << old_name << " to unrecognized accession type "
                            << tokens[2]);
@@ -1553,7 +1573,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         hints.specialN_submap = nullptr;
         if (hints.version < 2) {
             ERR_POST_X(21,
-                       Warning << "SAccGuide::AddRule: " << count
+                       Warning << "SAccGuide::AddRule: " << hints.where
                        << ": default fallbacks valid only in version 2+"
                        " guides");
         }
@@ -1561,7 +1581,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
             hints.default_fallbacks[tokens[1]] = tokens[2];
         }
     } else {
-        ERR_POST_X(5, Warning << "SAccGuide::AddRule: " << count
+        ERR_POST_X(5, Warning << "SAccGuide::AddRule: " << hints.where
                       << ": ignoring invalid line: " << rule);
     }
 }
@@ -1664,7 +1684,8 @@ SAccGuide::SAccGuide(void)
         }
         static const unsigned int kNumBuiltInRules
             = sizeof(kBuiltInGuide) / sizeof(*kBuiltInGuide);
-        SHints hints;
+        SHints hints("accguide3.inc");
+        hints.where.offset = 36;
         for (unsigned int i = 0;  i < kNumBuiltInRules;  ++i) {
             AddRule(kBuiltInGuide[i], hints);
         }
@@ -1674,6 +1695,7 @@ SAccGuide::SAccGuide(void)
 
 void SAccGuide::x_CompleteInit(SHints& hints)
 {
+    count = hints.where.line_no;
     AddRule("version 2", hints); // flush any last deferred special
     for (auto &rit : rules) {
         ERASE_ITERATE(TSmallSpecialMap, sit, rit.second.small_specials) {
@@ -1703,12 +1725,12 @@ void SAccGuide::x_Load(const string& fname)
     CRef<ILineReader> in(ILineReader::New(filename));
     CTime t;
     CFile(filename).GetTime(&t);
-    x_Load(*in, t);
+    x_Load(fname, *in, t);
 }
 
-void SAccGuide::x_Load(ILineReader& in, const CTime& t)
+void SAccGuide::x_Load(const string& fname, ILineReader& in, const CTime& t)
 {
-    SHints hints;
+    SHints hints(fname);
     timestamp = t;
     do {
         AddRule(*++in, hints);
@@ -2134,7 +2156,7 @@ void CSeq_id::LoadAccessionGuide(const string& filename)
 
 void CSeq_id::LoadAccessionGuide(ILineReader& in, const CTime& t)
 {
-    s_Guide->Reset(new SAccGuide(in, t));
+    s_Guide->Reset(new SAccGuide(kEmptyStr, in, t));
 }
 
 bool CSeq_id::RefreshAccessionGuide()
