@@ -34,8 +34,6 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbiargs.hpp>
 #include <corelib/ncbiutil.hpp>
 
 #include <serial/serial.hpp>
@@ -58,12 +56,6 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
-#include <objects/seqfeat/PCRReactionSet.hpp>
-#include <objects/seqfeat/PCRReaction.hpp>
-#include <objects/seqfeat/PCRPrimer.hpp>
-#include <objects/seqfeat/PCRPrimerSet.hpp>
-#include <objects/seqfeat/PCRPrimerName.hpp>
-#include <objects/seqfeat/PCRPrimerSeq.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
@@ -112,9 +104,8 @@
     #define biosample_chk_app_main main
 #endif
 
-using namespace ncbi;
-using namespace objects;
-using namespace xml;
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
 const char * BIOSAMPLE_CHK_APP_VER = "1.0";
 
@@ -197,7 +188,7 @@ public:
     int Run() override;
 
     void ReadClassMember(CObjectIStream& in,
-        const CObjectInfo::CMemberIterator& member);
+        const CObjectInfo::CMemberIterator& member) override;
 
 private:
 
