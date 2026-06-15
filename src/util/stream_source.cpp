@@ -229,7 +229,7 @@ void CInputStreamSource::InitManifest(const string& manifest)
     m_Files.clear();
     CFileManifest src(manifest);
     vector<string> all(src.GetAllFilePaths());
-    std::copy( all.begin(), all.end(), std::back_inserter(m_Files));
+    std::ranges::copy( all, std::back_inserter(m_Files));
 
     _TRACE("Added " << m_Files.size() << " files from input manifest");
 

@@ -158,7 +158,7 @@ void CFileManifest::WriteManyFilePaths( const vector<string> & file_paths )
                     m_ManifestPath );
     }
     ostream_iterator<string>  manifest_iterator( manifest_stream, "\n" );
-    copy( file_paths.begin(), file_paths.end(), manifest_iterator );
+    ranges::copy( file_paths, manifest_iterator );
 }
 
 

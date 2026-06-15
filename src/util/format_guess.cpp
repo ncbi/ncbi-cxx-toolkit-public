@@ -1570,8 +1570,8 @@ CFormatGuess::TestFormatCLUSTAL()
         }
         // Tokens should only contain printable characters
         for (const auto& token : toks) {
-            auto it = find_if(token.begin(), token.end(), 
-                    [](unsigned char c){ return !isprint(c); });
+            auto it = ranges::find_if(token,
+                        [](unsigned char c){ return !isprint(c); });
             if (it != token.end()) {
                 return false;
             }
