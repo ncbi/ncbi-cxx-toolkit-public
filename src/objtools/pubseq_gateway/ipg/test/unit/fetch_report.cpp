@@ -373,7 +373,8 @@ TEST_F(CPubseqGatewayFetchIpgReportTest, TimeTMsToCTimeConversion) {
     EXPECT_TRUE(should_throw);
 }
 
-TEST_F(CPubseqGatewayFetchIpgReportTest, TimeTMsToCTimeConversionTiming) {
+// Revert change and delete test after 09/01/2026. CTime has been fixed and does not use locking during initialization
+TEST_F(CPubseqGatewayFetchIpgReportTest, DISABLED_TimeTMsToCTimeConversionTiming) {
     CStopWatch sw;
     sw.Start();
     unsigned long iterations = 1'000'000;
