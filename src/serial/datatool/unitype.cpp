@@ -233,12 +233,12 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
             bool found_min = false, found_max = false;
             if (hasFacets) {
                 const list<CMemberFacet>& con = GetDataMember()->GetRestrictions();
-                list<CMemberFacet>::const_iterator f = find_if(con.begin(), con.end(), [](const CMemberFacet& i) { return i.GetType() == ESerialFacet::eMinItems;});
+                list<CMemberFacet>::const_iterator f = ranges::find_if(con, [](const CMemberFacet& i) { return i.GetType() == ESerialFacet::eMinItems;});
                 if (f != con.end()) {
                     out << " minOccurs=\"" << f->GetValue() << "\"";
                     found_min = true;
                 }
-                f = find_if(con.begin(), con.end(), [](const CMemberFacet& i) { return i.GetType() == ESerialFacet::eMaxItems;});
+                f = ranges::find_if(con, [](const CMemberFacet& i) { return i.GetType() == ESerialFacet::eMaxItems;});
                 if (f != con.end()) {
                     out << " maxOccurs=\"" << f->GetValue() << "\"";
                     found_max = true;

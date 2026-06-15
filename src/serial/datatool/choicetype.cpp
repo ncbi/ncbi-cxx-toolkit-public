@@ -137,7 +137,7 @@ void CChoiceDataType::PrintASN(CNcbiOstream& out, int indent) const
 
 void CChoiceDataType::PrintJSONSchema(CNcbiOstream& out, int indent, list<string>& required, bool contents_only) const
 {
-    TMembers::const_iterator att = find_if( m_Members.begin(), m_Members.end(), [](const TMembers::value_type& e) { return e->Attlist();});
+    TMembers::const_iterator att = ranges::find_if( m_Members, [](const TMembers::value_type& e) { return e->Attlist();});
     bool first = true;
 #if 0
 /*

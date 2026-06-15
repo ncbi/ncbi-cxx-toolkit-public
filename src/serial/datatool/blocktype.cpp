@@ -121,7 +121,7 @@ void CDataMemberContainerType::PrintJSONSchema(CNcbiOstream& out, int indent, li
     bool hasNotag = data && data->Notag();
     list<string> this_req;
     list<string>& req = (hasNotag || contents_only) ? required : this_req;
-    bool hasAttlist = find_if(m_Members.begin(), m_Members.end(),
+    bool hasAttlist = ranges::find_if(m_Members,
         [](const TMembers::value_type& e) { return e->Attlist();}) != m_Members.end();
     bool first = true;
 
