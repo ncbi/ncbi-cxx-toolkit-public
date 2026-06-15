@@ -505,8 +505,7 @@ void CTextFsm<MatchType>::FindFail(int state, int new_state, char ch)
     
     // add matches of substring at new state 
     
-    copy( m_States[next].GetMatches().begin(), 
-        m_States[next].GetMatches().end(),
+    ranges::copy( m_States[next].GetMatches(), 
         back_inserter(m_States[new_state].GetMatches()) );
 }
 

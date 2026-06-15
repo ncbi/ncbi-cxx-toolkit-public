@@ -1640,7 +1640,7 @@ void CSyncQueue<Type, Container, Traits>::CopyTo(TThisType* other) const
                        "room in the destination queue.");
         }
 
-        copy(m_Store.begin(), m_Store.end(), back_inserter(other->m_Store));
+        ranges::copy(m_Store, back_inserter(other->m_Store));
         other->m_Size += m_Size;
     }
 }
