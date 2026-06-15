@@ -159,22 +159,16 @@ public:
 
     CSplitQueryTestFixture() {
         // read the configuration file if it hasn't been read yet
-        if (m_Config.Empty()) {
-            const IRegistry::TFlags flags =
-                IRegistry::fNoOverride | 
-                IRegistry::fTransient |
-                IRegistry::fNotJustCore |
-                IRegistry::fTruncate;
-
             const string fname("data/split_query.ini");
             ifstream config_file(fname.c_str());
-            m_Config.Reset(new CNcbiRegistry(config_file, flags));
+            m_Config.Reset(new CNcbiRegistry);
+	    m_Config->Read( config_file );
+
 
             if (m_Config->Empty()) {
                 throw runtime_error("Failed to read configuration file" +
                                     fname);
             }
-        }
     }
 
     ~CSplitQueryTestFixture() {
