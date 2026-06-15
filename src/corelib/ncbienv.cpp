@@ -330,8 +330,7 @@ CNcbiArguments& CNcbiArguments::operator= (const CNcbiArguments& args)
         return *this;
 
     m_ProgramName = args.m_ProgramName;
-    m_Args.clear();
-    copy(args.m_Args.begin(), args.m_Args.end(), back_inserter(m_Args));
+    m_Args = args.m_Args;
     return *this;
 }
 
