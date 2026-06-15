@@ -41,6 +41,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/error_codes.hpp>
 #include <algorithm>
+#include <ranges>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbi_os_mswin.hpp>
@@ -1996,9 +1997,8 @@ enum EEchoInput {
 static string s_CArgs_ReadFromFile(const string& name, const string& filename)
 {
     CArg_InputFile f(name, filename, CArgDescriptions::fBinary);
-    istreambuf_iterator<char> it( f.AsInputFile() );
     vector<char> value;
-    std::copy( it, istreambuf_iterator<char>(), back_inserter(value));
+    ranges::copy( views::istream<char>(f.AsInputFile()), back_inserter(value));
     while (value[ value.size()-1] == '\r' || value[ value.size()-1] == '\n') {
         value.pop_back();
     }

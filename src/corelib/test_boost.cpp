@@ -2318,7 +2318,7 @@ main(int argc, char* argv[])
             ut_detail::labels_collector collector;
             traverse_test_tree( framework::master_test_suite().p_id, collector, true );
             *ostr << "Available labels:\n  ";
-            std::copy( collector.labels().begin(), collector.labels().end(), 
+            std::ranges::copy( collector.labels(), 
                        std::ostream_iterator<std::string>( *ostr, "\n  " ) );
             *ostr << "\n";
             return boost::exit_success;
