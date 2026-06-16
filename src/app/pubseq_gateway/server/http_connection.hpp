@@ -162,7 +162,6 @@ public:
     void OnTimer(void)
     {
         PeekAsync(false);
-        x_MaintainFinished();
     }
 
     void PrepareForUsage(uv_tcp_t *  uv_tcp_stream,
