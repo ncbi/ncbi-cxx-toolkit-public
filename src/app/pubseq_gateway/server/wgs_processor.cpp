@@ -257,7 +257,6 @@ void CPSGS_WGSProcessor::Process()
     }
 
     try {
-        GetRequest()->Lock(kWGSProcessorEvent);
         auto req_type = GetRequest()->GetRequestType();
         switch (req_type) {
         case CPSGS_Request::ePSGS_ResolveRequest:
