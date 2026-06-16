@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed Jun 10 05:33:05 EDT 2026; formally
+/* time_t value corresponding to Tue Jun 16 05:33:04 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1781083985UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1781602384UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -597,6 +597,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BEARU\ts\tBacterial Epidemiology and Antimicrobial Resistance Research Unit\t\t\t",
 "BED\ts\tBedford Public Library\t\t\t",
 "BEDF\ts\tNew England Wild Flower Society\t\t\t",
+"BEDPL\ts\tBedford Public Library\t\t\t",
 "BEG\tc\tInternational Bank for the Glomeromycota\tIBG\t\t",
 "BEGO\ts\tBeth Gordon Institute\t\t\t",
 "BEI\ts\tAmerican University of Beirut, Biology Department\t\t\t",
@@ -768,6 +769,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BNP\ts\tBanff Park Museum\t\t\t",
 "BNPL\ts\tBrighton Public Library\t\t\t",
 "BNRH\ts\tBuffelskloof Nature Reserve\t\t\t",
+"BNS\ts\tBristol Museum and Art Gallery\t\t\t",
 "BNU\ts\tBeijing Normal University, Biology Department\t\t\t",
 "BO\ts\tHerbarium Bogoriense (Research Centre for Biology)\t\t\t",
 "BOC\ts\tBingham Oceanographic Collection\tYPM\t\t",
@@ -3489,6 +3491,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IFIP\ts\tInstituto Federal de Educacao, Ciencia e Tecnologia Goiano\t\t\t",
 "IFM<AUS>\tc\tIFM Quality Services Pty Ltd\t\t\t",
 "IFM<JPN>\tc\tResearch Center for Pathogenic Fungi and Microbial Toxicoses, Chiba University\t\t\t",
+"IFMG\ts\tInstituto Federal de Minas Gerais - Campus Bambui\t\t\t",
 "IFO\tc\tInstitute for Fermentation\tNBRC\thttps://www.nite.go.jp/nbrc/catalogue/NBRCCatalogueDetailServlet?ID=IFO&CAT=\t",
 "IFP\ts\tInstitute of Applied Ecology, Academia Sinica\t\t\t",
 "IFRD\ts\tResearch Institute of Resource Insects\t\t\t",
