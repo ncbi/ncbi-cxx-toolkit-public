@@ -561,6 +561,7 @@ BEAN	s	Bridge of Allan Museum
 BEARU	s	Bacterial Epidemiology and Antimicrobial Resistance Research Unit			
 BED	s	Bedford Public Library			
 BEDF	s	New England Wild Flower Society			
+BEDPL	s	Bedford Public Library			
 BEG	c	International Bank for the Glomeromycota	IBG		
 BEGO	s	Beth Gordon Institute			
 BEI	s	American University of Beirut, Biology Department			
@@ -732,6 +733,7 @@ BNMMNH	s	Brukenthal National Museum Museum of Natural History
 BNP	s	Banff Park Museum			
 BNPL	s	Brighton Public Library			
 BNRH	s	Buffelskloof Nature Reserve			
+BNS	s	Bristol Museum and Art Gallery			
 BNU	s	Beijing Normal University, Biology Department			
 BO	s	Herbarium Bogoriense (Research Centre for Biology)			
 BOC	s	Bingham Oceanographic Collection	YPM		
@@ -3453,6 +3455,7 @@ IFI	s	Imperial Fisheries Institute
 IFIP	s	Instituto Federal de Educacao, Ciencia e Tecnologia Goiano			
 IFM<AUS>	c	IFM Quality Services Pty Ltd			
 IFM<JPN>	c	Research Center for Pathogenic Fungi and Microbial Toxicoses, Chiba University			
+IFMG	s	Instituto Federal de Minas Gerais - Campus Bambui			
 IFO	c	Institute for Fermentation	NBRC	https://www.nite.go.jp/nbrc/catalogue/NBRCCatalogueDetailServlet?ID=IFO&CAT=	
 IFP	s	Institute of Applied Ecology, Academia Sinica			
 IFRD	s	Research Institute of Resource Insects			
