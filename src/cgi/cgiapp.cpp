@@ -2054,7 +2054,7 @@ CTime CCgiApplication::GetFileModificationTime(const string& filename)
 bool CCgiApplication::CheckMemoryLimit(void)
 {
     Uint8 limit = NStr::StringToUInt8_DataSize(
-        GetConfig().GetString("FastCGI", "TotalMemoryLimit", "0", CNcbiRegistry::eReturn),
+        GetConfig().GetString("FastCGI", "TotalMemoryLimit", "0"),
         NStr::fConvErr_NoThrow);
     if ( limit ) {
         CCurrentProcess::SMemoryUsage memory_usage;
