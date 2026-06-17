@@ -3321,7 +3321,7 @@ CSeq_id& CSeq_id::Set(E_Choice the_type, TIntId the_id, TParseFlags flags)
         break;
     default:
         REJECT_X(35, flags,
-                 "Invalid numeric ID type" + SelectionName(the_type));
+                 "Invalid numeric ID type " + SelectionName(the_type));
     }
     return *this;
 }
