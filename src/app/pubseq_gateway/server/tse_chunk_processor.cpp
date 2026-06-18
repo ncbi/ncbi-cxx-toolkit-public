@@ -804,7 +804,6 @@ void CPSGS_TSEChunkProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                 ePSGS_NoBlobPropsError, eDiag_Error);
         IPSGS_Processor::m_Reply->PrepareTSEBlobPropCompletion(
                 fetch_details, kTSEChunkProcessorName);
-        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
     }
 
@@ -851,13 +850,13 @@ void CPSGS_TSEChunkProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
             fetch_details, kTSEChunkProcessorName);
     }
 
-    // To avoid sending an error in Peek()
-    fetch_details->GetLoader()->ClearError();
-
     if (is_error) {
         // If it is an error then regardless what stage it was, props or
         // chunks, there will be no more activity
         fetch_details->SetReadFinished();
+    } else {
+        // It was a warning; it is counted/logged so continue as a clear fetch
+        fetch_details->GetLoader()->ClearError();
     }
 
     if (IPSGS_Processor::m_Reply->IsOutputReady())
@@ -878,7 +877,6 @@ void CPSGS_TSEChunkProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
 
     if (m_Canceled) {
         fetch_details->GetLoader()->Cancel();
-        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
         if (IPSGS_Processor::m_Reply->IsOutputReady())
             x_Peek(false);
@@ -920,7 +918,6 @@ void CPSGS_TSEChunkProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
         // End of the blob
         IPSGS_Processor::m_Reply->PrepareTSEBlobCompletion(
                 fetch_details, kTSEChunkProcessorName);
-        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
 
         // Note: no need to set the blob completed in the exclude blob cache.
@@ -957,12 +954,12 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistoryError(
             IPSGS_Processor::m_Reply->GetItemId(),
             kTSEChunkProcessorName, message, status, code, severity);
 
-    // To avoid sending an error in Peek()
-    fetch_details->GetLoader()->ClearError();
-
     if (is_error) {
         // If it is an error then there will be no more activity
         fetch_details->SetReadFinished();
+    } else {
+        // It was a warning; it is counted/logged so continue as a clear fetch
+        fetch_details->GetLoader()->ClearError();
     }
 
     if (IPSGS_Processor::m_Reply->IsOutputReady())
@@ -978,7 +975,6 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistory(
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
-    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
 
     if (m_Canceled) {
@@ -1358,10 +1354,14 @@ bool CPSGS_TSEChunkProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
     if (need_wait) {
         if (!fetch_details->ReadFinished()) {
             final_state = fetch_details->GetLoader()->Wait();
+            if (final_state) {
+                fetch_details->SetReadFinished();
+            }
         }
     }
 
-    if (fetch_details->GetLoader()->HasError() &&
+    if (!fetch_details->ReadFinished() &&
+            fetch_details->GetLoader()->HasError() &&
             IPSGS_Processor::m_Reply->IsOutputReady() &&
             ! IPSGS_Processor::m_Reply->IsFinished()) {
         // Send an error
@@ -1392,7 +1392,6 @@ bool CPSGS_TSEChunkProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
 
         // Mark finished
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
