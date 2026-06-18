@@ -474,11 +474,17 @@ bool CPSGS_GetBlobProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         return true;
 
     bool    final_state = false;
-    if (need_wait)
-        if (!fetch_details->ReadFinished())
+    if (need_wait) {
+        if (!fetch_details->ReadFinished()) {
             final_state = fetch_details->GetLoader()->Wait();
+            if (final_state) {
+                fetch_details->SetReadFinished();
+            }
+        }
+    }
 
-    if (fetch_details->GetLoader()->HasError() &&
+    if (!fetch_details->ReadFinished() &&
+            fetch_details->GetLoader()->HasError() &&
             IPSGS_Processor::m_Reply->IsOutputReady() &&
             ! IPSGS_Processor::m_Reply->IsFinished()) {
         // Send an error
@@ -487,6 +493,7 @@ bool CPSGS_GetBlobProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
 
         app->GetCounters().Increment(this,
                                      CPSGSCounters::ePSGS_ProcUnknownError);
+
         PSG_ERROR(error);
 
         CCassBlobFetch *  blob_fetch = static_cast<CCassBlobFetch *>(fetch_details.get());
@@ -494,7 +501,6 @@ bool CPSGS_GetBlobProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
 
         // Mark finished
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     }

@@ -1103,7 +1103,8 @@ bool CPSGS_SNPProcessor::x_Peek(unique_ptr<CCassFetch>& fetch_details, bool  nee
             if (final_state) fetch_details->SetReadFinished();
         }
 
-    if (fetch_details->GetLoader()->HasError() &&
+    if (fetch_details->ReadFinished() &&
+        fetch_details->GetLoader()->HasError() &&
         GetReply()->IsOutputReady() && !GetReply()->IsFinished()) {
         // Send an error
         string error = fetch_details->GetLoader()->LastError();
@@ -1111,7 +1112,6 @@ bool CPSGS_SNPProcessor::x_Peek(unique_ptr<CCassFetch>& fetch_details, bool  nee
 
         // Mark finished
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
         x_Finish(ePSGS_Error);
     }

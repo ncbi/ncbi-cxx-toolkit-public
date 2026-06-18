@@ -156,7 +156,6 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
 {
     auto    app = CPubseqGatewayApp::GetInstance();
 
-    m_Fetch->GetLoader()->ClearError();
     m_Fetch->SetReadFinished();
 
     if (m_NeedTrace) {
@@ -271,7 +270,6 @@ void
 CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
                                         vector<CBioseqInfoRecord>&&  records)
 {
-    m_NoSeqIdTypeFetch->GetLoader()->ClearError();
     m_NoSeqIdTypeFetch->SetReadFinished();
 
     auto                        app = CPubseqGatewayApp::GetInstance();
@@ -357,11 +355,9 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoError(CRequestStatus::ECode  status,
                                                const string &  message)
 {
     if (m_Fetch) {
-        m_Fetch->GetLoader()->ClearError();
         m_Fetch->SetReadFinished();
     }
     if (m_NoSeqIdTypeFetch) {
-        m_NoSeqIdTypeFetch->GetLoader()->ClearError();
         m_NoSeqIdTypeFetch->SetReadFinished();
     }
 

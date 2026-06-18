@@ -278,7 +278,6 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistData(
 
     if (m_Canceled) {
         fetch_details->GetLoader()->Cancel();
-        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
 
         CPSGS_CassProcessorBase::SignalFinishProcessing();
@@ -298,7 +297,6 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistData(
     }
 
     if (last) {
-        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
 
         if (m_RecordCount == 0)
@@ -337,14 +335,14 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistError(
             IPSGS_Processor::m_Reply->GetItemId(),
             kAccVerHistProcessorName, message, status, code, severity);
 
-    // To avoid sending an error in Peek()
-    fetch_details->GetLoader()->ClearError();
-
     if (is_error) {
         // There will be no more activity
         fetch_details->SetReadFinished();
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     } else {
+        // That was a warning; it was already reported so continue as it is a
+        // clear fetch
+        fetch_details->GetLoader()->ClearError();
         x_Peek(false);
     }
 }
@@ -432,7 +430,8 @@ bool CPSGS_AccessionVersionHistoryProcessor::x_Peek(unique_ptr<CCassFetch> &  fe
             final_state = fetch_details->GetLoader()->Wait();
         }
 
-    if (fetch_details->GetLoader()->HasError() &&
+    if (!fetch_details->ReadFinished() &&
+            fetch_details->GetLoader()->HasError() &&
             IPSGS_Processor::m_Reply->IsOutputReady() &&
             ! IPSGS_Processor::m_Reply->IsFinished()) {
         // Send an error
@@ -460,7 +459,6 @@ bool CPSGS_AccessionVersionHistoryProcessor::x_Peek(unique_ptr<CCassFetch> &  fe
 
         // Mark finished
         UpdateOverallStatus(status);
-        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     }

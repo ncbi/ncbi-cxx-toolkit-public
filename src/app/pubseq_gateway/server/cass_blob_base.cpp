@@ -154,7 +154,6 @@ CPSGS_CassBlobBase::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                                  ePSGS_BlobRetrievalIsNotAuthorized,
                                  eDiag_Error);
 
-            fetch_details->GetLoader()->ClearError();
             fetch_details->SetReadFinished();
             return;
         }
@@ -241,7 +240,6 @@ CPSGS_CassBlobBase::x_OnBlobPropNoneTSE(CCassBlobFetch *  fetch_details)
 {
     // Nothing else to be sent
     x_PrepareBlobPropCompletion(fetch_details);
-    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
 }
 
@@ -263,7 +261,6 @@ CPSGS_CassBlobBase::x_OnBlobPropSlimTSE(CCassBlobFetch *  fetch_details,
     unsigned int    max_to_send = max(app->Settings().m_SendBlobIfSmall,
                                       blob_request.m_SendBlobIfSmall);
 
-    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
     if (blob.GetId2Info().empty()) {
         x_PrepareBlobPropCompletion(fetch_details);
@@ -297,7 +294,6 @@ void
 CPSGS_CassBlobBase::x_OnBlobPropSmartTSE(CCassBlobFetch *  fetch_details,
                                          CBlobRecord const &  blob)
 {
-    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
     if (blob.GetId2Info().empty()) {
         // Request original blob chunks
@@ -330,7 +326,6 @@ void
 CPSGS_CassBlobBase::x_OnBlobPropWholeTSE(CCassBlobFetch *  fetch_details,
                                          CBlobRecord const &  blob)
 {
-    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
     if (blob.GetId2Info().empty()) {
         // Request original blob chunks
@@ -351,7 +346,6 @@ void
 CPSGS_CassBlobBase::x_OnBlobPropOrigTSE(CCassBlobFetch *  fetch_details,
                                         CBlobRecord const &  blob)
 {
-    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
     // Request original blob chunks
     x_PrepareBlobPropCompletion(fetch_details);
@@ -653,8 +647,9 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
     }
 
     while (to_init_iter != m_FetchDetails.end()) {
-        if (*to_init_iter)
+        if (*to_init_iter) {
             (*to_init_iter)->GetLoader()->Wait();
+        }
         ++to_init_iter;
     }
 }
@@ -1247,7 +1242,6 @@ CPSGS_CassBlobBase::OnGetBlobError(CCassBlobFetch *  fetch_details,
 
         // If it is an error then regardless what stage it was, props or
         // chunks, there will be no more activity
-        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
     } else {
         if (fetch_details->IsBlobPropStage())
@@ -1257,7 +1251,8 @@ CPSGS_CassBlobBase::OnGetBlobError(CCassBlobFetch *  fetch_details,
             x_PrepareBlobMessage(fetch_details, message, status,
                                  code, severity);
 
-        // To avoid sending an error in Peek()
+        // This is a warning; it is counted/logged so continue as it is a clear
+        // fetch
         fetch_details->GetLoader()->ClearError();
     }
 }
@@ -1275,11 +1270,12 @@ CPSGS_CassBlobBase::OnGetBlobChunk(bool  cancelled,
 
     if (cancelled) {
         fetch_details->GetLoader()->Cancel();
-        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
         return;
     }
     if (m_Reply->IsFinished()) {
+        fetch_details->SetReadFinished();
+
         CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
                                             this,
                                             CPSGSCounters::ePSGS_ProcUnknownError);
@@ -1318,7 +1314,6 @@ CPSGS_CassBlobBase::OnGetBlobChunk(bool  cancelled,
 
         // End of the blob
         x_PrepareBlobCompletion(fetch_details);
-        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
 
         // Note: no need to set the blob completed in the exclude blob cache.
@@ -1365,7 +1360,6 @@ CPSGS_CassBlobBase::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
     // Remove from the already-sent cache if necessary
     fetch_details->RemoveFromExcludeBlobCache();
 
-    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
 }
 
@@ -1733,7 +1727,6 @@ CPSGS_CassBlobBase::OnPublicCommentError(
 {
     if (m_Canceled) {
         fetch_details->GetLoader()->Cancel();
-        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
         return;
     }
@@ -1750,12 +1743,13 @@ CPSGS_CassBlobBase::OnPublicCommentError(
         m_Reply->GetItemId(),
         m_ProcessorId, message, status, code, severity);
 
-    // To avoid sending an error in Peek()
-    fetch_details->GetLoader()->ClearError();
-
     if (is_error) {
         // If it is an error then there will be no more activity
         fetch_details->SetReadFinished();
+    } else {
+        // It is a warning so it was counted/logged; continue as it is a clear
+        // fetch
+        fetch_details->GetLoader()->ClearError();
     }
 
     // Note: is it necessary to call something like x_Peek() of the actual
@@ -1775,7 +1769,6 @@ CPSGS_CassBlobBase::OnPublicComment(
     CRequestContextResetter     context_resetter;
     m_Request->SetRequestContext();
 
-    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
 
     if (m_Canceled) {
@@ -1863,7 +1856,6 @@ CPSGS_CassBlobBase::x_BlobChunkCallback(CCassBlobFetch *  fetch_details,
     // Discarding the chunk.
     fetch_details->RemoveFromExcludeBlobCache();
     fetch_details->GetLoader()->Cancel();
-    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
 }
 
@@ -1900,7 +1892,6 @@ CPSGS_CassBlobBase::x_BlobPropsCallback(CCassBlobFetch *  fetch_details,
         // Here: blob prop not found and falback has not been requested yet.
         m_FallbackBlobRequested = true;
         fetch_details->GetLoader()->Cancel();
-        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
 
         msg = "Blob " + blob_id_as_str + " properties are not found. "
@@ -1943,7 +1934,6 @@ CPSGS_CassBlobBase::x_BlobPropsCallback(CCassBlobFetch *  fetch_details,
 
     // To prevent chunks coming, let's cancel the fetch
     fetch_details->GetLoader()->Cancel();
-    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
 }
 
@@ -1985,7 +1975,6 @@ CPSGS_CassBlobBase::x_BlobErrorCallback(CCassBlobFetch *  fetch_details,
     // If it is an error then regardless what stage it was, props or
     // chunks, there will be no more activity
     fetch_details->GetLoader()->Cancel();
-    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
 
     string      msg;
