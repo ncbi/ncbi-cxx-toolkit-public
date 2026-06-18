@@ -104,6 +104,14 @@ public:
     bool Canceled(void) const
     { return m_Canceled; }
 
+    bool HasError(void) const
+    {
+        if (m_Loader) {
+            return m_Loader->HasError();
+        }
+        return false;
+    }
+
     void Cancel(void)
     {
         if (m_Loader) {
