@@ -554,14 +554,14 @@ CPSGS_IPGResolveProcessor::x_OnIPGResolveError(
             IPSGS_Processor::m_Reply->GetItemId(),
             kIPGResolveProcessorName, message, status, code, severity);
 
-    // To avoid sending an error in Peek()
-    fetch_details->GetLoader()->ClearError();
-
     if (is_error) {
         // There will be no more activity
         fetch_details->SetReadFinished();
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     } else {
+        // It is a warning; it was counted/logged so continue as it is a clear
+        // fetch
+        fetch_details->GetLoader()->ClearError();
         x_Peek(false);
     }
 }
@@ -590,7 +590,6 @@ CPSGS_IPGResolveProcessor::x_OnIPGResolveData(vector<CIpgStorageReportEntry> && 
 
     if (m_Canceled) {
         fetch_details->GetLoader()->Cancel();
-        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
 
         CPSGS_CassProcessorBase::SignalFinishProcessing();
@@ -610,7 +609,6 @@ CPSGS_IPGResolveProcessor::x_OnIPGResolveData(vector<CIpgStorageReportEntry> && 
     }
 
     if (is_last) {
-        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
 
         if (m_RecordCount == 0) {
@@ -861,12 +859,14 @@ bool CPSGS_IPGResolveProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         return true;
 
     bool        final_state = false;
-    if (need_wait)
+    if (need_wait) {
         if (!fetch_details->ReadFinished()) {
             final_state = fetch_details->GetLoader()->Wait();
         }
+    }
 
-    if (fetch_details->GetLoader()->HasError() &&
+    if (!fetch_details->ReadFinished() &&
+            fetch_details->GetLoader()->HasError() &&
             IPSGS_Processor::m_Reply->IsOutputReady() &&
             ! IPSGS_Processor::m_Reply->IsFinished()) {
         // Send an error
@@ -896,7 +896,6 @@ bool CPSGS_IPGResolveProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
 
         // Mark finished
         UpdateOverallStatus(status);
-        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
