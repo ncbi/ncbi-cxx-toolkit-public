@@ -69,7 +69,8 @@ enum EPSGS_AlertType {
     ePSGS_BioseqInfoDBLookupIncompatibleRecords = 21,
     ePSGS_BioseqInfoCacheLookupINSDCIncompatibleRecords = 22,
     ePSGS_BioseqInfoDBLookupINSDCIncompatibleRecords = 23,
-    ePSGS_RequestDropped = 24
+    ePSGS_RequestDropped = 24,
+    ePSGS_CassRequestQueueFull = 25
 };
 
 enum EPSGS_AlertAckResult {

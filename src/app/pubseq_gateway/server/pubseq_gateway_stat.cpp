@@ -578,6 +578,11 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
         new SCounterInfo(
             "RequestStopXXX", "Request stop counter with unknown status",
             "Number of times a request finished with unknown status");
+    m_Counters[ePSGS_CassRequestQueueFullError] =
+        new SCounterInfo(
+            "CassRequestQueueFullError", "Cassandra request queue has reached capacity",
+            "Number of times a cassandra request was dismissed because "
+            "the number of concurrent requests is too high");
 
     // The counters below are for the sake of an identifier, name and
     // description. The name and description can be overwritten by the

@@ -196,6 +196,8 @@ class CPSGSCounters
             ePSGS_AsyncLogDroppedMessages,
             ePSGS_AsyncLogDroppedRequests,
 
+            ePSGS_CassRequestQueueFullError,
+
             // Used to reserve an array for individual counters
             ePSGS_MaxIndividualCounter,
 
