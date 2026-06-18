@@ -800,8 +800,10 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
         ePSGS_RS_NotFound       = 404,      // Used by a processor
         ePSGS_RS_Error          = 500,      // Used by a processor
         ePSGS_RS_Unavailable    = 503,      // This is for the case when a
-                                            // processor was not instantiated.
-                                            // Used by the framework
+                                            // processor was not instantiated
+                                            // (used by framework) or cassandra
+                                            // request queue is full (used by a
+                                            // processor).
         ePSGS_RS_Timeout        = 504       // Used by a processor
     };
 
