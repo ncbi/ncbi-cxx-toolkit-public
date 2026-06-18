@@ -111,6 +111,7 @@ private:
     void x_Peek(bool  need_wait);
     bool x_Peek(unique_ptr<CCassFetch> &  fetch_details,
                 bool  need_wait);
+    void x_FinishIfNeeded(void);
 
 private:
     // The processor filters out some of the requested named annotations

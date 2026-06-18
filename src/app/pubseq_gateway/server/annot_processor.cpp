@@ -285,10 +285,11 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
 
     // Initiate the retrieval loop
     for (auto &  fetch_details: m_FetchDetails) {
-        if (fetch_details)
+        if (fetch_details) {
             if (!fetch_details->ReadFinished()) {
                 fetch_details->GetLoader()->Wait();
             }
+        }
     }
 }
 
@@ -380,7 +381,10 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
         fetch_details->SetReadFinished();
         return false;
     }
+
     if (IPSGS_Processor::m_Reply->IsFinished()) {
+        fetch_details->SetReadFinished();
+
         CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
                                         this,
                                         CPSGSCounters::ePSGS_ProcUnknownError);
@@ -392,7 +396,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
         return false;
     }
 
-    // A responce has been succesfully received. Memorize it so that it can be
+    // A response has been succesfully received. Memorize it so that it can be
     // considered if some other keyspaces reply finish with errors or timeouts
     m_AnnotFetchCompletions.push_back(CRequestStatus::e200_Ok);
 
@@ -429,6 +433,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
     x_Peek(false);
     return true;
 }
+
 
 void
 CPSGS_AnnotProcessor::x_SendAnnotDataToClient(CNAnnotRecord &&  annot_record, int32_t  sat)
@@ -511,6 +516,8 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
         SPSGS_AnnotRequest::EPSGS_ResultStatus  result_status = SPSGS_AnnotRequest::ePSGS_RS_Error;
         if (fetch_completion == CRequestStatus::e504_GatewayTimeout)
             result_status = SPSGS_AnnotRequest::ePSGS_RS_Timeout;
+        if (fetch_completion == CRequestStatus::e503_ServiceUnavailable)
+            result_status = SPSGS_AnnotRequest::ePSGS_RS_Unavailable;
         for (const auto &  name: m_ValidNames) {
             if (m_Success.find(name) == m_Success.end()) {
                 m_AnnotRequest->ReportResultStatus(name, result_status);
@@ -531,10 +538,15 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
 
             UpdateOverallStatus(best_status);
             CPSGS_CassProcessorBase::SignalFinishProcessing();
+            return;
         }
     } else {
-        x_Peek(false);
+        // Not error, i.e. warning; it is counted/logged so continue as it is a
+        // clear fetch
+        fetch_details->GetLoader()->ClearError();
     }
+
+    x_FinishIfNeeded();
 }
 
 
@@ -794,8 +806,7 @@ void CPSGS_AnnotProcessor::OnAnnotBlobProp(CCassBlobFetch *  fetch_details,
     m_BlobStage = true;
     CPSGS_CassBlobBase::OnGetBlobProp(fetch_details, blob, is_found);
 
-    if (IPSGS_Processor::m_Reply->IsOutputReady())
-        x_Peek(false);
+    x_FinishIfNeeded();
 }
 
 
@@ -809,9 +820,7 @@ void CPSGS_AnnotProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
     }
 
     CPSGS_CassBlobBase::OnGetBlobProp(fetch_details, blob, is_found);
-
-    if (IPSGS_Processor::m_Reply->IsOutputReady())
-        x_Peek(false);
+    x_FinishIfNeeded();
 }
 
 
@@ -833,13 +842,27 @@ void CPSGS_AnnotProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
     // provided (OnGetBlobError(...) called CountError(...) so the m_Status is
     // set correctly
     SPSGS_AnnotRequest::EPSGS_ResultStatus  result_status = SPSGS_AnnotRequest::ePSGS_RS_Error;
-    if (m_Status == CRequestStatus::e504_GatewayTimeout)
+    if (status == CRequestStatus::e504_GatewayTimeout)
         result_status = SPSGS_AnnotRequest::ePSGS_RS_Timeout;
+    if (status == CRequestStatus::e503_ServiceUnavailable)
+        result_status = SPSGS_AnnotRequest::ePSGS_RS_Unavailable;
     m_AnnotRequest->ReportBlobError(m_Priority, result_status);
 
+    if (AreAllFinishedRead()) {
+        CRequestStatus::ECode   best_status = m_AnnotFetchCompletions[0];
+        for (auto  fetch_completion_status : m_AnnotFetchCompletions) {
+            if (fetch_completion_status < best_status) {
+                best_status = fetch_completion_status;
+            }
+        }
 
-    if (IPSGS_Processor::m_Reply->IsOutputReady())
+        UpdateOverallStatus(best_status);
+        IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
+
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
+    } else {
         x_Peek(false);
+    }
 }
 
 
@@ -851,9 +874,7 @@ void CPSGS_AnnotProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
 {
     CPSGS_CassBlobBase::OnGetBlobChunk(m_Canceled, fetch_details,
                                        chunk_data, data_size, chunk_no);
-
-    if (IPSGS_Processor::m_Reply->IsOutputReady())
-        x_Peek(false);
+    x_FinishIfNeeded();
 }
 
 
@@ -956,7 +977,8 @@ bool CPSGS_AnnotProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         }
     }
 
-    if (fetch_details->GetLoader()->HasError() &&
+    if (!fetch_details->ReadFinished() &&
+            fetch_details->GetLoader()->HasError() &&
             IPSGS_Processor::m_Reply->IsOutputReady() &&
             ! IPSGS_Processor::m_Reply->IsFinished()) {
         // Send an error
@@ -989,5 +1011,15 @@ void CPSGS_AnnotProcessor::x_OnResolutionGoodData(void)
     // however the annotations processor should not do anything.
     // The processor uses the an API to check bioseq info and named annotations
     // before sending them.
+}
+
+
+void CPSGS_AnnotProcessor::x_FinishIfNeeded(void)
+{
+    if (AreAllFinishedRead()) {
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
+    } else {
+        x_Peek(false);
+    }
 }
 
