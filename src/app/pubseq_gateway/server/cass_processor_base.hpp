@@ -63,9 +63,8 @@ public:
     void SignalFinishProcessing(void);
     void UnlockWaitingProcessor(void);
     void CallOnData(void);
-    string GetVerboseFetches(void) const;
-    void EnforceWait(void) const;
     void LoggingCallback(EDiagSev  severity, const string &  message);
+    string SerializeAllFetches(void) const;
 
 protected:
     IPSGS_Processor::EPSGS_Status GetStatus(void) override;
@@ -79,6 +78,7 @@ protected:
                                         const string &  seq_id);
     bool IsTimeoutError(const string &  msg) const;
     bool IsTimeoutError(int  code) const;
+    bool IsRequestQueueFull(int  code) const;
     bool IsError(EDiagSev  severity) const;
     CRequestStatus::ECode  CountError(CCassFetch *  fetch_details,
                                       CRequestStatus::ECode  status,

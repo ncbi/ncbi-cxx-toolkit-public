@@ -156,64 +156,46 @@ IPSGS_Processor::EPSGS_Status CPSGS_CassProcessorBase::GetStatus(void)
 }
 
 
-void CPSGS_CassProcessorBase::EnforceWait(void) const
-{
-    if (!m_FetchDetails.empty()) {
-        for (const auto &  details: m_FetchDetails) {
-            if (details) {
-                if (details->Canceled()) {
-                } else {
-                    if (details->ReadFinished()) {
-                    } else {
-                        details->GetLoader()->Wait();
-                    }
-                }
-            } else {
-            }
-        }
-    }
-}
-
-string CPSGS_CassProcessorBase::GetVerboseFetches(void) const
-{
-    string      ret;
-    ret = "Total fetches: " + to_string(m_FetchDetails.size());
-
-    if (!m_FetchDetails.empty()) {
-        for (const auto &  details: m_FetchDetails) {
-            ret += "\n";
-            if (details) {
-                ret += details->Serialize() + " ";
-                if (details->Canceled()) {
-                    ret += "Canceled";
-                } else {
-                    if (details->ReadFinished()) {
-                        ret += "Read has finished";
-                    } else {
-                        ret += "Read has not finished";
-                    }
-                }
-            } else {
-                ret += "No more details available";
-            }
-        }
-    }
-    return ret;
-}
-
-
 bool CPSGS_CassProcessorBase::AreAllFinishedRead(void) const
 {
     for (const auto &  details: m_FetchDetails) {
         if (details) {
             if (!details->Canceled()) {
-                if (!details->ReadFinished()) {
-                    return false;
+                if (!details->HasError()) {
+                    if (!details->ReadFinished()) {
+                        return false;
+                    }
                 }
             }
         }
     }
     return true;
+}
+
+
+string CPSGS_CassProcessorBase::SerializeAllFetches(void) const
+{
+    if (m_FetchDetails.empty()) {
+        return "No fetches";
+    }
+
+    string      ret;
+    size_t      seq_num = 0;
+    for (const auto &  details: m_FetchDetails) {
+        if (!ret.empty()) ret += "\n";
+        ret += to_string(seq_num) + ": ";
+        ++seq_num;
+        if (details->ReadFinished()) {
+            ret += "done";
+        } else {
+            ret += "read finished: " + to_string(details->ReadFinished()) +
+                   " canceled: " + to_string(details->Canceled()) +
+                   " has error: " + to_string(details->HasError()) +
+                   " desription: " + details->Serialize() +
+                   " low level: " + details->GetLoader()->GetDebugStateSnapshot();
+        }
+    }
+    return ret;
 }
 
 
@@ -368,6 +350,12 @@ bool CPSGS_CassProcessorBase::IsTimeoutError(int  code) const
 }
 
 
+bool CPSGS_CassProcessorBase::IsRequestQueueFull(int  code) const
+{
+    return code == CCassandraException::eRequestQueueFull;
+}
+
+
 bool CPSGS_CassProcessorBase::IsError(EDiagSev  severity) const
 {
     return (severity == eDiag_Error ||
@@ -428,6 +416,18 @@ CPSGS_CassProcessorBase::CountError(CCassFetch *  fetch_details,
             UpdateOverallStatus(CRequestStatus::e504_GatewayTimeout);
         }
         return CRequestStatus::e504_GatewayTimeout;
+    }
+
+    if (IsRequestQueueFull(code)) {
+        app->GetCounters().Increment(this,
+                                     CPSGSCounters::ePSGS_CassRequestQueueFullError);
+        app->GetAlerts().Register(ePSGS_CassRequestQueueFull, message);
+
+        if (status_update_flag == ePSGS_NeedStatusUpdate) {
+            UpdateOverallStatus(CRequestStatus::e503_ServiceUnavailable);
+        }
+
+        return CRequestStatus::e503_ServiceUnavailable;
     }
 
     if (status == CRequestStatus::e404_NotFound) {
