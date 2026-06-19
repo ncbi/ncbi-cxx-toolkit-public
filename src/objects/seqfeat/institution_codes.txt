@@ -1280,6 +1280,7 @@ CHULA	c	Microbiology Department Faculty of Science
 CHUNB	s	University of Brasilia Herpetological Collection			
 CHUR	s	Buendner Natur-Museum			
 CI	s	Carnegie Institution of Washington, Plant Biology Department			
+CIACOL	s	The Intiological Collection of the Colombian Amazon			
 CIAN<MEX-AG>	s	Instituto Nacional de Investigaciones Forestales, Agricolas y Pecuarias (INIFAP)			
 CIAN<MEX-CO>	s	Centro de Investigaciones Agricolas Nortoeste			
 CIAT	b	Centro Internacional de Agricultura Tropical (International Center for Tropical Agriculture)			
@@ -3299,9 +3300,10 @@ IAUH	s	Islamic Azad University (Avicenna Herbarium)
 IAUM	s	Islamic Azad University of Mashhad			
 IAUNT	s	Islamica Azad University, North Tehran Branch			
 IAV	sb	Institut Agronomique et Veterinaire Hassan II, Departement d'Ecologie Vegetale			
-IAVH	sb	Instituto de Ivestigacion de los Recursos Biologicos Alexander von Humboldt	IAvH		
+IAVH	sb	Instituto de Ivestigacion de los Recursos Biologicos Alexander von Humboldt			
 IAVH:A	sb	Instituto de Ivestigacion de los Recursos Biologicos Alexander von Humboldt, Ornithological Collection	IAVHA,IAvH:A		
 IAVH:CT	sb	Instituto de Ivestigacion de los Recursos Biologicos Alexander von Humboldt, Tissue Collection	IAVHCT,IAvH:CT		
+IAVH:P	sb	Instituto de Ivestigacion de los Recursos Biologicos Alexander von Humboldt, Fish Collection			
 IB	s	Universitat Innsbruck			
 IBA<ESP>	s	Instituto Asturiano de Taxonomia y Ecologia Vegetal			
 IBA<POL>	c	Collection of Microorganisms Producing Antibiotics			
