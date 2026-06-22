@@ -89,8 +89,8 @@ public:
 protected:
     /// Constructor.
     CTlsBase(bool auto_destroy)
-        : m_AutoDestroy(auto_destroy)
-    {}
+        : m_Key(0), m_Initialized(false), m_AutoDestroy(auto_destroy) {
+    }
 
     /// Destructor.
     ///

@@ -72,7 +72,8 @@ public:
         x_SetHitId(hit_id);
     }
 
-    CSharedHitId(void) : m_SubHitId(0) {}
+    CSharedHitId(void) : m_SubHitId(0), m_AppState(eDiagAppState_NotSet) {
+    }
     ~CSharedHitId(void) {}
 
     bool Empty(void) const { return m_HitId.empty(); }

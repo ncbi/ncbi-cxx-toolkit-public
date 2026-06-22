@@ -5661,7 +5661,7 @@ CUtf8::x_AsBasicString(const CTempString& str,
     if (validate == eValidate) {
         x_Validate(str);
     }
-    TUnicodeSymbol max_char = (TUnicodeSymbol)numeric_limits<TChar>::max();
+    constexpr TUnicodeSymbol max_char = (TUnicodeSymbol)numeric_limits<TChar>::max();
     basic_string<TChar> result;
     result.reserve(CUtf8::GetSymbolCount(str) + 1);
     CTempString::const_iterator src = str.begin();

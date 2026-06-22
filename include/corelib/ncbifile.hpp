@@ -3913,6 +3913,7 @@ private:
 
 inline
 CDirEntry::CDirEntry(void)
+    : m_DefaultMode{0}
 {
     return;
 }

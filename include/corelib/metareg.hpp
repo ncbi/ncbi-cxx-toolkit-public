@@ -79,6 +79,9 @@ public:
         CTime             timestamp; ///< For cache validation
         Int8              length;    ///< For cache validation
 
+        SEntry(void)
+            : flags(0), reg_flags(0), length(0) {
+        }
         /// Reload the configuration file.  By default, does nothing if
         /// the file has the same size and date as before.
         ///
