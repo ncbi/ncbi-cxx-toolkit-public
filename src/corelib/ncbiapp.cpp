@@ -790,11 +790,9 @@ void s_Create_ArgsOrEnvW(
 
     arg = begin;
     size_t i=0;
+    storage.reserve(count);
     for (i=0; i<count; ++i) {
         storage.push_back( _T_STDSTRING( *(arg++) ) );
-    }
-
-    for (i=0; i < storage.size(); ++i) {
         args[i] = storage[i].c_str();
     }
     args[i] = NULL;
