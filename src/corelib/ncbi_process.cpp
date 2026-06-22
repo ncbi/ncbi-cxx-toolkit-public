@@ -812,13 +812,17 @@ bool CProcess::Kill(unsigned long timeout)
     if ( safe  &&  allow_wait ) {
         // kernel32.dll loaded at same address in each process,
         // so call ::ExitProcess() there.
-        FARPROC exitproc = ::GetProcAddress(::GetModuleHandleA("KERNEL32.DLL"), "ExitProcess");
-        if ( exitproc ) {
-            hThread = ::CreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)exitproc, 0, 0, 0);
-            // Wait until process terminated, or timeout expired
-            if (hThread   &&
-                (::WaitForSingleObject(hProcess, timeout) == WAIT_OBJECT_0)){
-                terminated = true;
+        HMODULE hMod = ::GetModuleHandleA("KERNEL32.DLL");
+        if (hMod != NULL)
+        {
+            FARPROC exitproc = ::GetProcAddress(hMod, "ExitProcess");
+            if ( exitproc ) {
+                hThread = ::CreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)exitproc, 0, 0, 0);
+                // Wait until process terminated, or timeout expired
+                if (hThread   &&
+                    (::WaitForSingleObject(hProcess, timeout) == WAIT_OBJECT_0)){
+                    terminated = true;
+                }
             }
         }
     }
@@ -1120,7 +1124,7 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
                         } // else still running
                         break;
                     }
-                    /*FALLTHRU*/
+                    NCBI_FALLTHROUGH;
                 default:
                     // error
                     x_status = 0;
