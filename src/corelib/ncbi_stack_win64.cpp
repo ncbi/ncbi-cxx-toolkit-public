@@ -54,6 +54,9 @@ BEGIN_NCBI_SCOPE
 
 struct SModuleEntry
 {
+    SModuleEntry(void)
+        : baseAddress(0), size(0) {
+    }
     std::string imageName;
     std::string moduleName;
     DWORD64 baseAddress;

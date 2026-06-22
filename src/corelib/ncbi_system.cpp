@@ -1541,7 +1541,8 @@ const CCpuFeatures::InstructionSet& CCpuFeatures::IS(void)
 }
 
 CCpuFeatures::InstructionSet::InstructionSet(void)
-    : f01_ECX_  { 0 },
+    : m_Vendor(eOther),
+      f01_ECX_  { 0 },
       f01_EDX_  { 0 },
       f07_EBX_  { 0 },
       f07_ECX_  { 0 },
