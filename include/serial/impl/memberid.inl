@@ -59,7 +59,7 @@ CAsnBinaryDefs::ETagConstructed CMemberId::GetTagConstructed(void) const {
 }
 inline
 bool CMemberId::IsTagConstructed(void) const {
-    return m_TagConstructed == CAsnBinaryDefs::eConstructed;
+    return CAsnBinaryDefs::IsTagConstructed(m_TagConstructed);
 }
 
 inline

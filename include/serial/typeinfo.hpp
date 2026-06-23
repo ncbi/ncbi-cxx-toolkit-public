@@ -266,7 +266,7 @@ public:
         return m_TagConstructed;
     }
     bool IsTagConstructed(void) const {
-        return m_TagConstructed == CAsnBinaryDefs::eConstructed;
+        return CAsnBinaryDefs::IsTagConstructed(m_TagConstructed);
     }
     void CodeVersion(size_t codever) {
         m_CodeVer = codever;
