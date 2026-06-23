@@ -3746,6 +3746,7 @@ static string s_PrintableString(const CTempString    str,
             if (!(mode & NStr::fNewLine_Passthru))
                 c = 'n';
             /*FALLTHRU*/
+            NCBI_FALLTHROUGH;
         case '\\':
         case '\'':
         case '"':
@@ -4875,7 +4876,7 @@ string NStr::ParseEscapes(const CTempString str, EEscSeqRange mode, char user_ch
 }
 
 
-CTempString s_Unquote(const CTempString str, size_t* n_read)
+CTempString s_Unquote(const CTempString& str, size_t* n_read)
 {
     const char* str_pos = str.data();
     char quote_char;
@@ -4905,7 +4906,7 @@ CTempString s_Unquote(const CTempString str, size_t* n_read)
 
 string NStr::ParseQuoted(const CTempString str, size_t* n_read /*= NULL*/)
 {
-    return ParseEscapes(s_Unquote(std::move(str), n_read));
+    return ParseEscapes(s_Unquote(str, n_read));
 }
 
 
@@ -4973,7 +4974,7 @@ string s_ParseJsonEncodeEscapes(const CTempString str)
 
 string NStr::JsonDecode(const CTempString str, size_t* n_read /*= NULL*/)
 {
-    return s_ParseJsonEncodeEscapes(s_Unquote(std::move(str), n_read));
+    return s_ParseJsonEncodeEscapes(s_Unquote(str, n_read));
 }
 
 
