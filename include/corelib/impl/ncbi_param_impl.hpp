@@ -374,7 +374,7 @@ CEnumParser<TEnum, TParam>::EnumToString(const TEnumType& val,
 template<class TDescription>
 inline
 CParam<TDescription>::CParam(EParamCacheFlag cache_flag)
-    : m_ValueSet(false)
+    : m_ValueSet(false), m_Value{}
 {
     if (cache_flag == eParamCache_Defer) {
         return;
