@@ -132,7 +132,7 @@ protected:
 
 private:
     /// Copying prohibited.
-    CEnvironmentRegistry(const CEnvironmentRegistry&) {}
+    CEnvironmentRegistry(const CEnvironmentRegistry&) = delete;
 
     typedef multimap<TPriority, CConstRef<IEnvRegMapper> > TPriorityMap;
 
