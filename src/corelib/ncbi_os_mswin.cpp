@@ -271,7 +271,7 @@ bool CWinSecurity::GetObjectOwner(const string&  obj_name,
 
 static HANDLE s_GetCurrentThreadToken(DWORD access)
 {
-    HANDLE token;
+    HANDLE token = INVALID_HANDLE_VALUE;
     if ( !::OpenThreadToken(GetCurrentThread(), access, FALSE, &token) ) {
         DWORD res = GetLastError();
         if ( res == ERROR_NO_TOKEN ) {
@@ -289,7 +289,7 @@ static HANDLE s_GetCurrentThreadToken(DWORD access)
         } else {
             // Failed to open the current threads token with the required access rights
             CNcbiError::SetWindowsError(res);
-            return NULL;
+            return INVALID_HANDLE_VALUE;
         }
     }
     return token;
