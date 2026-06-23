@@ -319,14 +319,20 @@ const CTypeInfo* CItemsInfo::FindRealTypeInfo(const CTypeInfo* info)
         if (type->GetTypeFamily() == eTypeFamilyContainer) {
             const CContainerTypeInfo* cont =
                 dynamic_cast<const CContainerTypeInfo*>(type);
+            _ASSERT(cont);
             if (cont) {
                 type = cont->GetElementType();
+            } else {
+                break;
             }
         } else if (type->GetTypeFamily() == eTypeFamilyPointer) {
             const CPointerTypeInfo* ptr =
                 dynamic_cast<const CPointerTypeInfo*>(type);
+            _ASSERT(ptr);
             if (ptr) {
                 type = ptr->GetPointedType();
+            } else {
+                break;
             }
         } else {
             break;
@@ -420,6 +426,8 @@ TMemberIndex CItemsInfo::FindEmpty(void) const
                     dynamic_cast<const CPointerTypeInfo*>(type);
                 if (ptr) {
                     type = ptr->GetPointedType();
+                } else {
+                    break;
                 }
             } else {
                 break;

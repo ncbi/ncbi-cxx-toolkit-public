@@ -1834,12 +1834,16 @@ TMemberIndex CObjectIStreamXml::FindDeep(TTypeInfo type,
                 dynamic_cast<const CContainerTypeInfo*>(type);
             if (cont) {
                 type = cont->GetElementType();
+            } else {
+                break;
             }
         } else if (type->GetTypeFamily() == eTypeFamilyPointer) {
             const CPointerTypeInfo* ptr =
                 dynamic_cast<const CPointerTypeInfo*>(type);
             if (ptr) {
                 type = ptr->GetPointedType();
+            } else {
+                break;
             }
         } else {
             break;

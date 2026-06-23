@@ -806,7 +806,7 @@ void CMemberInfoFunctions::ReadWithDefaultMemberX(CObjectIStream& in,
                       memberInfo->GetTypeInfo());
         if (in.GetSpecialCaseUsed()) {
             memberInfo->UpdateSetFlagNo(classPtr);
-            if (in.GetSpecialCaseUsed() == CObjectIStream::eReadAsDefault) {
+            if (in.GetSpecialCaseUsed() & CObjectIStream::eReadAsDefault) {
                 memberInfo->UpdateSetFlagMaybe(classPtr);
             }
         }

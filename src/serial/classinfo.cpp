@@ -304,7 +304,7 @@ void CClassTypeInfo::ReadImplicitMember(CObjectIStream& in,
                      memberInfo->GetTypeInfo(),
                      memberInfo->GetItemPtr(objectPtr));
     if (memberInfo->HaveSetFlag()) {
-        if (in.GetSpecialCaseUsed() == CObjectIStream::eReadAsNil) {
+        if (in.GetSpecialCaseUsed() & CObjectIStream::eReadAsNil) {
             memberInfo->UpdateSetFlagNo(objectPtr);
         } else if (in.GetVerifyData() == eSerialVerifyData_Yes) {
             memberInfo->Validate(objectPtr, in);

@@ -110,7 +110,7 @@ CTypeInfo* CPointerTypeInfo::SetTag(
                     continue;
                 }
                 m_TagConstructed = CAsnBinaryDefs::eConstructed;
-            } else {
+            } else if (ptype) {
                 m_TagConstructed = ptype->GetTagConstructed();
             }
             break;
