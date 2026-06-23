@@ -34,13 +34,13 @@
 
 inline
 CTypeRef::CTypeRef(void)
-    : m_Getter(sx_GetAbort), m_ReturnData(0)
+    : m_Getter(sx_GetAbort), m_ReturnData(0), m_GetProcData(nullptr)
 {
 }
 
 inline
 CTypeRef::CTypeRef(TTypeInfo typeInfo)
-    : m_Getter(sx_GetReturn), m_ReturnData(typeInfo)
+    : m_Getter(sx_GetReturn), m_ReturnData(typeInfo), m_GetProcData(nullptr)
 {
 }
 

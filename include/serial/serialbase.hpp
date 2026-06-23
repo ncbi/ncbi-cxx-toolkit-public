@@ -340,9 +340,12 @@ class NCBI_XSERIAL_EXPORT CAliasBase
 public:
     typedef CAliasBase<TPrim> TThis;
 
-    CAliasBase(void) {}
+    CAliasBase(void)
+        : m_Data{} {
+    }
     explicit CAliasBase(const TPrim& value)
-        : m_Data(value) {}
+        : m_Data(value) {
+    }
 
     const TPrim& Get(void) const
         {
