@@ -55,14 +55,14 @@ CObjectIStream* CObjectIStream::CreateObjectIStreamAsn(void)
 }
 
 CObjectIStreamAsn::CObjectIStreamAsn(EFixNonPrint how)
-    : CObjectIStream(eSerial_AsnText)
+    : CObjectIStream(eSerial_AsnText), m_BlockStart(false)
 {
     FixNonPrint(how);
 }
 
 CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in,
                                      EFixNonPrint how)
-    : CObjectIStream(eSerial_AsnText)
+    : CObjectIStream(eSerial_AsnText), m_BlockStart(false)
 {
     FixNonPrint(how);
     Open(in);
@@ -71,7 +71,7 @@ CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in,
 CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in,
                                      bool deleteIn,
                                      EFixNonPrint how)
-    : CObjectIStream(eSerial_AsnText)
+    : CObjectIStream(eSerial_AsnText), m_BlockStart(false)
 {
     FixNonPrint(how);
     Open(in, deleteIn ? eTakeOwnership : eNoOwnership);
@@ -80,7 +80,7 @@ CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in,
 CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in,
                                      EOwnership deleteIn,
                                      EFixNonPrint how)
-    : CObjectIStream(eSerial_AsnText)
+    : CObjectIStream(eSerial_AsnText), m_BlockStart(false)
 {
     FixNonPrint(how);
     Open(in, deleteIn);
@@ -89,7 +89,7 @@ CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in,
 CObjectIStreamAsn::CObjectIStreamAsn(const char* buffer,
                                      size_t size,
                                      EFixNonPrint how)
-    : CObjectIStream(eSerial_AsnText)
+    : CObjectIStream(eSerial_AsnText), m_BlockStart(false)
 {
     FixNonPrint(how);
     OpenFromBuffer(buffer, size);

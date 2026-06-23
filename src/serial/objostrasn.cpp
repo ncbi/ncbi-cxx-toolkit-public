@@ -63,7 +63,7 @@ CObjectOStream* CObjectOStream::OpenObjectOStreamAsn(CNcbiOstream& out,
 
 CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
                                      EFixNonPrint how)
-    : CObjectOStream(eSerial_AsnText, out)
+    : CObjectOStream(eSerial_AsnText, out), m_BlockStart(false)
 {
     FixNonPrint(how);
     m_Output.SetBackLimit(80);
@@ -74,7 +74,7 @@ CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
 CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
                                      bool deleteOut,
                                      EFixNonPrint how)
-    : CObjectOStream(eSerial_AsnText, out, deleteOut ? eTakeOwnership : eNoOwnership)
+    : CObjectOStream(eSerial_AsnText, out, deleteOut ? eTakeOwnership : eNoOwnership), m_BlockStart(false)
 {
     FixNonPrint(how);
     m_Output.SetBackLimit(80);
@@ -85,7 +85,7 @@ CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
 CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
                                      EOwnership deleteOut,
                                      EFixNonPrint how)
-    : CObjectOStream(eSerial_AsnText, out, deleteOut)
+    : CObjectOStream(eSerial_AsnText, out, deleteOut), m_BlockStart(false)
 {
     FixNonPrint(how);
     m_Output.SetBackLimit(80);

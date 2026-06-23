@@ -884,7 +884,9 @@ public:
 };
 
 CPrimitiveTypeInfoInt::CPrimitiveTypeInfoInt(size_t size, bool isSigned)
-    : CParent(size, ePrimitiveValueInteger, isSigned)
+    : CParent(size, ePrimitiveValueInteger, isSigned),
+        m_GetInt4(nullptr), m_SetInt4(nullptr), m_GetUint4(nullptr), m_SetUint4(nullptr), 
+        m_GetInt8(nullptr), m_SetInt8(nullptr), m_GetUint8(nullptr), m_SetUint8(nullptr)
 {
     SetTag(CAsnBinaryDefs::eInteger);
 }

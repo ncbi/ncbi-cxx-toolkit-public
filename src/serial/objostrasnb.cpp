@@ -72,6 +72,7 @@ CObjectOStream* CObjectOStream::OpenObjectOStreamAsnBinary(CNcbiOstream& out,
 CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
                                                  EFixNonPrint how)
     : CObjectOStream(eSerial_AsnBinary, out),
+      m_CurrentTagPosition(0), m_CurrentTagCode(0), m_CurrentTagLengthSize(0), m_CurrentTagLength(0),
       m_CStyleBigInt(false), m_SkipNextTag(false), m_AutomaticTagging(true)
 {
     FixNonPrint(how);
@@ -86,6 +87,7 @@ CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
                                                  bool deleteOut,
                                                  EFixNonPrint how)
     : CObjectOStream(eSerial_AsnBinary, out, deleteOut ? eTakeOwnership : eNoOwnership),
+      m_CurrentTagPosition(0), m_CurrentTagCode(0), m_CurrentTagLengthSize(0), m_CurrentTagLength(0),
       m_CStyleBigInt(false), m_SkipNextTag(false), m_AutomaticTagging(true)
 {
     FixNonPrint(how);
@@ -100,6 +102,7 @@ CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
                                                  EOwnership deleteOut,
                                                  EFixNonPrint how)
     : CObjectOStream(eSerial_AsnBinary, out, deleteOut),
+      m_CurrentTagPosition(0), m_CurrentTagCode(0), m_CurrentTagLengthSize(0), m_CurrentTagLength(0),
       m_CStyleBigInt(false), m_SkipNextTag(false), m_AutomaticTagging(true)
 {
     FixNonPrint(how);

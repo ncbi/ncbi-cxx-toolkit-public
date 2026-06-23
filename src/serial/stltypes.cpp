@@ -153,19 +153,19 @@ void CStlClassInfoUtil::ThrowDuplicateElementError(void)
 CStlOneArgTemplate::CStlOneArgTemplate(size_t size,
                                        TTypeInfo type, bool randomOrder,
                                        const string& name)
-    : CParent(size, name, type, randomOrder)
+    : CParent(size, name, type, randomOrder), m_IsDefault(nullptr), m_SetDefault(nullptr)
 {
 }
 
 CStlOneArgTemplate::CStlOneArgTemplate(size_t size,
                                        TTypeInfo type, bool randomOrder)
-    : CParent(size, type, randomOrder)
+    : CParent(size, type, randomOrder), m_IsDefault(nullptr), m_SetDefault(nullptr)
 {
 }
 
 CStlOneArgTemplate::CStlOneArgTemplate(size_t size,
                                        const CTypeRef& type, bool randomOrder)
-    : CParent(size, type, randomOrder)
+    : CParent(size, type, randomOrder), m_IsDefault(nullptr), m_SetDefault(nullptr)
 {
 }
 
