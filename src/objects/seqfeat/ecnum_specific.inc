@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Mon Jun 15 16:26:16 EDT 2026; formally
+/* time_t value corresponding to Tue Jun 23 17:11:56 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kECNum_specific_Timestamp = 1781555176UL;
+static const unsigned long kECNum_specific_Timestamp = 1782249116UL;
 static const char* const kECNum_specific[] = {
     "1.1.1.1\talcohol dehydrogenase",
     "1.1.1.2\talcohol dehydrogenase (NADP(+))",
@@ -449,6 +449,9 @@ static const char* const kECNum_specific[] = {
     "1.1.1.439\t17-dehydrostemmadenine reductase",
     "1.1.1.440\trhazimal reductase",
     "1.1.1.441\tpolyprenol dehydrogenase [NAD(P)H]",
+    "1.1.1.442\t20beta-hydroxysteroid dehydrogenase",
+    "1.1.1.443\tquestin reductase",
+    "1.1.1.444\tsulfofucose 1-dehydrogenase",
     "1.1.1.n4\t(-)-trans-carveol dehydrogenase",
     "1.1.1.n5\t3-methylmalate dehydrogenase",
     "1.1.1.n11\tsuccinic semialdehyde reductase",
@@ -673,6 +676,7 @@ static const char* const kECNum_specific[] = {
     "1.2.7.10\toxalate oxidoreductase",
     "1.2.7.11\t2-oxoacid oxidoreductase (ferredoxin)",
     "1.2.7.12\tformylmethanofuran dehydrogenase",
+    "1.2.8.1\tpyruvate synthase (flavodoxin)",
     "1.2.98.1\tformaldehyde dismutase",
     "1.2.99.6\tcarboxylate reductase",
     "1.2.99.7\taldehyde dehydrogenase (FAD-independent)",
@@ -902,6 +906,7 @@ static const char* const kECNum_specific[] = {
     "1.4.1.26\t2,4-diaminopentanoate dehydrogenase (NAD(+))",
     "1.4.1.27\tglycine cleavage system",
     "1.4.1.28\tsecondary-alkyl amine dehydrogenase [NAD(P)(+)]",
+    "1.4.1.29\timinosuccinate reductase",
     "1.4.2.1\tglycine dehydrogenase (cytochrome)",
     "1.4.2.2\tnicotine dehydrogenase",
     "1.4.2.3\tpseudooxynicotine oxidase",
@@ -1172,6 +1177,7 @@ static const char* const kECNum_specific[] = {
     "1.10.3.15\tgrixazone synthase",
     "1.10.3.16\tdihydrophenazinedicarboxylate synthase",
     "1.10.3.17\tsuperoxide oxidase",
+    "1.10.3.18\ttorosachrysone 7,10'-coupling laccase",
     "1.10.5.1\tribosyldihydronicotinamide dehydrogenase (quinone)",
     "1.11.1.1\tNADH peroxidase",
     "1.11.1.2\tNADPH peroxidase",
@@ -1309,6 +1315,7 @@ static const char* const kECNum_specific[] = {
     "1.13.11.93\t2-oxoadipate dioxygenase/decarboxylase",
     "1.13.11.94\t4-vinylguaiacol dioxygenase",
     "1.13.11.95\t2-oxoethane-1-sulfonamide synthase",
+    "1.13.11.96\tquestin hydroquinone dioxygenase",
     "1.13.12.1\targinine 2-monooxygenase",
     "1.13.12.2\tlysine 2-monooxygenase",
     "1.13.12.3\ttryptophan 2-monooxygenase",
@@ -1455,7 +1462,6 @@ static const char* const kECNum_specific[] = {
     "1.14.13.38\tanhydrotetracycline 6-monooxygenase",
     "1.14.13.39\tnitric-oxide synthase (NADPH)",
     "1.14.13.40\tanthraniloyl-CoA monooxygenase",
-    "1.14.13.43\tquestin monooxygenase",
     "1.14.13.44\t2-hydroxybiphenyl 3-monooxygenase",
     "1.14.13.46\t(-)-menthol monooxygenase",
     "1.14.13.50\tpentachlorophenol monooxygenase",
@@ -1892,6 +1898,7 @@ static const char* const kECNum_specific[] = {
     "1.14.19.79\t3beta,22alpha-dihydroxysteroid 3-dehydrogenase",
     "1.14.19.80\t(19E)-geissoschizine oxidase",
     "1.14.19.81\tpolyneuridine aldehyde synthase",
+    "1.14.19.82\ttryptophan 5-brominase (NADPH)",
     "1.14.19.n4\tstearoyl-CoA 9-desaturase (NADPH)",
     "1.14.19.n5\tversicolorin B desaturase",
     "1.14.20.1\tdeacetoxycephalosporin-C synthase",
@@ -2442,6 +2449,7 @@ static const char* const kECNum_specific[] = {
     "2.1.1.401\tnicotinate methyltransferase",
     "2.1.1.402\tsialate 8-O-methyltransferase",
     "2.1.1.403\tmethylecgonone synthase",
+    "2.1.1.404\tatrochrysone 6-O-methyltransferase",
     "2.1.1.n1\tresorcinol O-methyltransferase",
     "2.1.1.n4\tthiocyanate methyltransferase",
     "2.1.1.n7\t5-pentadecatrienyl resorcinol O-methyltransferase",
@@ -5919,6 +5927,9 @@ static const char* const kECNum_specific[] = {
     "4.2.1.181\t3-carboxymethyl-3-hydroxy-acyl-[ACP] dehydratase",
     "4.2.1.182\tphosphomevalonate dehydratase",
     "4.2.1.183\tetheroleic acid synthase",
+    "4.2.1.184\t(3S)-3-hydroxy-D-aspartate dehydratase",
+    "4.2.1.185\t6-deoxy-6-sulfo-D-galactonate dehydratase",
+    "4.2.1.186\t3-cyano-L-homoalanine synthase",
     "4.2.2.1\thyaluronate lyase",
     "4.2.2.2\tpectate lyase",
     "4.2.2.3\tmannuronate-specific alginate lyase",
@@ -6271,6 +6282,8 @@ static const char* const kECNum_specific[] = {
     "4.4.1.41\t(2S)-3-sulfopropanediol sulfolyase",
     "4.4.1.42\tS-adenosyl-L-methionine lyase",
     "4.4.1.43\tcanavanine-gamma-lyase",
+    "4.4.1.44\t2-(S-pantetheinyl)-carbapenam-3-carboxylate synthase",
+    "4.4.1.45\textrinsic cysteine-dependent pyridinium-3,5-bisthiocarboxylic acid mononucleotide synthase",
     "4.5.1.1\tDDT-dehydrochlorinase",
     "4.5.1.2\t3-chloro-D-alanine dehydrochlorinase",
     "4.5.1.3\tdichloromethane dehalogenase",
@@ -6735,6 +6748,7 @@ static const char* const kECNum_specific[] = {
     "6.2.1.75\tindoleacetate--CoA ligase",
     "6.2.1.76\tmalonate--CoA ligase",
     "6.2.1.77\tL-lysine--[L-lysyl-carrier protein] ligase",
+    "6.2.1.78\t(3R)-beta-phenylalanine--CoA ligase",
     "6.2.1.n2\tamino acid--[acyl-carrier-protein] ligase",
     "6.2.2.1\tthioglycine synthase",
     "6.2.2.2\toxazoline synthase",

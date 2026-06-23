@@ -413,6 +413,9 @@
 1.1.1.439	17-dehydrostemmadenine reductase
 1.1.1.440	rhazimal reductase
 1.1.1.441	polyprenol dehydrogenase [NAD(P)H]
+1.1.1.442	20beta-hydroxysteroid dehydrogenase
+1.1.1.443	questin reductase
+1.1.1.444	sulfofucose 1-dehydrogenase
 1.1.1.n4	(-)-trans-carveol dehydrogenase
 1.1.1.n5	3-methylmalate dehydrogenase
 1.1.1.n11	succinic semialdehyde reductase
@@ -637,6 +640,7 @@
 1.2.7.10	oxalate oxidoreductase
 1.2.7.11	2-oxoacid oxidoreductase (ferredoxin)
 1.2.7.12	formylmethanofuran dehydrogenase
+1.2.8.1	pyruvate synthase (flavodoxin)
 1.2.98.1	formaldehyde dismutase
 1.2.99.6	carboxylate reductase
 1.2.99.7	aldehyde dehydrogenase (FAD-independent)
@@ -866,6 +870,7 @@
 1.4.1.26	2,4-diaminopentanoate dehydrogenase (NAD(+))
 1.4.1.27	glycine cleavage system
 1.4.1.28	secondary-alkyl amine dehydrogenase [NAD(P)(+)]
+1.4.1.29	iminosuccinate reductase
 1.4.2.1	glycine dehydrogenase (cytochrome)
 1.4.2.2	nicotine dehydrogenase
 1.4.2.3	pseudooxynicotine oxidase
@@ -1136,6 +1141,7 @@
 1.10.3.15	grixazone synthase
 1.10.3.16	dihydrophenazinedicarboxylate synthase
 1.10.3.17	superoxide oxidase
+1.10.3.18	torosachrysone 7,10'-coupling laccase
 1.10.5.1	ribosyldihydronicotinamide dehydrogenase (quinone)
 1.11.1.1	NADH peroxidase
 1.11.1.2	NADPH peroxidase
@@ -1273,6 +1279,7 @@
 1.13.11.93	2-oxoadipate dioxygenase/decarboxylase
 1.13.11.94	4-vinylguaiacol dioxygenase
 1.13.11.95	2-oxoethane-1-sulfonamide synthase
+1.13.11.96	questin hydroquinone dioxygenase
 1.13.12.1	arginine 2-monooxygenase
 1.13.12.2	lysine 2-monooxygenase
 1.13.12.3	tryptophan 2-monooxygenase
@@ -1419,7 +1426,6 @@
 1.14.13.38	anhydrotetracycline 6-monooxygenase
 1.14.13.39	nitric-oxide synthase (NADPH)
 1.14.13.40	anthraniloyl-CoA monooxygenase
-1.14.13.43	questin monooxygenase
 1.14.13.44	2-hydroxybiphenyl 3-monooxygenase
 1.14.13.46	(-)-menthol monooxygenase
 1.14.13.50	pentachlorophenol monooxygenase
@@ -1856,6 +1862,7 @@
 1.14.19.79	3beta,22alpha-dihydroxysteroid 3-dehydrogenase
 1.14.19.80	(19E)-geissoschizine oxidase
 1.14.19.81	polyneuridine aldehyde synthase
+1.14.19.82	tryptophan 5-brominase (NADPH)
 1.14.19.n4	stearoyl-CoA 9-desaturase (NADPH)
 1.14.19.n5	versicolorin B desaturase
 1.14.20.1	deacetoxycephalosporin-C synthase
@@ -2406,6 +2413,7 @@
 2.1.1.401	nicotinate methyltransferase
 2.1.1.402	sialate 8-O-methyltransferase
 2.1.1.403	methylecgonone synthase
+2.1.1.404	atrochrysone 6-O-methyltransferase
 2.1.1.n1	resorcinol O-methyltransferase
 2.1.1.n4	thiocyanate methyltransferase
 2.1.1.n7	5-pentadecatrienyl resorcinol O-methyltransferase
@@ -5883,6 +5891,9 @@
 4.2.1.181	3-carboxymethyl-3-hydroxy-acyl-[ACP] dehydratase
 4.2.1.182	phosphomevalonate dehydratase
 4.2.1.183	etheroleic acid synthase
+4.2.1.184	(3S)-3-hydroxy-D-aspartate dehydratase
+4.2.1.185	6-deoxy-6-sulfo-D-galactonate dehydratase
+4.2.1.186	3-cyano-L-homoalanine synthase
 4.2.2.1	hyaluronate lyase
 4.2.2.2	pectate lyase
 4.2.2.3	mannuronate-specific alginate lyase
@@ -6235,6 +6246,8 @@
 4.4.1.41	(2S)-3-sulfopropanediol sulfolyase
 4.4.1.42	S-adenosyl-L-methionine lyase
 4.4.1.43	canavanine-gamma-lyase
+4.4.1.44	2-(S-pantetheinyl)-carbapenam-3-carboxylate synthase
+4.4.1.45	extrinsic cysteine-dependent pyridinium-3,5-bisthiocarboxylic acid mononucleotide synthase
 4.5.1.1	DDT-dehydrochlorinase
 4.5.1.2	3-chloro-D-alanine dehydrochlorinase
 4.5.1.3	dichloromethane dehalogenase
@@ -6699,6 +6712,7 @@
 6.2.1.75	indoleacetate--CoA ligase
 6.2.1.76	malonate--CoA ligase
 6.2.1.77	L-lysine--[L-lysyl-carrier protein] ligase
+6.2.1.78	(3R)-beta-phenylalanine--CoA ligase
 6.2.1.n2	amino acid--[acyl-carrier-protein] ligase
 6.2.2.1	thioglycine synthase
 6.2.2.2	oxazoline synthase
