@@ -2398,15 +2398,19 @@ CTime& CTime::x_AdjustTime(const CTime& from, bool shift_time)
     case eMinute:
         if (Minute() != from.Minute())
             return x_AdjustTimeImmediately(from, shift_time);
+        NCBI_FALLTHROUGH;
     case eHour:
         if (Hour() != from.Hour())
             return x_AdjustTimeImmediately(from, shift_time);
+        NCBI_FALLTHROUGH;
     case eDay:
         if (Day() != from.Day())
             return x_AdjustTimeImmediately(from, shift_time);
+        NCBI_FALLTHROUGH;
     case eMonth:
         if (Month() != from.Month())
             return x_AdjustTimeImmediately(from, shift_time);
+        NCBI_FALLTHROUGH;
     default:
         break;
     }

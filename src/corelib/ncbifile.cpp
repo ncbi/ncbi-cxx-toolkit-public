@@ -876,6 +876,7 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
                 case 2: case 4: // got a UNC path (\\... or \\?\UNC\...)
                     head.push_back(kEmptyStr);
                     // fall through
+                    NCBI_FALLTHROUGH;
                 case 1:         // normal volume-less absolute path
                     head.push_back(kEmptyStr);
                     break;
@@ -5486,6 +5487,8 @@ struct SMemoryFileHandle {
 #else /* UNIX */
     int     hMap;   // File handle
 #endif
+    SMemoryFileHandle(void) : hMap(kInvalidHandle) {
+    }
     string  sFileName;
 };
 
@@ -6425,7 +6428,7 @@ void CFileIO::Open(const string& filename,
 #if defined(NCBI_OS_MSWIN)
 
     // Translate parameters
-    DWORD dwAccessMode, dwShareMode, dwOpenMode;
+    DWORD dwAccessMode(0), dwShareMode(0), dwOpenMode(0);
 
     switch (open_mode) {
         case eCreate:
@@ -6669,9 +6672,9 @@ size_t CFileIO::Read(void* buf, size_t count) const
     char* ptr = (char*) buf;
     
 #if defined(NCBI_OS_MSWIN)
-    const DWORD   kMax = numeric_limits<DWORD>::max();
+    constexpr DWORD   kMax = numeric_limits<DWORD>::max();
 #elif defined(NCBI_OS_UNIX)
-    const ssize_t kMax = numeric_limits<ssize_t>::max();
+    constexpr ssize_t kMax = numeric_limits<ssize_t>::max();
 #endif   
     
     while (count) {
@@ -6716,9 +6719,9 @@ size_t CFileIO::Write(const void* buf, size_t count) const
     const char* ptr = (const char*) buf;
     
 #if defined(NCBI_OS_MSWIN)
-    const DWORD   kMax = numeric_limits<DWORD>::max();
+    constexpr DWORD   kMax = numeric_limits<DWORD>::max();
 #elif defined(NCBI_OS_UNIX)
-    const ssize_t kMax = numeric_limits<ssize_t>::max();
+    constexpr ssize_t kMax = numeric_limits<ssize_t>::max();
 #endif   
     
     while (count) {
@@ -7206,11 +7209,13 @@ ERW_Result CFileReaderWriter::Flush(void)
 
 // Platform-dependent structure to store file locking information
 struct SLock {
-    SLock(void) {};
     SLock(CFileLock::TOffsetType off, size_t len) {
         Reset(off, len);
     }
 #if defined(NCBI_OS_MSWIN)
+    SLock(void) 
+        : offset_lo(0), offset_hi(0), length_lo(0), length_hi(0) {
+    };
     void Reset(CFileLock::TOffsetType off, size_t len) 
     {
         offset_lo = (DWORD)(off & 0xFFFFFFFF);
@@ -7231,6 +7236,9 @@ struct SLock {
     DWORD length_lo;
     DWORD length_hi;
 #elif defined(NCBI_OS_UNIX)
+    SLock(void) 
+        : offset(0), length(0) {
+    };
     void Reset(CFileLock::TOffsetType off, size_t len) {
         offset = off;
         length = len;

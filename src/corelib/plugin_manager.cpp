@@ -45,7 +45,8 @@ CPluginManager_DllResolver::CPluginManager_DllResolver(void)
     : m_DllNamePrefix("ncbi_plugin"),
       m_EntryPointPrefix("NCBI_EntryPoint"),
       m_Version(CVersionInfo::kAny),
-      m_DllResolver(0)
+      m_DllResolver(0),
+      m_AutoUnloadDll(CDll::eAutoUnload)
 {}
 
 

@@ -98,7 +98,7 @@ class CObjectMemoryPoolChunk : public CObject
 {
 private:
     CObjectMemoryPoolChunk(size_t size)
-        : m_CurPtr(m_Memory), m_EndPtr(m_Memory+size)
+        : m_Memory{}, m_CurPtr(m_Memory), m_EndPtr(m_Memory+size)
         {
             RegisterMemoryChunk(size);
         }
