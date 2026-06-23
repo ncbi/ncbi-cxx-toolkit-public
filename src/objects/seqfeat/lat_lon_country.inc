@@ -3002,7 +3002,7 @@ static const char* const s_DefaultLatLonCountryText[] = {
     "	31	7	12",
     "	30	8	11",
     "	29	8	11",
-    "Turkey",
+    "Turkiye",
     "	43	25	28	32	36",
     "	42	25	44",
     "	41	24	45",
