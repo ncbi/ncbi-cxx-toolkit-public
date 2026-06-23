@@ -285,7 +285,7 @@ CCompressionDictionary::CCompressionDictionary(const void* buf, size_t buf_size,
 
 
 CCompressionDictionary::CCompressionDictionary(const string& filename)
-    : m_Data(NULL), m_Size(0), m_Own(eNoOwnership)
+    : m_Data(nullptr), m_Size(0), m_Own(eNoOwnership)
 {
 
     // If loading dictionary from the file, get its size first
@@ -323,7 +323,7 @@ CCompressionDictionary::CCompressionDictionary(const string& filename)
 
 
 CCompressionDictionary::CCompressionDictionary(istream& stream, size_t size)
-    : m_Data(NULL), m_Size(0), m_Own(eNoOwnership)
+    : m_Data(nullptr), m_Size(0), m_Own(eNoOwnership)
 {
     try {
         m_Size = LoadFromStream(stream, size);
@@ -366,7 +366,7 @@ size_t CCompressionDictionary::LoadFromStream(CNcbiIstream& is, size_t size)
     // Read up to 'size' bytes from stream
     size_t left = size;
     size_t nread = 0;
-    char* p = (char*)m_Data;
+    char* p = (char*) m_Data;
 
     while (left && is) {
         is.read(p, left);
@@ -385,12 +385,11 @@ size_t CCompressionDictionary::LoadFromStream(CNcbiIstream& is, size_t size)
 void CCompressionDictionary::Free(void)
 {
     if (m_Data  &&  (m_Own == eTakeOwnership)) {
-        free((void*)m_Data);
+        delete[] static_cast<const char*>(m_Data);
     }
-    m_Data = NULL;
+    m_Data = nullptr;
     m_Size = 0;
 }
-
 
 
 END_NCBI_SCOPE
