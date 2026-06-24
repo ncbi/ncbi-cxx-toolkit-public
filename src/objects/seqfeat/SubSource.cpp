@@ -3746,7 +3746,7 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"TON", "Tonga"},
 {"TTO", "Trinidad and Tobago"},
 {"TUN", "Tunisia"},
-{"TUR", "Turkiye"},
+{"TUR", "Turkey"},
 {"TUV", "Tuvalu"},
 {"TWN", "Taiwan"},
 {"TZA", "Tanzania"},
