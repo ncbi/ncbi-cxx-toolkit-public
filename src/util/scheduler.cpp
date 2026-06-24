@@ -96,7 +96,8 @@ public:
     // In the absence of the following constructor, new compilers (as required
     // by the new C++ standard) may fill the object memory with zeros,
     // erasing flags set by CObject::operator new (see CXX-1808)
-    CScheduler_QueueEvent() {}
+    CScheduler_QueueEvent() : id(0), repeat_pattern(eWithRate)  {
+    }
 };
 
 

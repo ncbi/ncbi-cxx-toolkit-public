@@ -176,7 +176,8 @@ CUTTPWriter::CUTTPWriter()
       m_OutputBufferSize(0),
       m_ChunkPartSize(0),
       m_MaxBufferSize(0),
-      m_InternalBufferSize(0)
+      m_InternalBufferSize(0),
+      m_InternalBuffer{0}
 {
 }
 

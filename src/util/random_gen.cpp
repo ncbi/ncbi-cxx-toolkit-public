@@ -213,7 +213,7 @@ static CSafeStatic<CRandomSupplier> s_RandomSupplier;
 
 
 CRandom::CRandom(EGetRandMethod method) :
-    m_RandMethod(method)
+    m_RandMethod(method), m_State{0}, m_RJ(0), m_RK(0), m_Seed(0)
 {
     if (method == eGetRand_Sys) {
         if (!s_RandomSupplier->IsInitialized())
@@ -225,7 +225,7 @@ CRandom::CRandom(EGetRandMethod method) :
 
 
 CRandom::CRandom(TValue seed) :
-    m_RandMethod(eGetRand_LFG)
+    m_RandMethod(eGetRand_LFG), m_State{0}, m_RJ(0), m_RK(0), m_Seed(0)
 {
     SetSeed(seed);
 }

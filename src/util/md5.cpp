@@ -56,7 +56,7 @@ static void s_ByteReverse(unsigned char* buf, size_t longs)
 // Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
 // initialization constants.
 CMD5::CMD5(void)
-    : m_Bits(0), m_Finalized(false)
+    : m_Bits(0), m_In{0}, m_Finalized(false)
 {
     m_Buf[0] = 0x67452301;
     m_Buf[1] = 0xefcdab89;
