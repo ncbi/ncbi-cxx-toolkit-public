@@ -1475,7 +1475,7 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
                             CImprint::TPubstatus pubstatus = imp.GetPubstatus();
                             switch ( pubstatus ) {
                             case ePubStatus_epublish:
-                                l.push_back( "Publication Status: Online-Only" );
+                                // l.push_back( "Publication Status: Online-Only" );
                                 break;
                             case ePubStatus_aheadofprint:
                                 l.push_back( "Publication Status: Available-Online prior to print" );
