@@ -3279,6 +3279,7 @@ static const char* const s_Countries[] = {
     "Trinidad and Tobago",
     "Tromelin Island",
     "Tunisia",
+    "Turkey",
     "Turkiye",
     "Turkmenistan",
     "Turks and Caicos Islands",
@@ -3320,7 +3321,6 @@ static const char* const s_Former_Countries[] = {
     "Siam",
     "Swaziland",
     "The former Yugoslav Republic of Macedonia",
-    "Turkey",
     "USSR",
     "Yugoslavia",
     "Zaire"
