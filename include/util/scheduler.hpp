@@ -95,6 +95,9 @@ struct NCBI_XUTIL_EXPORT SScheduler_SeriesInfo
 
     /// Smart-pointer to the task
     CIRef<IScheduler_Task>  task;
+
+    SScheduler_SeriesInfo(void): id(0) {
+    }
 };
 
 

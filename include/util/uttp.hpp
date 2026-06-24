@@ -219,7 +219,8 @@ private:
 };
 
 inline CUTTPReader::CUTTPReader() :
-    m_Offset(0), m_State(eReadControlChars)
+    m_Buffer(nullptr), m_ChunkPart(nullptr), m_BufferSize(0), m_ChunkPartSize(0),
+    m_Offset(0), m_LengthAcc(0), m_State(eReadControlChars), m_ChunkContinued(false)
 {
 }
 

@@ -168,6 +168,8 @@ public:
     struct SDictionary {
         CRef<IDictionary> dict;
         int priority;
+        SDictionary(void) : priority(0) {
+        }
     };
     
     typedef vector<SDictionary> TDictionaries;
