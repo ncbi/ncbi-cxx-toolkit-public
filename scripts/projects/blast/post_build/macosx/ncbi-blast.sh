@@ -99,7 +99,9 @@ create_disk_image()
     du -shc $PRODUCT    # For diagnostics
     # Note: if this command fails, it could be because the -size argument is no
     # longer large enough, adjust accordingly
-    /usr/bin/hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT -verbose -size 500m
+    # June 24 2026, disabled size at all.
+    # /usr/bin/hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT -verbose -size 500m
+    /usr/bin/hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT -verbose 
     mkdir $INSTALLDIR/installer
     mv $PRODUCT.dmg $INSTALLDIR/installer
 }
