@@ -72,7 +72,7 @@ if("${TOOLKIT_GIT_REVISION}" STREQUAL "")
             OUTPUT_STRIP_TRAILING_WHITESPACE)
     endif()
 
-    if(NOT EXISTS ${_tree_root}/.git)
+    if("${TOOLKIT_GIT_REVISION}" STREQUAL "")
         include(FindSubversion)
     endif()
     if(NOT "$ENV{SVNREV}" STREQUAL "")
