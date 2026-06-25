@@ -40,7 +40,7 @@ prep_binary_component_package()
 {
     BLAST_BINS="blastn blastp blastx tblastn tblastx psiblast rpsblast rpstblastn blast_formatter deltablast legacy_blast.pl update_blastdb.pl cleanup-blastdb-volumes.py get_species_taxids.sh"
     MASKING_BINS="windowmasker dustmasker segmasker"
-    DB_BINS="blastdbcmd makeblastdb makeprofiledb makembindex blastdb_aliastool convert2blastmask blastdbcheck"
+    DB_BINS="blastdbcmd makeblastdb makeprofiledb makembindex makeclusterdb blastdb_aliastool convert2blastmask blastdbcheck"
     VDB_BINS="blast_formatter_vdb blast_vdb_cmd blastn_vdb tblastn_vdb"
     ALL_BINS="$BLAST_BINS $MASKING_BINS $DB_BINS $VDB_BINS"
 
