@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed Jun 24 11:25:15 EDT 2026; formally
+/* time_t value corresponding to Fri Jun 26 10:10:36 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kBuiltInGuide_Timestamp = 1782314715UL;
+static const unsigned long kBuiltInGuide_Timestamp = 1782483036UL;
 static const char* const kBuiltInGuide[] = {
     "# $Id$",
     "version  3 # of file format",
@@ -1681,6 +1681,15 @@ static const char* const kBuiltInGuide[] = {
     "2+6  QU  ddbj_patent",
     "2+8  QU  ddbj_other_nuc",
     "2+10 QU  ddbj_other_nuc",
+    "2+6  QV  ddbj_patent",
+    "2+8  QV  ddbj_other_nuc",
+    "2+10 QV  ddbj_other_nuc",
+    "2+6  QW  ddbj_patent",
+    "2+8  QW  ddbj_other_nuc",
+    "2+10 QW  ddbj_other_nuc",
+    "2+6  QX  ddbj_patent",
+    "2+8  QX  ddbj_other_nuc",
+    "2+10 QX  ddbj_other_nuc",
     "2+6  Q?  ddbj_other_nuc",
     "2+8  Q?  ddbj_other_nuc",
     "2+10 Q?  ddbj_other_nuc",
