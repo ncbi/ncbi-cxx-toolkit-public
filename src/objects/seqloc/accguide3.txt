@@ -1645,6 +1645,15 @@ version  3 # of file format
 2+6  QU  ddbj_patent
 2+8  QU  ddbj_other_nuc
 2+10 QU  ddbj_other_nuc
+2+6  QV  ddbj_patent
+2+8  QV  ddbj_other_nuc
+2+10 QV  ddbj_other_nuc
+2+6  QW  ddbj_patent
+2+8  QW  ddbj_other_nuc
+2+10 QW  ddbj_other_nuc
+2+6  QX  ddbj_patent
+2+8  QX  ddbj_other_nuc
+2+10 QX  ddbj_other_nuc
 2+6  Q?  ddbj_other_nuc
 2+8  Q?  ddbj_other_nuc
 2+10 Q?  ddbj_other_nuc
