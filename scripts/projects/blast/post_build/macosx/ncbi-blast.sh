@@ -101,7 +101,19 @@ create_disk_image()
     # longer large enough, adjust accordingly
     # June 24 2026, disabled size at all.
     # /usr/bin/hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT -verbose -size 500m
-    /usr/bin/hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT -verbose 
+    # Debugging START
+    hdiutil info
+    mount | grep 'ncbi-blast'
+    ls -la /Volumes | grep 'ncbi-blast'
+    # Debugging END
+    rm -frv $PRODUCT.dmg
+    /usr/bin/hdiutil create -help
+    /usr/bin/hdiutil create $PRODUCT.dmg \
+        -srcfolder $PRODUCT \
+        -verbose \
+        -ov \
+        -nospotlight \
+        -debug
     mkdir $INSTALLDIR/installer
     mv $PRODUCT.dmg $INSTALLDIR/installer
 }
