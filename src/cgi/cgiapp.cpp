@@ -87,10 +87,16 @@ NCBI_PARAM_DEF_EX(bool, CGI, Print_Request_Method, true, eParam_NoThread,
 typedef NCBI_PARAM_TYPE(CGI, Print_Request_Method) TPrintRequestMethodParam;
 
 
+/// Deprecated flag, use Print_JA_SIG instead
 NCBI_PARAM_DECL(bool, CGI, Print_JA3_SIG);
 NCBI_PARAM_DEF_EX(bool, CGI, Print_JA3_SIG, true, eParam_NoThread,
                   CGI_PRINT_JA3_SIG);
 typedef NCBI_PARAM_TYPE(CGI, Print_JA3_SIG) TPrintJA3SigParam;
+
+NCBI_PARAM_DECL(bool, CGI, Print_JA_SIG);
+NCBI_PARAM_DEF_EX(bool, CGI, Print_JA_SIG, true, eParam_NoThread,
+    CGI_PRINT_JA_SIG);
+typedef NCBI_PARAM_TYPE(CGI, Print_JA_SIG) TPrintJASigParam;
 
 
 NCBI_PARAM_DECL(bool, CGI, Allow_Sigpipe);
@@ -781,13 +787,40 @@ void CCgiApplication::LogRequest(const CCgiContext& ctx) const
             diag.Extra().Print("USER_AGENT", str);
         }
     }
-    // Print USER_AGENT
-    if ( TPrintJA3SigParam::GetDefault() ) {
-        str = req.GetRandomProperty("X_JA3_SIG");
-        if ( !str.empty() ) {
-            diag.Extra().Print("ja3_sig", str);
+
+    // Print X-JA*-Sig
+    // Use legacy Print_JA3_SIG flag only if Print_JA_SIG is not defined.
+    bool print_ja = TPrintJASigParam::GetDefault();
+    bool print_ja3 = TPrintJA3SigParam::GetDefault();
+    if (print_ja || print_ja3) {
+        CParamBase::EParamSource ja_src;
+        TPrintJASigParam::GetState(nullptr, &ja_src);
+        bool have_ja_param = ja_src != CParamBase::eSource_Default;
+        TPrintJA3SigParam::GetState(nullptr, &ja_src);
+        bool have_ja3_param = ja_src != CParamBase::eSource_Default;
+        // Prefer Print_JA_SIG over JA3, report contradicting flags.
+        if (have_ja_param || have_ja3_param) {
+            if (have_ja_param) {
+                if (have_ja3_param && print_ja != print_ja3) {
+                    ERR_POST_ONCE("PRINT_JA_SIG and PRINT_JA3_SIG flags do not match.");
+                }
+            }
+            else {
+                print_ja = print_ja3;
+            }
+        }
+        if (print_ja) {
+            str = req.GetRandomProperty("X_JA3_SIG");
+            if (!str.empty()) {
+                diag.Extra().Print("ja3_sig", str);
+            }
+            str = req.GetRandomProperty("X_JA4_SIG");
+            if (!str.empty()) {
+                diag.Extra().Print("ja4_sig", str);
+            }
         }
     }
+
     // Print NCBI_LOG_FIELDS
     CNcbiLogFields f("http");
     map<string, string> env;
