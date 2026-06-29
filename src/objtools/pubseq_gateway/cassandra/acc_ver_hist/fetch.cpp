@@ -70,18 +70,6 @@ void CCassAccVerHistoryTaskFetch::SetConsumeCallback( TAccVerHistConsumeCallback
     m_Consume = std::move(callback);
 }
 
-void CCassAccVerHistoryTaskFetch::SetDataReadyCB(
-    shared_ptr<CCassDataCallbackReceiver> callback)
-{
-    if( callback && m_State != eInit)
-    {
-        NCBI_THROW(CCassandraException, eSeqFailed,
-           "CCassAccVerHistoryTaskFetch: DataReadyCB can't be assigned "
-           "after the loading process has started");
-    }
-    CCassBlobWaiter::SetDataReadyCB3( callback);
-}
-
 void CCassAccVerHistoryTaskFetch::Wait1()
 {
     bool restarted = false;

@@ -134,7 +134,6 @@ public:
     bool IsBlobPropsFound() const;
     void SetChunkCallback(TBlobChunkCallbackEx callback);
     void SetPropsCallback(TBlobPropsCallback callback);
-    void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
 
     // Required to test variable timeouts.
     // Prepared statements interfere with testing process.

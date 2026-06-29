@@ -124,7 +124,7 @@ public:
      *
      * @return CRequestStatus::ECode
      */
-    inline CRequestStatus::ECode GetErrorRequestStatus() const
+    CRequestStatus::ECode GetErrorRequestStatus() const
     {
         switch (GetErrCode()) {
             case eNotFound:
@@ -156,11 +156,9 @@ public:
         }
     }
 
-    inline bool isRestartable() const
+    bool isRestartable() const
     {
-        return GetErrCode() == CCassandraException::eQueryTimeout
-               || GetErrCode() == CCassandraException::eQueryFailedRestartable
-               || GetErrCode() == CCassandraException::eRequestQueueFull;
+        return GetErrCode() == eQueryTimeout || GetErrCode() == eQueryFailedRestartable;
     }
 
     NCBI_EXCEPTION_DEFAULT(CCassandraException, CException);

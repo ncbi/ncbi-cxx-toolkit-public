@@ -65,7 +65,6 @@ class CCassSI2CSITaskFetch : public CCassBlobWaiter
                          TSI2CSIConsumeCallback      consume_callback,
                          TDataErrorCallback          data_error_cb);
 
-    void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
     void SetConsumeCallback(TSI2CSIConsumeCallback callback);
 
  protected:

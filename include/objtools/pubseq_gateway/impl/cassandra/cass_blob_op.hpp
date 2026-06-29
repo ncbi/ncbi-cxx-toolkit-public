@@ -61,8 +61,91 @@ using TDataErrorCallback = function<void(CRequestStatus::ECode status, int code,
 using TLoggingCallback = function<void(EDiagSev severity, const string & message)>;
 using TDataReadyCallback = void(*)(void*);
 
+/**
+ * Exclusively for PubSeqGateway callbacks. PSG supplies the same callback receiver for multiple requests
+ *  and needs to pass extra data item as an argument.
+ * Normal clients need to attach any extra data to a class which implements CCassDataCallbackReceiver interface
+ *  and avoid using this option.
+ */
+class CCassDataCallbackReceiverWithContext {
+public:
+    virtual ~CCassDataCallbackReceiverWithContext() = default;
+    virtual void OnData(void *) = 0;
+};
+
 class CCassBlobWaiter
 {
+    class CInternalDataCallbackReceiver
+        : public CCassDataCallbackReceiver
+    {
+    public:
+        explicit CInternalDataCallbackReceiver(weak_ptr<CCassDataCallbackReceiver> receiver)
+            : m_Receiver(receiver)
+        {}
+        explicit CInternalDataCallbackReceiver(weak_ptr<CCassDataCallbackReceiverWithContext> receiver)
+            : m_Receiver(receiver)
+        {}
+        void SetContext(void * context)
+        {
+            m_Context = context;
+        }
+        void OnData() override
+        {
+            m_WaitAfterReceiverCallCount.store(0, std::memory_order_relaxed);
+            m_ReceiverCallCount.fetch_add(1, std::memory_order_relaxed);
+            std::visit([&](auto& w) {
+                using T = std::decay_t<decltype(w)>;
+                if constexpr (std::is_same_v<T, std::weak_ptr<CCassDataCallbackReceiver>>) {
+                    if (auto sp = w.lock()) {
+                        sp->OnData();
+                    }
+                }
+                else if constexpr (std::is_same_v<T, std::weak_ptr<CCassDataCallbackReceiverWithContext>>) {
+                    if (auto sp = w.lock()) {
+                        sp->OnData(m_Context);
+                    }
+                }
+            }, m_Receiver);
+        }
+        bool ReceiverExpired() const
+        {
+            return std::visit([&](auto& w) -> bool {
+                using T = std::decay_t<decltype(w)>;
+                if constexpr (std::is_same_v<T, std::weak_ptr<CCassDataCallbackReceiver>>) {
+                    using wt = weak_ptr<CCassDataCallbackReceiver>;
+                    return w.owner_before(wt{}) || wt{}.owner_before(w);
+                }
+                else if constexpr (std::is_same_v<T, std::weak_ptr<CCassDataCallbackReceiverWithContext>>) {
+                    using wt = weak_ptr<CCassDataCallbackReceiverWithContext>;
+                    return w.owner_before(wt{}) || wt{}.owner_before(w);
+                }
+                return true;
+            }, m_Receiver);
+        }
+        void IncWaitAfterReceiverCallCount()
+        {
+            if (m_ReceiverCallCount.load(std::memory_order_seq_cst) > 0) {
+                m_WaitAfterReceiverCallCount.fetch_add(1, std::memory_order_relaxed);
+            }
+        }
+        int32_t GetWaitAfterReceiverCallCount() const
+        {
+            return m_WaitAfterReceiverCallCount.load(std::memory_order_relaxed);
+        }
+        int32_t GetReceiverCallCount() const
+        {
+            return m_ReceiverCallCount.load(std::memory_order_relaxed);
+        }
+    private:
+        std::variant<
+            std::weak_ptr<CCassDataCallbackReceiver>,
+            std::weak_ptr<CCassDataCallbackReceiverWithContext>
+        > m_Receiver;
+        void * m_Context{nullptr};
+        atomic<int32_t> m_WaitAfterReceiverCallCount{0};
+        atomic<int32_t> m_ReceiverCallCount{0};
+    };
+
 protected:
     CCassBlobWaiter(const CCassBlobWaiter& other)
         : m_ErrorCb(other.m_ErrorCb)
@@ -155,6 +238,9 @@ public:
     bool Wait()
     {
         m_WaitCallCounter.fetch_add(1, std::memory_order_relaxed);
+        if (m_InternalDataReadyCb) {
+            m_InternalDataReadyCb->IncWaitAfterReceiverCallCount();
+        }
         bool finished = Finished();
         while (!finished) {
             try {
@@ -242,9 +328,34 @@ public:
         return m_MaxRetries < 0 ? m_Conn->GetMaxRetries() : m_MaxRetries;
     }
 
-    void SetDataReadyCB3(shared_ptr<CCassDataCallbackReceiver> datareadycb3)
+    void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback_receiver)
     {
-        m_DataReadyCb3 = datareadycb3;
+        if (callback_receiver && m_State != eInit) {
+            NCBI_THROW(CCassandraException, eSeqFailed,
+               "CCassBlobWaiter: DataReadyCB can't be assigned after the loading process has started");
+        }
+        SetDataReadyCB3(std::move(callback_receiver));
+    }
+
+    void SetDataReadyCB3(shared_ptr<CCassDataCallbackReceiver> callback_receiver)
+    {
+        if (!m_InternalDataReadyCb) {
+            m_InternalDataReadyCb = std::make_shared<CInternalDataCallbackReceiver>(callback_receiver);
+        }
+        m_DataReadyCb3 = m_InternalDataReadyCb;
+    }
+
+    void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiverWithContext> callback_receiver, void * context)
+    {
+        if (callback_receiver && m_State != eInit) {
+            NCBI_THROW(CCassandraException, eSeqFailed,
+               "CCassBlobWaiter: DataReadyCB can't be assigned after the loading process has started");
+        }
+        if (!m_InternalDataReadyCb) {
+            m_InternalDataReadyCb = std::make_shared<CInternalDataCallbackReceiver>(callback_receiver);
+            m_InternalDataReadyCb->SetContext(context);
+        }
+        m_DataReadyCb3 = m_InternalDataReadyCb;
     }
 
     void SetReadConsistency(TCassConsistency value)
@@ -268,10 +379,13 @@ public:
             restart_count += q.restart_count;
         }
         auto callback = m_DataReadyCb3.lock();
-        return format("State:{}, WaitCalls:{}, DataReadyCbExists:{} Queries:{}, Restarts:{}, Cancel:{}",
+        return format("State:{}, ErrorCalls:{}, WaitCalls:{}, WaitCallsAfterDataReady:{} DataReadyCbExists:{}, DataReadyCalls:{}, Queries:{}, Restarts:{}, Cancel:{}",
             m_State.load(std::memory_order_relaxed),
+            m_ErrorCallCounter.load(std::memory_order_relaxed),
             m_WaitCallCounter.load(std::memory_order_relaxed),
+            m_InternalDataReadyCb ? m_InternalDataReadyCb->GetWaitAfterReceiverCallCount(): -1,
             callback ? "true" : "false",
+            m_InternalDataReadyCb ? m_InternalDataReadyCb->GetReceiverCallCount(): -1,
             query_count,
             restart_count,
             m_Cancelled ? "true" : "false"
@@ -311,8 +425,7 @@ protected:
     // Returns true for expired non empty weak pointers
     bool IsDataReadyCallbackExpired() const
     {
-        using wt = weak_ptr<CCassDataCallbackReceiver>;
-        return m_DataReadyCb3.owner_before(wt{}) || wt{}.owner_before(m_DataReadyCb3);
+        return m_InternalDataReadyCb && m_InternalDataReadyCb->ReceiverExpired();
     }
 
     void Error(CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
@@ -320,6 +433,7 @@ protected:
         m_State = eError;
         m_LastError = message.empty() ? "Unknown error" : message;
         if (m_ErrorCb) {
+            m_ErrorCallCounter.fetch_add(1, std::memory_order_relaxed);
             m_ErrorCb(status, code, severity, message);
         }
     }
@@ -426,7 +540,8 @@ protected:
     bool                            m_Async{true};
     atomic_bool                     m_Cancelled{false};
     vector<SQueryRec>               m_QueryArr;
-    atomic<int64_t>                 m_WaitCallCounter{0};
+    atomic<int32_t>                 m_WaitCallCounter{0};
+    atomic<int32_t>                 m_ErrorCallCounter{0};
 
 private:
     string                          m_Keyspace;
@@ -435,6 +550,7 @@ private:
 
     TCassConsistency                m_ReadConsistency{CCassConsistency::kLocalQuorum};
     TCassConsistency                m_WriteConsistency{CCassConsistency::kLocalQuorum};
+    shared_ptr<CInternalDataCallbackReceiver> m_InternalDataReadyCb{nullptr};
 };
 
 class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>

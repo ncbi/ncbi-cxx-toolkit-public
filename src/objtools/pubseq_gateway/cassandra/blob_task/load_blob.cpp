@@ -133,15 +133,6 @@ void CCassBlobTaskLoadBlob::SetPropsCallback(TBlobPropsCallback callback)
     m_PropsCallback = std::move(callback);
 }
 
-void CCassBlobTaskLoadBlob::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback)
-{
-    if (callback && m_State != eInit) {
-        NCBI_THROW(CCassandraException, eSeqFailed,
-           "CCassBlobTaskLoadBlob: DataReadyCB can't be assigned after the loading process has started");
-    }
-    CCassBlobWaiter::SetDataReadyCB3(std::move(callback));
-}
-
 void CCassBlobTaskLoadBlob::Wait1()
 {
     bool b_need_repeat{false};
@@ -431,6 +422,7 @@ void CCassBlobTaskLoadBlob::x_RequestChunk(CCassQuery& qry, int32_t chunk_no)
             Error(CRequestStatus::e500_InternalServerError, CCassandraException::eUnknown, eDiag_Error, msg);
         }
     }
+
     qry.Query(GetReadConsistency(), true, m_UsePrepared);
 }
 
