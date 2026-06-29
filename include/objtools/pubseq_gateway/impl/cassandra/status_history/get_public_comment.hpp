@@ -74,7 +74,6 @@ class CCassStatusHistoryTaskGetPublicComment
 
     void SetMessages(shared_ptr<CPSGMessages> messages);
     void SetCommentCallback(TCommentCallback callback);
-    void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
 
  protected:
     void Wait1() override;

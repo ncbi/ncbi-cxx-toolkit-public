@@ -79,16 +79,6 @@ void CCassBlobTaskFetchSplitHistory::SetConsumeCallback(TConsumeCallback callbac
     m_ConsumeCallback = std::move(callback);
 }
 
-void CCassBlobTaskFetchSplitHistory::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback)
-{
-    if (callback && m_State != eInit) {
-        NCBI_THROW(CCassandraException, eSeqFailed,
-           "CCassBlobTaskFetchSplitHistory: DataReadyCB can't be assigned "
-           "after the loading process has started");
-    }
-    CCassBlobWaiter::SetDataReadyCB3(callback);
-}
-
 void CCassBlobTaskFetchSplitHistory::Wait1()
 {
     bool restarted{false};

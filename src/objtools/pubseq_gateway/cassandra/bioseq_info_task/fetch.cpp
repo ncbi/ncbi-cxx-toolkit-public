@@ -90,16 +90,6 @@ void CCassBioseqInfoTaskFetch::SetConsumeCallback(TBioseqInfoConsumeCallback  ca
     m_ConsumeCallback = std::move(callback);
 }
 
-void CCassBioseqInfoTaskFetch::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver>  callback)
-{
-    if (callback && m_State != eInit) {
-        NCBI_THROW(CCassandraException, eSeqFailed,
-           "CCassBioseqInfoTaskFetch: DataReadyCB can't be assigned "
-           "after the loading process has started");
-    }
-    CCassBlobWaiter::SetDataReadyCB3(callback);
-}
-
 void CCassBioseqInfoTaskFetch::AllowInheritance(bool value)
 {
     m_InheritanceAllowed = value;

@@ -75,7 +75,6 @@ public:
         m_QueryArr.clear();
     }
 
-    void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
     void SetFindID2ChunkIDCallback( TFindID2ChunkIDCallback callback);
 
  protected:

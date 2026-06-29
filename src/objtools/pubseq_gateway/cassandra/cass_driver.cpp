@@ -318,7 +318,7 @@ void CCassConnection::SetRtLimits(unsigned int numThreadsIo, unsigned int numCon
 
 unsigned int CCassConnection::GetQueueSizeIo() const
 {
-    return m_QueueSizeIo;
+    return m_QueueSizeIo == 0 ? kCassDefaultQueueSizeIo : m_QueueSizeIo;
 }
 
 void CCassConnection::SetQueueSizeIo(unsigned int value)

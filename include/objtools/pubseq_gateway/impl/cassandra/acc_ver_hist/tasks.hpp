@@ -68,7 +68,6 @@ public:
         int16_t seq_id_type = 0
     );
 
-    void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
     void SetConsumeCallback(TAccVerHistConsumeCallback callback);
 
     string GetAccession() const

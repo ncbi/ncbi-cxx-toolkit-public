@@ -198,6 +198,7 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     // to avoid overflow we have to adjust to mks
     // ~35minutes
     static const unsigned int kCassMaxTimeout = numeric_limits<unsigned int>::max() / 1000;
+    static constexpr unsigned int kCassDefaultQueueSizeIo = 8192;
 
     using TPreparedList = unordered_map<string, const CassPrepared *>;
 
@@ -770,7 +771,7 @@ public:
         }
     }
 
- private:
+private:
     weak_ptr<CCassDataCallbackReceiver> m_ondata3;
     weak_ptr<CCassQuery>            m_query;
     shared_ptr<CCassQueryCbRef>     m_self;

@@ -68,15 +68,6 @@ void CCassSI2CSITaskFetch::SetConsumeCallback(TSI2CSIConsumeCallback  callback)
     m_ConsumeCallback = std::move(callback);
 }
 
-void CCassSI2CSITaskFetch::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver>  callback)
-{
-    if (callback && m_State != eInit) {
-        NCBI_THROW(CCassandraException, eSeqFailed,
-           "CCassSI2CSITaskFetch: DataReadyCB can't be assigned after the loading process has started");
-    }
-    CCassBlobWaiter::SetDataReadyCB3(callback);
-}
-
 void CCassSI2CSITaskFetch::x_InitializeQuery()
 {
     constexpr string_view select = "SELECT sec_seq_id_type, accession, gi, sec_seq_state, "

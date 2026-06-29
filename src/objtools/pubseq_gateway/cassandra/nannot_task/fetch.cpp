@@ -105,16 +105,6 @@ void CCassNAnnotTaskFetch::SetConsumeCallback(TNAnnotConsumeCallback callback)
     m_Consume = std::move(callback);
 }
 
-void CCassNAnnotTaskFetch::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback)
-{
-    if (callback && m_State != eInit) {
-        NCBI_THROW(CCassandraException, eSeqFailed,
-           "CCassNAnnotTaskFetch: DataReadyCB can't be assigned "
-           "after the loading process has started");
-    }
-    CCassBlobWaiter::SetDataReadyCB3(callback);
-}
-
 size_t CCassNAnnotTaskFetch::x_AnnotNamesSize() const
 {
     if (m_AnnotNames.empty()) {
