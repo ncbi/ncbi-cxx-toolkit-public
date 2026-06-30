@@ -39,11 +39,14 @@
 // generated includes
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbithr.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbi_param.hpp>
+#include <corelib/perf_log.hpp>
 #include <util/compile_time.hpp>
 #include <util/line_reader.hpp>
 #include <util/static_map.hpp>
+#include <util/sync_queue.hpp>
 #include <util/util_misc.hpp>
 #include <util/bitset/ncbi_bitset.hpp>
 #include <util/regexp/ctre/ctre.hpp>
@@ -70,6 +73,8 @@
 #include <objects/biblio/Id_pat.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <corelib/ncbistre.hpp>
+
+#include <algorithm>
 
 #include "accguide3.inc"
 
@@ -210,6 +215,19 @@ static constexpr ctll::fixed_string kAccessionLike{
     "[A-Za-z][A-Za-z_]*(?:\\d{2}[PSps]\\d)?\\d{5,}(?:\\.0*[1-9]\\d{0,8})?"
 };
 
+static constexpr ctll::fixed_string kValidLineDirective{
+    "[ \t]*#[ \t]*line[ \t]+([1-9]\\d*)(?:[ \t]+\"(.*)\")?[ \t]*"
+};
+static constexpr ctll::fixed_string kValidThreadDecl{
+    "[ \t]*###[ \t]*Thread[ \t]+([1-9]\\d*):"
+    "((?:[ \t]+[1-9]\\d*\\+[1-9]\\d*(?:/[1-9]\\d*)*)+)[ \t]*"
+};
+static constexpr ctll::fixed_string kValidThreadUse{
+    "[ \t]*###[ \t]*Thread[ \t]+([1-9]\\d*)[ \t]*"
+};
+static constexpr ctll::fixed_string kDirectiveAttempt{
+    "[ \t]*(?:#[ \t]*line|###[ \t]*Thread)(?![^ \t]).*"
+};
 static constexpr ctll::fixed_string kSpecialNRanges{
     "[ \t]*:[ \t]+([^ \t].*)"
 };
@@ -1002,6 +1020,7 @@ static const bm::bvector<>::size_type kBVSizes[kMaxSmallSpecialDigits + 1] = {
 };
 
 class CAccGuideChunk;
+class CAccGuideThread;
 
 struct SAccGuide : public CObject
 {
@@ -1081,6 +1100,9 @@ struct SAccGuide : public CObject
     typedef pair<string, string>    TFallback; // fallback, refinement
     typedef map<const TAccInfo*, TFallback> TFallbackMap;
     typedef CSeq_id::TLoadFlags     TLoadFlags;
+    typedef CRef<CAccGuideThread>   TThreadRef;
+    typedef vector<TThreadRef>      TThreads;
+    typedef vector<TFormatCode>     TFormats;
 
     struct SSubMap {
         TPrefixes         prefixes;
@@ -1109,7 +1131,8 @@ struct SAccGuide : public CObject
               prev_special_type(CSeq_id::eAcc_unknown),
               prev_special_base_type(CSeq_id::eAcc_unknown),
               specialN_submap(nullptr), specialN_end_pos(0),
-              specialN_version(0), version(1), where(filename), flags(flags_in)
+              specialN_version(0), version(1), where(filename),
+              flags(flags_in), current_thread(0)
             {}
 
         TAccInfo FindAccInfo(CTempString name);
@@ -1142,18 +1165,19 @@ struct SAccGuide : public CObject
         unsigned int          version;
         SWhere                where;
         TLoadFlags            flags;
+        TThreads              threads;
+        TFormats              formats;
+        // Positive in main thread, indicating current block's handler;
+        // -N in auxiliary thread N to inform performance logging.
+        int                   current_thread;
     };
     
     SAccGuide(TLoadFlags flags);
-    SAccGuide(const string& filename, TLoadFlags flags)
-        : count(0), complete(false)
-        { x_Load(filename, flags); }
+    SAccGuide(const string& filename, TLoadFlags flags);
     SAccGuide(const string& filename, ILineReader& lr, const CTime& t,
-              TLoadFlags flags)
-        : count(0), complete(false)
-        { x_Load(filename, lr, t, flags); }
+              TLoadFlags flags);
 
-    void AddRule(const CTempString& rule, SHints& hints);
+    bool AddRule(const CTempString& rule, SHints& hints);
     const TAccInfo& Find(TFormatCode fmt, const CTempString& acc_or_pfx,
                          string* key_used = NULL);
     static TFormatCode s_Key(unsigned short letters, unsigned short digits)
@@ -1260,6 +1284,134 @@ CTempString CAccGuideChunk::GetNextRule()
     }
 }
 
+class CAccGuideRuleQueue
+{
+public:
+    typedef CRef<CAccGuideChunk> TChunkRef;
+
+    CAccGuideRuleQueue()
+        : m_PartiallyWritten(new CAccGuideChunk),
+          m_Done(false), m_PushWanted(false)
+        { }
+
+    void AddRule(const CTempString& rule,
+                 const SAccGuide::SHints::SWhere& where,
+                 CAccGuideChunk::EType type = CAccGuideChunk::ePlain);
+    void Flush(bool done = false);
+
+    TChunkRef GetNextChunk(void)
+        { return m_Queue.Pop(); }
+    bool IsDone(void) const
+        { return m_Done  &&  m_Queue.IsEmpty(); }
+    void RequestPush(void)
+        { m_PushWanted = true; }
+
+private:
+    typedef CSyncQueue<TChunkRef> TQueue;
+
+    TQueue               m_Queue;
+    CRef<CAccGuideChunk> m_PartiallyWritten;
+    atomic<bool>         m_Done;
+    atomic<bool>         m_PushWanted;
+};
+
+void CAccGuideRuleQueue::AddRule(const CTempString& rule,
+                                 const SAccGuide::SHints::SWhere& where,
+                                 CAccGuideChunk::EType type)
+{
+    if ( !m_PartiallyWritten->AddRule(rule, where, type) ) {
+        Flush();
+        m_PartiallyWritten->AddRule(rule, where, type);
+    } else if (m_PushWanted) {
+        Flush();
+    }
+}
+
+void CAccGuideRuleQueue::Flush(bool done)
+{
+    if ( !m_PartiallyWritten->Empty() ) {
+        m_Queue.Push(m_PartiallyWritten);
+    }
+    if (done) {
+        m_Done = true;
+        if (IsDone()) {
+            m_Queue.Push(null); // deadlock protection
+        }
+    } else {
+        m_PartiallyWritten.Reset(new CAccGuideChunk);
+        m_PushWanted = false;
+    }
+}
+
+class CAccGuideThread : public CThread
+{
+public:
+    CAccGuideThread(CRef<SAccGuide> guide, shared_ptr<SAccGuide::SHints> hints)
+        : m_Guide(guide), m_Hints(hints)
+        { }
+
+    void AddRule(const CTempString& rule,
+                 const SAccGuide::SHints::SWhere& where,
+                 CAccGuideChunk::EType type = CAccGuideChunk::ePlain)
+        { m_Queue.AddRule(rule, where, type); }
+    void Flush(bool done = false)
+        { m_Queue.Flush(done); }
+
+protected:
+    void* Main() override;
+
+private:
+    CRef<SAccGuide>               m_Guide;
+    shared_ptr<SAccGuide::SHints> m_Hints;
+    CAccGuideRuleQueue::TChunkRef m_PartiallyRead;
+    CAccGuideRuleQueue            m_Queue;
+};
+
+void* CAccGuideThread::Main()
+{
+    CPerfLogGuard perf(NStr::NumericToString(-m_Hints->current_thread)
+                       + ".acc_guide_load");
+    unsigned int my_rules = 0;
+    do {
+        if (m_PartiallyRead.Empty()
+            ||  m_PartiallyRead->GetRulesLeft() == 0) {
+            if (m_Queue.IsDone()) {
+                break;
+            }
+            m_PartiallyRead.Reset(m_Queue.GetNextChunk());
+            if (m_PartiallyRead.Empty()) {
+                _ASSERT(m_Queue.IsDone());
+                break;
+            }
+            if (m_PartiallyRead->GetType() == CAccGuideChunk::eRanges) {
+                m_Queue.RequestPush();
+                auto &target
+                    = m_Hints->specialN_submap->deferred_specials.back();
+                target.abbrev_ranges.push_back(m_PartiallyRead);
+                auto n = m_PartiallyRead->GetRulesLeft();
+                my_rules += n;
+                m_Hints->where.line_no += n;
+                while (n-- > 0) {
+                    target.longest_line
+                        = max(target.longest_line,
+                              m_PartiallyRead->GetNextRule().size() + 2);
+                }
+                m_PartiallyRead->Rewind();
+                m_PartiallyRead.Reset();
+                continue;
+            }
+        }
+        if (m_PartiallyRead->GetRulesLeft() == 1) {
+            m_Queue.RequestPush();
+        }
+        m_Guide->AddRule(m_PartiallyRead->GetNextRule(), *m_Hints);
+        ++my_rules;
+    } while ( !m_Queue.IsDone() );
+    perf.AddParameter("rules", NStr::NumericToString(my_rules));
+    perf.Post(CRequestStatus::e200_Ok);
+    return nullptr;
+}
+
 ostream& operator << (ostream& os, const SAccGuide::SHints::SWhere& where)
 {
     if ( !where.filename.empty() ) {
@@ -1344,6 +1496,17 @@ SAccGuide::SSubMap& SAccGuide::SHints::FindSubMap(SAccGuide::TMainMap& rules,
         return *prev_submap->second;
     } else {
         SAccGuide::TMainMap::iterator it = rules.find(fmt);
+        if ( !formats.empty() ) {
+            if (it == rules.end()) {
+                ERR_POST_X(41,
+                           where << ": format " << s_Letters(fmt) << '+'
+                           << s_Digits(fmt) << " not assigned to any thread");
+            } else if ( !binary_search(formats.begin(), formats.end(), fmt) ) {
+                ERR_POST_X(42,
+                           where << ": format " << s_Letters(fmt) << '+'
+                           << s_Digits(fmt) << " assigned to another thread");
+            }
+        }
         if (it == rules.end()) {
             it = rules.insert(it, make_pair(
                                   fmt, make_shared<SAccGuide::SSubMap>()));
@@ -1355,9 +1518,92 @@ SAccGuide::SSubMap& SAccGuide::SHints::FindSubMap(SAccGuide::TMainMap& rules,
     }
 }
 
-void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
+bool SAccGuide::AddRule(const CTempString& rule, SHints& hints)
 {
-    if (auto m = ctre::match<kSpecialNRanges>(rule)) {
+    bool keep_comment = false;
+    ++hints.where.line_no;
+    if (auto m = ctre::match<kValidThreadUse>(rule)) {
+        auto n = NStr::StringToNumeric<unsigned int>(m.get<1>().view());
+        if (n > hints.threads.size()) {
+            ERR_POST_X(43,
+                       hints.where
+                       << ": ignoring request to use undeclared thread " << n);
+        } else {
+            if (hints.current_thread > 0) { // false the first time
+                hints.threads[hints.current_thread-1]->Flush();
+            }
+            hints.current_thread = n;
+            hints.threads[hints.current_thread-1]
+                ->AddRule("#line "
+                          + NStr::NumericToString(hints.where.line_no + 1),
+                          hints.where /* used only in length sanity-check */);
+            // filename?
+        }
+        return true;
+    } else if (hints.current_thread > 0) {
+        if (rule.size() > 2  &&  NStr::StartsWith(rule, ": ")
+            &&  !isspace(rule[2])) {
+            // crude but sufficient in practice, and just an optimization
+            hints.threads[hints.current_thread-1]
+                ->AddRule(rule.substr(2), hints.where,
+                          CAccGuideChunk::eRanges);
+        } else {
+            hints.threads[hints.current_thread-1]->AddRule(rule, hints.where);
+        }
+        return false;
+    } else if (auto m = ctre::match<kValidLineDirective>(rule)) {
+        NStr::StringToNumeric(m.get<1>().view(), &hints.where.line_no);
+        --hints.where.line_no;
+        // filename, if present?
+        return true;
+    } else if (auto m = ctre::match<kValidThreadDecl>(rule)) {
+        auto n = NStr::StringToNumeric<unsigned int>(m.get<1>().view());
+        auto expected = hints.threads.size() + 1;
+        if (n != expected) {
+            NCBI_THROW_FMT(CSeqIdException, eFormat,
+                           hints.where
+                           << ": unexpected declaration for thread " << n
+                           << "; " << expected << " should have been next.");
+        } else if (hints.prev_submap != nullptr) {
+            ERR_POST_X(44,
+                       hints.where << ": thread declaration follows content");
+        }
+        vector<CTempStringEx> tokens;
+        vector<TFormatCode> formats;
+        NStr::Split(m.get<2>().view(), " \t", tokens,
+                    NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+        CTempString l, r;
+        for (const auto & it : tokens) {
+            NStr::SplitInTwo(it, "+", l, r);
+            auto letters = NStr::StringToNumeric<unsigned short>(l);
+            vector<CTempStringEx> tokens2;
+            NStr::Split(r, "/", tokens2);
+            for (const auto & it2 : tokens2) {
+                auto fmt = s_Key(letters,
+                                 NStr::StringToNumeric<unsigned short>(it2));
+                if (rules.find(fmt) != rules.end()) {
+                    ERR_POST_X(45,
+                               hints.where << ": " << l << '+' << it2
+                               << " already assigned to another thread.");
+                    continue;
+                }
+                formats.push_back(fmt);
+                rules.emplace(fmt, new SSubMap);
+            }
+        }
+        std::sort(formats.begin(), formats.end());
+        auto hints2 = make_shared<SHints>(hints);
+        hints2->current_thread = -n;
+        hints2->formats = formats;
+        hints2->threads.clear();
+        CRef<CAccGuideThread> thr(new CAccGuideThread(CRef<SAccGuide>(this),
+                                                      hints2));
+        hints.threads.push_back(thr);
+        thr->Run(CThread::fRunCloneRequestContext);
+        return true;
+    } else if (ctre::match<kDirectiveAttempt>(rule)) {
+        keep_comment = true; // to pick up invalid-line warning
+    } else if (auto m = ctre::match<kSpecialNRanges>(rule)) {
         if (hints.version < 2) {
             ERR_POST_X(19,
                        Warning << "SAccGuide::AddRule: " << hints.where
@@ -1369,7 +1615,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                        Warning <<
                        "SAccGuide::AddRule: " << hints.where
                        << ": ignoring misplaced specialN ranges line.");
-            return;
+            return true;
         } else if ( !complete
                    &&  (hints.flags & CSeq_id::fFullyLoadSpecials) == 0) {
             auto &target = hints.specialN_submap->deferred_specials.back();
@@ -1384,7 +1630,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                 ar.back()->AddRule(sv, hints.where, CAccGuideChunk::eRanges);
             }
             target.longest_line = max(target.longest_line, rule.size());
-            return;
+            return true;
         }
     }
 
@@ -1392,15 +1638,16 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
     vector<CTempStringEx> tokens;
     SIZE_TYPE           pos, pos2;
 
-    ++hints.where.line_no;
-    tmp1.assign(rule, 0, rule.find('#')); // strip comment
-    if (tmp1.empty())
-        return;
+    if (keep_comment) {
+        tmp1 = rule;
+    } else {
+        tmp1.assign(rule, 0, rule.find('#'));
+    }
     tokens.reserve(3);
     NStr::Split(tmp1, " \t", tokens,
                 NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     if (tokens.empty()) {
-        return;
+        return true;
     } else if ( !hints.deferred_special_key.empty() ) {
         TAccInfo value = hints.deferred_special_type;
         if (tokens.size() != 3  ||  !NStr::EqualNocase(tokens[0], "special")
@@ -1458,7 +1705,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         if (hints.version > 3  ||  hints.version < 1) {
             ERR_POST_X(2, "SAccGuide::AddRule: " << hints.where
                           << ": Unsupported version " << tokens[1]);
-            return;
+            return true;
         }
     } else if ((pos = tokens[0].find('+')) != NPOS
                &&  (tokens.size() == 3
@@ -1804,6 +2051,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         ERR_POST_X(5, Warning << "SAccGuide::AddRule: " << hints.where
                       << ": ignoring invalid line: " << rule);
     }
+    return true;
 }
 
 const SAccGuide::TAccInfo& SAccGuide::Find(TFormatCode fmt,
@@ -1904,6 +2152,7 @@ SAccGuide::SAccGuide(TLoadFlags flags)
 {
     bool file_is_old = false;
     CTime builtin_timestamp(static_cast<time_t>(kBuiltInGuide_Timestamp));
+    CRef<SAccGuide> self_ref(this);
     {{
         filename = g_FindDataFile("accguide3.txt");
         if ( !filename.empty()  &&
@@ -1926,17 +2175,49 @@ SAccGuide::SAccGuide(TLoadFlags flags)
             = sizeof(kBuiltInGuide) / sizeof(*kBuiltInGuide);
         SHints hints("accguide3.inc");
         hints.where.offset = 36;
+        CPerfLogGuard perf("0.acc_guide_load");
+        unsigned int my_rules = 0;
         for (unsigned int i = 0;  i < kNumBuiltInRules;  ++i) {
-            AddRule(kBuiltInGuide[i], hints);
+            if (AddRule(kBuiltInGuide[i], hints)) {
+                ++my_rules;
+            }
         }
+        perf.AddParameter("rules", NStr::NumericToString(my_rules));
+        perf.Post(CRequestStatus::e200_Ok);
         x_CompleteInit(hints);
     }
+    self_ref.Release();
+}
+
+SAccGuide::SAccGuide(const string& filename, TLoadFlags flags)
+    : count(0), complete(false)
+{
+    CRef<SAccGuide> self_ref(this);
+    x_Load(filename, flags);
+    self_ref.Release();
+}
+
+SAccGuide::SAccGuide(const string& filename, ILineReader& lr, const CTime& t,
+                     TLoadFlags flags)
+    : count(0), complete(false)
+{
+    CRef<SAccGuide> self_ref(this);
+    x_Load(filename, lr, t, flags);
+    self_ref.Release();
 }
 
 void SAccGuide::x_CompleteInit(SHints& hints)
 {
+    for (auto & it : hints.threads) {
+        // flush any last deferred special
+        it->AddRule("version 2", hints.where);
+        it->Flush(true);
+    }
     count = hints.where.line_no;
-    AddRule("version 2", hints); // flush any last deferred special
+    for (auto & it : hints.threads) {
+        it->Join();
+    }
+    hints.threads.clear();
     for (auto &rit : rules) {
         ERASE_ITERATE(TSmallSpecialMap, sit, rit.second->small_specials) {
             if (sit->second.first.any()) {
@@ -1974,9 +2255,15 @@ void SAccGuide::x_Load(const string& fname, ILineReader& in, const CTime& t,
 {
     SHints hints(fname, flags);
     timestamp = t;
+    CPerfLogGuard perf("0.acc_guide_load");
+    unsigned int my_rules = 0;
     do {
-        AddRule(*++in, hints);
+        if (AddRule(*++in, hints)) {
+            ++my_rules;
+        }
     } while ( !in.AtEOF() );
+    perf.AddParameter("rules", NStr::NumericToString(my_rules));
+    perf.Post(CRequestStatus::e200_Ok);
     x_CompleteInit(hints);
 }
 
