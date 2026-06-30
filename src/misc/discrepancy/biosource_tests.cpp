@@ -1425,6 +1425,90 @@ DISCREPANCY_CASE(UNNECESSARY_ENVIRONMENTAL, BIOSRC, eOncaller, "Unnecessary envi
 }
 
 
+// UNPLACED_PROKARYOTIC_CHROMOSOME
+
+DISCREPANCY_CASE(UNPLACED_PROKARYOTIC_CHROMOSOME, BIOSRC, eDisc, "Unplaced Prokaryotic Chromosome")
+{
+    for (const CBioSource* biosrc : context.GetBiosources()) {
+
+        if (! context.IsProkaryotic(biosrc)) {
+            continue;
+        }
+
+        int genome = CBioSource::eGenome_unknown;
+        if (biosrc && biosrc->IsSetGenome()) {
+            genome = biosrc->GetGenome();
+        }
+
+        // record only genome chromosome and two values that are incompatible with chromosome
+		switch (genome) {
+		case CBioSource::eGenome_unknown:
+            m_Objs["UNKNOWN"].Add(*context.BiosourceObjRef(*biosrc));
+		    break;
+		case CBioSource::eGenome_genomic:
+            m_Objs["GENOMIC"].Add(*context.BiosourceObjRef(*biosrc));
+		    break;
+		case CBioSource::eGenome_chromosome:
+            m_Objs["CHROMOSOME"].Add(*context.BiosourceObjRef(*biosrc));
+		    break;
+		default:
+		    break;
+		}
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(UNPLACED_PROKARYOTIC_CHROMOSOME)
+{
+    CReportNode rep, rep1;
+    int chromosomes = 0;
+    int genomics = 0;
+    int unknowns = 0;
+
+    if (m_Objs.GetMap().size() < 2) {
+        return;
+    }
+
+    // count specific BioSource.genome values in entire record
+    for (auto& it: m_Objs.GetMap()) {
+        for (auto& obj: it.second->GetObjects()) {
+            if (it.first == "CHROMOSOME") {
+                chromosomes++;
+            } else if (it.first == "GENOMIC") {
+                genomics++;
+            } else if (it.first == "UNKNOWN") {
+                unknowns++;
+            }
+        }
+    }
+
+    // a conflict exists if there is at least one chromosome and at least one unknown or genomic
+    if (chromosomes < 1 || genomics + unknowns < 1) {
+        return;
+    }
+
+    for (auto& it: m_Objs.GetMap()) {
+        for (auto& obj: it.second->GetObjects()) {
+            if (it.first == "CHROMOSOME") {
+                string label = it.first;
+                rep["[n] sequence[s] annotated as chromosome"][label].Ext().Add(*obj);
+                rep1[label].Add(*obj);
+            } else if (it.first == "GENOMIC") {
+                string label = it.first;
+                rep["[n] sequence[s] unplaced with genomic location"][label].Ext().Add(*obj);
+                rep1[label].Add(*obj);
+            } else if (it.first == "UNKNOWN") {
+                string label = it.first;
+                rep["[n] sequence[s] unplaced with unknown location"][label].Ext().Add(*obj);
+                rep1[label].Add(*obj);
+            }
+        }
+    }
+
+    m_ReportItems = rep1.GetMap().size() > 1 ? rep.Export(*this)->GetSubitems() : rep1.Export(*this)->GetSubitems();
+}
+
+
 // END_COLON_IN_COUNTRY
 
 DISCREPANCY_CASE(END_COLON_IN_COUNTRY, BIOSRC, eOncaller, "Country name end with colon")
