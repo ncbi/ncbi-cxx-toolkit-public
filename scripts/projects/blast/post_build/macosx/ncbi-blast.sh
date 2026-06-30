@@ -104,20 +104,19 @@ create_disk_image()
     # Debugging START
     set +e
     set -x
-    hdiutil info
-    /sbin/mount | grep 'ncbi-blast'
-    ls -la /Volumes | grep 'ncbi-blast'
     # Debugging END
-    rm -frv $PRODUCT.dmg
-    /usr/bin/hdiutil detach "/Volumes/$PRODUCT" -force 2>/dev/null || true
-    /usr/bin/hdiutil create $PRODUCT.dmg \
-        -srcfolder $PRODUCT \
-        -format UDZO \
+    rm -frv $PRODUCT.dmg $PRODUCT.temp.dmg
+    /usr/bin/hdiutil create $PRODUCT.temp.dmg \
+        -format UDRW \
         -fs HFS+ \
         -volname "$PRODUCT" \
         -ov \
-        -nospotlight \
-        -debug
+        -nospotlight
+    /usr/bin/hdiutil attach $PRODUCT.temp.dmg -mountpoint /Volumes/$PRODUCT -nobrowse -owners on
+    /usr/bin/ditto $PRODUCT /Volumes/$PRODUCT
+    sync
+    /usr/bin/hdiutil detach /Volumes/$PRODUCT || /usr/bin/hdiutil detach /Volumes/$PRODUCT -force
+    /usr/bin/hdiutil convert $PRODUCT.temp.dmg -format UDZO -o $PRODUCT.dmg
     mkdir $INSTALLDIR/installer
     mv $PRODUCT.dmg $INSTALLDIR/installer
 }
