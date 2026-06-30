@@ -210,6 +210,9 @@ static constexpr ctll::fixed_string kAccessionLike{
     "[A-Za-z][A-Za-z_]*(?:\\d{2}[PSps]\\d)?\\d{5,}(?:\\.0*[1-9]\\d{0,8})?"
 };
 
+static constexpr ctll::fixed_string kSpecialNRanges{
+    "[ \t]*:[ \t]+([^ \t].*)"
+};
 
 // CSeqIdException
 const char* CSeqIdException::GetErrCodeString(void) const
@@ -1354,6 +1357,37 @@ SAccGuide::SSubMap& SAccGuide::SHints::FindSubMap(SAccGuide::TMainMap& rules,
 
 void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
 {
+    if (auto m = ctre::match<kSpecialNRanges>(rule)) {
+        if (hints.version < 2) {
+            ERR_POST_X(19,
+                       Warning << "SAccGuide::AddRule: " << hints.where
+                       << ": specialN continuation lines valid only in"
+                       " version 2+ guides");
+        }
+        if (hints.specialN_submap == nullptr) {
+            ERR_POST_X(20,
+                       Warning <<
+                       "SAccGuide::AddRule: " << hints.where
+                       << ": ignoring misplaced specialN ranges line.");
+            return;
+        } else if ( !complete
+                   &&  (hints.flags & CSeq_id::fFullyLoadSpecials) == 0) {
+            auto &target = hints.specialN_submap->deferred_specials.back();
+            auto &ar = target.abbrev_ranges;
+            auto sv = m.get<1>().view();
+            if (ar.empty()  ||  !ar.back()->AddRule(sv, hints.where,
+                                                    CAccGuideChunk::eRanges)) {
+                if (target.prefix.empty()) {
+                    target.prefix.assign(sv.data(), 1);
+                }
+                ar.emplace_back(new CAccGuideChunk);
+                ar.back()->AddRule(sv, hints.where, CAccGuideChunk::eRanges);
+            }
+            target.longest_line = max(target.longest_line, rule.size());
+            return;
+        }
+    }
+
     CTempString         tmp1, tmp2;
     vector<CTempStringEx> tokens;
     SIZE_TYPE           pos, pos2;
@@ -1684,35 +1718,6 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                  make_unique<SHints>(hints), 0);
         }
     } else if (tokens.size() >= 2  &&  tokens[0] == ":") {
-        if (hints.version < 2) {
-            ERR_POST_X(19,
-                       Warning << "SAccGuide::AddRule: " << hints.where
-                       << ": specialN continuation lines valid only in"
-                       " version 2+ guides");
-        }
-        if (hints.specialN_submap == nullptr) {
-            ERR_POST_X(20,
-                       Warning <<
-                       "SAccGuide::AddRule: " << hints.where
-                       << ": ignoring misplaced specialN ranges line.");
-            return;
-        }
-        if ( !complete  &&  (hints.flags & CSeq_id::fFullyLoadSpecials) == 0) {
-            auto& target = hints.specialN_submap->deferred_specials.back();
-            auto& ar = target.abbrev_ranges;
-            CTempString ranges(rule, 2, NPOS);
-            if (ar.empty()  ||  !ar.back()->AddRule(ranges, hints.where,
-                                                    CAccGuideChunk::eRanges)) {
-                if (target.prefix.empty()) {
-                    target.prefix.assign(ranges.data(), 1);
-                }
-                ar.emplace_back(new CAccGuideChunk);
-                ar.back()->AddRule(ranges, hints.where,
-                                   CAccGuideChunk::eRanges);
-            }
-            target.longest_line = max(target.longest_line, rule.size());
-            return;
-        }
         string s;
         CTempString from;
         char *p = &hints.prev_specialN_acc[hints.specialN_end_pos];
