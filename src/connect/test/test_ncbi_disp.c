@@ -45,6 +45,15 @@
 #include "test_assert.h"  /* This header must go last */
 
 
+static const char* x_Arch(TNcbiArch arch)
+{
+    static char buf[40];
+    TNcbiArch x_arch = arch >> 1;
+    sprintf(buf, "%hu%s", x_arch, arch & fArch_Virtual ? ", VM" : "");
+    return buf;
+}
+
+
 static unsigned short x_Msb(unsigned short x)
 {
     unsigned int y;
@@ -275,8 +284,8 @@ int main(int argc, const char* argv[])
                 CORE_LOGF(eLOG_Note,     ("    Tasks:       %d",
                                           HINFO_TaskCount(hinfo)));
                 if (HINFO_MachineParams(hinfo, &params)) {
-                    CORE_LOGF(eLOG_Note, ("    Arch:        %d",
-                                          params.arch));
+                    CORE_LOGF(eLOG_Note, ("    Arch:        %s",
+                                          x_Arch(params.arch)));
                     CORE_LOGF(eLOG_Note, ("    OSType:      %s",
                                           x_OS(params.ostype)));
                     t = (time_t) params.bootup;
