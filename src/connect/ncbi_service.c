@@ -1007,6 +1007,7 @@ static SERV_ITER x_Open(const char*         service,
         if (!svc) {
             char* tmp  = ConnNetInfo_URL(&data->net_info);
             if (tmp) {
+                assert(*tmp);
                 if (strncmp(tmp, "//", 2) == 0  &&  strncmp(url, "//", 2) != 0)
                     memmove(tmp, tmp + 2, strlen(tmp + 2) + 1);
                 if ((data->type & (fSERV_Dns | fSERV_Standalone)) == fSERV_Dns)
