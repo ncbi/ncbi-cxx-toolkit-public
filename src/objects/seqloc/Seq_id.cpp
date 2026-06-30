@@ -1002,20 +1002,74 @@ struct SAccGuide : public CObject
 {
     typedef CSeq_id::EAccessionInfo TAccInfo;
 
+    class CPrefix {
+    public:
+        CPrefix()
+            : m_Length(0) { m_Data[0] = '\0'; }
+        explicit CPrefix(const CTempString& s)
+            { assign(s.data(), s.length()); }
+        CPrefix(const char* c, SIZE_TYPE l)
+            { assign(c, l); }
+        void assign(const char* data, SIZE_TYPE length);
+        void clear()
+            { m_Length = 0; m_Data[0] = '\0'; }
+        char* data()
+            { return m_Data; }
+        const char* data() const
+            { return m_Data; }
+        bool empty() const
+            { return m_Length == 0; }
+        void erase(SIZE_TYPE p)
+            { m_Length = min<SIZE_TYPE>(p, m_Length); }
+        auto find(char c, SIZE_TYPE p = 0) const
+            { return CTempString(m_Data, m_Length).find(c, p); }
+        auto find_first_of(const CTempString& s) const
+            { return CTempString(m_Data, m_Length).find_first_of(s); }
+        void resize(size_t l)
+            { m_Length = min(l, sizeof(m_Data)); }
+        auto size() const
+            { return m_Length; }
+        CTempString substr(SIZE_TYPE p, SIZE_TYPE l = NPOS) const
+            { return CTempString(m_Data + p, min<SIZE_TYPE>(l, m_Length-p)); }
+        operator CTempString() const
+            { return CTempString(m_Data, m_Length); }
+        operator string_view() const
+            { return string_view(m_Data, m_Length); }
+        CPrefix& operator=(const CTempString& s)
+            { assign(s.data(), s.length()); return *this; }
+        auto operator<=>(const CPrefix& that) const
+            { return string_view(m_Data, m_Length)
+                    <=> string_view(that.m_Data, that.m_Length); }
+        bool operator==(const CPrefix& that) const
+            { return m_Length == that.m_Length
+                    &&  !memcmp(m_Data, that.m_Data, m_Length); }
+        bool operator==(const CTempString& s) const
+            { return CTempString(m_Data, m_Length) == s; }
+        const char& operator[](size_t i) const
+            { return m_Data[i]; }
+        char& operator[](size_t i)
+            { return m_Data[i]; }
+
+    private:
+        unsigned char m_Length;
+        char          m_Data[15];
+    };
+    typedef CPrefix TPrefix;
+
     struct SHints;
     struct SDeferredSpecials {
-        string             prefix;
+        TPrefix            prefix;
         vector<string>     abbrev_ranges;
         unique_ptr<SHints> hints;
         size_t             longest_line;
     };
-    
-    typedef unordered_map<string, TAccInfo>   TPrefixes;
-    typedef pair<string, TAccInfo>  TPair;
+
+    typedef unordered_map<TPrefix, TAccInfo, hash<string_view>> TPrefixes;
+    typedef pair<TPrefix, TAccInfo> TPair;
     typedef list<TPair>             TPairs; // not vector -- need stable ptrs
-    typedef map<string, TPair>      TBigSpecialMap; // last -> first -> value
+    typedef map<TPrefix, TPair>     TBigSpecialMap; // last -> first -> value
     typedef pair<bm::bvector<>, TAccInfo> TSmallSpecialOption;
-    typedef multimap<string, TSmallSpecialOption> TSmallSpecialMap;
+    typedef multimap<TPrefix, TSmallSpecialOption> TSmallSpecialMap;
     typedef unsigned int            TFormatCode;
     typedef pair<string, string>    TFallback; // fallback, refinement
     typedef map<const TAccInfo*, TFallback> TFallbackMap;
@@ -1062,12 +1116,12 @@ struct SAccGuide : public CObject
         TBigSpecialMap::iterator   prev_big_special;
         TSmallSpecialMap::iterator prev_small_special;
         TFormatCode           prev_special_format;
-        string                prev_special_key;
+        TPrefix               prev_special_key;
         CTempString           prev_special_type_name;
-        string                prev_special_base_key;
+        TPrefix               prev_special_base_key;
         TAccInfo              prev_special_type;
         TAccInfo              prev_special_base_type;
-        string                prev_specialN_acc;
+        TPrefix               prev_specialN_acc;
         string                deferred_special_key;
         string                deferred_special_type_name;
         TAccInfo              deferred_special_type;
@@ -1118,7 +1172,7 @@ private:
     void x_AddSpecial(SSubMap& submap, SHints& hints, TFormatCode fmt,
                       CTempString from, CTempString to, TAccInfo value,
                       const string* old_name, const CTempString& new_name);
-    static bm::bvector_size_type x_SplitSpecial(CTempString& acc,
+    static bm::bvector_size_type x_SplitSpecial(TPrefix& acc,
                                                 TFormatCode fmt);
 };
 
@@ -1128,6 +1182,33 @@ ostream& operator << (ostream& os, const SAccGuide::SHints::SWhere& where)
         os << where.filename << ':';
     }
     return os << (where.line_no + where.offset);
+}
+
+void SAccGuide::CPrefix::assign(const char* data, SIZE_TYPE length)
+{
+    m_Length = static_cast<unsigned char>(length);
+    if (length > sizeof(m_Data)) {
+        ERR_POST_X(40,
+                   CTempString(data, length) << ": unsupported prefix length "
+                   << length << " (max is " << (sizeof(m_Data) - 1) << ')');
+        m_Length = sizeof(m_Data);
+    }
+    memcpy(m_Data, data, m_Length);
+    if (m_Length < sizeof(m_Data)) {
+        m_Data[m_Length] = '\0';
+    }
+}
+
+inline
+ostream& operator<<(ostream& os, const SAccGuide::CPrefix& p)
+{
+    return os << CTempString(p);
+}
+
+inline
+bool operator<(const CTempString& s, const SAccGuide::CPrefix& p)
+{
+    return s < CTempString(p);
 }
 
 static const SAccGuide::TAccInfo kUnrecognized
@@ -1238,15 +1319,15 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                                " indicate that specials are present.");
                 }
             }
-            _ASSERT(hints.prev_type == value);
-            hints.prev_special_key = key;
-            SSubMap& submap = hints.FindSubMap(rules, fmt);
             if (pos2 == NPOS) {
                 tmp1 = tmp2 = key;
             } else {
                 tmp1.assign(key, 0, pos2);
                 tmp2.assign(key, pos2 + 1, NPOS);
             }
+            _ASSERT(hints.prev_type == value);
+            hints.prev_special_key = tmp2;
+            SSubMap& submap = hints.FindSubMap(rules, fmt);
             x_AddSpecial(submap, hints, fmt, tmp1, tmp2, value, old_name,
                          hints.deferred_special_type_name);
             hints.prev_special_type_name.clear();
@@ -1320,7 +1401,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
             }
             const TAccInfo* value_ptr = NULL;
             if (tokens[1].find_first_of("?*") == NPOS) {
-                value_ptr = &(submap.prefixes[tokens[1]] = value);
+                value_ptr = &(submap.prefixes[TPrefix(tokens[1])] = value);
             } else {
                 // Account for possible refinements of fallback definitions
                 NON_CONST_ITERATE (TPairs, wit, submap.wildcards) {
@@ -1513,7 +1594,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         hints.prev_special_type_name.clear();
         hints.prev_special_type = CSeq_id::eAcc_unknown;
         if ((hints.flags & CSeq_id::fFullyLoadSpecials) == 0) {
-            string prefix;
+            TPrefix prefix;
             if (hints.specialN_version == 2) {
                 prefix = hints.prev_special_base_key;
             }
@@ -1587,8 +1668,8 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         }
     } else if (tokens.size() == 3 && NStr::EqualNocase(tokens[0], "gnl")) {
         hints.specialN_submap = nullptr;
-        string key(tokens[1]);
-        NStr::ToUpper(key);
+        TPrefix key(tokens[1]);
+        NStr::ToUpper(key.data());
         TAccInfo value = hints.FindAccInfo(tokens[2]);
         if (value == kUnrecognized) {
             TPrefixes::iterator it2 = general.find(key);
@@ -1643,7 +1724,7 @@ const SAccGuide::TAccInfo& SAccGuide::Find(TFormatCode fmt,
 
     SSubMap&                  submap = *it->second;
     const TAccInfo*           result = &kUnknown;
-    CTempString               pfx     (acc_or_pfx, 0, fmt >> 16);
+    TPrefix                   pfx     (acc_or_pfx.data(), fmt >> 16);
     TPrefixes::const_iterator pit    = submap.prefixes.find(pfx);
     if (pit != submap.prefixes.end()) {
         result = &pit->second;
@@ -1702,7 +1783,7 @@ const SAccGuide::TAccInfo& SAccGuide::Find(TFormatCode fmt,
             }
         }
         TBigSpecialMap::const_iterator bsit
-            = submap.big_specials.lower_bound(acc_or_pfx);
+            = submap.big_specials.lower_bound(TPrefix(acc_or_pfx));
         if (bsit != submap.big_specials.end()
             &&  !(acc_or_pfx < bsit->second.first) ) {
             if (key_used) {
@@ -1776,7 +1857,7 @@ void SAccGuide::x_CompleteInit(SHints& hints)
             "SRA", "TI", "TR_ASSM_CH", "TRACE_ASSM", "TRACE_CHGR", NULL
         };
         for (const char* const* p = kNucDBs;  *p;  ++p) {
-            general[*p] = CSeq_id::eAcc_general_nuc;
+            general[TPrefix(*p)] = CSeq_id::eAcc_general_nuc;
         }
     }
     complete = true;
@@ -1807,7 +1888,7 @@ void SAccGuide::x_AddSpecial(SSubMap& submap, SHints& hints, TFormatCode fmt,
                              const string* old_name,
                              const CTempString& new_name)
 {
-    CTempString from_pfx = from, to_pfx = to;
+    TPrefix from_pfx(from), to_pfx(to);
     auto left  = x_SplitSpecial(from_pfx, fmt),
          right = x_SplitSpecial(to_pfx, fmt);
     const TAccInfo* value_ptr = nullptr;
@@ -1882,7 +1963,7 @@ void SAccGuide::x_AddSpecial(SSubMap& submap, SHints& hints, TFormatCode fmt,
     }
 }
 
-bm::bvector_size_type SAccGuide::x_SplitSpecial(CTempString& acc,
+bm::bvector_size_type SAccGuide::x_SplitSpecial(TPrefix& acc,
                                                 TFormatCode fmt)
 {
     auto raw_digits = fmt & 0xffff, digits = raw_digits;
@@ -2200,9 +2281,9 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(TParseFlags flags) const
 
     case e_General:
     {
-        string db = GetGeneral().GetDb();
+        SAccGuide::TPrefix db(GetGeneral().GetDb());
         auto guide = *s_Guide;
-        NStr::ToUpper(db);
+        NStr::ToUpper(db.data());
         SAccGuide::TPrefixes::const_iterator it = guide->general.find(db);
         return it == guide->general.end() ? eAcc_general : it->second;
     }
