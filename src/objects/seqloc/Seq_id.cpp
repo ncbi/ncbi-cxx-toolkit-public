@@ -998,6 +998,8 @@ static const bm::bvector<>::size_type kBVSizes[kMaxSmallSpecialDigits + 1] = {
     1000000000
 };
 
+class CAccGuideChunk;
+
 struct SAccGuide : public CObject
 {
     typedef CSeq_id::EAccessionInfo TAccInfo;
@@ -1058,8 +1060,10 @@ struct SAccGuide : public CObject
 
     struct SHints;
     struct SDeferredSpecials {
+        typedef CRef<CAccGuideChunk> TChunkRef;
+
         TPrefix            prefix;
-        vector<string>     abbrev_ranges;
+        vector<TChunkRef>  abbrev_ranges;
         unique_ptr<SHints> hints;
         size_t             longest_line;
     };
@@ -1175,6 +1179,83 @@ private:
     static bm::bvector_size_type x_SplitSpecial(TPrefix& acc,
                                                 TFormatCode fmt);
 };
+
+ostream& operator << (ostream& os, const SAccGuide::SHints::SWhere& where);
+
+class CAccGuideChunk : public CObject
+{
+public:
+    enum EType {
+        eEmpty,
+        ePlain,
+        eRanges
+    };
+
+    explicit CAccGuideChunk()
+        : m_Boundaries(), m_ReadIndex(0), m_WriteIndex(0), m_Type(eEmpty)
+        { }
+
+    bool         AddRule(const CTempString& rule,
+                         const SAccGuide::SHints::SWhere& where,
+                         EType type = ePlain);
+    bool         Empty() const
+        { return m_WriteIndex == 0; }
+    CTempString  GetNextRule();
+    unsigned int GetRulesLeft() const
+        { return m_WriteIndex - m_ReadIndex; }
+    EType        GetType() const
+        { return m_Type; }
+    void         Rewind()
+        { m_ReadIndex = 0; }
+
+private:
+    char           m_Buffer[65536];
+    unsigned short m_Boundaries[1024];
+    unsigned int   m_ReadIndex;
+    unsigned int   m_WriteIndex;
+    EType          m_Type;
+};
+
+bool CAccGuideChunk::AddRule(const CTempString& rule,
+                             const SAccGuide::SHints::SWhere& where,
+                             EType type)
+{
+    _ASSERT(type != eEmpty);
+    if (m_Type == eEmpty) {
+        _ASSERT(m_WriteIndex == 0);
+        m_Type = type;
+    } else if (m_Type != type) {
+        _ASSERT(m_WriteIndex > 0);
+        return false; // force a boundary
+    }
+    auto start = m_WriteIndex == 0 ? 0 : m_Boundaries[m_WriteIndex-1];
+    auto l = rule.size();
+    if (m_WriteIndex * sizeof(*m_Boundaries) < sizeof(m_Boundaries)
+        &&  l < sizeof(m_Buffer) - start) {
+        memcpy(m_Buffer + start, rule.data(), l);
+        m_Boundaries[m_WriteIndex++] = static_cast<unsigned short>(start + l);
+        return true;
+    } else if (l >= sizeof(m_Buffer)) {
+        NCBI_THROW_FMT(CSeqIdException, eFormat,
+                       where << ": accession guide rule of length " << l
+                       << " exceeds generous limit "
+                       << (sizeof(m_Buffer) - 1));
+    } else {
+        return false;
+    }
+}
+
+CTempString CAccGuideChunk::GetNextRule()
+{
+    _ASSERT(m_ReadIndex < m_WriteIndex);
+    auto i = m_ReadIndex++;
+    if (i == 0) {
+        return CTempString(m_Buffer, m_Boundaries[0]);
+    } else {
+        return CTempString(m_Buffer + m_Boundaries[i-1],
+                           m_Boundaries[i] - m_Boundaries[i-1]);
+    }
+}
 
 ostream& operator << (ostream& os, const SAccGuide::SHints::SWhere& where)
 {
@@ -1599,7 +1680,8 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                 prefix = hints.prev_special_base_key;
             }
             hints.specialN_submap->deferred_specials.emplace_back
-                (prefix, vector<string>(), make_unique<SHints>(hints), 0);
+                (prefix, vector<SDeferredSpecials::TChunkRef>(),
+                 make_unique<SHints>(hints), 0);
         }
     } else if (tokens.size() >= 2  &&  tokens[0] == ":") {
         if (hints.version < 2) {
@@ -1616,11 +1698,18 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
             return;
         }
         if ( !complete  &&  (hints.flags & CSeq_id::fFullyLoadSpecials) == 0) {
-            auto &target = hints.specialN_submap->deferred_specials.back();
-            if (target.prefix.empty()) {
-                target.prefix.assign(rule.data() + 2, 1);
+            auto& target = hints.specialN_submap->deferred_specials.back();
+            auto& ar = target.abbrev_ranges;
+            CTempString ranges(rule, 2, NPOS);
+            if (ar.empty()  ||  !ar.back()->AddRule(ranges, hints.where,
+                                                    CAccGuideChunk::eRanges)) {
+                if (target.prefix.empty()) {
+                    target.prefix.assign(ranges.data(), 1);
+                }
+                ar.emplace_back(new CAccGuideChunk);
+                ar.back()->AddRule(ranges, hints.where,
+                                   CAccGuideChunk::eRanges);
             }
-            target.abbrev_ranges.push_back(rule.substr(2));
             target.longest_line = max(target.longest_line, rule.size());
             return;
         }
@@ -1761,10 +1850,13 @@ const SAccGuide::TAccInfo& SAccGuide::Find(TFormatCode fmt,
                     vector<char> buf(dsit->longest_line);
                     buf[0] = ':';
                     buf[1] = ' ';
-                    for (const auto &ar : dsit->abbrev_ranges) {
-                        memcpy(buf.data() + 2, ar.data(), ar.size());
-                        AddRule(CTempString(buf.data(), ar.size() + 2),
-                                *dsit->hints);
+                    for (auto & chunk : dsit->abbrev_ranges) {
+                        while (chunk->GetRulesLeft() > 0) {
+                            auto ar = chunk->GetNextRule();
+                            memcpy(buf.data() + 2, ar.data(), ar.size());
+                            AddRule(CTempString(buf.data(), ar.size() + 2),
+                                    *dsit->hints);
+                        }
                     }
                     VECTOR_ERASE(dsit, submap.deferred_specials);
                 }
