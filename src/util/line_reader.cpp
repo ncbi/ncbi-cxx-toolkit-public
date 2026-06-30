@@ -349,11 +349,38 @@ void CMemoryLineReader::UngetLine(void)
     m_Pos = m_Line.begin();
 }
 
+static inline
+const char* s_MemChr2(const char* p, const char* end, char c1, char c2)
+{
+    static const ptrdiff_t kChunkSize = 4096;
+    do {
+        auto n = min(end - p, kChunkSize);
+        const char* p2 = static_cast<const char*>(memchr(p, c1, n));
+        if (p2 == nullptr) {
+            p2 = static_cast<const char*>(memchr(p, c2, n));
+            if (p2 != nullptr) {
+                return p2;
+            }
+        } else if (p2 == p) {
+            return p;
+        } else {
+            const char* p3
+                = static_cast<const char*>(memchr(p, c2, p2 - p - 1));
+            if (p3 == nullptr) {
+                return p2;
+            } else {
+                return p3;
+            }
+        }
+        p += n;
+    } while (p < end);
+    return end;
+}
 
 CMemoryLineReader& CMemoryLineReader::operator++(void)
 {
     /* If at EOF - noop */
-    if (AtEOF()) {
+    if (m_Pos >= m_End) {
         m_Line = CTempString(NULL);
         return *this;
     }
@@ -362,9 +389,10 @@ CMemoryLineReader& CMemoryLineReader::operator++(void)
         /* If after UngetLine(), line is already in buffer, so end is known*/
         p = m_Line.end();
     } else {
-        /* Line is in stream, go char by char until delimiters */
-        while ( p < m_End  &&  *p != '\r'  && *p != '\n' ) {
-            ++p;
+        if (p > m_Start  &&  p[-1] == '\r') {
+            p = s_MemChr2(p, m_End, '\r', '\n');
+        } else {
+            p = s_MemChr2(p, m_End, '\n', '\r');
         }
         m_Line = CTempString(m_Pos, p - m_Pos);
     }
