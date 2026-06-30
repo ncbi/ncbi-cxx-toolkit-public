@@ -103,19 +103,18 @@ create_disk_image()
     # /usr/bin/hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT -verbose -size 500m
     # Debugging START
     set +e
+    set -x
     hdiutil info
     /sbin/mount | grep 'ncbi-blast'
     ls -la /Volumes | grep 'ncbi-blast'
     # Debugging END
     rm -frv $PRODUCT.dmg
     /usr/bin/hdiutil detach "/Volumes/$PRODUCT" -force 2>/dev/null || true
-    /usr/bin/hdiutil create -help
     /usr/bin/hdiutil create $PRODUCT.dmg \
         -srcfolder $PRODUCT \
         -format UDZO \
         -fs HFS+ \
         -volname "$PRODUCT" \
-        -verbose \
         -ov \
         -nospotlight \
         -debug
