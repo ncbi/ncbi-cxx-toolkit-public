@@ -106,12 +106,14 @@ create_disk_image()
     set -x
     # Debugging END
     rm -frv $PRODUCT.dmg $PRODUCT.temp.dmg
-    /usr/bin/hdiutil create $PRODUCT.temp.dmg \
+    /usr/bin/hdiutil create \
+        -srcfolder $PRODUCT \
         -format UDRW \
         -fs HFS+ \
         -volname "$PRODUCT" \
         -ov \
-        -nospotlight
+        -nospotlight \
+        $PRODUCT.temp.dmg \
     /usr/bin/hdiutil attach $PRODUCT.temp.dmg -mountpoint /Volumes/$PRODUCT -nobrowse -owners on
     /usr/bin/ditto $PRODUCT /Volumes/$PRODUCT
     sync
