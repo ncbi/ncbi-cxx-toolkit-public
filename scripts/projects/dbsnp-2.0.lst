@@ -32,6 +32,7 @@ internal/asn_cache
 internal/trackmgr
 internal/gpipe/common$
 internal/gpipe/grid_wrapper
+internal/gpipe/xml_proc$
 internal/mapview/cgi/cgilib
 internal/mapview/util
 sra
