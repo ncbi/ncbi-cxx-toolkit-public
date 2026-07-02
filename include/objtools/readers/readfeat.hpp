@@ -105,6 +105,13 @@ public:
                                             ITableFilter* filter = nullptr,
                                             const string& seqid_prefix = kEmptyStr);
 
+
+    CRef<CSeq_annot> ReadSequinFeatureTable(const string& seqid,
+                                            const string& annotname,
+                                            const TFlags flags=0,
+                                            ITableFilter* filter=nullptr);
+
+
     // read 5-column feature table and return Seq-annot
     static CRef<CSeq_annot> ReadSequinFeatureTable(ILineReader& reader,
                                                    const TFlags flags = 0,

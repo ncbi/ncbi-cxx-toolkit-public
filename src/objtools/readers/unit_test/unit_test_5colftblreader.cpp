@@ -277,3 +277,64 @@ BOOST_AUTO_TEST_CASE(Test_RW_2238)
     string msg = listener.Get(0).Message();
     BOOST_CHECK_EQUAL(msg, expected_msg);
 }
+
+BOOST_AUTO_TEST_CASE(Test_RW_2710) 
+{
+    string input_string{
+R"(>Feature 10_1_Jianfeng
+<1	>509	CDS
+			note	EF-1a
+			product	elongation factor-1 alpha
+			protein_id	AQX83263.1
+			label	elongation factor-1 alpha CDS
+<1	>509	mRNA
+			product	elongation factor-1 alpha
+			label	elongation factor-1 alpha mRNA
+>Feature 10_2_Jianfeng
+<1	>509	CDS
+			note	EF-1a
+			product	elongation factor-1 alpha
+			protein_id	AQX83263.1
+			label	elongation factor-1 alpha CDS
+<1	>509	mRNA
+			product	elongation factor-1 alpha
+            transcript_id dummy_id
+			label	elongation factor-1 alpha mRNA
+>Feature 10_3_Jianfeng
+<1	>509	CDS
+			note	EF-1a
+			product	elongation factor-1 alpha
+			protein_id	AQX83263.1
+			label	elongation factor-1 alpha CDS
+<1	>509	mRNA
+			product	elongation factor-1 alpha
+            transcript_id dummy_id
+			label	elongation factor-1 alpha mRNA)"};
+
+    istringstream           istr(input_string);
+    auto                    pLineReader = ILineReader::New(istr);
+    CMessageListenerLenient listener;
+
+    CFeature_table_reader table_reader(*pLineReader, &listener);
+    ++(*pLineReader);
+
+    auto pAnnot = table_reader.ReadSequinFeatureTable("seq1", "");
+
+    ++(*pLineReader);
+    pAnnot = table_reader.ReadSequinFeatureTable("seq2", "");
+
+    ++(*pLineReader);
+    pAnnot = table_reader.ReadSequinFeatureTable("seq3", "");
+
+    BOOST_CHECK_EQUAL(listener.Count(), 3);
+
+    string expected_msg{ "Protein ID AQX83263.1 appears on multiple CDS features" };
+    BOOST_CHECK_EQUAL(listener.Get(0).Message(), expected_msg);
+    BOOST_CHECK_EQUAL(listener.Get(0).Line(), 14);
+    BOOST_CHECK_EQUAL(listener.Get(1).Message(), expected_msg);
+    BOOST_CHECK_EQUAL(listener.Get(1).Line(), 24);
+
+    expected_msg = "Transcript ID dummy_id appears on multiple mRNA features";
+    BOOST_CHECK_EQUAL(listener.Get(2).Message(), expected_msg);
+    BOOST_CHECK_EQUAL(listener.Get(2).Line(), 28);
+}
