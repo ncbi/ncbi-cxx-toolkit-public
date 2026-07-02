@@ -113,7 +113,7 @@ create_disk_image()
         -volname "$PRODUCT" \
         -ov \
         -nospotlight \
-        $PRODUCT.temp.dmg \
+        $PRODUCT.temp.dmg
     /usr/bin/hdiutil attach $PRODUCT.temp.dmg -mountpoint /Volumes/$PRODUCT -nobrowse -owners on
     /usr/bin/ditto $PRODUCT /Volumes/$PRODUCT
     sync
