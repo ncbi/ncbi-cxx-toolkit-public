@@ -3534,6 +3534,14 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable(
     return x_ReadFeatureTable(*m_pImpl, flags, pFilter, seqid_prefix);
 }
 
+CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable(
+    const string&       seqid,
+    const string&       annotname,
+    const TFlags        flags,
+    ITableFilter*       filter)
+{
+    return m_pImpl->ReadSequinFeatureTable(seqid, annotname, flags, filter);
+}
 
 void CFeature_table_reader::ReadSequinFeatureTables(
     CNcbiIstream&       ifs,
