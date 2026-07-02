@@ -997,7 +997,10 @@ string CSDB_Decryptor::x_GetKey(const CTempString& key_id)
 
 #ifdef HAVE_LIBNCBICRYPT
     if (key.empty()) {
-        key = NCBICRYPT_FindBuiltinKey(string(key_id).c_str());;
+        auto c_key = NCBICRYPT_FindBuiltinKey(string(key_id).c_str());
+        if (c_key != nullptr) {
+            key = c_key;
+        }
     }
 #endif
     if (key.empty()) {
