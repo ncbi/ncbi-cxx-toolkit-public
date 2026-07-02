@@ -105,20 +105,23 @@ create_disk_image()
     set +e
     set -x
     # Debugging END
-    rm -frv $PRODUCT.dmg $PRODUCT.temp.dmg
+    DMG_SIZE=$(/usr/bin/du -sm "$PRODUCT" | /usr/bin/awk '{ size = int($1 * 1.25) + 64; if (size < 512) size = 512; print size "m"; exit }')
+    MOUNT_POINT=$(/usr/bin/mktemp -d "${TMPDIR:-/tmp}/${PRODUCT}.XXXXXX")
+    rm -frv "$PRODUCT.dmg" "$PRODUCT.temp.dmg"
     /usr/bin/hdiutil create \
-        -srcfolder $PRODUCT \
+        -size "$DMG_SIZE" \
         -format UDRW \
         -fs HFS+ \
         -volname "$PRODUCT" \
         -ov \
         -nospotlight \
-        $PRODUCT.temp.dmg
-    /usr/bin/hdiutil attach $PRODUCT.temp.dmg -mountpoint /Volumes/$PRODUCT -nobrowse -owners on
-    /usr/bin/ditto $PRODUCT /Volumes/$PRODUCT
+        "$PRODUCT.temp.dmg"
+    /usr/bin/hdiutil attach "$PRODUCT.temp.dmg" -mountpoint "$MOUNT_POINT" -nobrowse -owners on
+    /usr/bin/ditto "$PRODUCT" "$MOUNT_POINT"
     sync
-    /usr/bin/hdiutil detach /Volumes/$PRODUCT || /usr/bin/hdiutil detach /Volumes/$PRODUCT -force
-    /usr/bin/hdiutil convert $PRODUCT.temp.dmg -format UDZO -o $PRODUCT.dmg
+    /usr/bin/hdiutil detach "$MOUNT_POINT" || /usr/bin/hdiutil detach "$MOUNT_POINT" -force
+    /usr/bin/hdiutil convert "$PRODUCT.temp.dmg" -format UDZO -o "$PRODUCT.dmg"
+    rm -frv "$PRODUCT.temp.dmg"
     mkdir $INSTALLDIR/installer
     mv $PRODUCT.dmg $INSTALLDIR/installer
 }
