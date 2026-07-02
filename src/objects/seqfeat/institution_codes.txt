@@ -44,7 +44,7 @@ ABRIICC	c	ABRIICC Agricultural Biotechnology Research Institute of Iran Culture 
 ABRN	s	Centre for Ecology and Hydrology			
 ABS<UK>	sc	Aberystwyth University, Institute of Biological, Environmental and Rural Sciences			
 ABS<USA>	s	Archbold Biological Station			
-ABSH	s	Southern Illinois Universitiy, Department of Plant Biology			
+ABSH	s	Southern Illinois University, Department of Plant Biology			
 ABSL	s	University of Minnesota, American Bryological and Lichenological Society			
 ABSM	s	Duke University, Botany Department			
 ABT	s	Laboratoire de Biologie Vegetale et d'Ecologie Forestiere			
@@ -82,6 +82,10 @@ ACSSI	c	Algal Collection of Soil Science Institute
 ACTC	s	Austin College			
 ACU	s	Abilene Christian University			
 ACUNHC	s	Abilene Christian University, Natural History Collection			
+ACUNHC:Ento	s	Entomology Collection			
+ACUNHC:Herp	s	Herp collection			
+ACUNHC:Mamm	s	Mammal Collection			
+ACUNHC:Paleo	s	Fossil Collection			
 AD	s	State Herbarium of South Australia			
 ADA	s	Herbarium, Department of Agriculture, South Australia			
 ADK	s	Adirondack Mountain Club			
