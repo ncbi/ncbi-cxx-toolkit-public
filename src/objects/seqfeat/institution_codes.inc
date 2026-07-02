@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Fri Jun 19 05:33:04 EDT 2026; formally
+/* time_t value corresponding to Thu Jul  2 05:33:05 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1781861584UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1782984785UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -80,7 +80,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ABRN\ts\tCentre for Ecology and Hydrology\t\t\t",
 "ABS<UK>\tsc\tAberystwyth University, Institute of Biological, Environmental and Rural Sciences\t\t\t",
 "ABS<USA>\ts\tArchbold Biological Station\t\t\t",
-"ABSH\ts\tSouthern Illinois Universitiy, Department of Plant Biology\t\t\t",
+"ABSH\ts\tSouthern Illinois University, Department of Plant Biology\t\t\t",
 "ABSL\ts\tUniversity of Minnesota, American Bryological and Lichenological Society\t\t\t",
 "ABSM\ts\tDuke University, Botany Department\t\t\t",
 "ABT\ts\tLaboratoire de Biologie Vegetale et d'Ecologie Forestiere\t\t\t",
@@ -118,6 +118,10 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ACTC\ts\tAustin College\t\t\t",
 "ACU\ts\tAbilene Christian University\t\t\t",
 "ACUNHC\ts\tAbilene Christian University, Natural History Collection\t\t\t",
+"ACUNHC:Ento\ts\tEntomology Collection\t\t\t",
+"ACUNHC:Herp\ts\tHerp collection\t\t\t",
+"ACUNHC:Mamm\ts\tMammal Collection\t\t\t",
+"ACUNHC:Paleo\ts\tFossil Collection\t\t\t",
 "AD\ts\tState Herbarium of South Australia\t\t\t",
 "ADA\ts\tHerbarium, Department of Agriculture, South Australia\t\t\t",
 "ADK\ts\tAdirondack Mountain Club\t\t\t",
