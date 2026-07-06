@@ -109,6 +109,7 @@ create_disk_image()
     MOUNT_POINT=$(/usr/bin/mktemp -d "${TMPDIR:-/tmp}/${PRODUCT}.XXXXXX")
     rm -frv "$PRODUCT.dmg" "$PRODUCT.temp.dmg"
     /usr/bin/hdiutil create \
+        -srcfolder "$PRODUCT" \
         -size "$DMG_SIZE" \
         -format UDRW \
         -fs HFS+ \
