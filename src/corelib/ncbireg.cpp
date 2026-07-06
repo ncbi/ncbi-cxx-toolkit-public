@@ -1869,6 +1869,7 @@ CConstRef<IRegistry> CCompoundRWRegistry::FindByContents(const string& section,
 }
 
 
+static
 string s_Expand(const CTempString& in)
 {
     string out;
@@ -1981,9 +1982,12 @@ bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags,
         if (entry2.registry) {
             m_BaseRegNames.insert(name);
             bases.push_back(TNewBase(name, entry2.registry));
+        } else if (NStr::StartsWith(*it, "+"))  {
+            ERR_POST(Fatal << "Base registry " << name << " (" << it->substr(1)
+                     << ") absent or unreadable");
         } else if ( !NStr::StartsWith(*it, "-") )  {
-            ERR_POST((NStr::StartsWith(*it, "+") ? Fatal : Critical)
-                     << "Base registry " << name << " absent or unreadable");
+            ERR_POST(Critical << "Base registry " << name << " (" << *it
+                     << ") absent or unreadable");
         }
     }
 
