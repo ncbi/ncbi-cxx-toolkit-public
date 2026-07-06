@@ -1869,6 +1869,52 @@ CConstRef<IRegistry> CCompoundRWRegistry::FindByContents(const string& section,
 }
 
 
+string s_Expand(const CTempString& in)
+{
+    string out;
+    SIZE_TYPE start = (in[0] == '-'  ||  in[0] == '+') ? 1 : 0, pos;
+    while (start < in.size()  &&  (pos = in.find('$', start)) != NPOS
+           &&  pos != in.size() - 1) {
+        out.append(in.data() + start, pos - start);
+        if (in[pos + 1] == '$') {
+            out += in[pos + 1];
+            start = pos + 2;
+            continue;
+        } else if (in[pos + 1] == '{') {
+            start = pos + 2;
+            pos = in.find('}', start);
+            if (pos == NPOS) {
+                NCBI_THROW2(CRegistryException, eValue,
+                            "Unbalanced ${ in [NCBI] .Inherits value " + in,
+                            0);
+            }
+        } else {
+            start = pos + 1;
+            pos = in.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                       "abcdefghijklmnopqrstuvwxyz"
+                                       "0123456789_", start);
+            if (pos == NPOS) {
+                pos = in.size();
+            }
+        }
+        CTempString name(in.data() + start, pos - start);
+        auto xvalue = NcbiSys_getenv(_T_XCSTRING(name));
+        if (xvalue != nullptr  &&  xvalue[0] != '\0') {
+            out += _T_STDSTRING(xvalue);
+        }
+        if (in[start - 1] == '{') {
+            start = pos + 1;
+        } else {
+            start = pos;
+        }
+    }
+    if (start < in.size()) {
+        out.append(in, start, in.size() - start);
+    }
+    return out;
+}
+
+
 bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags,
                                              const string& path)
 {
@@ -1910,7 +1956,8 @@ bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags,
     SIZE_TYPE initial_num_bases = m_BaseRegNames.size();
 
     ITERATE (list<string>, it, names) {
-        if (m_BaseRegNames.find(*it) != m_BaseRegNames.end()) {
+        string name = s_Expand(*it);
+        if (m_BaseRegNames.find(name) != m_BaseRegNames.end()) {
             continue;
         }
         CRef<CCompoundRWRegistry> reg2
@@ -1922,21 +1969,21 @@ bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags,
         if (NStr::EndsWith(*it, ".ini")) {
             entry2.registry = NULL;
         } else {
-            entry2 = CMetaRegistry::Load(*it, CMetaRegistry::eName_Ini,
+            entry2 = CMetaRegistry::Load(name, CMetaRegistry::eName_Ini,
                                          metareg_flags, flags,
                                          reg2.GetPointer(), path);
         }
         if (entry2.registry == NULL) {
-            entry2 = CMetaRegistry::Load(*it, CMetaRegistry::eName_AsIs,
+            entry2 = CMetaRegistry::Load(name, CMetaRegistry::eName_AsIs,
                                          metareg_flags, flags,
                                          reg2.GetPointer(), path);
         }
         if (entry2.registry) {
-            m_BaseRegNames.insert(*it);
-            bases.push_back(TNewBase(*it, entry2.registry));
-        } else {
-            ERR_POST(Critical << "Base registry " << *it
-                     << " absent or unreadable");
+            m_BaseRegNames.insert(name);
+            bases.push_back(TNewBase(name, entry2.registry));
+        } else if ( !NStr::StartsWith(*it, "-") )  {
+            ERR_POST((NStr::StartsWith(*it, "+") ? Fatal : Critical)
+                     << "Base registry " << name << " absent or unreadable");
         }
     }
 
