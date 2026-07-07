@@ -879,14 +879,15 @@ const string s_PlastidTxt[20] = {
 
 bool CCdregionValidator::IsPlastid(int genome)
 {
-    if ( genome == CBioSource::eGenome_chloroplast  ||
-         genome == CBioSource::eGenome_chromoplast  ||
-         genome == CBioSource::eGenome_plastid      ||
-         genome == CBioSource::eGenome_cyanelle     ||
-         genome == CBioSource::eGenome_apicoplast   ||
-         genome == CBioSource::eGenome_leucoplast   ||
-         genome == CBioSource::eGenome_proplastid   ||
-         genome == CBioSource::eGenome_chromatophore ) {
+    if ( genome == CBioSource::eGenome_chloroplast   ||
+         genome == CBioSource::eGenome_chromoplast   ||
+         genome == CBioSource::eGenome_plastid       ||
+         genome == CBioSource::eGenome_cyanelle      ||
+         genome == CBioSource::eGenome_apicoplast    ||
+         genome == CBioSource::eGenome_leucoplast    ||
+         genome == CBioSource::eGenome_proplastid    ||
+         genome == CBioSource::eGenome_chromatophore ||
+         genome == CBioSource::eGenome_nitroplast ) {
         return true;
     }
 
@@ -938,6 +939,7 @@ static int s_GetStrictGenCode(const CBioSource& src)
             case CBioSource::eGenome_apicoplast:
             case CBioSource::eGenome_leucoplast:
             case CBioSource::eGenome_proplastid:
+            case CBioSource::eGenome_nitroplast:
                 if (orn.IsSetPgcode() && orn.GetPgcode() != 0) {
                     gencode = orn.GetPgcode();
                 } else {
