@@ -109,12 +109,24 @@ CSeqDBAtlas::CSeqDBAtlas(bool use_atlas_lock)
     m_OpenedFilesCount = 0;
     m_MaxOpenedFilesCount = 0;
     CNcbiEnvironment env;
+    m_MaxFileDescriptors = CSeqDBAtlas::kDefaultMaxFileDescriptors;
     const string & MAX_FD_STRING = env.Get("NCBI_BLAST_MAX_FILE_DESCRIPTORS");
-    if (MAX_FD_STRING != kEmptyStr){
-       m_MaxFileDescriptors = NStr::StringToInt(MAX_FD_STRING);
-    }
-    else {
-        m_MaxFileDescriptors = CSeqDBAtlas::kDefaultMaxFileDescriptors;
+    if (MAX_FD_STRING != kEmptyStr) {
+        try {
+            const int configured = NStr::StringToInt(MAX_FD_STRING);
+            if (configured > 0) {
+                m_MaxFileDescriptors = configured;
+            } else {
+                LOG_POST(Warning
+                         << "Ignoring NCBI_BLAST_MAX_FILE_DESCRIPTORS="
+                         << MAX_FD_STRING
+                         << ": value must be greater than zero");
+            }
+        } catch (const CStringException&) {
+            LOG_POST(Warning
+                     << "Ignoring malformed NCBI_BLAST_MAX_FILE_DESCRIPTORS="
+                     << MAX_FD_STRING);
+        }
     }
     LOG_POST(Info <<"Max num of File descriptor: " << m_MaxFileDescriptors);
 }
