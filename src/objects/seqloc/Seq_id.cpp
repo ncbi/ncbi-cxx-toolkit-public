@@ -43,6 +43,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/perf_log.hpp>
+#include <corelib/request_ctx.hpp>
 #include <util/compile_time.hpp>
 #include <util/line_reader.hpp>
 #include <util/static_map.hpp>
@@ -1346,8 +1347,9 @@ void CAccGuideRuleQueue::Flush(bool done)
 class CAccGuideThread : public CThread
 {
 public:
-    CAccGuideThread(CRef<SAccGuide> guide, shared_ptr<SAccGuide::SHints> hints)
-        : m_Guide(guide), m_Hints(hints)
+    CAccGuideThread(CRef<SAccGuide> guide, shared_ptr<SAccGuide::SHints> hints,
+                    CRef<CRequestContext> rctx)
+        : m_Guide(guide), m_Hints(hints), m_RequestContext(rctx)
         { }
 
     void AddRule(const CTempString& rule,
@@ -1363,12 +1365,14 @@ protected:
 private:
     CRef<SAccGuide>               m_Guide;
     shared_ptr<SAccGuide::SHints> m_Hints;
+    CRef<CRequestContext>         m_RequestContext;
     CAccGuideRuleQueue::TChunkRef m_PartiallyRead;
     CAccGuideRuleQueue            m_Queue;
 };
 
 void* CAccGuideThread::Main()
 {
+    GetDiagContext().SetRequestContext(m_RequestContext.GetPointer());
     CPerfLogGuard perf(NStr::NumericToString(-m_Hints->current_thread)
                        + ".acc_guide_load");
     unsigned int my_rules = 0;
@@ -1596,10 +1600,12 @@ bool SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         hints2->current_thread = -n;
         hints2->formats = formats;
         hints2->threads.clear();
-        CRef<CAccGuideThread> thr(new CAccGuideThread(CRef<SAccGuide>(this),
-                                                      hints2));
+        CRef<CAccGuideThread> thr
+            (new CAccGuideThread
+             (CRef<SAccGuide>(this), hints2,
+              GetDiagContext().GetRequestContext().Clone()));
         hints.threads.push_back(thr);
-        thr->Run(CThread::fRunCloneRequestContext);
+        thr->Run(/*CThread::fRunCloneRequestContext*/);
         return true;
     } else if (ctre::match<kDirectiveAttempt>(rule)) {
         keep_comment = true; // to pick up invalid-line warning
