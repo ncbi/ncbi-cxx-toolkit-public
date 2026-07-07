@@ -1916,6 +1916,25 @@ string s_Expand(const CTempString& in)
 }
 
 
+static
+void s_SplitInherits(list<string>& high_prio, list<string>& low_prio,
+                     const string& in)
+{
+    list<string> names;
+    NStr::Split(in, ", ", names,
+                NStr::fSplit_CanSingleQuote | 
+                NStr::fSplit_MergeDelimiters | 
+                NStr::fSplit_Truncate);
+    auto it = find(names.begin(), names.end(), "{}");
+    if (it == names.end()) {
+        low_prio.splice(low_prio.end(), names);
+    } else {
+        high_prio.splice(high_prio.end(), names, names.begin(), it);
+        low_prio.splice(low_prio.end(), names, ++it, names.end());
+    }
+}
+
+
 bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags,
                                              const string& path)
 {
@@ -1926,11 +1945,13 @@ bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags,
     list<string> names;
     TWriteGuard LOCK(*this);
     {{
-        string s = m_MainRegistry->Get("NCBI", ".Inherits");
+        list<string> low_prio;
+        s_SplitInherits(names, low_prio,
+                        m_MainRegistry->Get("NCBI", ".Inherits"));
 
         REVERSE_ITERATE(CCompoundRegistry::TPriorityMap, it, m_AllRegistries->m_PriorityMap) {
-            s += ',';
-            s += it->second->Get("NCBI", ".Inherits");
+            s_SplitInherits(names, low_prio,
+                            it->second->Get("NCBI", ".Inherits"));
         }
 
         {
@@ -1938,27 +1959,35 @@ bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags,
                 _TRACE_X(27,
                          "LoadBaseRegistries(" << this
                          << "): trying file registry");
-                s += ',';
-                s += FindByName(CNcbiRegistry::sm_FileRegName)
-                    ->Get("NCBI", ".Inherits");
+                s_SplitInherits(names, low_prio,
+                                FindByName(CNcbiRegistry::sm_FileRegName)
+                                ->Get("NCBI", ".Inherits"));
             }
         }
-        NStr::Split(s, ", ", names,
-                    NStr::fSplit_CanSingleQuote | 
-                    NStr::fSplit_MergeDelimiters | 
-                    NStr::fSplit_Truncate);
-        if (names.empty()) return false;
-        _TRACE_X(28, "LoadBaseRegistries(" << this << "): using " << s);
+        if (names.empty()  &&  low_prio.empty()) return false;
+        names.emplace_back("{}");
+        names.splice(names.end(), low_prio);
+#ifdef _DEBUG
+        _TRACE_X(28, "LoadBaseRegistries(" << this << "): using "
+                 << NStr::Join(names, " "));
+#endif
     }}
 
     typedef pair<string, CRef<IRWRegistry> > TNewBase;
     typedef vector<TNewBase> TNewBases;
-    TNewBases bases;
-    SIZE_TYPE initial_num_bases = m_BaseRegNames.size();
+    TNewBases high_prio_bases, low_prio_bases, *bases = &high_prio_bases;
+    SIZE_TYPE initial_hp_bases = m_HighPriorityBaseRegNames.size(),
+              initial_lp_bases = m_LowPriorityBaseRegNames.size();
+    auto* base_names = &m_HighPriorityBaseRegNames;
 
     ITERATE (list<string>, it, names) {
+        if (*it == "{}") {
+            bases = &low_prio_bases;
+            base_names = &m_LowPriorityBaseRegNames;
+            continue;
+        }
         string name = s_Expand(*it);
-        if (m_BaseRegNames.find(name) != m_BaseRegNames.end()) {
+        if (base_names->find(name) != base_names->end()) {
             continue;
         }
         CRef<CCompoundRWRegistry> reg2
@@ -1980,8 +2009,8 @@ bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags,
                                          reg2.GetPointer(), path);
         }
         if (entry2.registry) {
-            m_BaseRegNames.insert(name);
-            bases.push_back(TNewBase(name, entry2.registry));
+            base_names->insert(name);
+            bases->push_back(TNewBase(name, entry2.registry));
         } else if (NStr::StartsWith(*it, "+"))  {
             ERR_POST(Fatal << "Base registry " << name << " (" << it->substr(1)
                      << ") absent or unreadable");
@@ -1991,13 +2020,18 @@ bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags,
         }
     }
 
-    for (SIZE_TYPE i = 0;  i < bases.size();  ++i) {
-        x_Add(*bases[i].second,
-              TPriority(ePriority_MaxUser - initial_num_bases - i),
-              sm_BaseRegNamePrefix + bases[i].first);
+    for (SIZE_TYPE i = 0;  i < high_prio_bases.size();  ++i) {
+        x_Add(*high_prio_bases[i].second,
+              TPriority(kPriority_MaxHighPriorityBase - initial_hp_bases - i),
+              sm_BaseRegNamePrefix + high_prio_bases[i].first);
+    }
+    for (SIZE_TYPE i = 0;  i < low_prio_bases.size();  ++i) {
+        x_Add(*low_prio_bases[i].second,
+              TPriority(ePriority_MaxUser - initial_lp_bases - i),
+              sm_BaseRegNamePrefix + low_prio_bases[i].first);
     }
 
-    return !bases.empty();
+    return !high_prio_bases.empty() || !low_prio_bases.empty();
 }
 
 
@@ -2125,10 +2159,14 @@ void CCompoundRWRegistry::x_Clear(TFlags flags) // XXX - should this do more?
 {
     m_MainRegistry->Clear(flags);
 
-    ITERATE (set<string>, it, m_BaseRegNames) {
+    ITERATE (set<string>, it, m_HighPriorityBaseRegNames) {
         Remove(*FindByName(sm_BaseRegNamePrefix + *it));
     }
-    m_BaseRegNames.clear();
+    ITERATE (set<string>, it, m_LowPriorityBaseRegNames) {
+        Remove(*FindByName(sm_BaseRegNamePrefix + *it));
+    }
+    m_HighPriorityBaseRegNames.clear();
+    m_LowPriorityBaseRegNames.clear();
 }
 
 

@@ -889,13 +889,17 @@ protected:
                TPriority        prio = ePriority_Default,
                const string&    name = kEmptyStr);
 
+    static const TPriority kPriority_MaxHighPriorityBase
+        = CCompoundRegistry::ePriority_Max - 9;
+
 private:
     typedef map<string, TFlags> TClearedEntries;
 
     TClearedEntries         m_ClearedEntries;
     CRef<CTwoLayerRegistry> m_MainRegistry;
     CRef<CCompoundRegistry> m_AllRegistries;
-    set<string>             m_BaseRegNames;
+    set<string>             m_HighPriorityBaseRegNames;
+    set<string>             m_LowPriorityBaseRegNames;
     TFlags                  m_Flags;
 };
 
@@ -980,7 +984,7 @@ private:
 
     enum EReservedPriority {
         ePriority_File = ePriority_Reserved,
-        ePriority_Overrides,
+        ePriority_Overrides = kPriority_MaxHighPriorityBase + 1,
         ePriority_Environment,
         ePriority_RuntimeOverrides
     };
