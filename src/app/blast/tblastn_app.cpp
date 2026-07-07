@@ -275,6 +275,9 @@ int CTblastnApp::x_RunMTBySplitDB()
             for (; !input->End(); formatter.ResetScopeHistory(), QueryBatchCleanup()) {
 
                 query =  input->GetNextSeqBatch(*scope);
+                if (query->Empty()) {
+                    continue;
+                }
                 query_factory.Reset(new CObjMgr_QueryFactory(*query));
 
                 SaveSearchStrategy(args, m_CmdLineArgs, query_factory, m_OptsHndl);

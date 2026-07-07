@@ -41,6 +41,19 @@ BEGIN_NCBI_SCOPE
 
 using namespace std;
 
+static void s_ValidateMaxFileSize(Uint8 sz)
+{
+    if (sz > kMaxVolFileSize) {
+        NCBI_THROW(CWriteDBException, eArgErr,
+                   "max_file_sz must be <= " +
+                   NStr::UInt8ToString_DataSize(kMaxVolFileSize,
+                                                NStr::fDS_NoDecimalPoint |
+                                                NStr::fDS_ShortSuffix |
+                                                NStr::fDS_PutBSuffixToo,
+                                                3));
+    }
+}
+
 // Impl
 
 
@@ -117,6 +130,7 @@ void CWriteDB::AddSequence(const CTempString & sequence,
 
 void CWriteDB::SetMaxFileSize(Uint8 sz)
 {
+    s_ValidateMaxFileSize(sz);
     m_Impl->SetMaxFileSize(sz);
 }
 

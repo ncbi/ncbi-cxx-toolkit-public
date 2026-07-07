@@ -513,6 +513,9 @@ int CPsiBlastApp::Run(void)
             for (; !input->End(); formatter.ResetScopeHistory(), QueryBatchCleanup()) {
 
 		CRef<CBlastQueryVector> query_batch(input->GetNextSeqBatch(*scope));
+                if (query_batch->Empty()) {
+                    continue;
+                }
 
                 const bool converged = DoIterations(opts_hndl,
                            query_batch,

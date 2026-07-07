@@ -404,7 +404,8 @@ public:
     /// made as a component of a database volume manufactured by the
     /// WriteDB library.  The default value is 3G bytes.
     ///
-    /// @param max_file_size Maximum file size in bytes.
+    /// @param max_file_size Maximum file size in bytes. Values above
+    ///        kMaxVolFileSize throw CWriteDBException.
     void SetMaxFileSize(Uint8 max_file_size);
 
     /// Define a masking algorithm.

@@ -3544,6 +3544,21 @@ BOOST_AUTO_TEST_CASE(LimitProteinDeflines)
 
 
 
+BOOST_AUTO_TEST_CASE(SetMaxFileSizeRejectsValuesOverLimit)
+{
+    const Uint8 kTooLarge = kMaxVolFileSize + 1;
+    CWriteDB db("max-file-size-limit", CWriteDB::eProtein, "test");
+    BOOST_REQUIRE_THROW(db.SetMaxFileSize(kTooLarge), CWriteDBException);
+}
+
+BOOST_AUTO_TEST_CASE(CBuildDatabaseSetMaxFileSizeRejectsValuesOverLimit)
+{
+    const Uint8 kTooLarge = kMaxVolFileSize + 1;
+    CNcbiOfstream log("/dev/null");
+    CBuildDatabase db("max-file-size-build-limit", "test", true, false, true,
+                      false, &log);
+    BOOST_REQUIRE_THROW(db.SetMaxFileSize(kTooLarge), CWriteDBException);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 
