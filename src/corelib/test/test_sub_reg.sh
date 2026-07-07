@@ -17,6 +17,8 @@ wd=`pwd`
 
 # Set environment variables with registry values (Windows version has capitalized value names)
 export NCBI_CONFIG_PATH=`dirname $0`/test_sub_reg_data
+export M=main
+export B=base
 unamestr=`uname -s`
 case "$unamestr" in
   MINGW* | CYGWIN* )
@@ -78,7 +80,7 @@ case "$unamestr" in
 esac
 
 # Second run
-unset NCBI_CONFIG_PATH NCBI_CONFIG_OVERRIDES
+unset M B NCBI_CONFIG_PATH NCBI_CONFIG_OVERRIDES
 export NCBI_DONT_USE_LOCAL_CONFIG=1
 
 case "$unamestr" in
