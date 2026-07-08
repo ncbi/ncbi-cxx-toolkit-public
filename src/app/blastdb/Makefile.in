@@ -5,7 +5,7 @@
 
 REQUIRES = objects algo
 
-APP_PROJ = blastdbcmd makeblastdb blastdb_aliastool blastdbcheck convert2blastmask blastdbcp makeprofiledb blastdb_convert blastdb_path makeclusterdb
+APP_PROJ = blastdbcmd makeblastdb blastdb_aliastool blastdbcheck convert2blastmask blastdbcp makeprofiledb blastdb_convert blastdb_path makeclusterdb clusterdbcmd
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
@@ -41,3 +41,6 @@ blastdb_path:
 	
 makeclusterdb:
 	${MAKE} ${MFLAGS} -f Makefile.makeclusterdb_app
+
+clusterdbcmd:
+	${MAKE} ${MFLAGS} -f Makefile.clusterdbcmd_app
