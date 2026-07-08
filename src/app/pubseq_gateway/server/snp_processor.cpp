@@ -296,7 +296,7 @@ IPSGS_Processor* CPSGS_SNPProcessor::CreateProcessor(
 {
     try {
         if (!x_IsEnabled(*request)) return nullptr;
-        if (!m_Client->CanProcessRequest(*request, m_Priority)) return nullptr;
+        if (!m_Client->CanProcessRequest(*request, priority)) return nullptr;
         return new CPSGS_SNPProcessor(*this, request, reply, priority);
     }
     catch ( exception& exc ) {
