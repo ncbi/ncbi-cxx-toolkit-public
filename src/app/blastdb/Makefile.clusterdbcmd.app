@@ -1,0 +1,20 @@
+WATCHERS = camacho
+
+APP = clusterdbcmd
+SRC = clusterdbcmd
+LIB_ = $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIB = $(LIB_:%=%$(STATIC))
+
+CFLAGS   = $(FAST_CFLAGS)
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+CPPFLAGS = -DNCBI_MODULE=BLASTDB $(ORIG_CPPFLAGS) $(BLAST_THIRD_PARTY_INCLUDE)
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(GENBANK_THIRD_PARTY_LIBS) $(CMPRS_LIBS) \
+       $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+
+REQUIRES = objects -Cygwin SQLITE3
+
+CHECK_REQUIRES = -MSWin
+CHECK_COPY = clusterdbcmd_test.py clusterdbcmd_test_data.py
+CHECK_CMD = python3 -m unittest clusterdbcmd_test
