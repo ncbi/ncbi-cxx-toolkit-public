@@ -128,7 +128,7 @@ private:
     objects::CCDDClientPool::SCDDBlob m_CDDBlob;
     string m_Error;
     shared_ptr<ncbi::CThreadPool> m_ThreadPool;
-    CPSGS_ThreadPoolTask<CPSGS_CDDProcessor>* m_PoolTask = nullptr;
+    CRef<CPSGS_ThreadPoolTask<CPSGS_CDDProcessor>> m_PoolTask;
 };
 
 

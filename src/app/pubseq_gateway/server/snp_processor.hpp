@@ -152,7 +152,7 @@ private:
     shared_ptr<SSNPProcessor_Config> m_Config;
     mutable shared_ptr<CSNPClient> m_Client;
     shared_ptr<ncbi::CThreadPool> m_ThreadPool;
-    CPSGS_ThreadPoolTask<CPSGS_SNPProcessor>* m_PoolTask = nullptr;
+    CRef<CPSGS_ThreadPoolTask<CPSGS_SNPProcessor>> m_PoolTask;
 
     psg_time_point_t m_Start;
     EPSGS_Status m_Status = ePSGS_NotFound;

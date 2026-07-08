@@ -460,7 +460,7 @@ void CPSGS_SNPProcessor::x_ProcessAnnotationRequest(void)
             return;
         }
     }
-    m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_SNPProcessor::GetAnnotation);
+    m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_SNPProcessor::GetAnnotation));
     m_ThreadPool->AddTask(m_PoolTask);
 }
 
@@ -501,6 +501,7 @@ void CPSGS_SNPProcessor::OnGotAnnotation(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    m_PoolTask.Reset();
     if (x_IsCanceled()) {
         return;
     }
@@ -580,7 +581,7 @@ void CPSGS_SNPProcessor::x_ProcessBlobBySatSatKeyRequest(void)
 {
     SPSGS_BlobBySatSatKeyRequest& blob_request = GetRequest()->GetRequest<SPSGS_BlobBySatSatKeyRequest>();
     m_PSGBlobId = blob_request.m_BlobId.GetId();
-    m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_SNPProcessor::GetBlobByBlobId);
+    m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_SNPProcessor::GetBlobByBlobId));
     m_ThreadPool->AddTask(m_PoolTask);
 }
 
@@ -615,6 +616,7 @@ void CPSGS_SNPProcessor::OnGotBlobByBlobId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    m_PoolTask.Reset();
     if (x_IsCanceled()) {
         return;
     }
@@ -664,7 +666,7 @@ void CPSGS_SNPProcessor::x_ProcessTSEChunkRequest(void)
     SPSGS_TSEChunkRequest& chunk_request = GetRequest()->GetRequest<SPSGS_TSEChunkRequest>();
     m_Id2Info = chunk_request.m_Id2Info;
     m_ChunkId = chunk_request.m_Id2Chunk;
-    m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_SNPProcessor::GetChunk);
+    m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_SNPProcessor::GetChunk));
     m_ThreadPool->AddTask(m_PoolTask);
 }
 
@@ -695,6 +697,7 @@ void CPSGS_SNPProcessor::OnGotChunk(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    m_PoolTask.Reset();
     if (x_IsCanceled()) {
         return;
     }
@@ -914,13 +917,13 @@ void CPSGS_SNPProcessor::Cancel()
         x_Finish(ePSGS_Canceled);
         return;
     }
-    if (m_PoolTask) {
-        m_ThreadPool->CancelTask(m_PoolTask);
-        if (m_PoolTask->TryFinish()) {
+    if (auto task = m_PoolTask) {
+        m_ThreadPool->CancelTask(task);
+        if (task->TryFinish()) {
             m_Status = ePSGS_Canceled;
             x_Finish(ePSGS_Canceled);
         }
-        m_PoolTask = nullptr;
+        m_PoolTask.Reset();
     }
 }
 
@@ -993,7 +996,7 @@ void CPSGS_SNPProcessor::x_OnSeqIdResolveFinished(SBioseqResolution&& bioseq_res
             }
             m_SeqIds.push_back(CSeq_id_Handle::GetHandle(id));
         }
-        m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_SNPProcessor::GetAnnotation);
+        m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_SNPProcessor::GetAnnotation));
         m_ThreadPool->AddTask(m_PoolTask);
     }
     catch (...) {

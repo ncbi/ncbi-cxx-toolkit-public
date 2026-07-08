@@ -323,7 +323,7 @@ void CPSGS_WGSProcessor::x_ProcessResolveRequest(void)
             kWGSProcessorName + " processor is resolving seq-id " + m_SeqId->AsFastaString(),
             GetRequest()->GetStartTimestamp());
     }
-    m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::ResolveSeqId);
+    m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::ResolveSeqId));
     m_ThreadPool->AddTask(m_PoolTask);
 }
 
@@ -355,7 +355,7 @@ void CPSGS_WGSProcessor::OnResolvedSeqId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    m_PoolTask = nullptr;
+    m_PoolTask.Reset();
     if ( x_IsCanceled() ) {
         return;
     }
@@ -427,7 +427,7 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySeqIdRequest(void)
                 kWGSProcessorName + " processor is getting info for seq-id " + m_SeqId->AsFastaString(),
                 GetRequest()->GetStartTimestamp());
         }
-        m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::ResolveSeqId);
+        m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::ResolveSeqId));
         m_ThreadPool->AddTask(m_PoolTask);
     }
     else {
@@ -438,7 +438,7 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySeqIdRequest(void)
         }
         m_ExcludedBlobs = get_request.m_ExcludeBlobs;
         m_ResendTimeoutMks = get_request.m_ResendTimeoutMks;
-        m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::GetBlobBySeqId);
+        m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::GetBlobBySeqId));
         m_ThreadPool->AddTask(m_PoolTask);
     }
 }
@@ -478,7 +478,7 @@ void CPSGS_WGSProcessor::OnGotBlobBySeqId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    m_PoolTask = nullptr;
+    m_PoolTask.Reset();
     if ( x_IsCanceled() ) {
         return;
     }
@@ -540,7 +540,7 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySatSatKeyRequest(void)
             kWGSProcessorName + " processor is fetching blob " + m_PSGBlobId,
             GetRequest()->GetStartTimestamp());
     }
-    m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::GetBlobByBlobId);
+    m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::GetBlobByBlobId));
     m_ThreadPool->AddTask(m_PoolTask);
 }
 
@@ -572,7 +572,7 @@ void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    m_PoolTask = nullptr;
+    m_PoolTask.Reset();
     if ( x_IsCanceled() ) {
         return;
     }
@@ -632,7 +632,7 @@ void CPSGS_WGSProcessor::x_ProcessTSEChunkRequest(void)
             kWGSProcessorName + " processor is fetching chunk " + m_Id2Info + "." + NStr::NumericToString(m_ChunkId),
             GetRequest()->GetStartTimestamp());
     }
-    m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::GetChunk);
+    m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::GetChunk));
     m_ThreadPool->AddTask(m_PoolTask);
 }
 
@@ -664,7 +664,7 @@ void CPSGS_WGSProcessor::OnGotChunk(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    m_PoolTask = nullptr;
+    m_PoolTask.Reset();
     if ( x_IsCanceled() ) {
         return;
     }
@@ -1034,13 +1034,13 @@ void CPSGS_WGSProcessor::Cancel()
         x_Finish(ePSGS_Canceled);
         return;
     }
-    if (m_PoolTask) {
-        m_ThreadPool->CancelTask(m_PoolTask);
-        if (m_PoolTask->TryFinish()) {
+    if (auto task = m_PoolTask) {
+        m_ThreadPool->CancelTask(task);
+        if (task->TryFinish()) {
             m_Status = ePSGS_Canceled;
             x_Finish(ePSGS_Canceled);
         }
-        m_PoolTask = nullptr;
+        m_PoolTask.Reset();
     }
 }
 

@@ -183,7 +183,7 @@ private:
     string m_WGSDataError;
     EOutputFormat m_OutputFormat;
     shared_ptr<ncbi::CThreadPool> m_ThreadPool;
-    CPSGS_ThreadPoolTask<CPSGS_WGSProcessor>* m_PoolTask = nullptr;
+    CRef<CPSGS_ThreadPoolTask<CPSGS_WGSProcessor>> m_PoolTask;
 };
 
 

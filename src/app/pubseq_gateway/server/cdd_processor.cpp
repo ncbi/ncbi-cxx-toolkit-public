@@ -363,12 +363,12 @@ void CPSGS_CDDProcessor::x_ProcessResolveRequest(void)
         annot_request.m_TSEOption == SPSGS_BlobRequestBase::EPSGS_TSEOption::ePSGS_WholeTSE ||
         annot_request.m_TSEOption == SPSGS_BlobRequestBase::EPSGS_TSEOption::ePSGS_OrigTSE) {
         // Send whole TSE.
-        m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_CDDProcessor::GetBlobByBlobId);
+        m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_CDDProcessor::GetBlobByBlobId));
         m_ThreadPool->AddTask(m_PoolTask);
     }
     else {
         // Send annot info only.
-        m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_CDDProcessor::GetBlobId);
+        m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_CDDProcessor::GetBlobId));
         m_ThreadPool->AddTask(m_PoolTask);
     }
 }
@@ -389,7 +389,7 @@ void CPSGS_CDDProcessor::x_ProcessGetBlobRequest(void)
         x_Finish(ePSGS_NotFound);
         return;
     }
-    m_PoolTask = new CPSGS_ThreadPoolTask(*this, &CPSGS_CDDProcessor::GetBlobByBlobId);
+    m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_CDDProcessor::GetBlobByBlobId));
     m_ThreadPool->AddTask(m_PoolTask);
 }
 
@@ -486,6 +486,7 @@ void CPSGS_CDDProcessor::OnGotBlobId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    m_PoolTask.Reset();
     if ( x_IsCanceled() ) {
         return;
     }
@@ -533,6 +534,7 @@ void CPSGS_CDDProcessor::OnGotBlobBySeqId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    m_PoolTask.Reset();
     if ( x_IsCanceled() ) {
         return;
     }
@@ -581,6 +583,7 @@ void CPSGS_CDDProcessor::OnGotBlobByBlobId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    m_PoolTask.Reset();
     if ( x_IsCanceled() ) {
         return;
     }
@@ -730,13 +733,13 @@ void CPSGS_CDDProcessor::Cancel()
         x_Finish(ePSGS_Canceled);
         return;
     }
-    if (m_PoolTask) {
-        m_ThreadPool->CancelTask(m_PoolTask);
-        if (m_PoolTask->TryFinish()) {
+    if (auto task = m_PoolTask) {
+        m_ThreadPool->CancelTask(task);
+        if (task->TryFinish()) {
             m_Status = ePSGS_Canceled;
             x_Finish(ePSGS_Canceled);
         }
-        m_PoolTask = nullptr;
+        m_PoolTask.Reset();
     }
 }
 
