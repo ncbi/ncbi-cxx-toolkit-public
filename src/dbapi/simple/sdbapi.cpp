@@ -1193,6 +1193,12 @@ string CSDB_ConnectionParam::x_GetPassword() const
     // Account for possible encryption.
     string key_id = Get(ePasswordKeyID, eWithOverrides);
     if ( !key_id.empty() ) {
+        if (password.empty()) {
+            ERR_POST_X(22,
+                       Warning << m_Url.GetHost()
+                       << ": ignoring password key without password.");
+            return password;
+        }
         CRef<CSDB_Decryptor> decryptor = GetGlobalDecryptor();
         if (decryptor.NotEmpty()) {
             password = decryptor->Decrypt(password, key_id);
