@@ -1182,7 +1182,8 @@ string CSDB_ConnectionParam::x_GetPassword() const
             if ( !in ) {
                 NCBI_THROW(CSDB_Exception,
                            eNotExist | Retriable(eRetriable_No), // eWrongParams?
-                           "Unable to open password file " + pwfile + ": " +
+                           "Unable to open password file " + pwfile + " for "
+                           + m_Url.GetHost() + ": " +
                            NCBI_ERRNO_STR_WRAPPER(NCBI_ERRNO_CODE_WRAPPER()));
             }
             NcbiGetline(in, password, "\r\n");
@@ -1200,7 +1201,7 @@ string CSDB_ConnectionParam::x_GetPassword() const
                     NCBI_THROW(CSDB_Exception,
                                eWrongParams | Retriable(eRetriable_No),
                                "Invalid character in supposedly decrypted"
-                               " password.");
+                               " password for " + m_Url.GetHost() + '.');
                 }
             }
         }
