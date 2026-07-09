@@ -182,7 +182,7 @@ read_login_info(int argc, char **argv)
 			break;
 		case 'f': /* override default PWD file */
 			if (pwd_read)
-				free(PWD);
+				free((void*)PWD);
 			PWD = strdup(optarg);
 			pwd_read = 1;
 			break;
