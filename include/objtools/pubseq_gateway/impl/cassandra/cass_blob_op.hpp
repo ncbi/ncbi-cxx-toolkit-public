@@ -70,7 +70,7 @@ using TDataReadyCallback = void(*)(void*);
 class CCassDataCallbackReceiverWithContext {
 public:
     virtual ~CCassDataCallbackReceiverWithContext() = default;
-    virtual void OnData(void *) = 0;
+    virtual void OnData(weak_ptr<void>) = 0;
 };
 
 class CCassBlobWaiter
@@ -85,9 +85,9 @@ class CCassBlobWaiter
         explicit CInternalDataCallbackReceiver(weak_ptr<CCassDataCallbackReceiverWithContext> receiver)
             : m_Receiver(receiver)
         {}
-        void SetContext(void * context)
+        void SetContext(weak_ptr<void> context)
         {
-            m_Context = context;
+            m_Context = std::move(context);
         }
         void OnData() override
         {
@@ -141,7 +141,7 @@ class CCassBlobWaiter
             std::weak_ptr<CCassDataCallbackReceiver>,
             std::weak_ptr<CCassDataCallbackReceiverWithContext>
         > m_Receiver;
-        void * m_Context{nullptr};
+        weak_ptr<void> m_Context{};
         atomic<int32_t> m_WaitAfterReceiverCallCount{0};
         atomic<int32_t> m_ReceiverCallCount{0};
     };
@@ -345,7 +345,7 @@ public:
         m_DataReadyCb3 = m_InternalDataReadyCb;
     }
 
-    void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiverWithContext> callback_receiver, void * context)
+    void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiverWithContext> callback_receiver, weak_ptr<void> context)
     {
         if (callback_receiver && m_State != eInit) {
             NCBI_THROW(CCassandraException, eSeqFailed,
@@ -353,7 +353,7 @@ public:
         }
         if (!m_InternalDataReadyCb) {
             m_InternalDataReadyCb = std::make_shared<CInternalDataCallbackReceiver>(callback_receiver);
-            m_InternalDataReadyCb->SetContext(context);
+            m_InternalDataReadyCb->SetContext(std::move(context));
         }
         m_DataReadyCb3 = m_InternalDataReadyCb;
     }
