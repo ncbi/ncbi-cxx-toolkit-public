@@ -130,7 +130,10 @@ void CCassBlobTaskLoadBlob::SetChunkCallback(TBlobChunkCallbackEx callback)
 
 void CCassBlobTaskLoadBlob::SetPropsCallback(TBlobPropsCallback callback)
 {
-    m_PropsCallback = std::move(callback);
+    if (callback) {
+        m_PropCallbackExists = true;
+        m_PropsCallback = std::move(callback);
+    }
 }
 
 void CCassBlobTaskLoadBlob::Wait1()
@@ -216,6 +219,7 @@ void CCassBlobTaskLoadBlob::Wait1()
 
             case eFinishedPropsFetch:
                 if (m_PropsCallback) {
+                    ++m_PropCallbackCalled;
                     m_PropsCallback(*m_Blob, m_PropsFound);
                     // ID-8131 If Cancel() call was performed during blob_prop callback we need to stop processing
                     // m_State is expected to have a final state value after CCassBlobTaskLoadBlob::Cancel() call

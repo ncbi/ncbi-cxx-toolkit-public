@@ -145,10 +145,12 @@ public:
     [[nodiscard]]
     string GetDebugStateSnapshot() const override
     {
-        return format("LoadBlob: LoadChunks:{}, PropsFound:{}, ExplicitBlob:{}, ChunkCbExist:{}, ChunkCbCalls:{}, {}",
+        return format("LoadBlob: LoadChunks:{}, PropsFound:{}, ExplicitBlob:{}, PropCbExists:{}, PropCbCalls:{}, ChunkCbExists:{}, ChunkCbCalls:{}, {}",
             m_LoadChunks ? "true" : "false",
             m_PropsFound ? "true" : "false",
             m_ExplicitBlob ? "true" : "false",
+            m_PropCallbackExists ? "true" : "false",
+            m_PropCallbackCalled,
             m_ChunkCallbackExists ? "true" : "false",
             m_ChunkCallbackCalled,
             CCassBlobWaiter::GetDebugStateSnapshot()
@@ -177,6 +179,8 @@ private:
     bool m_ExplicitBlob{false};
     bool m_UsePrepared{true};
     EBlobTaskMode m_Mode;
+    bool m_PropCallbackExists{false};
+    int m_PropCallbackCalled{0};
     bool m_ChunkCallbackExists{false};
     int m_ChunkCallbackCalled{0};
 };

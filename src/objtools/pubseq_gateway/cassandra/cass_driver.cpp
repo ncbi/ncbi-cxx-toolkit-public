@@ -1024,46 +1024,45 @@ const CassPrepared * CCassConnection::Prepare(const string & sql)
             return rv;
         }
     }
-
-    CSpinGuard guard(m_prepared_mux);
-    auto it = m_prepared.find(sql);
-    if (it == m_prepared.end())
-    {
-        const char * query = sql.c_str();
-        CassFuture * __future = cass_session_prepare(m_session, query);
-        if (!__future) {
-            RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain cassandra query future"));
+    CassFuture * __future = cass_session_prepare(m_session, sql.c_str());
+    if (!__future) {
+        RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain cassandra query future"));
+    }
+    unique_ptr<CassFuture, function<void(CassFuture*)>> future(
+        __future,
+        [](CassFuture* future)
+        {
+            cass_future_free(future);
         }
-
-        unique_ptr<CassFuture, function<void(CassFuture*)>> future(
-            __future,
-            [](CassFuture* future)
-            {
-                cass_future_free(future);
-            }
+    );
+    bool b = cass_future_wait_timed(future.get(), m_qtimeoutms * 1000L);
+    if (!b) {
+        RAISE_CASS_QUERY_ERROR(
+            CCassandraException::eQueryTimeout, -1,
+            ProduceSyncTimeoutMessage("Failed to prepare query: " + NStr::Quote(sql), 0, m_qtimeoutms)
         );
-        bool b = cass_future_wait_timed(future.get(), m_qtimeoutms * 1000L);
-        if (!b) {
-            RAISE_CASS_QUERY_ERROR(
-                CCassandraException::eQueryTimeout, -1,
-                ProduceSyncTimeoutMessage("Failed to prepare query: " + NStr::Quote(sql), 0, m_qtimeoutms)
-            );
+    }
+    CassError rc = cass_future_error_code(future.get());
+    if (rc != CASS_OK) {
+        RAISE_CASS_QUERY_ERROR(
+            GetErrorCodeByDriverRC(rc), rc,
+            ProduceCassandraQueryErrorMessage(future.get(), nullptr, sql)
+        );
+    }
+    rv = cass_future_get_prepared(future.get());
+    if (!rv) {
+        RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain prepared handle for sql: ") + sql);
+    }
+    {
+        CSpinGuard guard(m_prepared_mux);
+        auto it = m_prepared.find(sql);
+        if (it == m_prepared.end()) {
+            m_prepared.emplace(sql, rv);
         }
-        CassError rc = cass_future_error_code(future.get());
-        if (rc != CASS_OK) {
-            RAISE_CASS_QUERY_ERROR(
-                GetErrorCodeByDriverRC(rc), rc,
-                ProduceCassandraQueryErrorMessage(future.get(), nullptr, sql)
-            );
+        else {
+            cass_prepared_free(rv);
+            rv = it->second;
         }
-        rv = cass_future_get_prepared(future.get());
-        if (!rv) {
-            RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain prepared handle for sql: ") + sql);
-        }
-        m_prepared.emplace(sql, rv);
-    } else {
-        rv = it->second;
-        return rv;
     }
     return rv;
 }
