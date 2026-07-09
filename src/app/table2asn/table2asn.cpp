@@ -502,6 +502,8 @@ int CTbl2AsnApp::Run()
     CTable2AsnLogger* app_logger = new CTable2AsnLogger;
     CNcbiOstream* error_log = args["logfile"] ? &(args["logfile"].AsOutputFile()) : &NcbiCerr;
     app_logger->SetProgressOstream(error_log);
+
+    CDiagRestorer diag_restorer; // RW-2708: ensures that initial diagnostic settings are restored when this method exits
     SetDiagHandler(app_logger, false);
     m_logger.Reset(app_logger);
     m_context.m_logger = m_logger;
@@ -955,8 +957,6 @@ int CTbl2AsnApp::Run()
         }
     }
 
-    // prevent further logging after m_logger is autodestroyed; RW-2219, RW-2233
-    SetDiagHandler(nullptr, false);
     return ret;
 }
 
