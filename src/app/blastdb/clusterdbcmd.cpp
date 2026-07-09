@@ -260,9 +260,6 @@ void CClusterDBCmdApp::x_OpenDb()
 
     CSQLITE_Connection::TOperationFlags opFlags =
             CSQLITE_Connection::fExternalMT |
-            CSQLITE_Connection::fVacuumOff |
-            CSQLITE_Connection::fJournalOff |
-            CSQLITE_Connection::fSyncOff |
             CSQLITE_Connection::fTempToMemory |
             CSQLITE_Connection::fReadOnly;
     m_DbConn = make_unique<CSQLITE_Connection>(m_DbName, opFlags);
