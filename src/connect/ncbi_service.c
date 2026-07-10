@@ -1031,11 +1031,9 @@ static SERV_ITER x_Open(const char*         service,
         free(url);
     } else if (svc  &&  !url) {
         /* Service name was entirely valid -- use resolver(s) */
-        assert(!prefix  ||  *prefix);
-        assert(!domain  ||  *domain);
-        assert(!domain  ||  !ismask);
-        assert(!prefix  ||  domain);
-        if (domain) {
+        assert(!domain  ||  (!ismask  &&  *domain  &&  *domain != '.'));
+        assert(!prefix  ||  (*prefix  &&  domain));
+        if (!prefix  &&  domain) {
             /* disable all domain-unaware resolvers */
 #ifdef NCBI_OS_UNIX
             do_lbsmd   =
@@ -1048,7 +1046,6 @@ static SERV_ITER x_Open(const char*         service,
             do_namerd  =
 #endif /*NCBI_CXX_TOOLKIT*/
             do_dispd   = 0/*false*/;
-            assert(*domain != '.');
         }
         if (!ismask  &&  strchr(svc, '/')) {
             /* disable resolvers that cannot handle compound service names */
@@ -1082,7 +1079,7 @@ static SERV_ITER x_Open(const char*         service,
                      ismask ? "\""     : "",
                      !exact ? ": \""   : "",
                      !exact ? url      : "",
-                     &"\""[!exact]));
+                     !exact ? "\""     : ""));
         if (svc) {
             free((void*) svc);
             svc = 0/*fatal*/;
