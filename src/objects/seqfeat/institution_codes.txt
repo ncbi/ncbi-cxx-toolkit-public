@@ -5271,7 +5271,6 @@ MTL	s	Musee Toulouse Lautrec d'Albi
 MTMG	s	McGill University, Macdonald Campus, Plant Science Department			
 MTN	s	Malton Field Naturalists' Society			
 MTP	s	Michigan State University			
-MTQA	s	Museum of Tropical Queensland	MTQ		
 MTRO	s	Museum de Troyes			
 MTSN	s	Trento Museum of Natural Sciences			
 MTSU	s	Middle Tennessee State University, Biology Department			
@@ -6537,6 +6536,7 @@ QMC	s	Queen Mary College
 QMEX	s	Universidad Autonoma de Queretaro, Centro Universitario			
 QMOR	s	Collection Entomologique Ouellet-Robert			
 QMP	s	Musee du Quebec			
+QMT	s	Queensland Museum Tropics			
 QNA	s	Qena University			
 QNUN	s	Qiannan Normal University for Nationalities			
 QPAR	s	Ministere du Tourisme de la Chasse et de la Peche du Quebec, Laboratoire de Recherches			
