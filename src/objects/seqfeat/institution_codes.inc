@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed Jul  8 05:33:05 EDT 2026; formally
+/* time_t value corresponding to Fri Jul 10 05:33:05 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1783503185UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1783675985UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -5307,7 +5307,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MTMG\ts\tMcGill University, Macdonald Campus, Plant Science Department\t\t\t",
 "MTN\ts\tMalton Field Naturalists' Society\t\t\t",
 "MTP\ts\tMichigan State University\t\t\t",
-"MTQA\ts\tMuseum of Tropical Queensland\tMTQ\t\t",
 "MTRO\ts\tMuseum de Troyes\t\t\t",
 "MTSN\ts\tTrento Museum of Natural Sciences\t\t\t",
 "MTSU\ts\tMiddle Tennessee State University, Biology Department\t\t\t",
@@ -6573,6 +6572,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "QMEX\ts\tUniversidad Autonoma de Queretaro, Centro Universitario\t\t\t",
 "QMOR\ts\tCollection Entomologique Ouellet-Robert\t\t\t",
 "QMP\ts\tMusee du Quebec\t\t\t",
+"QMT\ts\tQueensland Museum Tropics\t\t\t",
 "QNA\ts\tQena University\t\t\t",
 "QNUN\ts\tQiannan Normal University for Nationalities\t\t\t",
 "QPAR\ts\tMinistere du Tourisme de la Chasse et de la Peche du Quebec, Laboratoire de Recherches\t\t\t",
