@@ -187,7 +187,6 @@ public:
     CPubseqGatewayFetchIpgReport(CPubseqGatewayFetchIpgReport&&) = delete;
     CPubseqGatewayFetchIpgReport& operator=(CPubseqGatewayFetchIpgReport&&) = delete;
 
-    void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
     void SetConsumeCallback(CPubseqGatewayIpgReportConsumeCallback callback);
 
     void SetConsistency(CassConsistency value);
