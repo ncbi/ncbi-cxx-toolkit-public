@@ -867,6 +867,7 @@ static struct SINTERNAL_Data* s_InternalMapper(const char** svc,
         int ismask = 0/*false*/, isfast = 1/*false*/;
         char* x_name = s_ServiceName(net_info->host, &ismask, &isfast,
                                      &prefix, 0/*domain*/, 0/*url*/);
+        assert(!prefix  ||  x_name);
         assert(name == url);
         if (x_name) {
             if (!prefix)
