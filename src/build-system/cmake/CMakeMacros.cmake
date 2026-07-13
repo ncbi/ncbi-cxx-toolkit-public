@@ -76,6 +76,9 @@ endfunction()
 ##############################################################################
 # assume all files are in the same directory
 function(NCBI_util_gitignore _f)
+    if(NCBI_PTBCFG_PACKAGED)
+        return()
+    endif()
     set( _files ${ARGV})
     if("${_files}" STREQUAL "")
         return()
