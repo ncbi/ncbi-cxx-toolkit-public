@@ -148,7 +148,9 @@ fi
 # The fallback happens due to various chunks so the final status is to be
 # checked and the fact of a fallback
 TESTS="bad_id2chunk_prop_fallback_whole
-       getna_id2chunk_prop_fallback_smart"
+       bad_id2chunk_prop_fallback_whole_2
+       getna_id2chunk_prop_fallback_smart
+       getna_id2chunk_prop_fallback_slim"
 if echo $TESTS | grep -w $obasename > /dev/null; then
     curl "${curl_https}" -s -i "${full_url}" | grep --text -e 'Falling' -e 'Fallback' -e 'Callback error' -e 'Failed to fetch' -e 'status=200' | sed -r 's/&n_chunks=[0-9]+//g' | sed  -r 's/chunk=[0-9]+/chunk=/g' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/item_id=[0-9]+&//g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | sort > $ofile
     exit 0
@@ -176,7 +178,7 @@ TESTS="bad_id2chunk_prop_fallback_slim bad_id2chunk_prop_fallback_smart
        bad_id2chunk_prop_fallback_none
        bad_id2chunk_prop_fallback_orig
        bad_id2chunk_prop_fallback_slim_2 bad_id2chunk_prop_fallback_smart_2
-       bad_id2chunk_prop_fallback_whole_2 bad_id2chunk_prop_fallback_none_2
+       bad_id2chunk_prop_fallback_none_2
        bad_id2chunk_prop_fallback_orig_2
        bad_id2chunk_prop_fallback_slim_3 bad_id2chunk_prop_fallback_smart_3
        bad_id2chunk_prop_fallback_none_3
@@ -197,7 +199,6 @@ TESTS="bad_id2chunk_prop_fallback_slim bad_id2chunk_prop_fallback_smart
        getna_bad_id2info_fallback_slim getna_bad_id2info_fallback_smart
        getna_bad_id2info_fallback_whole getna_bad_id2info_fallback_orig
        getna_bad_id2info_fallback_none
-       getna_id2chunk_prop_fallback_slim 
        getna_id2chunk_prop_fallback_whole getna_id2chunk_prop_fallback_orig
        getna_id2chunk_prop_fallback_none
        getna_id2chunk_prop_fallback_whole_2 getna_id2chunk_prop_fallback_orig_2
