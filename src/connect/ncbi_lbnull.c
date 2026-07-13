@@ -105,7 +105,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     unsigned int         ipv4;
     SSERV_Info*          info;
 
-    assert(data->hostlen  &&  data->host[0]  &&  !data->info);
+    assert(type  &&  data->hostlen  &&  data->host[0]  &&  !data->info);
     if (!SOCK_gethostbynameEx6(&ipv6, data->host, data->debug ? eOn : eDefault))
         return 0/*failure*/;
 
@@ -113,7 +113,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     if (!(ipv4 = NcbiIPv6ToIPv4(&ipv6, 0)))
         ipv4 = (unsigned int)(-1);
 
-    if (iter->reverse_dns  ||  (type & (fSERV_Dns | fSERV_Standalone)) == fSERV_Dns) {
+    if (iter->reverse_dns  ||  (type & fSERV_Dns)) {
         assert((type & fSERV_Dns)  ||  data->port);
         info = SERV_CreateDnsInfo(ipv4);
     } else if (type &= fSERV_Http) {
@@ -164,7 +164,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
             free(infostr);
     }
 
-    if (!(data->info = SERV_CopyInfoEx(info, iter->reverse_dns ? iter->name : ""))) {
+    if (!(data->info = SERV_CopyInfoEx(info, iter->reverse_dns ? data->host : ""))) {
         CORE_LOGF_ERRNO_X(85, eLOG_Error, errno,
                           ("[%s]  LBNULL cannot store server info", iter->name));
     }
@@ -279,11 +279,19 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     /* Can process fSERV_Any (basically meaning fSERV_Standalone), and explicit
      * fSERV_Dns, fSERV_Http and fSERV_Standalone only, which all, as a matter
      * of fact, are also included in fSERV_All. */
-    type = SERV_GetImplicitServerTypeInternalEx(iter->name, fSERV_Standalone);
-    if (!(type & (fSERV_Dns | fSERV_Http | fSERV_Standalone)))
-        return 0;
+    type = SERV_GetImplicitServerTypeInternalEx(iter->name, (ESERV_Type) fSERV_Any);
     types = iter->types & fSERV_All;
-    if (types  &&  !(type &= types))
+    if (!type)
+        type = types ? types : fSERV_Standalone;
+    else if (types)
+        type &= types;
+    if (type & fSERV_Standalone)
+        type = fSERV_Standalone;
+    else if (type & fSERV_Http)
+        type &= fSERV_Http;
+    else if (type & fSERV_Dns)
+        type = fSERV_Dns;
+    else
         return 0;
 
     CORE_TRACEF(("SERV_LBNULL_Open(\"%s%s%s%s%s\")",
@@ -306,10 +314,10 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
                      &"\""[!iter->val]));
         goto out;
     }
-    CORE_TRACEF(("[%s]  LBNULL using server type \"%s\"",
-                 iter->name, SERV_TypeStr(type)));
+    CORE_TRACEF(("[%s]  LBNULL using %sserver type \"%s\"",
+                 iter->name, iter->reverse_dns ? "REVERSED " : "", SERV_TypeStr(type)));
 
-    if (!(type & fSERV_Dns)  &&  (type & fSERV_Http)) {
+    if (!iter->reverse_dns  &&  (type & fSERV_Http)) {
         vhost = ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
                                     (iter->name, REG_CONN_LBNULL_VHOST,
                                      temp, sizeof(temp), 0));

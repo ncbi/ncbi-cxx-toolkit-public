@@ -314,8 +314,8 @@ size_t SERV_CheckDomain(const char* domain)
 /* "svc" (of length "len") is assumed to be syntactically correct.  That is,
  * it does not start or end with a dash, nor does it have any dashes in a
  * succession.  Also, this routine may _only_ be called for domain-enabled
- * services.  Return a 0-based string position from the open range
- * (SERV_LABLEN_MIN + 1 .. "len"),
+ * services.  Return a 0-based string position from the _open_ range
+ * (SERV_LABLEN_MIN + 1 .. len - 1),
  * where a legacy name appears to start (which also equates to the entire
  * prefix length).  Return 0 when none found.
  */
@@ -455,8 +455,8 @@ static char* x_ServiceName(unsigned int* depth,
                &&  strcasecmp(service, svc) != 0  &&  !*ismask  &&  (!url  ||  !*url));
     }
     len = !svc ? 0 : !*ismask ? strcspn(svc, ".") : strlen(svc);
-    if (!svc  ||  (!len  &&  !*ismask)
-        ||  len >= sizeof(buf) - sizeof(REG_CONN_SERVICE_NAME)) {
+    if (!svc  ||  (!*ismask  &&  !len)
+        ||  (!*isfast  &&  len >= sizeof(buf) - sizeof(REG_CONN_SERVICE_NAME))) {
         CORE_LOGF_X(7, eLOG_Error,
                     ("%s%s%s%s service name%s%s%s",
                      service  &&  *service ? "["   : "",
@@ -569,9 +569,12 @@ static char* x_ServiceName(unsigned int* depth,
             if (!*isfast  &&  pfxlen)
                 x_tr(str, str, dom, '-', '_');
             str[dom++] = '\0';
-            if (domain  &&  domlen)
+            if (domain  &&  domlen) {
+                str[len] = '\0';
                 *domain = str + dom;
-            str[len++] = '\0';
+                assert(strlen(*domain) == domlen);
+            }
+            ++len;
             if (prefix  &&  pfxlen) {
                 char* pfx = str + len;
                 /*NB:svc[pfxlen-1]=='-'*/
@@ -579,6 +582,7 @@ static char* x_ServiceName(unsigned int* depth,
                 pfx[pfxlen] = '\0';
                 assert(pfxlen);
                 *prefix = pfx;
+                assert(strlen(*prefix) == pfxlen);
             }
             assert(*str  &&  strlen(str) == dom - 1);
             assert(!*ismask  ||  !(pfxlen  ||  domlen));
@@ -808,19 +812,20 @@ static int/*bool*/ x_HttpNotOkay(TSERV_TypeOnly types)
 }
 
 
-static struct SINTERNAL_Data* s_InternalMapper(const char* name,
-                                               TSERV_Type  types,
-                                               const char* url)
+static struct SINTERNAL_Data* s_InternalMapper(const char** svc,
+                                               TSERV_Type   types,
+                                               const char*  url)
 {
     static volatile int/*bool*/ do_internal = -1/*unassigned*/;
     static void* volatile /*bool*/ s_Once = 0/*false*/;
+    const char*            name = *svc ? *svc : url;
     unsigned/*bool*/       reverse_dns;
     SConnNetInfo*          net_info;
     struct SINTERNAL_Data* data;
     char*                  frag;
     size_t                 len;
 
-    assert((!name  ||  *name)  &&  url  &&  *url);
+    assert(name  &&  *name  &&  url  &&  *url);
 
     if (CORE_Once(&s_Once)) {
         char        buf[80];
@@ -831,8 +836,6 @@ static struct SINTERNAL_Data* s_InternalMapper(const char* name,
     }
     if (!do_internal)
         return 0;
-    if (!name)
-        name = url;
 
     reverse_dns = types & fSERV_ReverseDns ? 1/*T*/ : 0/*F*/;
     types &= fSERV_All;
@@ -858,6 +861,19 @@ static struct SINTERNAL_Data* s_InternalMapper(const char* name,
             goto out;
         if (memchr(net_info->host, '.', len))
             net_info->host[len] = '\0';
+    }
+    if (!*svc) {
+        const char* prefix;
+        int ismask = 0/*false*/, isfast = 1/*false*/;
+        char* x_name = s_ServiceName(net_info->host, &ismask, &isfast,
+                                     &prefix, 0/*domain*/, 0/*url*/);
+        assert(name == url);
+        if (x_name) {
+            if (!prefix)
+                free(x_name);
+            else
+                *svc = name = x_name;
+        }
     }
     if (!net_info->port) {
         switch (net_info->scheme) {
@@ -1002,7 +1018,7 @@ static SERV_ITER x_Open(const char*         service,
     assert(!url  ||  (*url  &&  !ismask));
     assert(!url  ||  !(prefix  ||  domain));
     assert((svc  &&  *svc)  ||  !(prefix  ||  domain));
-    if (url  &&  (data = s_InternalMapper(svc, types, url)) != 0) {
+    if (url  &&  (data = s_InternalMapper(&svc, types, url)) != 0) {
         /* Service resolved to some parsable URL -- proceed internally */
         if (!svc) {
             char* tmp  = ConnNetInfo_URL(&data->net_info);
@@ -1074,12 +1090,12 @@ static SERV_ITER x_Open(const char*         service,
         CORE_LOGF_X(15, eLOG_Trace,
                     ("[%s]  Service unresolvable%s%s%s%s%s%s",
                      service,
-                     ismask ? " in \"" : "",
-                     ismask ? svc      : "",
-                     ismask ? "\""     : "",
-                     !exact ? ": \""   : "",
-                     !exact ? url      : "",
-                     !exact ? "\""     : ""));
+                     ismask ? " for \"" : "",
+                     ismask ? svc       : "",
+                     ismask ? "\""      : "",
+                     !exact ? ": \""    : "",
+                     !exact ? url       : "",
+                     !exact ? "\""      : ""));
         if (svc) {
             free((void*) svc);
             svc = 0/*fatal*/;
@@ -2131,16 +2147,18 @@ extern int/*bool*/ SERV_SetImplicitServerType(const char* service,
 #  ifdef NCBI_OS_MSWIN
 #    define putenv _putenv
 #  endif /*NCBI_OS_MSWIN*/
-    len = !putenv(buf);
-    if (len)
+    if (putenv(buf) != 0) {
+        len = 0/*failure*/;
         free(buf);
+    } else
+        len = 1/*success*/;
 #else
     len = !(unset ? unsetenv(buf) : setenv(buf, typ, 1/*overwrite*/));
     free(buf);
 #endif /*!HAVE_SETENV*/
     CORE_UNLOCK;
 
-    return len ? 1/*success*/ : 0/*failure*/;
+    return !!len;
 }
 
 
