@@ -65,12 +65,8 @@ enum EPSGS_AlertType {
     ePSGS_SeqIdClassificationConfigFilesRefreshSuccess = 17,
     ePSGS_SeqIdClassificationConfigFilesRefreshFailure = 18,
     ePSGS_SeqIdInconsistencyParsingAndAssess = 19,
-    ePSGS_BioseqInfoCacheLookupIncompatibleRecords = 20,
-    ePSGS_BioseqInfoDBLookupIncompatibleRecords = 21,
-    ePSGS_BioseqInfoCacheLookupINSDCIncompatibleRecords = 22,
-    ePSGS_BioseqInfoDBLookupINSDCIncompatibleRecords = 23,
-    ePSGS_RequestDropped = 24,
-    ePSGS_CassRequestQueueFull = 25
+    ePSGS_RequestDropped = 20,
+    ePSGS_CassRequestQueueFull = 21
 };
 
 enum EPSGS_AlertAckResult {

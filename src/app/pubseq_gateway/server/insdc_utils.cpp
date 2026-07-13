@@ -98,9 +98,7 @@ DecideINSDC(const vector<CBioseqInfoRecord> &  records,
 
                     auto    app = CPubseqGatewayApp::GetInstance();
                     if (is_cache) {
-                        PSG_ERROR("Cache lookup: " + decision.message);
-                        app->GetAlerts().Register(ePSGS_BioseqInfoCacheLookupINSDCIncompatibleRecords,
-                                                  "Cache lookup: " + decision.message);
+                        PSG_WARNING("Cache lookup: " + decision.message);
                         // It is safe to use nullptr instead of a processor pointer because
                         // it is not a per-processor counter
                         app->GetCounters().Increment(nullptr,
@@ -110,9 +108,7 @@ DecideINSDC(const vector<CBioseqInfoRecord> &  records,
                                              request->GetStartTimestamp());
                         }
                     } else {
-                        PSG_ERROR("Cassandra lookup: " + decision.message);
-                        app->GetAlerts().Register(ePSGS_BioseqInfoDBLookupINSDCIncompatibleRecords,
-                                                  "Cassandra lookup: " + decision.message);
+                        PSG_WARNING("Cassandra lookup: " + decision.message);
                         // It is safe to use nullptr instead of a processor pointer because
                         // it is not a per-processor counter
                         app->GetCounters().Increment(nullptr,
@@ -176,9 +172,7 @@ DecideINSDC(const vector<CBioseqInfoRecord> &  records,
 
         auto    app = CPubseqGatewayApp::GetInstance();
         if (is_cache) {
-            PSG_ERROR("Cache lookup: " + decision.message);
-            app->GetAlerts().Register(ePSGS_BioseqInfoCacheLookupINSDCIncompatibleRecords,
-                                      "Cache lookup: " + decision.message);
+            PSG_WARNING("Cache lookup: " + decision.message);
             // It is safe to use nullptr instead of a processor pointer because
             // it is not a per-processor counter
             app->GetCounters().Increment(nullptr,
@@ -188,9 +182,7 @@ DecideINSDC(const vector<CBioseqInfoRecord> &  records,
                                  request->GetStartTimestamp());
             }
         } else {
-            PSG_ERROR("Cassandra lookup: " + decision.message);
-            app->GetAlerts().Register(ePSGS_BioseqInfoDBLookupINSDCIncompatibleRecords,
-                                      "Cassandra lookup: " + decision.message);
+            PSG_WARNING("Cassandra lookup: " + decision.message);
             // It is safe to use nullptr instead of a processor pointer because
             // it is not a per-processor counter
             app->GetCounters().Increment(nullptr,

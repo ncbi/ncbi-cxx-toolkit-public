@@ -157,8 +157,6 @@ SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records,
         // - tick a counter
         if (is_cache) {
             PSG_WARNING("Cache lookup: " + ret.message);
-            app->GetAlerts().Register(ePSGS_BioseqInfoCacheLookupIncompatibleRecords,
-                                      "Cache lookup: " + ret.message);
 
             // It is safe to use nullptr instead of a processor pointer because
             // it is not a per-processor counter
@@ -171,8 +169,6 @@ SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records,
             }
         } else {
             PSG_WARNING("Cassandra lookup: " + ret.message);
-            app->GetAlerts().Register(ePSGS_BioseqInfoDBLookupIncompatibleRecords,
-                                      "Cassandra lookup: " + ret.message);
 
             // It is safe to use nullptr instead of a processor pointer because
             // it is not a per-processor counter

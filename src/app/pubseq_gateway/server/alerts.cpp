@@ -63,10 +63,6 @@ const SAlertToId     kAlertToIdMap[] = {
     { ePSGS_SeqIdClassificationConfigFilesRefreshSuccess,   "SeqIdClassificationConfigFilesRefreshSuccess" },
     { ePSGS_SeqIdClassificationConfigFilesRefreshFailure,   "SeqIdClassificationConfigFilesRefreshFailure" },
     { ePSGS_SeqIdInconsistencyParsingAndAssess,             "SeqIdInconsistencyParsingAndAssess" },
-    { ePSGS_BioseqInfoCacheLookupIncompatibleRecords,       "BioseqInfoCacheLookupIncompatibleRecords" },
-    { ePSGS_BioseqInfoDBLookupIncompatibleRecords,          "BioseqInfoDBLookupIncompatibleRecords" },
-    { ePSGS_BioseqInfoCacheLookupINSDCIncompatibleRecords,  "BioseqInfoCacheLookupINSDCIncompatibleRecords" },
-    { ePSGS_BioseqInfoDBLookupINSDCIncompatibleRecords,     "BioseqInfoDBLookupINSDCIncompatibleRecords" },
     { ePSGS_RequestDropped,                                 "RequestDropped" },
     { ePSGS_CassRequestQueueFull,                           "CassRequestQueueFull" }
 };
