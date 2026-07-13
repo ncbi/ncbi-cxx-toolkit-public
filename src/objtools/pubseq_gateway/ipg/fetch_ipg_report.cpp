@@ -210,16 +210,6 @@ void CPubseqGatewayFetchIpgReport::ConvertTimeTMsToCTimeLocal(int64_t time_ms, C
     FillCTimeLocalByTimeTMs(time_ms, t);
 }
 
-void CPubseqGatewayFetchIpgReport::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback)
-{
-    if (callback && m_State != eInit) {
-        NCBI_THROW(CCassandraException, eSeqFailed,
-           "CPubseqGatewayFetchIpgReport: DataReadyCB can't be assigned "
-           "after the loading process has started");
-    }
-    CCassBlobWaiter::SetDataReadyCB3(callback);
-}
-
 void CPubseqGatewayFetchIpgReport::Wait1()
 {
     using THugeHelper = CPubseqGatewayHugeIpgReportHelper;
