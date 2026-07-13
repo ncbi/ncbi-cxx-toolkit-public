@@ -79,6 +79,11 @@ public:
         return m_UserRequest->GetStartTimestamp();
     }
 
+    IPSGS_Processor *  GetProcessor(void) const
+    {
+        return m_Processor.get();
+    }
+
 private:
     // Incoming request
     shared_ptr<CPSGS_Request>               m_UserRequest;

@@ -521,7 +521,7 @@ SPSGS_AnnotRequest::RegisterProcessedName(TProcessorPriority  priority,
                                           const string &  name)
 {
     TProcessorPriority      ret = kUnknownPriority;
-    CSpinlockGuard          guard(&m_Lock);
+    lock_guard<mutex>       guard(m_Lock);
 
     for (auto &  item : m_Processed) {
         if (item.second == name) {
@@ -539,7 +539,7 @@ SPSGS_AnnotRequest::RegisterProcessedName(TProcessorPriority  priority,
 TProcessorPriority
 SPSGS_AnnotRequest::RegisterBioseqInfo(TProcessorPriority  priority)
 {
-    CSpinlockGuard          guard(&m_Lock);
+    lock_guard<mutex>       guard(m_Lock);
     TProcessorPriority      ret = m_ProcessedBioseqInfo;
     m_ProcessedBioseqInfo = max(m_ProcessedBioseqInfo, priority);
     return ret;
@@ -553,7 +553,7 @@ SPSGS_AnnotRequest::GetNotProcessedName(TProcessorPriority  priority)
 {
     vector<string>      ret = m_Names;
 
-    CSpinlockGuard      guard(&m_Lock);
+    lock_guard<mutex>   guard(m_Lock);
     for (const auto &  item : m_Processed) {
         if (item.first >= priority) {
             auto    it = find(ret.begin(), ret.end(), item.second);
@@ -579,7 +579,7 @@ bool SPSGS_AnnotRequest::WasSent(const string &  annot_name) const
 vector<pair<TProcessorPriority, string>>
 SPSGS_AnnotRequest::GetProcessedNames(void) const
 {
-    CSpinlockGuard      guard(&m_Lock);
+    lock_guard<mutex>       guard(m_Lock);
     return m_Processed;
 }
 
@@ -588,7 +588,7 @@ void
 SPSGS_AnnotRequest::ReportResultStatus(const string &  annot_name,
                                        EPSGS_ResultStatus  rs)
 {
-    CSpinlockGuard      guard(&m_Lock);
+    lock_guard<mutex>       guard(m_Lock);
 
     switch (rs) {
         case ePSGS_RS_NotFound:
@@ -621,7 +621,7 @@ void  SPSGS_AnnotRequest::ReportBlobError(TProcessorPriority  priority,
         return;
     }
 
-    CSpinlockGuard      guard(&m_Lock);
+    lock_guard<mutex>       guard(m_Lock);
 
     // Mark specifically this processor annotation as the one with an error
     // i.e. move it from 'ok' to the corresponding list

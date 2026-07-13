@@ -123,7 +123,7 @@ CPSGS_IPGResolveProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
 }
 
 
-IPSGS_Processor*
+IPSGS_Processor *
 CPSGS_IPGResolveProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
                                            shared_ptr<CPSGS_Reply> reply,
                                            TProcessorPriority  priority) const
@@ -207,9 +207,7 @@ bool CPSGS_IPGResolveProcessor::x_InitiateResolve(void)
                 if (m_ProteinType.has_value()) {
                     if (m_ProteinType.value() == CSeq_id_Base::e_Gi) {
                         if (IPSGS_Processor::m_Request->NeedTrace()) {
-                            IPSGS_Processor::m_Reply->SendTrace(
-                                "Protein detected as GI. Trying to resolve it.",
-                                IPSGS_Processor::m_Request->GetStartTimestamp());
+                            SendTrace("Protein detected as GI. Trying to resolve it.");
                         }
                         ResolveInputSeqId(m_IPGResolveRequest->m_Protein.value(),
                                           static_cast<int16_t>(CSeq_id::e_Gi));
@@ -227,9 +225,7 @@ bool CPSGS_IPGResolveProcessor::x_InitiateResolve(void)
                     if (m_NucleotideType.value() == CSeq_id_Base::e_Gi) {
 
                         if (IPSGS_Processor::m_Request->NeedTrace()) {
-                            IPSGS_Processor::m_Reply->SendTrace(
-                                "Nucleotide detected as GI. Trying to resolve it.",
-                                IPSGS_Processor::m_Request->GetStartTimestamp());
+                            SendTrace("Nucleotide detected as GI. Trying to resolve it.");
                         }
                         ResolveInputSeqId(m_IPGResolveRequest->m_Nucleotide.value(),
                                           static_cast<int16_t>(CSeq_id::e_Gi));
@@ -256,9 +252,7 @@ bool CPSGS_IPGResolveProcessor::x_InitiateResolve(void)
                 if (m_ProteinType.has_value()) {
                     if (m_ProteinType.value() != CSeq_id_Base::e_Gi) {
                         if (IPSGS_Processor::m_Request->NeedTrace()) {
-                            IPSGS_Processor::m_Reply->SendTrace(
-                                "Protein detected as non GI. Trying to resolve it.",
-                                IPSGS_Processor::m_Request->GetStartTimestamp());
+                            SendTrace("Protein detected as non GI. Trying to resolve it.");
                         }
                         // seq_id_type is not known
                         ResolveInputSeqId(m_IPGResolveRequest->m_Protein.value(), -1);
@@ -275,9 +269,7 @@ bool CPSGS_IPGResolveProcessor::x_InitiateResolve(void)
                 if (m_NucleotideType.has_value()) {
                     if (m_NucleotideType.value() != CSeq_id_Base::e_Gi) {
                         if (IPSGS_Processor::m_Request->NeedTrace()) {
-                            IPSGS_Processor::m_Reply->SendTrace(
-                                "Nucleotide detected as non GI. Trying to resolve it.",
-                                IPSGS_Processor::m_Request->GetStartTimestamp());
+                            SendTrace("Nucleotide detected as non GI. Trying to resolve it.");
                         }
                         // seq_id_type is not known
                         ResolveInputSeqId(m_IPGResolveRequest->m_Nucleotide.value(), -1);
@@ -309,9 +301,8 @@ void CPSGS_IPGResolveProcessor::x_DetectSeqIdTypes(void)
             m_ProteinType = DetectSeqIdTypeForIPG(protein);
 
             if (need_trace) {
-                IPSGS_Processor::m_Reply->SendTrace(
-                    "Protein type detected as: " + to_string(m_ProteinType.value()),
-                    IPSGS_Processor::m_Request->GetStartTimestamp());
+                SendTrace("Protein type detected as: " +
+                          to_string(m_ProteinType.value()));
             }
         }
     }
@@ -322,9 +313,8 @@ void CPSGS_IPGResolveProcessor::x_DetectSeqIdTypes(void)
             m_NucleotideType = DetectSeqIdTypeForIPG(nucleotide);
 
             if (need_trace) {
-                IPSGS_Processor::m_Reply->SendTrace(
-                    "Nucleotide type detected as: " + to_string(m_NucleotideType.value()),
-                    IPSGS_Processor::m_Request->GetStartTimestamp());
+                SendTrace("Nucleotide type detected as: " +
+                          to_string(m_NucleotideType.value()));
             }
         }
     }
@@ -352,9 +342,7 @@ CPSGS_IPGResolveProcessor::x_PrepareRequestOnOriginalValues(void)
 {
     bool        need_trace = IPSGS_Processor::m_Request->NeedTrace();
     if (need_trace) {
-        IPSGS_Processor::m_Reply->SendTrace(
-            "Prepare IPG fetch using the URL values as is",
-            IPSGS_Processor::m_Request->GetStartTimestamp());
+        SendTrace("Prepare IPG fetch using the URL values as is");
     }
 
     CPubseqGatewayFetchIpgReportRequest     request;
@@ -373,9 +361,7 @@ CPSGS_IPGResolveProcessor::x_PrepareRequestOnResolvedlValues(void)
 {
     bool        need_trace = IPSGS_Processor::m_Request->NeedTrace();
     if (need_trace) {
-        IPSGS_Processor::m_Reply->SendTrace(
-            "Prepare IPG fetch using resolved or URL (may be altered) values",
-            IPSGS_Processor::m_Request->GetStartTimestamp());
+        SendTrace("Prepare IPG fetch using resolved or URL (may be altered) values");
     }
 
     CPubseqGatewayFetchIpgReportRequest     request;
@@ -385,9 +371,7 @@ CPSGS_IPGResolveProcessor::x_PrepareRequestOnResolvedlValues(void)
     if (m_ResolvedProtein.IsValid()) {
         request.SetProtein(x_FormSeqId(m_ResolvedProtein));
         if (need_trace) {
-            IPSGS_Processor::m_Reply->SendTrace(
-                "Use resolved protein value",
-                IPSGS_Processor::m_Request->GetStartTimestamp());
+            SendTrace("Use resolved protein value");
         }
     } else {
         if (m_ProteinType.has_value()) {
@@ -395,16 +379,12 @@ CPSGS_IPGResolveProcessor::x_PrepareRequestOnResolvedlValues(void)
             if (m_ProteinType.value() == CSeq_id_Base::e_Pdb) {
                 NStr::ReplaceInPlace(protein, "|", "_");
                 if (need_trace) {
-                    IPSGS_Processor::m_Reply->SendTrace(
-                        "Use aletred URL protein value. It is PDB, "
-                        "so '|' is replaced with '_' if present",
-                        IPSGS_Processor::m_Request->GetStartTimestamp());
+                    SendTrace("Use aletred URL protein value. It is PDB, "
+                              "so '|' is replaced with '_' if present");
                 }
             } else {
                 if (need_trace) {
-                    IPSGS_Processor::m_Reply->SendTrace(
-                        "Use URL protein value as is.",
-                        IPSGS_Processor::m_Request->GetStartTimestamp());
+                    SendTrace("Use URL protein value as is.");
                 }
             }
             request.SetProtein(protein);
@@ -414,9 +394,7 @@ CPSGS_IPGResolveProcessor::x_PrepareRequestOnResolvedlValues(void)
     if (m_ResolvedNucleotide.IsValid()) {
         request.SetNucleotide(x_FormSeqId(m_ResolvedNucleotide));
         if (need_trace) {
-            IPSGS_Processor::m_Reply->SendTrace(
-                "Use resolved nucleotide value",
-                IPSGS_Processor::m_Request->GetStartTimestamp());
+            SendTrace("Use resolved nucleotide value");
         }
     } else {
         if (m_NucleotideType.has_value()) {
@@ -424,10 +402,8 @@ CPSGS_IPGResolveProcessor::x_PrepareRequestOnResolvedlValues(void)
             if (m_NucleotideType.value() == CSeq_id_Base::e_Pdb) {
                 NStr::ReplaceInPlace(nucleotide, "|", "_");
                 if (need_trace) {
-                    IPSGS_Processor::m_Reply->SendTrace(
-                        "Use aletred URL nucleotide value. It is PDB, "
-                        "so '|' is replaced with '_' if present",
-                        IPSGS_Processor::m_Request->GetStartTimestamp());
+                    SendTrace("Use aletred URL nucleotide value. It is PDB, "
+                              "so '|' is replaced with '_' if present");
                 }
             }
             request.SetNucleotide(nucleotide);
@@ -445,19 +421,15 @@ string CPSGS_IPGResolveProcessor::x_FormSeqId(SBioseqResolution &  bioseq_info)
 
     if (seq_id_type == CSeq_id::e_Pir || seq_id_type == CSeq_id::e_Prf) {
         if (need_trace) {
-            IPSGS_Processor::m_Reply->SendTrace(
-                "Form seq id: resolved type is PIR or PRF; use bioseq_info.name",
-                IPSGS_Processor::m_Request->GetStartTimestamp());
+            SendTrace("Form seq id: resolved type is PIR or PRF; use bioseq_info.name");
         }
         return bioseq_info.GetBioseqInfo().GetName();
     }
 
     if (seq_id_type == CSeq_id::e_Pdb) {
         if (need_trace) {
-            IPSGS_Processor::m_Reply->SendTrace(
-                "Form seq id: resolved type is PDB; replace '|' with '_' "
-                "in bioseq_info.accession and use it",
-                IPSGS_Processor::m_Request->GetStartTimestamp());
+            SendTrace("Form seq id: resolved type is PDB; replace '|' with '_' "
+                      "in bioseq_info.accession and use it");
         }
 
         string      accession = bioseq_info.GetBioseqInfo().GetAccession();
@@ -469,18 +441,14 @@ string CPSGS_IPGResolveProcessor::x_FormSeqId(SBioseqResolution &  bioseq_info)
 
     if (version == 0) {
         if (need_trace) {
-            IPSGS_Processor::m_Reply->SendTrace(
-                "Form seq id: bioseq_info.version is 0 so use bioseq_info.accession",
-                IPSGS_Processor::m_Request->GetStartTimestamp());
+            SendTrace("Form seq id: bioseq_info.version is 0 so use bioseq_info.accession");
         }
         return bioseq_info.GetBioseqInfo().GetAccession();
     }
 
     if (need_trace) {
-        IPSGS_Processor::m_Reply->SendTrace(
-            "Form seq id: bioseq_info.version is not 0 so use "
-            "bioseq_info.accession + '.' + bioseq_info.version",
-            IPSGS_Processor::m_Request->GetStartTimestamp());
+        SendTrace("Form seq id: bioseq_info.version is not 0 so use "
+                  "bioseq_info.accession + '.' + bioseq_info.version");
     }
     return bioseq_info.GetBioseqInfo().GetAccession() + "." +
            to_string(version);
@@ -491,7 +459,7 @@ void
 CPSGS_IPGResolveProcessor::x_InitiateIPGFetch(
                     const CPubseqGatewayFetchIpgReportRequest &  request)
 {
-    unique_ptr<CCassIPGFetch>               details;
+    shared_ptr<CCassIPGFetch>               details;
     details.reset(new CCassIPGFetch(*m_IPGResolveRequest));
 
     // Note: the presence of the ipg keyspace has been checked in the
@@ -504,7 +472,8 @@ CPSGS_IPGResolveProcessor::x_InitiateIPGFetch(
                                          ipg_keyspace->keyspace,
                                          request,
                                          nullptr, nullptr, true);
-    details->SetLoader(fetch_task);
+    details->SetLoader(fetch_task,
+                       static_cast<CPSGS_CassProcessorBase*>(this));
 
     fetch_task->SetConsumeCallback(
         CIPGResolveCallback(
@@ -520,16 +489,16 @@ CPSGS_IPGResolveProcessor::x_InitiateIPGFetch(
     fetch_task->SetLoggingCB(
             bind(&CPSGS_CassProcessorBase::LoggingCallback,
                  this, _1, _2));
-    fetch_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
+    fetch_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB(),
+                               weak_ptr<void>(details));
 
     if (IPSGS_Processor::m_Request->NeedTrace()) {
-        IPSGS_Processor::m_Reply->SendTrace("Cassandra request: " +
-            ToJsonString(request,
-                         ipg_keyspace->GetConnection()->GetDatacenterName()),
-            IPSGS_Processor::m_Request->GetStartTimestamp());
+        SendTrace("Cassandra request: " +
+                  ToJsonString(request,
+                               ipg_keyspace->GetConnection()->GetDatacenterName()));
     }
 
-    m_FetchDetails.push_back(std::move(details));
+    m_FetchDetails.push_back(move(details));
     fetch_task->Wait();
 }
 
@@ -548,69 +517,45 @@ CPSGS_IPGResolveProcessor::x_OnIPGResolveError(
     // It could be a message or an error
     CountError(fetch_details, status, code, severity, message,
                ePSGS_NeedLogging, ePSGS_NeedStatusUpdate);
-    bool    is_error = IsError(severity);
 
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(
             IPSGS_Processor::m_Reply->GetItemId(),
             kIPGResolveProcessorName, message, status, code, severity);
 
-    if (is_error) {
-        // There will be no more activity
-        fetch_details->SetReadFinished();
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
-    } else {
-        // It is a warning; it was counted/logged so continue as it is a clear
-        // fetch
-        fetch_details->GetLoader()->ClearError();
-        x_Peek(false);
-    }
+    ProcessEvent();
 }
 
 
 bool
 CPSGS_IPGResolveProcessor::x_OnIPGResolveData(vector<CIpgStorageReportEntry> &&  page,
-                                              bool  is_last,
+                                              bool  last,
                                               CCassIPGFetch *  fetch_details)
 {
+    if (last) {
+        fetch_details->SetReadFinished();
+    }
+
+    if (m_Canceled) {
+        ProcessEvent();
+        // To avoid a race condition between destroying the wrapper and
+        // processing events which are already in the queue return 'true'.
+        // The only action is to skip sending any data to the client
+        return true;
+    }
+
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
     bool        need_trace = IPSGS_Processor::m_Request->NeedTrace();
     if (need_trace) {
-        if (is_last) {
-            IPSGS_Processor::m_Reply->SendTrace(
-                "IPG resolve no-more-data callback",
-                IPSGS_Processor::m_Request->GetStartTimestamp());
+        if (last) {
+            SendTrace("IPG resolve no-more-data callback");
         } else {
-            IPSGS_Processor::m_Reply->SendTrace(
-                "IPG resolve data received",
-                IPSGS_Processor::m_Request->GetStartTimestamp());
+            SendTrace("IPG resolve data received");
         }
     }
 
-    if (m_Canceled) {
-        fetch_details->GetLoader()->Cancel();
-        fetch_details->SetReadFinished();
-
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
-        return false;
-    }
-
-    if (IPSGS_Processor::m_Reply->IsFinished()) {
-        CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
-                                        this,
-                                        CPSGSCounters::ePSGS_ProcUnknownError);
-        PSG_ERROR("Unexpected data received "
-                  "while the output has finished, ignoring");
-
-        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
-        return false;
-    }
-
-    if (is_last) {
-        fetch_details->SetReadFinished();
-
+    if (last) {
         if (m_RecordCount == 0) {
             m_NotFoundCriterias.push_back(
                 ToJsonString(fetch_details->GetLoader()->GetRequest(),
@@ -622,7 +567,6 @@ CPSGS_IPGResolveProcessor::x_OnIPGResolveData(vector<CIpgStorageReportEntry> && 
 
                 if (x_InitiateResolve()) {
                     // A resolve was initiated
-                    x_Peek(false);
                     return true;
                 }
             }
@@ -634,7 +578,7 @@ CPSGS_IPGResolveProcessor::x_OnIPGResolveData(vector<CIpgStorageReportEntry> && 
             UpdateOverallStatus(CRequestStatus::e404_NotFound);
         }
 
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
+        ProcessEvent();
         return false;
     }
 
@@ -648,7 +592,7 @@ CPSGS_IPGResolveProcessor::x_OnIPGResolveData(vector<CIpgStorageReportEntry> && 
         }
     }
 
-    x_Peek(false);
+    ProcessEvent();
     return true;
 }
 
@@ -694,7 +638,11 @@ string CPSGS_IPGResolveProcessor::GetGroupName(void) const
 
 void CPSGS_IPGResolveProcessor::ProcessEvent(void)
 {
-    x_Peek(true);
+    // Note: if all fetches finished then the final flush in the
+    // dispatcher will flush all the accumulated chunks together with
+    // the stream closing flag.
+
+    CPSGS_CassProcessorBase::SignalFinishProcessing();
 }
 
 
@@ -766,7 +714,7 @@ CPSGS_IPGResolveProcessor::x_OnSeqIdResolveFinished(
                                     CPSGSCounters::ePSGS_ProcUnknownError);
 
     UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-    CPSGS_CassProcessorBase::SignalFinishProcessing();
+    ProcessEvent();
 }
 
 
@@ -779,7 +727,7 @@ CPSGS_IPGResolveProcessor::x_OnSeqIdResolveError(CRequestStatus::ECode  status,
                                                  const string &  message)
 {
     if (m_Canceled) {
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
+        ProcessEvent();
         return;
     }
 
@@ -800,7 +748,7 @@ CPSGS_IPGResolveProcessor::x_OnSeqIdResolveError(CRequestStatus::ECode  status,
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(
                                             item_id, kIPGResolveProcessorName, 2);
 
-    CPSGS_CassProcessorBase::SignalFinishProcessing();
+    ProcessEvent();
 }
 
 
@@ -810,96 +758,5 @@ void CPSGS_IPGResolveProcessor::x_OnResolutionGoodData(void)
     // however the IPG resolve processor should not do anything.
     // There are no competitive processors for this request to send a signal
     // to.
-}
-
-
-void CPSGS_IPGResolveProcessor::x_Peek(bool  need_wait)
-{
-    if (m_Canceled) {
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
-        return;
-    }
-
-    // 1 -> call m_Loader->Wait1 to pick data
-    // 2 -> check if we have ready-to-send buffers
-    // 3 -> call reply->Send()  to send what we have if it is ready
-    bool        overall_final_state = false;
-
-    while (true) {
-        auto initial_size = m_FetchDetails.size();
-
-        for (auto &  details: m_FetchDetails) {
-            if (details) {
-                if (details->InPeek()) {
-                    continue;
-                }
-                details->SetInPeek(true);
-                overall_final_state |= x_Peek(details, need_wait);
-                details->SetInPeek(false);
-            }
-        }
-        if (initial_size == m_FetchDetails.size())
-            break;
-    }
-
-    // Ready packets needs to be send only once when everything is finished
-    if (overall_final_state) {
-        if (AreAllFinishedRead()) {
-            IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
-            CPSGS_CassProcessorBase::SignalFinishProcessing();
-        }
-    }
-}
-
-
-bool CPSGS_IPGResolveProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
-                                       bool  need_wait)
-{
-    if (!fetch_details->GetLoader())
-        return true;
-
-    bool        final_state = false;
-    if (need_wait) {
-        if (!fetch_details->ReadFinished()) {
-            final_state = fetch_details->GetLoader()->Wait();
-        }
-    }
-
-    if (!fetch_details->ReadFinished() &&
-            fetch_details->GetLoader()->HasError() &&
-            IPSGS_Processor::m_Reply->IsOutputReady() &&
-            ! IPSGS_Processor::m_Reply->IsFinished()) {
-        // Send an error
-        string      error = fetch_details->GetLoader()->LastError();
-        auto *      app = CPubseqGatewayApp::GetInstance();
-
-        PSG_ERROR(error);
-
-        // Last resort to detect if it was a timeout
-        CRequestStatus::ECode       status;
-        if (IsTimeoutError(error)) {
-            status = CRequestStatus::e500_InternalServerError;
-            app->GetCounters().Increment(
-                        this,
-                        CPSGSCounters::ePSGS_ProcUnknownError);
-        } else {
-            status = CRequestStatus::e504_GatewayTimeout;
-            app->GetCounters().Increment(
-                        this,
-                        CPSGSCounters::ePSGS_CassQueryTimeoutError);
-        }
-
-        IPSGS_Processor::m_Reply->PrepareProcessorMessage(
-                IPSGS_Processor::m_Reply->GetItemId(),
-                kIPGResolveProcessorName, error, status,
-                ePSGS_UnknownError, eDiag_Error);
-
-        // Mark finished
-        UpdateOverallStatus(status);
-        fetch_details->SetReadFinished();
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
-    }
-
-    return final_state;
 }
 

@@ -91,7 +91,6 @@ public:
 
     ~CHttpReply()
     {
-        // PSG_TRACE("~CHttpReply");
         x_Clear();
     }
 
@@ -276,9 +275,6 @@ public:
                    "Request pool is not available");
     }
 
-    bool CheckResetDataTriggered(void)
-    { return m_DataReady->CheckResetTriggered(); }
-
     void Error(const char *  what)
     {
         switch (m_State) {
@@ -293,8 +289,8 @@ public:
         CancelPending();
     }
 
-    shared_ptr<CCassDataCallbackReceiver> GetDataReadyCB(void)
-    { return static_pointer_cast<CCassDataCallbackReceiver>(m_DataReady); }
+    shared_ptr<CCassDataCallbackReceiverWithContext> GetDataReadyCB(void)
+    { return static_pointer_cast<CCassDataCallbackReceiverWithContext>(m_DataReady); }
 
     bool GetExceedSoftLimitFlag(void) const;
     void ResetExceedSoftLimitFlag(void);
@@ -307,7 +303,7 @@ public:
     void UpdatePeerId(const string &  peer_id);
 
 private:
-    struct CDataTrigger : public CCassDataCallbackReceiver
+    struct CDataTrigger : public CCassDataCallbackReceiverWithContext
     {
     public:
         CDataTrigger(const CDataTrigger &  from) = delete;
@@ -316,20 +312,12 @@ private:
         CDataTrigger &  operator=(CDataTrigger &&  from) = delete;
 
         CDataTrigger(CHttpProto *  proto) :
-            m_Triggered(false),
             m_Proto(proto)
         {}
 
-        virtual void OnData() override;
-
-        bool CheckResetTriggered(void)
-        {
-            bool        b = true;
-            return m_Triggered.compare_exchange_weak(b, false);
-        }
+        virtual void OnData(weak_ptr<void>  context) override;
 
     private:
-        std::atomic<bool>       m_Triggered;
         CHttpProto *            m_Proto;
     };
 
@@ -357,11 +345,9 @@ private:
     // using this connection
     void StopCB(void)
     {
-        // PSG_TRACE("CHttpReply::Stop");
         m_OutputIsReady = true;
         m_OutputFinished = true;
         if (m_State != eReplyFinished) {
-            // PSG_TRACE("CHttpReply::Stop: need cancel");
             x_DoCancel();
             NeedOutput();
         }
@@ -377,7 +363,6 @@ private:
     // it is ready for the next portion
     void ProceedCB(void)
     {
-        // PSG_TRACE("CHttpReply::Proceed");
         m_OutputIsReady = true;
         NeedOutput();
     }
@@ -437,9 +422,6 @@ private:
     {
         if (!x_ConnectionPrecheck(count, is_last))
             return;
-
-        // PSG_TRACE("x_DoSend: " << count << " chunks, "
-        //           "is_last: " << is_last << ", state: " << m_State);
 
         x_HandleConnectionState(status, reason);
 

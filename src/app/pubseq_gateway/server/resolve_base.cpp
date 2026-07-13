@@ -121,10 +121,9 @@ CPSGS_ResolveBase::x_ComposeOSLT(CSeq_id &  parsed_seq_id,
                                m_CurrentSeqIdToResolve->seq_id_type,
                                effective_seq_id_type, need_trace)) {
         if (need_trace) {
-            m_Reply->SendTrace("OSLT has not been tried due to mismatch "
-                             "between the  parsed CSeq_id seq_id_type and "
-                             "the URL provided one",
-                             m_Request->GetStartTimestamp());
+            SendTrace("OSLT has not been tried due to mismatch "
+                      "between the  parsed CSeq_id seq_id_type and "
+                      "the URL provided one");
         }
         return false;
     }
@@ -134,8 +133,7 @@ CPSGS_ResolveBase::x_ComposeOSLT(CSeq_id &  parsed_seq_id,
                                                CSeq_id::fGpipeAddSecondary);
     } catch (...) {
         if (need_trace) {
-            m_Reply->SendTrace("OSLT call failure (exception)",
-                             m_Request->GetStartTimestamp());
+            SendTrace("OSLT call failure (exception)");
         }
         return false;
     }
@@ -151,7 +149,7 @@ CPSGS_ResolveBase::x_ComposeOSLT(CSeq_id &  parsed_seq_id,
                 trace_msg += "\nOSLT secondary id: " + item;
             }
         }
-        m_Reply->SendTrace(trace_msg, m_Request->GetStartTimestamp());
+        SendTrace(trace_msg);
     }
 
     return true;
@@ -580,7 +578,7 @@ void CPSGS_ResolveBase::x_OptimizedNotFound(const string &  err_msg)
                                  CPSGSCounters::ePSGS_InputSeqIdNotResolved);
 
     if (m_Request->NeedTrace()) {
-        m_Reply->SendTrace(err_msg, m_Request->GetStartTimestamp());
+        SendTrace(err_msg);
     }
 
     m_ResolveErrors.AppendError(err_msg, CRequestStatus::e404_NotFound);

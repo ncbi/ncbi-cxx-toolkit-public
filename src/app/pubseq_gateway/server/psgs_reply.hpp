@@ -123,7 +123,7 @@ public:
     void Send504(const char *  payload);
 
     void ConnectionCancel(void);
-    shared_ptr<idblob::CCassDataCallbackReceiver> GetDataReadyCB(void);
+    shared_ptr<idblob::CCassDataCallbackReceiverWithContext> GetDataReadyCB(void);
 
     CHttpReply *  GetHttpReply(void)
     {

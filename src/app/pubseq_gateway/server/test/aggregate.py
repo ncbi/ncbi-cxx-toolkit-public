@@ -34,6 +34,8 @@ def convertToBytesPerSecond(s):
         return float(s[:-4]) * 1024.0
     if s.endswith('MB/s'):
         return float(s[:-4]) * 1024.0 * 1024.0
+    if s.endswith('GB/s'):
+        return float(s[:-4]) * 1024.0 * 1024.0 * 1024.0
     if s.endswith('B/s'):
         return float(s[:-3])
     raise Exception(f'Unknown value to convert to bytes per seconds: {s}')

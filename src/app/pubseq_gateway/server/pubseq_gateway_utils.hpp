@@ -379,26 +379,6 @@ private:
 };
 
 
-// Spinlock guard
-class CSpinlockGuard
-{
-public:
-    CSpinlockGuard(atomic<bool> *  spinlock) :
-        m_Spinlock(spinlock)
-    {
-        while (m_Spinlock->exchange(true)) {}
-    }
-
-    ~CSpinlockGuard()
-    {
-        *m_Spinlock = false;
-    }
-
-private:
-    atomic<bool> *  m_Spinlock;
-};
-
-
 string FormatPreciseTime(const chrono::system_clock::time_point &  t_point);
 unsigned long GetTimespanToNowMks(const psg_time_point_t &  t_point);
 unsigned long GetTimespanToNowMs(const psg_time_point_t &  t_point);

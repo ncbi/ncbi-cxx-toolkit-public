@@ -741,7 +741,6 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
         m_SeqIds(std::move(seq_ids)),
         m_SeqIdResolve(seq_id_resolve),
         m_SNPScaleLimit(snp_scale_limit),
-        m_Lock(false),
         m_ProcessedBioseqInfo(kUnknownPriority)
     {}
 
@@ -749,7 +748,6 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
         m_SeqIdType(-1),
         m_ResendTimeoutMks(0),
         m_SeqIdResolve(true),   // default
-        m_Lock(false),
         m_ProcessedBioseqInfo(kUnknownPriority)
     {}
 
@@ -832,7 +830,7 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
 
 private:
     // A list of names which have been already processed by some processors
-    mutable atomic<bool>                        m_Lock;
+    mutable mutex                               m_Lock;
     TProcessorPriority                          m_ProcessedBioseqInfo;
     vector<pair<TProcessorPriority, string>>    m_Processed;
 

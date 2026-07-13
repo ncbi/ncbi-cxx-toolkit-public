@@ -97,6 +97,7 @@ public:
 
 public:
     IPSGS_Processor() :
+        m_Priority(-1),
         m_FinishSignalled(false), m_UVThreadId(0),
         m_ProcessInvokeTimestampInitialized(false),
         m_SignalStartTimestampInitialized(false),
@@ -343,6 +344,13 @@ public:
         const string& request_seq_id,
         int request_seq_id_type,
         string* err_msg = nullptr);
+
+    void SendTrace(const string &  msg) const;
+
+    bool GetFinishSignalled(void) const
+    {
+        return m_FinishSignalled;
+    }
 
 protected:
     bool GetEffectiveSeqIdType(

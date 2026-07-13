@@ -81,16 +81,14 @@ void CMyNCBIErrorCallback::operator()(CRequestStatus::ECode  status,
     }
 
     // Trace
-    auto    request = m_Processor->GetRequest();
-    if (request->NeedTrace()) {
-        m_Processor->GetReply()->SendTrace(
+    if (m_Processor->GetRequest()->NeedTrace()) {
+        m_Processor->SendTrace(
             "MyNCBI error callback. Cookie: " + m_Cookie +
             " Status: " + to_string(status) +
             " Adjusted status: " + to_string(adjusted_status) +
             " Code: " + to_string(code) +
             " Severity: " + to_string(severity) +
-            " Message: " + message,
-            request->GetStartTimestamp());
+            " Message: " + message);
     }
 
     m_MyNCBIErrorCB(m_Cookie, adjusted_status, code, severity, message);
@@ -121,14 +119,12 @@ void CMyNCBIDataCallback::operator()(CPSG_MyNCBIRequest_WhoAmI::SUserInfo info)
     app->GetMyNCBIOKCache()->AddUserInfo(m_Cookie, info);
 
     // Trace
-    auto    request = m_Processor->GetRequest();
-    if (request->NeedTrace()) {
-        m_Processor->GetReply()->SendTrace(
+    if (m_Processor->GetRequest()->NeedTrace()) {
+        m_Processor->SendTrace(
             "MyNCBI data callback. Cookie: " + m_Cookie +
             " User ID: " + to_string(info.user_id) +
             " User name: " + info.username +
-            " Email: " + info.email_address,
-            request->GetStartTimestamp());
+            " Email: " + info.email_address);
     }
 
     m_MyNCBIDataCB(m_Cookie, info);

@@ -220,9 +220,8 @@ void CPSGS_AsyncResolveBase::SetupSeqIdToResolve(void)
 
         if (m_SeqIdsToResolve.size() > 1) {
             if (m_Request->NeedTrace()) {
-                m_Reply->SendTrace("The seq_ids to resolve list before sorting: " +
-                                   x_GetSeqIdsToResolveList(),
-                                   m_Request->GetStartTimestamp());
+                SendTrace("The seq_ids to resolve list before sorting: " +
+                          x_GetSeqIdsToResolveList());
             }
         }
 
@@ -232,9 +231,8 @@ void CPSGS_AsyncResolveBase::SetupSeqIdToResolve(void)
 
         if (m_SeqIdsToResolve.size() > 1) {
             if (m_Request->NeedTrace()) {
-                m_Reply->SendTrace("The seq_ids to resolve list after sorting: " +
-                                   x_GetSeqIdsToResolveList(),
-                                   m_Request->GetStartTimestamp());
+                SendTrace("The seq_ids to resolve list after sorting: " +
+                          x_GetSeqIdsToResolveList());
             }
         }
         m_CurrentSeqIdToResolve = m_SeqIdsToResolve.begin();
@@ -324,12 +322,11 @@ bool CPSGS_AsyncResolveBase::GetSeqIdResolve(void)
         auto    app = CPubseqGatewayApp::GetInstance();
         if (app->Settings().m_SeqIdResolveAlways == true) {
             if (m_Request->NeedTrace()) {
-                m_Reply->SendTrace("The request seq_id_resolve flag "
-                                   "is set to 'no' however the configuration "
-                                   "parameter [CASSANDRA_PROCESSOR]/seq_id_resolve_always "
-                                   "overwrites it. The resolution will be done "
-                                   "without optimization.",
-                                   m_Request->GetStartTimestamp());
+                SendTrace("The request seq_id_resolve flag "
+                          "is set to 'no' however the configuration "
+                          "parameter [CASSANDRA_PROCESSOR]/seq_id_resolve_always "
+                          "overwrites it. The resolution will be done "
+                          "without optimization.");
             }
             effective_seq_id_resolve = true;
         }
@@ -449,9 +446,8 @@ CPSGS_AsyncResolveBase::AdjustBioseqAccession(
 {
     if (CanSkipBioseqInfoRetrieval(bioseq_resolution.GetBioseqInfo())) {
         if (m_Request->NeedTrace()) {
-            m_Reply->SendTrace("Accession adjustment is not required "
-                               "(bioseq info is not provided)",
-                               m_Request->GetStartTimestamp());
+            SendTrace("Accession adjustment is not required "
+                      "(bioseq info is not provided)");
         }
         return ePSGS_NotRequired;
     }
@@ -459,9 +455,8 @@ CPSGS_AsyncResolveBase::AdjustBioseqAccession(
     auto    acc_subst_option = GetAccessionSubstitutionOption();
     if (acc_subst_option == SPSGS_RequestBase::ePSGS_NeverAccSubstitute) {
         if (m_Request->NeedTrace()) {
-            m_Reply->SendTrace("Accession adjustment is not required "
-                               "(substitute option is 'never')",
-                               m_Request->GetStartTimestamp());
+            SendTrace("Accession adjustment is not required "
+                      "(substitute option is 'never')");
         }
         return ePSGS_NotRequired;
     }
@@ -475,10 +470,9 @@ CPSGS_AsyncResolveBase::AdjustBioseqAccession(
                 seq_id_type == CSeq_id::e_Prf) {
                 // For them there is no substitution
                 if (m_Request->NeedTrace()) {
-                    m_Reply->SendTrace("Accession adjustment is not required "
-                                       "(It is PDB, PIR or PRF with version == 0 "
-                                       "and substitute option is 'default')",
-                                       m_Request->GetStartTimestamp());
+                    SendTrace("Accession adjustment is not required "
+                              "(It is PDB, PIR or PRF with version == 0 "
+                              "and substitute option is 'default')");
                 }
                 return ePSGS_NotRequired;
             }
@@ -489,9 +483,8 @@ CPSGS_AsyncResolveBase::AdjustBioseqAccession(
     if (acc_subst_option == SPSGS_RequestBase::ePSGS_LimitedAccSubstitution &&
         seq_id_type != CSeq_id::e_Gi) {
         if (m_Request->NeedTrace()) {
-            m_Reply->SendTrace("Accession adjustment is not required "
-                               "(substitute option is 'limited' and seq_id_type is not gi)",
-                               m_Request->GetStartTimestamp());
+            SendTrace("Accession adjustment is not required "
+                      "(substitute option is 'limited' and seq_id_type is not gi)");
         }
         return ePSGS_NotRequired;
     }
@@ -630,7 +623,7 @@ CPSGS_AsyncResolveBase::x_PrepareAccessionLikeBioseqInfoQuery(void)
     m_BioseqInfoRequestedSeqIdType = -1;
     m_BioseqInfoRequestedGI = -1;
 
-    unique_ptr<CCassBioseqInfoFetch>   details;
+    shared_ptr<CCassBioseqInfoFetch>   details;
     details.reset(new CCassBioseqInfoFetch());
 
     CBioseqInfoFetchRequest     bioseq_info_request;
@@ -642,7 +635,8 @@ CPSGS_AsyncResolveBase::x_PrepareAccessionLikeBioseqInfoQuery(void)
                                          bioseq_keyspace.keyspace,
                                          bioseq_info_request,
                                          nullptr, nullptr);
-    details->SetLoader(fetch_task);
+    details->SetLoader(fetch_task,
+                       static_cast<CPSGS_CassProcessorBase*>(this));
 
     // Note: there are two callback implementations available, with/without
     //       seq_id_type. Here the request is without the seq_id_type however
@@ -658,18 +652,17 @@ CPSGS_AsyncResolveBase::x_PrepareAccessionLikeBioseqInfoQuery(void)
     fetch_task->SetLoggingCB(
             bind(&CPSGS_CassProcessorBase::LoggingCallback,
                  this, _1, _2));
-    fetch_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
+    fetch_task->SetDataReadyCB(m_Reply->GetDataReadyCB(),
+                               weak_ptr<void>(details));
 
     m_BioseqInfoStart = psg_clock_t::now();
-    m_CurrentFetch = details.release();
-    m_FetchDetails.push_back(unique_ptr<CCassFetch>(m_CurrentFetch));
+    m_CurrentFetch = details.get();
+    m_FetchDetails.push_back(move(details));
 
     if (m_Request->NeedTrace()) {
-        m_Reply->SendTrace(
-            "Cassandra request (accession like seq_id as user provided): " +
-            ToJsonString(bioseq_info_request,
-                         bioseq_keyspace.connection->GetDatacenterName()),
-            m_Request->GetStartTimestamp());
+        SendTrace("Cassandra request (accession like seq_id as user provided): " +
+                  ToJsonString(bioseq_info_request,
+                               bioseq_keyspace.connection->GetDatacenterName()));
     }
 
     fetch_task->Wait();
@@ -690,7 +683,7 @@ CPSGS_AsyncResolveBase::x_PreparePrimaryBioseqInfoQuery(
     m_BioseqInfoRequestedSeqIdType = seq_id_type;
     m_BioseqInfoRequestedGI = gi;
 
-    unique_ptr<CCassBioseqInfoFetch>   details;
+    shared_ptr<CCassBioseqInfoFetch>   details;
     details.reset(new CCassBioseqInfoFetch());
 
     CBioseqInfoFetchRequest     bioseq_info_request;
@@ -710,7 +703,8 @@ CPSGS_AsyncResolveBase::x_PreparePrimaryBioseqInfoQuery(
                                          bioseq_keyspace.keyspace,
                                          bioseq_info_request,
                                          nullptr, nullptr);
-    details->SetLoader(fetch_task);
+    details->SetLoader(fetch_task,
+                       static_cast<CPSGS_CassProcessorBase*>(this));
 
     if (with_seq_id_type)
         fetch_task->SetConsumeCallback(
@@ -724,30 +718,26 @@ CPSGS_AsyncResolveBase::x_PreparePrimaryBioseqInfoQuery(
     fetch_task->SetLoggingCB(
             bind(&CPSGS_CassProcessorBase::LoggingCallback,
                  this, _1, _2));
-    fetch_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
+    fetch_task->SetDataReadyCB(m_Reply->GetDataReadyCB(),
+                               weak_ptr<void>(details));
 
     m_BioseqInfoStart = psg_clock_t::now();
     if (with_seq_id_type) {
-        m_CurrentFetch = details.release();
-        m_FetchDetails.push_back(unique_ptr<CCassFetch>(m_CurrentFetch));
+        m_CurrentFetch = details.get();
     } else {
-        m_NoSeqIdTypeFetch = details.release();
-        m_FetchDetails.push_back(unique_ptr<CCassFetch>(m_NoSeqIdTypeFetch));
+        m_NoSeqIdTypeFetch = details.get();
     }
+    m_FetchDetails.push_back(move(details));
 
     if (m_Request->NeedTrace()) {
         if (with_seq_id_type)
-            m_Reply->SendTrace(
-                "Cassandra request: " +
-                ToJsonString(bioseq_info_request,
-                             bioseq_keyspace.connection->GetDatacenterName()),
-                m_Request->GetStartTimestamp());
+            SendTrace("Cassandra request: " +
+                      ToJsonString(bioseq_info_request,
+                                   bioseq_keyspace.connection->GetDatacenterName()));
         else
-            m_Reply->SendTrace(
-                "Cassandra request for INSDC types: " +
-                ToJsonString(bioseq_info_request,
-                             bioseq_keyspace.connection->GetDatacenterName()),
-                m_Request->GetStartTimestamp());
+            SendTrace("Cassandra request for INSDC types: " +
+                      ToJsonString(bioseq_info_request,
+                                   bioseq_keyspace.connection->GetDatacenterName()));
     }
 
     fetch_task->Wait();
@@ -759,7 +749,7 @@ void CPSGS_AsyncResolveBase::x_PrepareSi2csiQuery(const string &  secondary_id,
 {
     ++m_BioseqResolution.m_CassQueryCount;
 
-    unique_ptr<CCassSi2csiFetch>   details;
+    shared_ptr<CCassSi2csiFetch>   details;
     details.reset(new CCassSi2csiFetch());
 
     CSi2CsiFetchRequest     si2csi_request;
@@ -774,26 +764,26 @@ void CPSGS_AsyncResolveBase::x_PrepareSi2csiQuery(const string &  secondary_id,
                                      si2csi_request,
                                      nullptr, nullptr);
 
-    details->SetLoader(fetch_task);
+    details->SetLoader(fetch_task,
+                       static_cast<CPSGS_CassProcessorBase*>(this));
 
     fetch_task->SetConsumeCallback(std::bind(&CPSGS_AsyncResolveBase::x_OnSi2csiRecord, this, _1));
     fetch_task->SetErrorCB(std::bind(&CPSGS_AsyncResolveBase::x_OnSi2csiError, this, _1, _2, _3, _4));
     fetch_task->SetLoggingCB(
             bind(&CPSGS_CassProcessorBase::LoggingCallback,
                  this, _1, _2));
-    fetch_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
+    fetch_task->SetDataReadyCB(m_Reply->GetDataReadyCB(),
+                               weak_ptr<void>(details));
 
-    m_CurrentFetch = details.release();
+    m_CurrentFetch = details.get();
 
     m_Si2csiStart = psg_clock_t::now();
-    m_FetchDetails.push_back(unique_ptr<CCassFetch>(m_CurrentFetch));
+    m_FetchDetails.push_back(move(details));
 
     if (m_Request->NeedTrace())
-        m_Reply->SendTrace(
-            "Cassandra request: " +
-            ToJsonString(si2csi_request,
-                         bioseq_keyspace.connection->GetDatacenterName()),
-            m_Request->GetStartTimestamp());
+        SendTrace("Cassandra request: " +
+                  ToJsonString(si2csi_request,
+                               bioseq_keyspace.connection->GetDatacenterName()));
 
     fetch_task->Wait();
 }
@@ -840,7 +830,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
         for (const auto &  item : records) {
             msg += "\n" + ToJsonString(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
         }
-        m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
+        SendTrace(msg);
     }
 
     ssize_t  index_to_pick = 0;
@@ -857,9 +847,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
         index_to_pick = result.index;
         if (result.status == CRequestStatus::e300_MultipleChoices) {
             if (m_Request->NeedTrace()) {
-                m_Reply->SendTrace(
-                    result.message + "\nSo report as not found",
-                    m_Request->GetStartTimestamp());
+                SendTrace(result.message + "\nSo report as not found");
             }
             m_CassAmbiguityMessage = result.message;
             m_CassAmbiguityJson = result.ambiguity_json;
@@ -918,11 +906,8 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
             prefix = "Selected record:\n";
         else
             prefix = "Record selected in accordance to priorities (live & not HUP, dead & not HUP, HUP + largest gi/version):\n";
-        m_Reply->SendTrace(
-            prefix +
-            ToJsonString(records[index_to_pick],
-                         SPSGS_ResolveRequest::fPSGS_AllBioseqFields),
-            m_Request->GetStartTimestamp());
+        SendTrace(prefix + ToJsonString(records[index_to_pick],
+                                        SPSGS_ResolveRequest::fPSGS_AllBioseqFields));
     }
 
     m_BioseqResolution.m_ResolutionResult = ePSGS_BioseqDB;
@@ -982,7 +967,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
         for (const auto &  item : records) {
             msg += "\n" + ToJsonString(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
         }
-        m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
+        SendTrace(msg);
     }
 
     switch (decision.status) {
@@ -1102,7 +1087,7 @@ void CPSGS_AsyncResolveBase::x_OnSi2csiRecord(vector<CSI2CSIRecord> &&  records)
         if (record_count > 1)
             msg += "\nMore than one record => may be more tries";
 
-        m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
+        SendTrace(msg);
     }
 
     if (record_count != 1) {
@@ -1192,9 +1177,8 @@ bool CPSGS_AsyncResolveBase::MoveToNextSeqId(void)
     }
 
     if (m_Request->NeedTrace()) {
-        m_Reply->SendTrace("Could not resolve seq_id " + current_seq_id +
-                           ". There are more seq_id to try, switching to the next one.",
-                           m_Request->GetStartTimestamp());
+        SendTrace("Could not resolve seq_id " + current_seq_id +
+                  ". There are more seq_id to try, switching to the next one.");
     }
 
     return true;

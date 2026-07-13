@@ -110,9 +110,9 @@ public:
                          uv_close_cb  close_cb);
     void OnClientClosedConnection(uv_stream_t *  conn,
                                   CHttpConnection *  http_conn);
-    void WakeWorker(void);
+    void WakeWorker(weak_ptr<void>  fetch);
+    void WakeWorker(void *  processor);
     void OnTimer(void);
-    void OnAsyncWork(bool  cancel);
 
     static void DaemonStarted() {}
     static void DaemonStopped() {}

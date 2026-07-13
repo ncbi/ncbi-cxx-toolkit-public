@@ -121,7 +121,7 @@ class CPSGS_ZEndPointRequests
 
         // request id -> request attributes
         map<size_t, SRequestAttributes> m_Requests;
-        atomic<bool>                    m_RequestsLock;
+        mutex                           m_RequestsLock;
 };
 
 

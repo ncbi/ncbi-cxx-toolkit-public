@@ -115,8 +115,6 @@ private:
                                EDiagSev  severity,
                                const string& message);
     void x_OnResolutionGoodData(void);
-    void x_Peek(bool  need_wait);
-    bool x_Peek(unique_ptr<CCassFetch>& fetch_details, bool  need_wait);
 
     void x_RegisterTiming(psg_time_point_t start,
                           EPSGOperation operation,

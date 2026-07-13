@@ -75,7 +75,7 @@ CPSGS_AsyncBioseqInfoBase::MakeRequest(SBioseqResolution &&  bioseq_resolution)
 void
 CPSGS_AsyncBioseqInfoBase::x_MakeRequest(void)
 {
-    unique_ptr<CCassBioseqInfoFetch>   details;
+    shared_ptr<CCassBioseqInfoFetch>   details;
     details.reset(new CCassBioseqInfoFetch());
 
     string      accession = StripTrailingVerticalBars(
@@ -103,7 +103,8 @@ CPSGS_AsyncBioseqInfoBase::x_MakeRequest(void)
                     sat_info_entry.keyspace,
                     bioseq_info_request,
                     nullptr, nullptr);
-    details->SetLoader(fetch_task);
+    details->SetLoader(fetch_task,
+                       static_cast<CPSGS_CassProcessorBase*>(this));
 
     if (m_WithSeqIdType)
         fetch_task->SetConsumeCallback(
@@ -120,31 +121,27 @@ CPSGS_AsyncBioseqInfoBase::x_MakeRequest(void)
     fetch_task->SetLoggingCB(
             bind(&CPSGS_CassProcessorBase::LoggingCallback,
                  this, _1, _2));
-    fetch_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
+    fetch_task->SetDataReadyCB(m_Reply->GetDataReadyCB(),
+                               weak_ptr<void>(details));
 
 
     m_BioseqRequestStart = psg_clock_t::now();
     if (m_WithSeqIdType) {
-        m_Fetch = details.release();
-        m_FetchDetails.push_back(unique_ptr<CCassFetch>(m_Fetch));
+        m_Fetch = details.get();
     } else {
-        m_NoSeqIdTypeFetch = details.release();
-        m_FetchDetails.push_back(unique_ptr<CCassFetch>(m_NoSeqIdTypeFetch));
+        m_NoSeqIdTypeFetch = details.get();
     }
+    m_FetchDetails.push_back(move(details));
 
     if (m_NeedTrace) {
         if (m_WithSeqIdType)
-            m_Reply->SendTrace(
-                "Cassandra request: " +
-                ToJsonString(bioseq_info_request,
-                             sat_info_entry.connection->GetDatacenterName()),
-                m_Request->GetStartTimestamp());
+            SendTrace("Cassandra request: " +
+                      ToJsonString(bioseq_info_request,
+                                   sat_info_entry.connection->GetDatacenterName()));
         else
-            m_Reply->SendTrace(
-                "Cassandra request for INSDC types: " +
-                ToJsonString(bioseq_info_request,
-                             sat_info_entry.connection->GetDatacenterName()),
-                m_Request->GetStartTimestamp());
+            SendTrace("Cassandra request for INSDC types: " +
+                      ToJsonString(bioseq_info_request,
+                                   sat_info_entry.connection->GetDatacenterName()));
     }
 
     fetch_task->Wait();
@@ -164,7 +161,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
             msg += "\n" +
                    ToJsonString(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
         }
-        m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
+        SendTrace(msg);
     }
 
     if (records.empty()) {
@@ -180,9 +177,9 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
             return;
         }
 
-        if (m_NeedTrace)
-            m_Reply->SendTrace("Report not found",
-                               m_Request->GetStartTimestamp());
+        if (m_NeedTrace) {
+            SendTrace("Report not found");
+        }
 
         m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
 
@@ -196,7 +193,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
     if (records.size() == 1) {
         // Exactly one match; no complications
         if (m_NeedTrace) {
-            m_Reply->SendTrace("Report found", m_Request->GetStartTimestamp());
+            SendTrace("Report found");
         }
 
         m_BioseqResolution.m_ResolutionResult = ePSGS_BioseqDB;
@@ -225,10 +222,9 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
                                   eOpStatusNotFound, m_BioseqRequestStart);
         app->GetCounters().Increment(this, CPSGSCounters::ePSGS_BioseqInfoNotFound);
 
-        if (m_NeedTrace)
-            m_Reply->SendTrace(
-                result.message + "\nSo report as not found",
-                m_Request->GetStartTimestamp());
+        if (m_NeedTrace) {
+            SendTrace(result.message + "\nSo report as not found");
+        }
 
         m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
         m_ErrorCB(CRequestStatus::e300_MultipleChoices, ePSGS_UnresolvedSeqId,
@@ -248,12 +244,9 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
             prefix = "Selected record:\n";
         else
             prefix = "Record selected in accordance to priorities (live & not HUP, dead & not HUP, HUP + largest gi/version):\n";
-        m_Reply->SendTrace(
-            prefix +
-            ToJsonString(records[result.index],
-                         SPSGS_ResolveRequest::fPSGS_AllBioseqFields) +
-            "\nReport found",
-            m_Request->GetStartTimestamp());
+        SendTrace(prefix + ToJsonString(records[result.index],
+                                        SPSGS_ResolveRequest::fPSGS_AllBioseqFields) +
+                  "\nReport found");
     }
 
     m_BioseqResolution.m_ResolutionResult = ePSGS_BioseqDB;
@@ -286,14 +279,14 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
         for (const auto &  item : records) {
             msg += "\n" + ToJsonString(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
         }
-        m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
+        SendTrace(msg);
     }
 
     switch (decision.status) {
         case CRequestStatus::e200_Ok:
-            if (m_NeedTrace)
-                m_Reply->SendTrace("Report found",
-                                   m_Request->GetStartTimestamp());
+            if (m_NeedTrace) {
+                SendTrace("Report found");
+            }
 
             m_BioseqResolution.m_ResolutionResult = ePSGS_BioseqDB;
 
@@ -306,9 +299,9 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
             m_FinishedCB(std::move(m_BioseqResolution));
             break;
         case CRequestStatus::e404_NotFound:
-            if (m_NeedTrace)
-                m_Reply->SendTrace("Report not found",
-                                   m_Request->GetStartTimestamp());
+            if (m_NeedTrace) {
+                SendTrace("Report not found");
+            }
 
             m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
 
@@ -323,9 +316,9 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
                       eDiag_Error, "", ePSGS_SkipLogging);
             break;
         case CRequestStatus::e500_InternalServerError:
-            if (m_NeedTrace)
-                m_Reply->SendTrace("Report not found because of DB data inconsistency",
-                                   m_Request->GetStartTimestamp());
+            if (m_NeedTrace) {
+                SendTrace("Report not found because of DB data inconsistency");
+            }
 
             m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
 

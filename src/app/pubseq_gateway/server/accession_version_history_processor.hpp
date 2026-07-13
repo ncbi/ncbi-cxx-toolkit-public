@@ -82,11 +82,6 @@ private:
                              const string &  message);
 
 private:
-    void x_Peek(bool  need_wait);
-    bool x_Peek(unique_ptr<CCassFetch> &  fetch_details,
-                bool  need_wait);
-
-private:
     size_t                                  m_RecordCount;
     SPSGS_AccessionVersionHistoryRequest *  m_AccVerHistoryRequest;
 };

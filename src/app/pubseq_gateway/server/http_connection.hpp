@@ -151,18 +151,14 @@ public:
         p->OnBeforeClosedConnection();
     }
 
-    void PeekAsync(bool  chk_data_ready);
+    // void PeekAsync(bool  chk_data_ready);
     void ResetForReuse(void);
     void Postpone(shared_ptr<CPSGS_Request>  request,
                   shared_ptr<CPSGS_Reply>  reply,
                   list<string>  processor_names);
     void ScheduleMaintain(void);
     void DoScheduledMaintain(void);
-
-    void OnTimer(void)
-    {
-        PeekAsync(false);
-    }
+    void OnTimer(void);
 
     void PrepareForUsage(uv_tcp_t *  uv_tcp_stream,
                          int64_t  conn_cnt_at_open,

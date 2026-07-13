@@ -137,7 +137,7 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveError(
                                             const string &  message)
 {
     if (m_Canceled) {
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
+        ProcessEvent();
         return;
     }
 
@@ -158,7 +158,7 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveError(
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(
                                     item_id, kAccVerHistProcessorName, 2);
 
-    CPSGS_CassProcessorBase::SignalFinishProcessing();
+    ProcessEvent();
 }
 
 
@@ -167,6 +167,11 @@ void
 CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveFinished(
                                         SBioseqResolution &&  bioseq_resolution)
 {
+    if (m_Canceled) {
+        ProcessEvent();
+        return;
+    }
+
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
@@ -177,7 +182,7 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveFinished(
 
     // Initiate the accession history request
     auto *                              app = CPubseqGatewayApp::GetInstance();
-    unique_ptr<CCassAccVerHistoryFetch> details;
+    shared_ptr<CCassAccVerHistoryFetch> details;
     details.reset(new CCassAccVerHistoryFetch(*m_AccVerHistoryRequest));
 
     // Note: the part of the resolution process is a accession substitution
@@ -192,7 +197,8 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveFinished(
                                         nullptr, nullptr,
                                         0,      // version is not used here
                                         bioseq_resolution.GetOriginalSeqIdType());
-    details->SetLoader(fetch_task);
+    details->SetLoader(fetch_task,
+                       static_cast<CPSGS_CassProcessorBase*>(this));
 
     fetch_task->SetConsumeCallback(
         CAccVerHistCallback(
@@ -208,16 +214,16 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveFinished(
     fetch_task->SetLoggingCB(
             bind(&CPSGS_CassProcessorBase::LoggingCallback,
                  this, _1, _2));
-    fetch_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
+    fetch_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB(),
+                               weak_ptr<void>(details));
 
     if (IPSGS_Processor::m_Request->NeedTrace()) {
-        IPSGS_Processor::m_Reply->SendTrace("Cassandra request: " +
-            ToJsonString(*fetch_task,
-                         sat_info.connection->GetDatacenterName()),
-            IPSGS_Processor::m_Request->GetStartTimestamp());
+        SendTrace("Cassandra request: " +
+                  ToJsonString(*fetch_task,
+                               sat_info.connection->GetDatacenterName()));
     }
 
-    m_FetchDetails.push_back(std::move(details));
+    m_FetchDetails.push_back(move(details));
     fetch_task->Wait();
 }
 
@@ -227,7 +233,7 @@ CPSGS_AccessionVersionHistoryProcessor::x_SendBioseqInfo(
                                         SBioseqResolution &  bioseq_resolution)
 {
     if (m_Canceled) {
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
+        // Just skip sending data
         return;
     }
 
@@ -261,48 +267,43 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistData(
                             bool  last,
                             CCassAccVerHistoryFetch *  fetch_details)
 {
+    if (last) {
+        fetch_details->SetReadFinished();
+    }
+
+    if (m_Canceled) {
+        ProcessEvent();
+        // To avoid a race condition between destroying the wrapper and
+        // processing events which are already in the queue return 'true'.
+        // The only action is to skip sending any data to the client
+        return true;
+    }
+
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         if (last) {
-            IPSGS_Processor::m_Reply->SendTrace(
-                "Accession version history no-more-data callback",
-                IPSGS_Processor::m_Request->GetStartTimestamp());
+            SendTrace("Accession version history no-more-data callback");
         } else {
-            IPSGS_Processor::m_Reply->SendTrace(
-                "Accession version history data received",
-                IPSGS_Processor::m_Request->GetStartTimestamp());
+            SendTrace("Accession version history data received");
         }
     }
 
-    if (m_Canceled) {
-        fetch_details->GetLoader()->Cancel();
-        fetch_details->SetReadFinished();
-
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
-        return false;
-    }
-
     if (IPSGS_Processor::m_Reply->IsFinished()) {
-        CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
-                                        this,
-                                        CPSGSCounters::ePSGS_ProcUnknownError);
-        PSG_ERROR("Unexpected data received "
-                  "while the output has finished, ignoring");
-
-        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
-        return false;
+        // it can happened when a data event happened after an error on another
+        // data handler. In this case a dispatcher may have already mark the
+        // reply as finished. So skip sending data.
+        ProcessEvent();
+        return true;
     }
 
     if (last) {
-        fetch_details->SetReadFinished();
-
-        if (m_RecordCount == 0)
+        if (m_RecordCount == 0) {
             UpdateOverallStatus(CRequestStatus::e404_NotFound);
+        }
 
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
+        ProcessEvent();
         return false;
     }
 
@@ -310,7 +311,7 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistData(
     IPSGS_Processor::m_Reply->PrepareAccVerHistoryData(
         kAccVerHistProcessorName, ToJsonString(acc_ver_hist_record));
 
-    x_Peek(false);
+    ProcessEvent();
     return true;
 }
 
@@ -338,13 +339,12 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistError(
     if (is_error) {
         // There will be no more activity
         fetch_details->SetReadFinished();
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
     } else {
         // That was a warning; it was already reported so continue as it is a
         // clear fetch
         fetch_details->GetLoader()->ClearError();
-        x_Peek(false);
     }
+    ProcessEvent();
 }
 
 
@@ -375,95 +375,13 @@ string CPSGS_AccessionVersionHistoryProcessor::GetGroupName(void) const
 
 void CPSGS_AccessionVersionHistoryProcessor::ProcessEvent(void)
 {
-    x_Peek(true);
-}
-
-
-void CPSGS_AccessionVersionHistoryProcessor::x_Peek(bool  need_wait)
-{
-    if (m_Canceled) {
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
-        return;
-    }
-
-    // 1 -> call m_Loader->Wait1 to pick data
-    // 2 -> check if we have ready-to-send buffers
-    // 3 -> call reply->Send()  to send what we have if it is ready
-    bool        overall_final_state = false;
-
-    while (true) {
-        auto initial_size = m_FetchDetails.size();
-
-        for (auto &  details: m_FetchDetails) {
-            if (details) {
-                if (details->InPeek()) {
-                    continue;
-                }
-                details->SetInPeek(true);
-                overall_final_state |= x_Peek(details, need_wait);
-                details->SetInPeek(false);
-            }
-        }
-        if (initial_size == m_FetchDetails.size())
-            break;
-    }
-
     // Ready packets needs to be send only once when everything is finished
-    if (overall_final_state) {
-        if (AreAllFinishedRead()) {
-            IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
-            CPSGS_CassProcessorBase::SignalFinishProcessing();
-        }
-    }
-}
 
+    // Note: if all fetches finished then the final flush in the
+    // dispatcher will flush all the accumulated chunks together with
+    // the stream closing flag.
 
-bool CPSGS_AccessionVersionHistoryProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
-                                                    bool  need_wait)
-{
-    if (!fetch_details->GetLoader())
-        return true;
-
-    bool        final_state = false;
-    if (need_wait)
-        if (!fetch_details->ReadFinished()) {
-            final_state = fetch_details->GetLoader()->Wait();
-        }
-
-    if (!fetch_details->ReadFinished() &&
-            fetch_details->GetLoader()->HasError() &&
-            IPSGS_Processor::m_Reply->IsOutputReady() &&
-            ! IPSGS_Processor::m_Reply->IsFinished()) {
-        // Send an error
-        string      error = fetch_details->GetLoader()->LastError();
-        auto *      app = CPubseqGatewayApp::GetInstance();
-
-        PSG_ERROR(error);
-
-        // Last resort to detect if it was a timeout
-        CRequestStatus::ECode       status;
-        if (IsTimeoutError(error)) {
-            status = CRequestStatus::e500_InternalServerError;
-            app->GetCounters().Increment(this,
-                                         CPSGSCounters::ePSGS_ProcUnknownError);
-        } else {
-            status = CRequestStatus::e504_GatewayTimeout;
-            app->GetCounters().Increment(this,
-                                         CPSGSCounters::ePSGS_CassQueryTimeoutError);
-        }
-
-        IPSGS_Processor::m_Reply->PrepareProcessorMessage(
-                IPSGS_Processor::m_Reply->GetItemId(),
-                kAccVerHistProcessorName, error, status,
-                ePSGS_UnknownError, eDiag_Error);
-
-        // Mark finished
-        UpdateOverallStatus(status);
-        fetch_details->SetReadFinished();
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
-    }
-
-    return final_state;
+    CPSGS_CassProcessorBase::SignalFinishProcessing();
 }
 
 
@@ -472,13 +390,9 @@ void CPSGS_AccessionVersionHistoryProcessor::x_OnResolutionGoodData(void)
     // The resolution process started to receive data which look good so
     // the dispatcher should be notified that the other processors can be
     // stopped
-    if (m_Canceled) {
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
-        return;
-    }
 
     if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
+        ProcessEvent();
     }
 
     // If the other processor waits then let it go but after sending the signal

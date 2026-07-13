@@ -62,7 +62,6 @@ public:
     virtual void Cancel(void) override;
     void SignalFinishProcessing(void);
     void UnlockWaitingProcessor(void);
-    void CallOnData(void);
     void LoggingCallback(EDiagSev  severity, const string &  message);
     string SerializeAllFetches(void) const;
 
@@ -72,7 +71,6 @@ protected:
     bool IsMyNCBIFinished(void) const;
     void UpdateOverallStatus(CRequestStatus::ECode  status);
     bool IsCassandraProcessorEnabled(shared_ptr<CPSGS_Request> request) const;
-    void CancelLoaders(void);
     SCass_BlobId TranslateSatToKeyspace(CBioseqInfoRecord::TSat  sat,
                                         CBioseqInfoRecord::TSatKey  sat_key,
                                         const string &  seq_id);
@@ -112,7 +110,7 @@ protected:
 
 protected:
     // Cassandra data loaders; there could be many of them
-    list<unique_ptr<CCassFetch>>    m_FetchDetails;
+    list<shared_ptr<CCassFetch>>    m_FetchDetails;
 
     bool                            m_Canceled;
     bool                            m_Unlocked;

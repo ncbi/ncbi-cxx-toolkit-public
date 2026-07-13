@@ -96,15 +96,11 @@ SCheckDescription  FindCheckDescription(const string &  id)
 }
 
 
-static atomic<bool>     s_ZEndPointRequestIdLock(false);
-static size_t           s_ZEndPointNextRequestId = 0;
 
-
+static atomic<size_t> s_ZEndPointNextRequestId{0};
 size_t  GetNextZEndPointRequestId(void)
 {
-    CSpinlockGuard      guard(&s_ZEndPointRequestIdLock);
-    auto request_id = ++s_ZEndPointNextRequestId;
-    return request_id;
+    return ++s_ZEndPointNextRequestId;
 }
 
 
@@ -561,8 +557,7 @@ void s_OnAsyncZEndPointFinilize(uv_async_t *  handle)
 
 
 
-CPSGS_ZEndPointRequests::CPSGS_ZEndPointRequests() :
-    m_RequestsLock(false)
+CPSGS_ZEndPointRequests::CPSGS_ZEndPointRequests()
 {}
 
 
@@ -574,7 +569,7 @@ void CPSGS_ZEndPointRequests::RegisterRequest(size_t          request_id,
                                               CRef<CRequestContext> &  context,
                                               const vector<SCheckAttributes> &  checks)
 {
-    CSpinlockGuard      guard(&m_RequestsLock);
+    lock_guard<mutex>   guard(m_RequestsLock);
     m_Requests[request_id] = SRequestAttributes();
 
     // Note: it cannot be done in the constructor because of the async event
@@ -650,7 +645,7 @@ void CPSGS_ZEndPointRequests::OnZEndPointRequestFinish(size_t  request_id,
                                                        const string &  message,
                                                        CRequestStatus::ECode  http_status)
 {
-    CSpinlockGuard      guard(&m_RequestsLock);
+    lock_guard<mutex>   guard(m_RequestsLock);
 
     auto it = m_Requests.find(request_id);
     if (it == m_Requests.end()) {
@@ -715,7 +710,7 @@ void s_RemoveZEndpointRequestData(uv_handle_t *  handle)
 
 void CPSGS_ZEndPointRequests::OnFinilizeHealthZRequest(size_t  request_id)
 {
-    CSpinlockGuard      guard(&m_RequestsLock);
+    lock_guard<mutex>   guard(m_RequestsLock);
 
     auto it = m_Requests.find(request_id);
     if (it == m_Requests.end()) {
@@ -795,7 +790,7 @@ void CPSGS_ZEndPointRequests::OnFinilizeHealthZRequest(size_t  request_id)
 
 void CPSGS_ZEndPointRequests::OnCleanupHealthZRequest(size_t  request_id)
 {
-    CSpinlockGuard      guard(&m_RequestsLock);
+    lock_guard<mutex>   guard(m_RequestsLock);
 
     auto it = m_Requests.find(request_id);
     if (it == m_Requests.end()) {

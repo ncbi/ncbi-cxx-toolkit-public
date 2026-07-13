@@ -19,7 +19,7 @@ memcheck="0"
 max_sessions="200"
 
 H2LOAD_CNT="10"
-H2LOAD_THREADS_CNT="40"
+H2LOAD_THREADS_CNT="30"
 REQ_CNT="500000"
 
 H2LOAD_CNT_ADMIN="5"
@@ -130,13 +130,17 @@ case_run "get-bbm-164040" "ID/get?seq_id=bbm%7C164040"
 case_run "get-123791" "ID/get?seq_id=123791&seq_id_type=2"
 case_run "get-164040" "ID/get?seq_id=164040&seq_id_type=3&exclude_blobs=1.1,4.8091,3.3"
 case_run "getblob-4-15971" "ID/getblob?blob_id=4.15971"
+
 case_run "getblob-4-509567" "ID/getblob?blob_id=4.509567&tse=whole"
 case_run "getblob-4-1" "ID/getblob?blob_id=4.1"
 case_run "get_tse_chunk-25-116773935-5" "ID/get_tse_chunk?id2_chunk=3&id2_info=25.116773935.5"
 case_run "get_tse_chunk-25-116773935-5-too-big" "ID/get_tse_chunk?id2_chunk=96&id2_info=25.116773935.5"
 case_run "get_tse_chunk-999999999" "ID/get_tse_chunk?id2_chunk=999999999&id2_info=25.116773935.5"
 case_run "comment-basic-suppressed" "ID/getblob?blob_id=4.94088756"
+
+# Before the recent fixes this test led to stuck processors
 case_run "get_na_smart_send_if_small_50000" "ID/get_na?fmt=json&all_info=yes&seq_id=NW_019824422&names=NA000150051.1&tse=smart&send_blob_if_small=50000"
+
 case_run "get_na_slim_send_if_small_50000" "ID/get_na?fmt=json&all_info=yes&seq_id=NW_024096525&names=NA000288180.1&tse=slim&send_blob_if_small=50000"
 case_run "ipg_resolve_both" "IPG/resolve?ipg=642300&protein=EGB0689184.1"
 

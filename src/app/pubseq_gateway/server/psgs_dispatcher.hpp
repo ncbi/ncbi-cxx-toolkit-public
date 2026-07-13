@@ -209,14 +209,14 @@ public:
     // itself or from the framework.
     enum EPSGS_SignalSource {
         ePSGS_Processor,
-        ePSGS_Fromework
+        ePSGS_Framework
     };
 
     static string  SignalSourceToString(EPSGS_SignalSource  source)
     {
         switch (source) {
             case ePSGS_Processor: return "processor";
-            case ePSGS_Fromework: return "framework";
+            case ePSGS_Framework: return "framework";
             default:              break;
         }
         return "unknown";
@@ -285,8 +285,6 @@ private:
     void x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
                             CRequestStatus::ECode  status,
                             size_t  bytes_sent);
-    CRequestStatus::ECode
-    x_MapProcessorFinishToStatus(IPSGS_Processor::EPSGS_Status  status) const;
     CRequestStatus::ECode
     x_ConcludeIDGetNARequestStatus(shared_ptr<CPSGS_Request> request,
                                    shared_ptr<CPSGS_Reply> reply,

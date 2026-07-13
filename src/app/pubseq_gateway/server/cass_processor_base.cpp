@@ -76,7 +76,29 @@ void CPSGS_CassProcessorBase::Cancel(void)
     UnlockWaitingProcessor();
 
     m_Canceled = true;
-    CancelLoaders();
+
+    // Note: cancel loaders must not be done. Here is why:
+    // if a loader is canceled and this is considered as everything is finished
+    // on that loader then the processor group can be destroyed and thus the
+    // CCassFetch is also destroyed. However at that time an event may have
+    // already been generated and be in a queue for handling. The  calling of
+    // Wait() is done without checking the existance so there will be a core
+    // dump.
+    // If not to consider as a final state of the loader then when Wait() is
+    // called and no callback will be invoked and consequently nothing will be
+    // marked as finished.
+    // So it is more reliable not to cancel anything and let all data to go
+    // through.
+    // The boolean flag though can be helpful in a sense that it will indicate
+    // that nothing should be sent to the client.
+
+    for (auto &  loader: m_FetchDetails) {
+        if (loader) {
+            if (!loader->ReadFinished()) {
+                loader->RemoveFromExcludeBlobCache();
+            }
+        }
+    }
 }
 
 
@@ -85,8 +107,9 @@ NCBI_PARAM_DEF(int, CASSANDRA_PROCESSOR, ERROR_RATE, 0);
 
 void CPSGS_CassProcessorBase::SignalFinishProcessing(void)
 {
-    // It is safe to unlock the request many times
-    UnlockWaitingProcessor();
+    if (m_FinishSignalled) {
+        return;
+    }
 
     if (!AreAllFinishedRead() || !IsMyNCBIFinished()) {
         // Cannot really report finish because there could be still not
@@ -95,6 +118,9 @@ void CPSGS_CassProcessorBase::SignalFinishProcessing(void)
         // it will go further.
         return;
     }
+
+    // It is safe to unlock the request many times
+    UnlockWaitingProcessor();
 
     static int error_rate = NCBI_PARAM_TYPE(CASSANDRA_PROCESSOR, ERROR_RATE)::GetDefault();
     if ( error_rate > 0 && !m_FinishSignalled ) {
@@ -160,11 +186,9 @@ bool CPSGS_CassProcessorBase::AreAllFinishedRead(void) const
 {
     for (const auto &  details: m_FetchDetails) {
         if (details) {
-            if (!details->Canceled()) {
-                if (!details->HasError()) {
-                    if (!details->ReadFinished()) {
-                        return false;
-                    }
+            if (!details->HasError()) {
+                if (!details->ReadFinished()) {
+                    return false;
                 }
             }
         }
@@ -183,72 +207,24 @@ string CPSGS_CassProcessorBase::SerializeAllFetches(void) const
     size_t      seq_num = 0;
     for (const auto &  details: m_FetchDetails) {
         if (!ret.empty()) ret += "\n";
-        ret += to_string(seq_num) + ": ";
+        ret += to_string(seq_num) + ": " + details->GetName() + " ";
         ++seq_num;
         if (details->ReadFinished()) {
             ret += "done";
+            if (details->HasError()) {
+                ret += "; error: true";
+            }
+//            ret += "; low level: " + details->GetLoader()->GetDebugStateSnapshot();
         } else {
             ret += "read finished: " + to_string(details->ReadFinished()) +
-                   " canceled: " + to_string(details->Canceled()) +
                    " has error: " + to_string(details->HasError()) +
                    " desription: " + details->Serialize() +
                    " low level: " + details->GetLoader()->GetDebugStateSnapshot();
         }
     }
+    ret += "\nAll read finished: " + to_string(AreAllFinishedRead()) +
+           "\nProc canceled: " + to_string(m_Canceled);
     return ret;
-}
-
-
-void call_on_data_cb(void *  user_data)
-{
-    CPSGS_CassProcessorBase *   proc = (CPSGS_CassProcessorBase*)(user_data);
-    proc->CallOnData();
-}
-
-
-void CPSGS_CassProcessorBase::CallOnData(void)
-{
-    auto p = IPSGS_Processor::m_Reply->GetDataReadyCB();
-    p->OnData();
-}
-
-
-void call_processor_process_event_cb(void *  user_data)
-{
-    CPSGS_CassProcessorBase *   proc = (CPSGS_CassProcessorBase*)(user_data);
-    proc->ProcessEvent();
-}
-
-
-void CPSGS_CassProcessorBase::CancelLoaders(void)
-{
-    for (auto &  loader: m_FetchDetails) {
-        if (loader) {
-            if (!loader->ReadFinished()) {
-                loader->Cancel();
-                loader->RemoveFromExcludeBlobCache();
-
-                // Imitate the Cassandra data ready event. This will eventually
-                // lead to a pending operation Peek() call which in turn calls
-                // Wait() for the loader. The Wait() return value should say in
-                // this case that there will be nothing else.
-                // However, do not do that synchronously. Do the call in the
-                // next iteration of libuv loop associated with the processor
-                // so that it is safe even if Cancel() is done from another
-                // loop
-                PostponeInvoke(call_on_data_cb, (void*)(this));
-            }
-        }
-    }
-
-    // Sometimes there are no loaders which have not finished or the OnData()
-    // does not lead to a process event call of the processor due to a data
-    // trigger.
-    // This may lead to a not called SignalFinishProcessing() for a processor.
-    // On the other hand the ProcessEvent() is innocent in terms of data
-    // processing however will check the cancel status as needed.
-    // So shedule ProcessEvent() for later.
-    PostponeInvoke(call_processor_process_event_cb, (void*)(this));
 }
 
 
@@ -391,6 +367,17 @@ CPSGS_CassProcessorBase::CountError(CCassFetch *  fetch_details,
     // It could be a message or an error
     bool    is_error = IsError(severity);
 
+    if (fetch_details != nullptr) {
+        if (is_error) {
+            // There will be no more activity
+            fetch_details->SetReadFinished();
+        } else {
+            // It is a warning; it was counted/logged so continue as it is a
+            // clear fetch
+            fetch_details->GetLoader()->ClearError();
+        }
+    }
+
     if (logging_flag == ePSGS_NeedLogging) {
         if (is_error) {
             PSG_ERROR(message_prefix + message);
@@ -400,12 +387,11 @@ CPSGS_CassProcessorBase::CountError(CCassFetch *  fetch_details,
     }
 
     if (m_Request->NeedTrace()) {
-        m_Reply->SendTrace(message_prefix +
-                           "Error detected. Status: " + to_string(status) +
-                           " Code: " + to_string(code) +
-                           " Severity: " + string(CNcbiDiag::SeverityName(severity)) +
-                           " Message: " + message,
-                           m_Request->GetStartTimestamp());
+        SendTrace(message_prefix +
+                  "Error detected. Status: " + to_string(status) +
+                  " Code: " + to_string(code) +
+                  " Severity: " + string(CNcbiDiag::SeverityName(severity)) +
+                  " Message: " + message);
     }
 
     auto *  app = CPubseqGatewayApp::GetInstance();
@@ -525,13 +511,13 @@ void CPSGS_CassProcessorBase::LoggingCallback(EDiagSev  severity,
             break;
         default:
             PSG_ERROR("Unknown message severity (" + to_string(severity) +
-                      ")in the logging callback");
+                      ") in the logging callback");
             PSG_ERROR(message);
             break;
     }
 
     if (m_Request->NeedTrace()) {
-        m_Reply->SendTrace(message, m_Request->GetStartTimestamp());
+        SendTrace(message);
     }
 }
 
@@ -592,9 +578,8 @@ CPSGS_CassProcessorBase::PopulateMyNCBIUser(TMyNCBIDataCB  data_cb,
         // Found in error cache; invoke a callback for errors and return saying
         // no further actions are required.
         if (need_trace) {
-            m_Reply->SendTrace("MyNCBI cookie was found in the error cache: " +
-                               cookie + ". Call the error callback right away.",
-                               m_Request->GetStartTimestamp());
+            SendTrace("MyNCBI cookie was found in the error cache: " +
+                      cookie + ". Call the error callback right away.");
         }
         error_cb(cookie, err_cache_ret.value().m_Status,
                  err_cache_ret.value().m_Code,
@@ -611,9 +596,8 @@ CPSGS_CassProcessorBase::PopulateMyNCBIUser(TMyNCBIDataCB  data_cb,
         // Found in not found cache; invoke a callback for not found and return saying
         // no further actions are required.
         if (need_trace) {
-            m_Reply->SendTrace("MyNCBI cookie was found in the not found cache: " +
-                               cookie + ". Call the error callback right away.",
-                               m_Request->GetStartTimestamp());
+            SendTrace("MyNCBI cookie was found in the not found cache: " +
+                      cookie + ". Call the error callback right away.");
         }
 
         // Error callback is used for not found case as well. The 404 status is
@@ -640,10 +624,9 @@ CPSGS_CassProcessorBase::PopulateMyNCBIUser(TMyNCBIDataCB  data_cb,
         if (user_info.value().m_Status == SMyNCBIOKCacheItem::ePSGS_Ready) {
             // The data are ready to use
             if (need_trace) {
-                m_Reply->SendTrace("MyNCBI user info found in OK cache "
-                                   "in Ready state for cookie: " + cookie +
-                                   ". User name: " + user_info.value().m_UserInfo.username,
-                                   m_Request->GetStartTimestamp());
+                SendTrace("MyNCBI user info found in OK cache "
+                          "in Ready state for cookie: " + cookie +
+                          ". User name: " + user_info.value().m_UserInfo.username);
             }
 
             m_UserName = user_info.value().m_UserInfo.username;
@@ -654,10 +637,9 @@ CPSGS_CassProcessorBase::PopulateMyNCBIUser(TMyNCBIDataCB  data_cb,
         // That means the caller is put into a wait list. Thus there is nothing
         // else to do; just wait for a callback
         if (need_trace) {
-            m_Reply->SendTrace("MyNCBI cookie found in OK cache "
-                               "in InProgress state for cookie: " + cookie +
-                               ". We are in a wait list now.",
-                               m_Request->GetStartTimestamp());
+            SendTrace("MyNCBI cookie found in OK cache "
+                      "in InProgress state for cookie: " + cookie +
+                      ". We are in a wait list now.");
         }
         return ePSGS_AddedToWaitlist;
     }
@@ -667,8 +649,7 @@ CPSGS_CassProcessorBase::PopulateMyNCBIUser(TMyNCBIDataCB  data_cb,
     uv_loop_t *     loop = app->GetUVLoop();
 
     if (need_trace) {
-        m_Reply->SendTrace("Initiating MyNCBI request for cookie: " + cookie,
-                           m_Request->GetStartTimestamp());
+        SendTrace("Initiating MyNCBI request for cookie: " + cookie);
     }
 
     m_WhoAmIRequest =

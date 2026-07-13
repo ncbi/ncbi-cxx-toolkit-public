@@ -75,15 +75,10 @@ void s_OnAsyncConnClose(uv_async_t *  handle)
 }
 
 
-static int64_t          s_ConnectionId = 0;
-static atomic<bool>     s_ConnectionIdLock(false);
+static atomic<int64_t> s_ConnectionId{0};
 int64_t GenerateConnectionId(void)
 {
-    int64_t  ret;
-
-    CSpinlockGuard      guard(&s_ConnectionIdLock);
-    ret = ++s_ConnectionId;
-    return ret;
+    return ++s_ConnectionId;
 }
 
 
@@ -312,17 +307,11 @@ void CHttpConnection::ResetForReuse(void)
 }
 
 
-void CHttpConnection::PeekAsync(bool  chk_data_ready)
+void CHttpConnection::OnTimer(void)
 {
     for (auto &  it: m_RunningRequests) {
-        if (!chk_data_ready ||
-            it.m_Reply->GetHttpReply()->CheckResetDataTriggered()) {
-            it.m_Reply->GetHttpReply()->PeekPending();
-        }
+        it.m_Reply->GetHttpReply()->PeekPending();
     }
-
-    x_MaintainFinished();
-    x_MaintainBacklog();
 }
 
 

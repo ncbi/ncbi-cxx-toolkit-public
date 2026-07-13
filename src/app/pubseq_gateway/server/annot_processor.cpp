@@ -160,7 +160,7 @@ void CPSGS_AnnotProcessor::Process(void)
     m_ValidNames = x_FilterNames(not_processed_names);
     if (m_ValidNames.empty()) {
         UpdateOverallStatus(CRequestStatus::e200_Ok);
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
+        ProcessEvent();
         return;
     }
 
@@ -183,7 +183,7 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveError(
                         const string &  message)
 {
     if (m_Canceled) {
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
+        ProcessEvent();
         return;
     }
 
@@ -221,7 +221,7 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveError(
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(
                                             item_id, kAnnotProcessorName, 2);
 
-    CPSGS_CassProcessorBase::SignalFinishProcessing();
+    ProcessEvent();
 }
 
 
@@ -240,7 +240,7 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
     vector<SSatInfoEntry>           bioseq_na_keyspaces = app->GetBioseqNAKeyspaces();
 
     for (const auto &  bioseq_na_keyspace : bioseq_na_keyspaces) {
-        unique_ptr<CCassNamedAnnotFetch>   details;
+        shared_ptr<CCassNamedAnnotFetch>   details;
         details.reset(new CCassNamedAnnotFetch(*m_AnnotRequest));
 
         // Note: the accession and seq_id_type may be adjusted in the bioseq
@@ -255,7 +255,8 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
                                          bioseq_resolution.GetOriginalSeqIdType(),
                                          m_ValidNames,
                                          nullptr, nullptr);
-        details->SetLoader(fetch_task);
+        details->SetLoader(fetch_task,
+                           static_cast<CPSGS_CassProcessorBase*>(this));
 
         fetch_task->SetConsumeCallback(
             CNamedAnnotationCallback(
@@ -271,16 +272,16 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
         fetch_task->SetLoggingCB(
                 bind(&CPSGS_CassProcessorBase::LoggingCallback,
                      this, _1, _2));
-        fetch_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
+        fetch_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB(),
+                                   weak_ptr<void>(details));
 
         if (IPSGS_Processor::m_Request->NeedTrace()) {
-            IPSGS_Processor::m_Reply->SendTrace("Cassandra request: " +
-                ToJsonString(*fetch_task,
-                             bioseq_na_keyspace.connection->GetDatacenterName()),
-                IPSGS_Processor::m_Request->GetStartTimestamp());
+            SendTrace("Cassandra request: " +
+                      ToJsonString(*fetch_task,
+                                   bioseq_na_keyspace.connection->GetDatacenterName()));
         }
 
-        m_FetchDetails.push_back(std::move(details));
+        m_FetchDetails.push_back(move(details));
     }
 
     // Initiate the retrieval loop
@@ -298,7 +299,7 @@ void
 CPSGS_AnnotProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
 {
     if (m_Canceled) {
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
+        // Just skip sending data to the client
         return;
     }
 
@@ -310,21 +311,17 @@ CPSGS_AnnotProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
         // Was processed by a lower priority processor so it needs to be
         // send anyway
         if (IPSGS_Processor::m_Request->NeedTrace()) {
-            IPSGS_Processor::m_Reply->SendTrace(
-                "Bioseq info has already been sent by the other processor. "
-                "The data are to be sent because the other processor priority (" +
-                to_string(other_proc_priority) + ") is lower than mine (" +
-                to_string(m_Priority) + ")",
-                IPSGS_Processor::m_Request->GetStartTimestamp());
+            SendTrace("Bioseq info has already been sent by the other processor. "
+                      "The data are to be sent because the other processor priority (" +
+                      to_string(other_proc_priority) + ") is lower than mine (" +
+                      to_string(m_Priority) + ")");
         }
     } else {
         // The other processor has already processed it
         if (IPSGS_Processor::m_Request->NeedTrace()) {
-            IPSGS_Processor::m_Reply->SendTrace(
-                "Skip sending bioseq info because the other processor with priority " +
-                to_string(other_proc_priority) + " has already sent it "
-                "(my priority is " + to_string(m_Priority) + ")",
-                IPSGS_Processor::m_Request->GetStartTimestamp());
+            SendTrace("Skip sending bioseq info because the other processor with priority " +
+                      to_string(other_proc_priority) + " has already sent it "
+                      "(my priority is " + to_string(m_Priority) + ")");
         }
         return;
     }
@@ -365,35 +362,10 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
 
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         if (last) {
-            IPSGS_Processor::m_Reply->SendTrace(
-                "Named annotation no-more-data callback",
-                IPSGS_Processor::m_Request->GetStartTimestamp());
+            SendTrace("Named annotation no-more-data callback");
         } else {
-            IPSGS_Processor::m_Reply->SendTrace(
-                "Named annotation data received",
-                IPSGS_Processor::m_Request->GetStartTimestamp());
+            SendTrace("Named annotation data received");
         }
-    }
-
-    if (m_Canceled) {
-        fetch_details->GetLoader()->Cancel();
-        fetch_details->GetLoader()->ClearError();
-        fetch_details->SetReadFinished();
-        return false;
-    }
-
-    if (IPSGS_Processor::m_Reply->IsFinished()) {
-        fetch_details->SetReadFinished();
-
-        CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
-                                        this,
-                                        CPSGSCounters::ePSGS_ProcUnknownError);
-        PSG_ERROR("Unexpected data received "
-                  "while the output has finished, ignoring");
-
-        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
-        return false;
     }
 
     // A response has been succesfully received. Memorize it so that it can be
@@ -401,7 +373,6 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
     m_AnnotFetchCompletions.push_back(CRequestStatus::e200_Ok);
 
     if (last) {
-        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
 
         // There could be many sat_name(s) requested so the callback is called
@@ -417,12 +388,12 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
                 }
             }
 
-            CPSGS_CassProcessorBase::SignalFinishProcessing();
+            ProcessEvent();
             return false;
         }
 
         // Not all finished so wait for more callbacks
-        x_Peek(false);
+        ProcessEvent();
         return true;
     }
 
@@ -430,7 +401,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
     m_Success.insert(annot_record.GetAnnotName());
 
     x_SendAnnotDataToClient(std::move(annot_record), sat);
-    x_Peek(false);
+    ProcessEvent();
     return true;
 }
 
@@ -454,13 +425,12 @@ CPSGS_AnnotProcessor::x_SendAnnotDataToClient(CNAnnotRecord &&  annot_record, in
         // Was processed by a lower priority processor so it needs to be
         // send anyway
         if (IPSGS_Processor::m_Request->NeedTrace()) {
-            IPSGS_Processor::m_Reply->SendTrace(
+            SendTrace(
                 "The NA name " + annot_record.GetAnnotName() + " has already "
                 "been processed by the other processor. The data are to be sent"
                 " because the other processor priority (" +
                 to_string(other_proc_priority) + ") is lower than mine (" +
-                to_string(m_Priority) + ")",
-                IPSGS_Processor::m_Request->GetStartTimestamp());
+                to_string(m_Priority) + ")");
         }
         IPSGS_Processor::m_Reply->PrepareNamedAnnotationData(
             annot_record.GetAnnotName(), kAnnotProcessorName,
@@ -469,12 +439,11 @@ CPSGS_AnnotProcessor::x_SendAnnotDataToClient(CNAnnotRecord &&  annot_record, in
     } else {
         // The other processor has already processed it
         if (IPSGS_Processor::m_Request->NeedTrace()) {
-            IPSGS_Processor::m_Reply->SendTrace(
+            SendTrace(
                 "Skip sending NA name " + annot_record.GetAnnotName() +
                 " because the other processor with priority " +
                 to_string(other_proc_priority) + " has already processed it "
-                "(my priority is " + to_string(m_Priority) + ")",
-                IPSGS_Processor::m_Request->GetStartTimestamp());
+                "(my priority is " + to_string(m_Priority) + ")");
         }
     }
 
@@ -508,9 +477,6 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
             IPSGS_Processor::m_Reply->GetItemId(),
             kAnnotProcessorName, message, status, code, severity);
 
-    // To avoid sending an error in Peek()
-    fetch_details->GetLoader()->ClearError();
-
     if (is_error) {
         // Report error/timeout to the request
         SPSGS_AnnotRequest::EPSGS_ResultStatus  result_status = SPSGS_AnnotRequest::ePSGS_RS_Error;
@@ -537,7 +503,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
             }
 
             UpdateOverallStatus(best_status);
-            CPSGS_CassProcessorBase::SignalFinishProcessing();
+            ProcessEvent();
             return;
         }
     } else {
@@ -546,7 +512,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
         fetch_details->GetLoader()->ClearError();
     }
 
-    x_FinishIfNeeded();
+    ProcessEvent();
 }
 
 
@@ -578,10 +544,8 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
                                              int64_t  last_modified)
 {
     if (IPSGS_Processor::m_Request->NeedTrace()) {
-        IPSGS_Processor::m_Reply->SendTrace(
-            "Retrieve blob props for " + to_string(sat) + "." + to_string(sat_key) +
-            " to check if the blob size is small (if so to send it right away).",
-            IPSGS_Processor::m_Request->GetStartTimestamp());
+        SendTrace("Retrieve blob props for " + to_string(sat) + "." + to_string(sat_key) +
+                  " to check if the blob size is small (if so to send it right away).");
     }
 
     m_AnnotRequest->m_BlobId = SPSGS_BlobId(sat, sat_key);
@@ -610,7 +574,7 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
         // It could be only one annotation and the blob prop retrieval happens
         // after sending the annotation so it is safe to say that the processor
         // is finished
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
+        ProcessEvent();
         return;
     }
 
@@ -664,13 +628,13 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
                         ePSGS_BlobInProgress);
             }
             if (finish_processing) {
-                CPSGS_CassProcessorBase::SignalFinishProcessing();
+                ProcessEvent();
                 return;
             }
         }
     }
 
-    unique_ptr<CCassBlobFetch>  fetch_details;
+    shared_ptr<CCassBlobFetch>  fetch_details;
     fetch_details.reset(new CCassBlobFetch(*m_AnnotRequest, blob_id));
 
     unique_ptr<CBlobRecord> blob_record(new CBlobRecord);
@@ -690,7 +654,8 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
                                               blob_id.m_Keyspace->keyspace,
                                               std::move(blob_record),
                                               false, nullptr);
-        fetch_details->SetLoader(load_task);
+        fetch_details->SetLoader(load_task,
+                                 static_cast<CPSGS_CassProcessorBase*>(this));
     } else {
         if (m_AnnotRequest->m_UseCache == SPSGS_RequestBase::ePSGS_CacheOnly) {
             // No data in cache and not going to the DB
@@ -701,13 +666,11 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
                 else
                     trace_msg = "Blob properties are not found (cache lookup error)";
 
-                IPSGS_Processor::m_Reply->SendTrace(
-                    trace_msg, IPSGS_Processor::m_Request->GetStartTimestamp());
+                SendTrace(trace_msg);
             }
 
             fetch_details->RemoveFromExcludeBlobCache();
-
-            CPSGS_CassProcessorBase::SignalFinishProcessing();
+            ProcessEvent();
             return;
         }
 
@@ -716,10 +679,12 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
                                               blob_id.m_SatKey,
                                               last_modified,
                                               false, nullptr);
-        fetch_details->SetLoader(load_task);
+        fetch_details->SetLoader(load_task,
+                                 static_cast<CPSGS_CassProcessorBase*>(this));
     }
 
-    load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
+    load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB(),
+                              weak_ptr<void>(fetch_details));
     load_task->SetErrorCB(
         CGetBlobErrorCallback(this,
                               bind(&CPSGS_AnnotProcessor::OnGetBlobError,
@@ -732,20 +697,16 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
         CBlobPropCallback(this,
                           bind(&CPSGS_AnnotProcessor::OnAnnotBlobProp,
                                this, _1, _2, _3),
-                          IPSGS_Processor::m_Request,
-                          IPSGS_Processor::m_Reply,
                           fetch_details.get(),
                           blob_prop_cache_lookup_result != ePSGS_CacheHit));
 
     if (IPSGS_Processor::m_Request->NeedTrace()) {
-        IPSGS_Processor::m_Reply->SendTrace(
-                            "Cassandra request: " +
-                            ToJsonString(*load_task,
-                                         blob_id.m_Keyspace->GetConnection()->GetDatacenterName()),
-                            IPSGS_Processor::m_Request->GetStartTimestamp());
+        SendTrace("Cassandra request: " +
+                  ToJsonString(*load_task,
+                               blob_id.m_Keyspace->GetConnection()->GetDatacenterName()));
     }
 
-    m_FetchDetails.push_back(std::move(fetch_details));
+    m_FetchDetails.push_back(move(fetch_details));
 
     // Initiate cassandra request
     load_task->Wait();
@@ -759,26 +720,14 @@ void CPSGS_AnnotProcessor::OnAnnotBlobProp(CCassBlobFetch *  fetch_details,
                                            bool is_found)
 {
     // Annotation blob properties may come only once
-    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
-
-    if (m_Canceled) {
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
-        return;
-    }
 
     if (!is_found) {
         if (IPSGS_Processor::m_Request->NeedTrace()) {
-            IPSGS_Processor::m_Reply->SendTrace(
-                "Blob properties are not found",
-                IPSGS_Processor::m_Request->GetStartTimestamp());
+            SendTrace("Blob properties are not found");
         }
 
-        if (AreAllFinishedRead()) {
-            CPSGS_CassProcessorBase::SignalFinishProcessing();
-        } else {
-            x_Peek(false);
-        }
+        ProcessEvent();
         return;
     }
 
@@ -788,17 +737,11 @@ void CPSGS_AnnotProcessor::OnAnnotBlobProp(CCassBlobFetch *  fetch_details,
     if (blob.GetSize() > max_to_send) {
         // Nothing needs to be sent because the blob is too big
         if (IPSGS_Processor::m_Request->NeedTrace()) {
-            IPSGS_Processor::m_Reply->SendTrace(
-                "Blob size is too large (" + to_string(blob.GetSize()) +
-                " > " + to_string(max_to_send) + " max allowed to send)",
-                IPSGS_Processor::m_Request->GetStartTimestamp());
+            SendTrace("Blob size is too large (" + to_string(blob.GetSize()) +
+                      " > " + to_string(max_to_send) + " max allowed to send)");
         }
 
-        if (AreAllFinishedRead()) {
-            CPSGS_CassProcessorBase::SignalFinishProcessing();
-        } else {
-            x_Peek(false);
-        }
+        ProcessEvent();
         return;
     }
 
@@ -806,7 +749,7 @@ void CPSGS_AnnotProcessor::OnAnnotBlobProp(CCassBlobFetch *  fetch_details,
     m_BlobStage = true;
     CPSGS_CassBlobBase::OnGetBlobProp(fetch_details, blob, is_found);
 
-    x_FinishIfNeeded();
+    ProcessEvent();
 }
 
 
@@ -814,13 +757,8 @@ void CPSGS_AnnotProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                                          CBlobRecord const &  blob,
                                          bool is_found)
 {
-    if (m_Canceled) {
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
-        return;
-    }
-
     CPSGS_CassBlobBase::OnGetBlobProp(fetch_details, blob, is_found);
-    x_FinishIfNeeded();
+    ProcessEvent();
 }
 
 
@@ -830,11 +768,6 @@ void CPSGS_AnnotProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
                                           EDiagSev  severity,
                                           const string &  message)
 {
-    if (m_Canceled) {
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
-        return;
-    }
-
     CPSGS_CassBlobBase::OnGetBlobError(fetch_details, status, code,
                                        severity, message);
 
@@ -857,12 +790,8 @@ void CPSGS_AnnotProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
         }
 
         UpdateOverallStatus(best_status);
-        IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
-
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
-    } else {
-        x_Peek(false);
     }
+    ProcessEvent();
 }
 
 
@@ -874,7 +803,7 @@ void CPSGS_AnnotProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
 {
     CPSGS_CassBlobBase::OnGetBlobChunk(m_Canceled, fetch_details,
                                        chunk_data, data_size, chunk_no);
-    x_FinishIfNeeded();
+    ProcessEvent();
 }
 
 
@@ -905,103 +834,37 @@ string CPSGS_AnnotProcessor::GetGroupName(void) const
 
 void CPSGS_AnnotProcessor::ProcessEvent(void)
 {
-    x_Peek(true);
-}
-
-
-void CPSGS_AnnotProcessor::x_Peek(bool  need_wait)
-{
-    if (m_Canceled) {
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
-        return;
-    }
-
-    // 1 -> call m_Loader->Wait1 to pick data
-    // 2 -> check if we have ready-to-send buffers
-    // 3 -> call reply->Send()  to send what we have if it is ready
-    bool        overall_final_state = false;
-
-    while (true) {
-        auto initial_size = m_FetchDetails.size();
-
-        for (auto &  details: m_FetchDetails) {
-            if (details) {
-                if (details->InPeek()) {
-                    continue;
-                }
-                details->SetInPeek(true);
-                overall_final_state |= x_Peek(details, need_wait);
-                details->SetInPeek(false);
-            }
-        }
-        if (initial_size == m_FetchDetails.size())
-            break;
-    }
+    // Note: Flush(accumulated) resets the OutputReady flag so if this is
+    // really the last portion of data then it is better
+    // to do Flush(accumulated and close) all together in the dispatcher.
 
     if (m_BlobStage) {
-        // It is a stage of sending the blob. So the chunks need to be sent as
-        // soon as they are available
-        IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
-
-        if (AreAllFinishedRead()) {
+        if (AreAllFinishedRead() && IsMyNCBIFinished()) {
             for (auto &  details: m_FetchDetails) {
                 if (details) {
                     // Update the cache records where needed
                     details->SetExcludeBlobCacheCompleted();
                 }
             }
-            CPSGS_CassProcessorBase::SignalFinishProcessing();
-        }
-    } else {
-        // Ready packets needs to be send only once when everything is finished
-        if (overall_final_state) {
-            if (AreAllFinishedRead()) {
-                IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
-                CPSGS_CassProcessorBase::SignalFinishProcessing();
-            }
-        }
-    }
-}
 
+            // Note: if all fetches finished then the final flush in the
+            // dispatcher will flush all the accumulated chunks together with
+            // the stream closing flag. So here the accumulated flush is done
+            // only when not all the fetches finished
 
-bool CPSGS_AnnotProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
-                                  bool  need_wait)
-{
-    if (!fetch_details->GetLoader())
-        return true;
-
-    bool        final_state = false;
-    if (need_wait) {
-        if (!fetch_details->ReadFinished()) {
-            final_state = fetch_details->GetLoader()->Wait();
+        } else {
+            // It is a stage of sending the blob. So the chunks need to be sent as
+            // soon as they are available.
+            IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
+            return;
         }
     }
 
-    if (!fetch_details->ReadFinished() &&
-            fetch_details->GetLoader()->HasError() &&
-            IPSGS_Processor::m_Reply->IsOutputReady() &&
-            ! IPSGS_Processor::m_Reply->IsFinished()) {
-        // Send an error
-        string      error = fetch_details->GetLoader()->LastError();
-        auto *      app = CPubseqGatewayApp::GetInstance();
-
-        app->GetCounters().Increment(this, CPSGSCounters::ePSGS_ProcUnknownError);
-        PSG_ERROR(error);
-
-        IPSGS_Processor::m_Reply->PrepareProcessorMessage(
-                IPSGS_Processor::m_Reply->GetItemId(),
-                kAnnotProcessorName, error,
-                CRequestStatus::e500_InternalServerError,
-                ePSGS_UnknownError, eDiag_Error);
-
-        // Mark finished
-        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-        fetch_details->GetLoader()->ClearError();
-        fetch_details->SetReadFinished();
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
-    }
-
-    return final_state;
+    // It will check the condition if all fetches finished.
+    // If the infrastructure IPSGS_Processor::SignalFinishProcessing() is
+    // called and the final flush is done then everything will be sent together
+    // with the stream closing flag
+    CPSGS_CassProcessorBase::SignalFinishProcessing();
 }
 
 
@@ -1011,15 +874,5 @@ void CPSGS_AnnotProcessor::x_OnResolutionGoodData(void)
     // however the annotations processor should not do anything.
     // The processor uses the an API to check bioseq info and named annotations
     // before sending them.
-}
-
-
-void CPSGS_AnnotProcessor::x_FinishIfNeeded(void)
-{
-    if (AreAllFinishedRead()) {
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
-    } else {
-        x_Peek(false);
-    }
 }
 

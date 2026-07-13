@@ -34,6 +34,7 @@
 #include "pubseq_gateway.hpp"
 #include "http_reply.hpp"
 #include "http_connection.hpp"
+#include "cass_fetch.hpp"
 
 
 void OnLibh2oFinished(size_t  request_id)
@@ -252,23 +253,29 @@ void CHttpReply::x_GenericSendError(int  status,
 void CHttpReply::NeedOutput(void)
 {
     if (m_State == eReplyFinished) {
-        // PSG_TRACE("NeedOutput -> finished -> wake");
-        m_HttpProto->WakeWorker();
+        for (auto  pending_req: m_PendingReqs) {
+            // This is a case when libh2o reported that a new portion of data
+            // is needed to send it to a client.
+            // There is no particular fetch in this case and there could be
+            // multiple processors handling the request. So a pointer to
+            // IPSGS_Processor is provided here
+            m_HttpProto->WakeWorker(pending_req->GetProcessor());
+        }
     } else {
         PeekPending();
     }
 }
 
 
-void CHttpReply::CDataTrigger::OnData()
+void CHttpReply::CDataTrigger::OnData(weak_ptr<void>  context)
 {
     if (!m_Proto)
         return;
 
-    bool        b = false;
-    if (m_Triggered.compare_exchange_weak(b, true)) {
-        m_Proto->WakeWorker();
+    // If the fetch does not exist anymore then just drop this data ready event
+    if (context.lock()) {
+        // Context is a pointer to the CCassFetch.
+        m_Proto->WakeWorker(context);
     }
 }
-
 

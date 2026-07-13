@@ -101,14 +101,10 @@ class CBlobPropCallback
         CBlobPropCallback(
                 IPSGS_Processor *  processor,
                 TBlobPropsCB  blob_prop_cb,
-                shared_ptr<CPSGS_Request>  request,
-                shared_ptr<CPSGS_Reply>  reply,
                 CCassBlobFetch *  fetch_details,
                 bool  need_timing) :
             m_Processor(processor),
             m_BlobPropCB(blob_prop_cb),
-            m_Request(request),
-            m_Reply(reply),
             m_FetchDetails(fetch_details),
             m_InProcess(false),
             m_NeedTiming(need_timing)
@@ -120,14 +116,11 @@ class CBlobPropCallback
         void operator()(CBlobRecord const &  blob, bool is_found)
         {
             if (!m_InProcess) {
-                if (m_Request->NeedTrace()) {
+                if (m_Processor->GetRequest()->NeedTrace()) {
                     if (is_found) {
-                        m_Reply->SendTrace("Cassandra blob props: " +
-                            ToJsonString(blob),
-                            m_Request->GetStartTimestamp());
+                        m_Processor->SendTrace("Cassandra blob props: " + ToJsonString(blob));
                     } else {
-                        m_Reply->SendTrace("Cassandra blob props not found",
-                                           m_Request->GetStartTimestamp());
+                        m_Processor->SendTrace("Cassandra blob props not found");
                     }
                 }
 
@@ -154,8 +147,6 @@ class CBlobPropCallback
     private:
         IPSGS_Processor *               m_Processor;
         TBlobPropsCB                    m_BlobPropCB;
-        shared_ptr<CPSGS_Request>       m_Request;
-        shared_ptr<CPSGS_Reply>         m_Reply;
         CCassBlobFetch *                m_FetchDetails;
 
         // Avoid an infinite loop

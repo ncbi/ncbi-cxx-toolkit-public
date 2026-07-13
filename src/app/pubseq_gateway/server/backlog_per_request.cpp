@@ -39,13 +39,14 @@ using namespace std;
 
 
 SBacklogPerRequest      g_BacklogPerRequest;
-atomic<bool>            g_BacklogPerRequestLock;
+mutex                   g_BacklogPerRequestLock;
 
 
 size_t GetBacklogSize(void)
 {
     size_t              ret = 0;
-    CSpinlockGuard      guard(&g_BacklogPerRequestLock);
+
+    lock_guard<mutex>   guard(g_BacklogPerRequestLock);
     for (size_t  k = 0; k < sizeof(g_BacklogPerRequest.m_BacklogPerRequest) / sizeof(size_t); ++k) {
         ret += g_BacklogPerRequest.m_BacklogPerRequest[k];
     }
@@ -55,7 +56,7 @@ size_t GetBacklogSize(void)
 SBacklogPerRequest GetBacklogPerRequestSnapshot(void)
 {
     SBacklogPerRequest  ret;
-    CSpinlockGuard      guard(&g_BacklogPerRequestLock);
+    lock_guard<mutex>   guard(g_BacklogPerRequestLock);
     ret = g_BacklogPerRequest;
     return ret;
 }
@@ -63,14 +64,14 @@ SBacklogPerRequest GetBacklogPerRequestSnapshot(void)
 
 void RegisterBackloggedRequest(CPSGS_Request::EPSGS_Type  request_type)
 {
-    CSpinlockGuard      guard(&g_BacklogPerRequestLock);
+    lock_guard<mutex>   guard(g_BacklogPerRequestLock);
     ++g_BacklogPerRequest.m_BacklogPerRequest[static_cast<size_t>(request_type)];
 }
 
 
 void UnregisterBackloggedRequest(CPSGS_Request::EPSGS_Type  request_type)
 {
-    CSpinlockGuard      guard(&g_BacklogPerRequestLock);
+    lock_guard<mutex>   guard(g_BacklogPerRequestLock);
     --g_BacklogPerRequest.m_BacklogPerRequest[static_cast<size_t>(request_type)];
 }
 

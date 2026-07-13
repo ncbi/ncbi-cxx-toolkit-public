@@ -107,11 +107,6 @@ private:
     void x_OnResolutionGoodData(void);
 
 private:
-    void x_Peek(bool  need_wait);
-    bool x_Peek(unique_ptr<CCassFetch> &  fetch_details,
-                bool  need_wait);
-
-private:
     SPSGS_IPGResolveRequest *   m_IPGResolveRequest;
     size_t                      m_RecordCount;
     EPSGS_IPGStage              m_IPGStage;

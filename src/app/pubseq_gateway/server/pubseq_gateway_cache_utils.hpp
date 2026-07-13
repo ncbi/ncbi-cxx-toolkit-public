@@ -157,6 +157,8 @@ private:
                                               int64_t &  last_modified,
                                               CBlobRecord &  blob_record);
 
+    void x_SendTrace(const string &  msg) const;
+
 private:
     bool                        m_Allowed;
     bool                        m_NeedTrace;

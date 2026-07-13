@@ -50,27 +50,25 @@
 USING_IDBLOB_SCOPE;
 using namespace ipg;
 
-class CPendingOperation;
 class CPSGS_Reply;
+class CPSGS_CassProcessorBase;
 
 // Keeps track of the retrieving something from cassandra
 class CCassFetch
 {
 public:
     CCassFetch() :
+        m_CassProcessor(nullptr),
         m_FinishedRead(false),
-        m_InPeek(false),
         m_FetchType(ePSGS_UnknownFetch),
-        m_Canceled(false),
         m_ExcludeBlobCacheUpdated(false)
     {}
 
     CCassFetch(const string &  client_id,
                const SCass_BlobId &  blob_id) :
+        m_CassProcessor(nullptr),
         m_FinishedRead(false),
-        m_InPeek(false),
         m_FetchType(ePSGS_UnknownFetch),
-        m_Canceled(false),
         m_ClientId(client_id),
         m_BlobId(blob_id),
         m_ExcludeBlobCacheUpdated(false)
@@ -81,10 +79,14 @@ public:
 
     virtual void ResetCallbacks(void) = 0;
     virtual string Serialize(void) const = 0;
+    virtual string GetName(void) const = 0;
 
 public:
     CCassBlobWaiter * GetLoader(void)
     { return m_Loader.get(); }
+
+    CPSGS_CassProcessorBase *  GetProcessor(void)
+    { return m_CassProcessor; }
 
     void SetReadFinished(void)
     { m_FinishedRead = true; }
@@ -95,31 +97,12 @@ public:
     bool ReadFinished(void) const
     { return m_FinishedRead; }
 
-    void SetInPeek(bool val)
-    { m_InPeek = val; }
-
-    bool InPeek(void) const
-    { return m_InPeek; }
-
-    bool Canceled(void) const
-    { return m_Canceled; }
-
     bool HasError(void) const
     {
         if (m_Loader) {
             return m_Loader->HasError();
         }
         return false;
-    }
-
-    void Cancel(void)
-    {
-        if (m_Loader) {
-            if (!m_Canceled) {
-                m_Canceled = true;
-                m_Loader->Cancel();
-            }
-        }
     }
 
     bool IsBlobFetch(void) const
@@ -152,19 +135,18 @@ protected:
     // including errors
     unique_ptr<CCassBlobWaiter>     m_Loader;
 
+    // The processor pointer is used in a cassandra data callback to know which
+    // processor needs to call Wait() for a particular fetch
+    CPSGS_CassProcessorBase *       m_CassProcessor;
+
     // Indication that there will be no more data
     bool                            m_FinishedRead;
-
-    // Prevent infinite loop
-    bool                            m_InPeek;
 
     // At the time of a x_Peek() there is a last resort error handling.
     // That code receives a pointer to the base class but it needs to know
     // what kind of request it was because an appropriate error message needs
     // to be send. Thus this member is required.
     EPSGS_DbFetchType               m_FetchType;
-
-    bool                            m_Canceled;
 
     // These fields are only for the blob fetches IsBlobFetches() == true
     string                          m_ClientId;
@@ -199,12 +181,19 @@ public:
         return "CCassNamedAnnotFetch. Keyspace: " + m_Keyspace + " Names: " + names;
     }
 
+    virtual string GetName(void) const
+    {
+        return "CCassNamedAnnotFetch";
+    }
+
 public:
-    void SetLoader(CCassNAnnotTaskFetch *  fetch)
+    void SetLoader(CCassNAnnotTaskFetch *  fetch,
+                   CPSGS_CassProcessorBase *  processor)
     {
         m_Keyspace = fetch->GetKeySpace();
         m_Names = fetch->GetAnnotNames();
         m_Loader.reset(fetch);
+        m_CassProcessor = processor;
     }
 
     CCassNAnnotTaskFetch * GetLoader(void)
@@ -238,9 +227,18 @@ public:
         return "CCassAccVerHistoryFetch";
     }
 
+    virtual string GetName(void) const
+    {
+        return "CCassAccVerHistoryFetch";
+    }
+
 public:
-    void SetLoader(CCassAccVerHistoryTaskFetch *  fetch)
-    { m_Loader.reset(fetch); }
+    void SetLoader(CCassAccVerHistoryTaskFetch *  fetch,
+                   CPSGS_CassProcessorBase *  processor)
+    {
+        m_Loader.reset(fetch);
+        m_CassProcessor = processor;
+    }
 
     CCassAccVerHistoryTaskFetch * GetLoader(void)
     { return static_cast<CCassAccVerHistoryTaskFetch *>(m_Loader.get()); }
@@ -302,6 +300,11 @@ public:
         return "CCassBlobFetch; BlobId: " + m_BlobId.ToString() +
                " BlobPropSent: " + to_string(m_BlobPropSent) +
                " TotalSentBlobChunks: " + to_string(m_TotalSentBlobChunks);
+    }
+
+    virtual string GetName(void) const
+    {
+        return "CCassBlobFetch";
     }
 
     // The TSE chunk request is pretty much the same as a blob request
@@ -369,8 +372,12 @@ public:
     bool GetNeedAddId2ChunkId2Info(void) const
     { return m_NeedAddId2ChunkId2Info; }
 
-    void SetLoader(CCassBlobTaskLoadBlob *  fetch)
-    { m_Loader.reset(fetch); }
+    void SetLoader(CCassBlobTaskLoadBlob *  fetch,
+                   CPSGS_CassProcessorBase *  processor)
+    {
+        m_Loader.reset(fetch);
+        m_CassProcessor = processor;
+    }
 
     CCassBlobTaskLoadBlob *  GetLoader(void)
     { return static_cast<CCassBlobTaskLoadBlob *>(m_Loader.get()); }
@@ -421,9 +428,18 @@ public:
         return "CCassBioseqInfoFetch";
     }
 
+    virtual string GetName(void) const
+    {
+        return "CCassBioseqInfoFetch";
+    }
+
 public:
-    void SetLoader(CCassBioseqInfoTaskFetch *  fetch)
-    { m_Loader.reset(fetch); }
+    void SetLoader(CCassBioseqInfoTaskFetch *  fetch,
+                   CPSGS_CassProcessorBase *  processor)
+    {
+        m_Loader.reset(fetch);
+        m_CassProcessor = processor;
+    }
 
     CCassBioseqInfoTaskFetch * GetLoader(void)
     { return static_cast<CCassBioseqInfoTaskFetch *>(m_Loader.get()); }
@@ -449,9 +465,18 @@ public:
         return "CCassSi2csiFetch";
     }
 
+    virtual string GetName(void) const
+    {
+        return "CCassSi2csiFetch";
+    }
+
 public:
-    void SetLoader(CCassSI2CSITaskFetch *  fetch)
-    { m_Loader.reset(fetch); }
+    void SetLoader(CCassSI2CSITaskFetch *  fetch,
+                   CPSGS_CassProcessorBase *  processor)
+    {
+        m_Loader.reset(fetch);
+        m_CassProcessor = processor;
+    }
 
     CCassSI2CSITaskFetch * GetLoader(void)
     { return static_cast<CCassSI2CSITaskFetch *>(m_Loader.get()); }
@@ -483,6 +508,11 @@ public:
         return "CCassSplitHistoryFetch";
     }
 
+    virtual string GetName(void) const
+    {
+        return "CCassSplitHistoryFetch";
+    }
+
 public:
     SCass_BlobId  GetTSEId(void) const
     { return m_TSEId; }
@@ -496,8 +526,12 @@ public:
     SPSGS_RequestBase::EPSGS_CacheAndDbUse  GetUseCache(void) const
     { return m_UseCache; }
 
-    void SetLoader(CCassBlobTaskFetchSplitHistory *  fetch)
-    { m_Loader.reset(fetch); }
+    void SetLoader(CCassBlobTaskFetchSplitHistory *  fetch,
+                   CPSGS_CassProcessorBase *  processor)
+    {
+        m_Loader.reset(fetch);
+        m_CassProcessor = processor;
+    }
 
     CCassBlobTaskFetchSplitHistory * GetLoader(void)
     { return static_cast<CCassBlobTaskFetchSplitHistory *>(m_Loader.get()); }
@@ -538,6 +572,11 @@ public:
         return "CCassPublicCommentFetch";
     }
 
+    virtual string GetName(void) const
+    {
+        return "CCassPublicCommentFetch";
+    }
+
 public:
     EPSGS_Identification  GetIdentification(void) const
     {
@@ -572,8 +611,12 @@ public:
     string  GetId2Info(void) const
     { return m_Id2Info; }
 
-    void SetLoader(CCassStatusHistoryTaskGetPublicComment *  fetch)
-    { m_Loader.reset(fetch); }
+    void SetLoader(CCassStatusHistoryTaskGetPublicComment *  fetch,
+                   CPSGS_CassProcessorBase *  processor)
+    {
+        m_Loader.reset(fetch);
+        m_CassProcessor = processor;
+    }
 
     CCassStatusHistoryTaskGetPublicComment * GetLoader(void)
     { return static_cast<CCassStatusHistoryTaskGetPublicComment *>(m_Loader.get()); }
@@ -614,9 +657,18 @@ public:
         return "CCassIPGFetch";
     }
 
+    virtual string GetName(void) const
+    {
+        return "CCassIPGFetch";
+    }
+
 public:
-    void SetLoader(CPubseqGatewayFetchIpgReport *  fetch)
-    { m_Loader.reset(fetch); }
+    void SetLoader(CPubseqGatewayFetchIpgReport *  fetch,
+                   CPSGS_CassProcessorBase *  processor)
+    {
+        m_Loader.reset(fetch);
+        m_CassProcessor = processor;
+    }
 
     CPubseqGatewayFetchIpgReport * GetLoader(void)
     { return static_cast<CPubseqGatewayFetchIpgReport *>(m_Loader.get()); }

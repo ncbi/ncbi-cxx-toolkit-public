@@ -114,8 +114,7 @@ CPSGS_CassBlobBase::OnGetBlobProp(CCassBlobFetch *  fetch_details,
     m_Request->SetRequestContext();
 
     if (m_Request->NeedTrace()) {
-        m_Reply->SendTrace("Blob prop callback; found: " + to_string(is_found),
-                           m_Request->GetStartTimestamp());
+        SendTrace("Blob prop callback; found: " + to_string(is_found));
     }
 
     if (is_found) {
@@ -370,7 +369,7 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
                                                 m_UserName.value());
             if (!cass_connection) {
                 ReportSecureSatUnauthorized(m_UserName.value());
-                CPSGS_CassProcessorBase::SignalFinishProcessing();
+                ProcessEvent();
                 return;
             }
         } else {
@@ -378,11 +377,11 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
         }
     } catch (const exception &  exc) {
         ReportFailureToGetCassConnection(exc.what());
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
+        ProcessEvent();
         return;
     } catch (...) {
         ReportFailureToGetCassConnection();
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
+        ProcessEvent();
         return;
     }
 
@@ -408,9 +407,10 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
                                   std::move(blob_record),
                                   true, nullptr);
 
-    unique_ptr<CCassBlobFetch>  cass_blob_fetch;
+    shared_ptr<CCassBlobFetch>  cass_blob_fetch;
     cass_blob_fetch.reset(new CCassBlobFetch(orig_blob_request, cass_blob_id));
-    cass_blob_fetch->SetLoader(load_task);
+    cass_blob_fetch->SetLoader(load_task,
+                               static_cast<CPSGS_CassProcessorBase*>(this));
 
     // Blob props have already been received
     cass_blob_fetch->SetBlobPropSent();
@@ -419,7 +419,8 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
                                 false) == ePSGS_SkipRetrieving)
         return;
 
-    load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
+    load_task->SetDataReadyCB(m_Reply->GetDataReadyCB(),
+                              weak_ptr<void>(cass_blob_fetch));
     load_task->SetErrorCB(
         CGetBlobErrorCallback(this, m_BlobErrorCB, cass_blob_fetch.get()));
     load_task->SetLoggingCB(
@@ -430,13 +431,11 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
         CBlobChunkCallback(this, m_BlobChunkCB, cass_blob_fetch.get()));
 
     if (m_Request->NeedTrace()) {
-        m_Reply->SendTrace(
-            "Cassandra request: " + ToJsonString(*load_task,
-                                                 cass_connection->GetDatacenterName()),
-            m_Request->GetStartTimestamp());
+        SendTrace("Cassandra request: " +
+                  ToJsonString(*load_task, cass_connection->GetDatacenterName()));
     }
 
-    m_FetchDetails.push_back(std::move(cass_blob_fetch));
+    m_FetchDetails.push_back(move(cass_blob_fetch));
 
     load_task->Wait();
 }
@@ -530,7 +529,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
                           psg_clock_t::now());
 
     // Prepare Id2Info retrieval
-    unique_ptr<CCassBlobFetch>  cass_blob_fetch;
+    shared_ptr<CCassBlobFetch>  cass_blob_fetch;
     cass_blob_fetch.reset(new CCassBlobFetch(info_blob_request, info_blob_id));
     bool                        info_blob_requested = false;
 
@@ -590,9 +589,11 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
                             info_blob_id.m_SatKey,
                             true, nullptr);
         }
-        cass_blob_fetch->SetLoader(load_task);
+        cass_blob_fetch->SetLoader(load_task,
+                                   static_cast<CPSGS_CassProcessorBase*>(this));
 
-        load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
+        load_task->SetDataReadyCB(m_Reply->GetDataReadyCB(),
+                                  weak_ptr<void>(cass_blob_fetch));
         load_task->SetErrorCB(
             CGetBlobErrorCallback(this,
                 bind(&CPSGS_CassBlobBase::x_BlobErrorCallback,
@@ -605,8 +606,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
             CBlobPropCallback(this,
                 bind(&CPSGS_CassBlobBase::x_BlobPropsCallback,
                      this, _1, _2, _3),
-                m_Request, m_Reply, cass_blob_fetch.get(),
-                blob_prop_cache_lookup_result != ePSGS_CacheHit));
+                cass_blob_fetch.get(), blob_prop_cache_lookup_result != ePSGS_CacheHit));
         load_task->SetChunkCallback(
             CBlobChunkCallback(this,
                 bind(&CPSGS_CassBlobBase::x_BlobChunkCallback,
@@ -614,16 +614,14 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
                 cass_blob_fetch.get()));
 
         if (m_Request->NeedTrace()) {
-            m_Reply->SendTrace("Cassandra request: " +
-                               ToJsonString(*load_task,
-                                            cass_connection->GetDatacenterName()),
-                               m_Request->GetStartTimestamp());
+            SendTrace("Cassandra request: " +
+                      ToJsonString(*load_task, cass_connection->GetDatacenterName()));
         }
 
         m_RequestedID2BlobChunks.push_back(info_blob_id_as_str);
         info_blob_requested = true;
         cass_blob_fetch->SetNeedAddId2ChunkId2Info(true);
-        m_FetchDetails.push_back(std::move(cass_blob_fetch));
+        m_FetchDetails.push_back(move(cass_blob_fetch));
     }
 
     auto    to_init_iter = m_FetchDetails.end();
@@ -724,7 +722,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
                           vector<string>(), vector<string>(),
                           psg_clock_t::now());
 
-        unique_ptr<CCassBlobFetch>   details;
+        shared_ptr<CCassBlobFetch>   details;
         details.reset(new CCassBlobFetch(chunk_request, chunks_blob_id));
 
         // Check the already sent cache
@@ -751,7 +749,8 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
                             chunks_blob_id.m_Keyspace->keyspace,
                             std::move(blob_record),
                             true, nullptr);
-            details->SetLoader(load_task);
+            details->SetLoader(load_task,
+                               static_cast<CPSGS_CassProcessorBase*>(this));
         } else {
             // The handler deals with both kind of blob requests:
             // - by sat/sat_key
@@ -786,10 +785,12 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
                             chunks_blob_id.m_Keyspace->keyspace,
                             chunks_blob_id.m_SatKey,
                             true, nullptr);
-            details->SetLoader(load_task);
+            details->SetLoader(load_task,
+                               static_cast<CPSGS_CassProcessorBase*>(this));
         }
 
-        load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
+        load_task->SetDataReadyCB(m_Reply->GetDataReadyCB(),
+                                  weak_ptr<void>(details));
         load_task->SetErrorCB(
             CGetBlobErrorCallback(this,
                 bind(&CPSGS_CassBlobBase::x_BlobErrorCallback,
@@ -802,8 +803,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
             CBlobPropCallback(this,
                 bind(&CPSGS_CassBlobBase::x_BlobPropsCallback,
                      this, _1, _2, _3),
-                m_Request, m_Reply, details.get(),
-                blob_prop_cache_lookup_result != ePSGS_CacheHit));
+                details.get(), blob_prop_cache_lookup_result != ePSGS_CacheHit));
         load_task->SetChunkCallback(
             CBlobChunkCallback(this,
                 bind(&CPSGS_CassBlobBase::x_BlobChunkCallback,
@@ -812,7 +812,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
 
         m_RequestedID2BlobChunks.push_back(chunks_blob_id_as_str);
         details->SetNeedAddId2ChunkId2Info(true);
-        m_FetchDetails.push_back(std::move(details));
+        m_FetchDetails.push_back(move(details));
     }
 }
 
@@ -833,10 +833,9 @@ CPSGS_CassBlobBase::x_DecideToRequestMoreChunksForSmartTSE(
     auto        request_type = m_Request->GetRequestType();
     if (request_type != CPSGS_Request::ePSGS_BlobBySeqIdRequest) {
         if (m_Request->NeedTrace()) {
-            m_Reply->SendTrace("Decision: split info of " + info_blob_id.ToString() +
-                               " will not be collected for further analysis "
-                               "because it is not the ID/get request",
-                               m_Request->GetStartTimestamp());
+            SendTrace("Decision: split info of " + info_blob_id.ToString() +
+                      " will not be collected for further analysis "
+                      "because it is not the ID/get request");
         }
         return;
     }
@@ -844,22 +843,20 @@ CPSGS_CassBlobBase::x_DecideToRequestMoreChunksForSmartTSE(
     auto &      blob_request = m_Request->GetRequest<SPSGS_BlobRequestBase>();
     if (blob_request.m_TSEOption != SPSGS_BlobRequestBase::ePSGS_SmartTSE) {
         if (m_Request->NeedTrace()) {
-            m_Reply->SendTrace("Decision: split info of " + info_blob_id.ToString() +
-                               " will not be collected for further analysis "
-                               "because the ID/get request is not "
-                               "with 'tse' option set to 'smart'",
-                               m_Request->GetStartTimestamp());
+            SendTrace("Decision: split info of " + info_blob_id.ToString() +
+                      " will not be collected for further analysis "
+                      "because the ID/get request is not "
+                      "with 'tse' option set to 'smart'");
         }
         return;
     }
 
     if (m_ResolvedSeqID.Which() == CSeq_id_Base::e_not_set) {
         if (m_Request->NeedTrace()) {
-            m_Reply->SendTrace("Decision: split info of " + info_blob_id.ToString() +
-                               " will not be collected for further analysis "
-                               "because of the failure to construct CSeq_id from the "
-                               "resolved input seq_id (see an applog warning)",
-                               m_Request->GetStartTimestamp());
+            SendTrace("Decision: split info of " + info_blob_id.ToString() +
+                      " will not be collected for further analysis "
+                      "because of the failure to construct CSeq_id from the "
+                      "resolved input seq_id (see an applog warning)");
         }
         return;
     }
@@ -874,9 +871,8 @@ CPSGS_CassBlobBase::x_DecideToRequestMoreChunksForSmartTSE(
     if (cache_search_result.has_value()) {
         // The chunks are in cache
         if (m_Request->NeedTrace()) {
-            m_Reply->SendTrace("Extra split info blob for " + info_blob_id.ToString() +
-                               " is already in cache. Using the blob to request extra chunks",
-                               m_Request->GetStartTimestamp());
+            SendTrace("Extra split info blob for " + info_blob_id.ToString() +
+                      " is already in cache. Using the blob to request extra chunks");
         }
         vector<int>     extra_chunks;
         try {
@@ -898,9 +894,8 @@ CPSGS_CassBlobBase::x_DecideToRequestMoreChunksForSmartTSE(
     m_CollectSplitInfo = true;
 
     if (m_Request->NeedTrace()) {
-        m_Reply->SendTrace("Decision: split info of " + info_blob_id.ToString() +
-                           " will be collected for further analysis",
-                           m_Request->GetStartTimestamp());
+        SendTrace("Decision: split info of " + info_blob_id.ToString() +
+                  " will be collected for further analysis");
     }
 }
 
@@ -908,9 +903,8 @@ CPSGS_CassBlobBase::x_DecideToRequestMoreChunksForSmartTSE(
 void CPSGS_CassBlobBase::x_DeserializeSplitInfo(CCassBlobFetch *  fetch_details)
 {
     if (m_Request->NeedTrace()) {
-        m_Reply->SendTrace("Deserializing collected split info from the buffer "
-                           "for further analysis",
-                           m_Request->GetStartTimestamp());
+        SendTrace("Deserializing collected split info from the buffer "
+                  "for further analysis");
     }
 
     // The Gzip flag has been memorized when the split info blob props were
@@ -982,7 +976,7 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
                           vector<string>(), vector<string>(),
                           psg_clock_t::now());
 
-        unique_ptr<CCassBlobFetch>   details;
+        shared_ptr<CCassBlobFetch>   details;
         details.reset(new CCassBlobFetch(chunk_request, chunks_blob_id));
 
         // Check the already sent cache
@@ -1047,7 +1041,8 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
                             chunks_blob_id.m_Keyspace->keyspace,
                             std::move(blob_record),
                             true, nullptr);
-            details->SetLoader(load_task);
+            details->SetLoader(load_task,
+                               static_cast<CPSGS_CassProcessorBase*>(this));
         } else {
             // The handler is only for the ID/get i.e. blob by seq_id/seq_id_type
             // Get the reference to the blob base request
@@ -1080,10 +1075,12 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
                             chunks_blob_id.m_Keyspace->keyspace,
                             chunks_blob_id.m_SatKey,
                             true, nullptr);
-            details->SetLoader(load_task);
+            details->SetLoader(load_task,
+                               static_cast<CPSGS_CassProcessorBase*>(this));
         }
 
-        load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
+        load_task->SetDataReadyCB(m_Reply->GetDataReadyCB(),
+                                  weak_ptr<void>(details));
         load_task->SetErrorCB(
             CGetBlobErrorCallback(this,
                 bind(&CPSGS_CassBlobBase::x_BlobErrorCallback,
@@ -1096,8 +1093,7 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
             CBlobPropCallback(this,
                 bind(&CPSGS_CassBlobBase::x_BlobPropsCallback,
                      this, _1, _2, _3),
-                m_Request, m_Reply, details.get(),
-                blob_prop_cache_lookup_result != ePSGS_CacheHit));
+                details.get(), blob_prop_cache_lookup_result != ePSGS_CacheHit));
         load_task->SetChunkCallback(
             CBlobChunkCallback(this,
                 bind(&CPSGS_CassBlobBase::x_BlobChunkCallback,
@@ -1105,14 +1101,13 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
                 details.get()));
 
         if (m_Request->NeedTrace()) {
-            m_Reply->SendTrace("Requesting extra chunk from INFO for the 'smart' tse option: " +
-                               chunks_blob_id.ToString(),
-                               m_Request->GetStartTimestamp());
+            SendTrace("Requesting extra chunk from INFO for the 'smart' tse option: " +
+                      chunks_blob_id.ToString());
         }
 
         m_RequestedID2BlobChunks.push_back(chunks_blob_id_as_str);
         details->SetNeedAddId2ChunkId2Info(true);
-        m_FetchDetails.push_back(std::move(details));
+        m_FetchDetails.push_back(move(details));
 
         if (need_wait) {
             // Needed only when the method is called from the last chunk
@@ -1268,26 +1263,9 @@ CPSGS_CassBlobBase::OnGetBlobChunk(bool  cancelled,
     CRequestContextResetter     context_resetter;
     m_Request->SetRequestContext();
 
-    if (cancelled) {
-        fetch_details->GetLoader()->Cancel();
-        fetch_details->SetReadFinished();
-        return;
-    }
-    if (m_Reply->IsFinished()) {
-        fetch_details->SetReadFinished();
-
-        CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
-                                            this,
-                                            CPSGSCounters::ePSGS_ProcUnknownError);
-        PSG_ERROR("Unexpected data received "
-                  "while the output has finished, ignoring");
-        return;
-    }
-
     if (chunk_no >= 0) {
         if (m_Request->NeedTrace()) {
-            m_Reply->SendTrace("Blob chunk " + to_string(chunk_no) + " callback",
-                               m_Request->GetStartTimestamp());
+            SendTrace("Blob chunk " + to_string(chunk_no) + " callback");
         }
 
         // A blob chunk; 0-length chunks are allowed too
@@ -1297,19 +1275,17 @@ CPSGS_CassBlobBase::OnGetBlobChunk(bool  cancelled,
         if (m_CollectSplitInfo) {
             if (fetch_details->GetBlobId() == m_InfoBlobId) {
                 if (m_Request->NeedTrace()) {
-                    m_Reply->SendTrace("Collecting split info in the buffer "
-                                       "for further analysis. Chunk number: " +
-                                       to_string(chunk_no) + " of size " +
-                                       to_string(data_size),
-                                       m_Request->GetStartTimestamp());
+                    SendTrace("Collecting split info in the buffer "
+                              "for further analysis. Chunk number: " +
+                              to_string(chunk_no) + " of size " +
+                              to_string(data_size));
                 }
                 m_CollectedSplitInfo.AddDataChunk(chunk_data, data_size, chunk_no);
             }
         }
     } else {
         if (m_Request->NeedTrace()) {
-            m_Reply->SendTrace("Blob chunk no-more-data callback",
-                               m_Request->GetStartTimestamp());
+            SendTrace("Blob chunk no-more-data callback");
         }
 
         // End of the blob
@@ -1453,9 +1429,8 @@ CPSGS_CassBlobBase::x_IsAuthorized(EPSGS_BlobOp  blob_op,
     if (!is_secure_keyspace) {
         if (blob.IsConfidential()) {
             if (m_Request->NeedTrace()) {
-                m_Reply->SendTrace(
-                    "Blob " + blob_id.ToString() + " is not authorized "
-                    "because it is confidential", m_Request->GetStartTimestamp());
+                SendTrace("Blob " + blob_id.ToString() + " is not authorized "
+                          "because it is confidential");
             }
             return false;
         }
@@ -1463,9 +1438,8 @@ CPSGS_CassBlobBase::x_IsAuthorized(EPSGS_BlobOp  blob_op,
 
     if (blob.GetFlag(EBlobFlags::eWithdrawn)) {
         if (m_Request->NeedTrace()) {
-            m_Reply->SendTrace(
-                "Blob " + blob_id.ToString() + " is not authorized "
-                "because it is withdrawn", m_Request->GetStartTimestamp());
+            SendTrace("Blob " + blob_id.ToString() + " is not authorized "
+                      "because it is withdrawn");
         }
         return false;
     }
@@ -1485,7 +1459,7 @@ CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  blob_fetch_details,
         blob.GetFlag(EBlobFlags::eWithdrawn)) {
         // Request public comment
         auto                                    app = CPubseqGatewayApp::GetInstance();
-        unique_ptr<CCassPublicCommentFetch>     comment_fetch_details;
+        shared_ptr<CCassPublicCommentFetch>     comment_fetch_details;
         comment_fetch_details.reset(new CCassPublicCommentFetch());
         // Memorize the identification which will be used at the moment of
         // sending the comment to the client
@@ -1530,8 +1504,10 @@ CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  blob_fetch_details,
                     cass_connection,
                     blob_fetch_details->GetBlobId().m_Keyspace->keyspace,
                     blob, nullptr);
-        comment_fetch_details->SetLoader(load_task);
-        load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
+        comment_fetch_details->SetLoader(load_task,
+                                         static_cast<CPSGS_CassProcessorBase*>(this));
+        load_task->SetDataReadyCB(m_Reply->GetDataReadyCB(),
+                                  weak_ptr<void>(comment_fetch_details));
         load_task->SetErrorCB(
             CPublicCommentErrorCallback(
                 this,
@@ -1550,14 +1526,12 @@ CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  blob_fetch_details,
         load_task->SetMessages(app->GetPublicCommentsMapping());
 
         if (m_Request->NeedTrace()) {
-            m_Reply->SendTrace(
-                "Cassandra request: " +
-                ToJsonString(*load_task,
-                             cass_connection->GetDatacenterName()),
-                m_Request->GetStartTimestamp());
+            SendTrace("Cassandra request: " +
+                      ToJsonString(*load_task,
+                                   cass_connection->GetDatacenterName()));
         }
 
-        m_FetchDetails.push_back(std::move(comment_fetch_details));
+        m_FetchDetails.push_back(move(comment_fetch_details));
         load_task->Wait();  // Initiate cassandra request
     }
 
@@ -1725,12 +1699,6 @@ CPSGS_CassBlobBase::OnPublicCommentError(
                             EDiagSev  severity,
                             const string &  message)
 {
-    if (m_Canceled) {
-        fetch_details->GetLoader()->Cancel();
-        fetch_details->SetReadFinished();
-        return;
-    }
-
     CRequestContextResetter     context_resetter;
     m_Request->SetRequestContext();
 
@@ -1752,11 +1720,7 @@ CPSGS_CassBlobBase::OnPublicCommentError(
         fetch_details->GetLoader()->ClearError();
     }
 
-    // Note: is it necessary to call something like x_Peek() of the actual
-    //       processor class to send this immediately? It should work without
-    //       this call and at the moment x_Peek() is not available here
-    // if (m_Reply->IsOutputReady())
-    //     x_Peek(false);
+    ProcessEvent();
 }
 
 
@@ -1771,15 +1735,8 @@ CPSGS_CassBlobBase::OnPublicComment(
 
     fetch_details->SetReadFinished();
 
-    if (m_Canceled) {
-        fetch_details->GetLoader()->Cancel();
-        return;
-    }
-
     if (m_Request->NeedTrace()) {
-        m_Reply->SendTrace(
-            "Public comment callback; found: " + to_string(is_found),
-            m_Request->GetStartTimestamp());
+        SendTrace("Public comment callback; found: " + to_string(is_found));
     }
 
     if (is_found) {
@@ -1799,11 +1756,7 @@ CPSGS_CassBlobBase::OnPublicComment(
         }
     }
 
-    // Note: is it necessary to call something like x_Peek() of the actual
-    //       processor class to send this immediately? It should work without
-    //       this call and at the moment x_Peek() is not available here
-    // if (m_Reply->IsOutputReady())
-    //     x_Peek(false);
+    ProcessEvent();
 }
 
 
@@ -1850,13 +1803,13 @@ CPSGS_CassBlobBase::x_BlobChunkCallback(CCassBlobFetch *  fetch_details,
                       " chunk " + to_string(chunk_no) +
                       " when a fallback original blob has been requested. "
                       "Ignore and continue.";
-        m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
+        SendTrace(msg);
     }
 
     // Discarding the chunk.
     fetch_details->RemoveFromExcludeBlobCache();
-    fetch_details->GetLoader()->Cancel();
     fetch_details->SetReadFinished();
+    ProcessEvent();
 }
 
 
@@ -1865,6 +1818,10 @@ CPSGS_CassBlobBase::x_BlobPropsCallback(CCassBlobFetch *  fetch_details,
                                         CBlobRecord const &  blob,
                                         bool  is_found)
 {
+    if (!is_found) {
+        fetch_details->SetReadFinished();
+    }
+
     if (!m_NeedFallbackBlob) {
         // As usual
         m_BlobPropsCB(fetch_details, blob, is_found);
@@ -1891,7 +1848,6 @@ CPSGS_CassBlobBase::x_BlobPropsCallback(CCassBlobFetch *  fetch_details,
 
         // Here: blob prop not found and falback has not been requested yet.
         m_FallbackBlobRequested = true;
-        fetch_details->GetLoader()->Cancel();
         fetch_details->SetReadFinished();
 
         msg = "Blob " + blob_id_as_str + " properties are not found. "
@@ -1929,12 +1885,8 @@ CPSGS_CassBlobBase::x_BlobPropsCallback(CCassBlobFetch *  fetch_details,
                   "has already been initiated before.";
         }
 
-        m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
+        SendTrace(msg);
     }
-
-    // To prevent chunks coming, let's cancel the fetch
-    fetch_details->GetLoader()->Cancel();
-    fetch_details->SetReadFinished();
 }
 
 
@@ -1974,7 +1926,6 @@ CPSGS_CassBlobBase::x_BlobErrorCallback(CCassBlobFetch *  fetch_details,
 
     // If it is an error then regardless what stage it was, props or
     // chunks, there will be no more activity
-    fetch_details->GetLoader()->Cancel();
     fetch_details->SetReadFinished();
 
     string      msg;
@@ -2017,7 +1968,7 @@ CPSGS_CassBlobBase::x_BlobErrorCallback(CCassBlobFetch *  fetch_details,
           "Callback error message: " + message;
 
     if (m_Request->NeedTrace()) {
-        m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
+        SendTrace(msg);
     }
 
     if (fetch_details->GetTotalSentBlobChunks() == 0) {
@@ -2031,5 +1982,11 @@ CPSGS_CassBlobBase::x_BlobErrorCallback(CCassBlobFetch *  fetch_details,
                              ePSGS_ID2ChunkErrorAfterFallbackRequested,
                              eDiag_Warning);
     }
+
+    // Note: the blob error callback m_BlobErrorCB is not called here
+    // intentionally. These errors need just be skipped so instead
+    // ProcessEvent() is called (since the fetch has finished and the processor
+    // may need to signal finished if all the fetches are complete).
+    ProcessEvent();
 }
 

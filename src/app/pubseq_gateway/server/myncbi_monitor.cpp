@@ -58,6 +58,9 @@ void MyNCBIMonitorThreadedFunction(size_t  my_ncbi_dns_resolve_ok_period_sec,
     size_t      seconds_in_resolve_period = 0;
     size_t      seconds_in_test_period = 0;
 
+    // Set the thread name
+    pthread_setname_np(pthread_self(), "myncbi_monitor");
+
     uv_loop_t   loop;
     if (uv_loop_init(&loop) != 0) {
         string  err_msg = "Error initialization of a uv loop "

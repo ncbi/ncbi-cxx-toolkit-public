@@ -100,7 +100,8 @@ CHttpDaemon::~CHttpDaemon()
 }
 
 
-void CHttpDaemon::Run(std::function<void(CTcpDaemon &)> on_watch_dog)
+void CHttpDaemon::Run(std::function<void(CTcpDaemon &)> on_watch_dog,
+                      size_t  callback_queue_size)
 {
     h2o_hostconf_t *    hostconf = h2o_config_register_host(
             &m_HttpCfg, h2o_iovec_init(H2O_STRLIT("default")), kAnyPort);
@@ -124,7 +125,7 @@ void CHttpDaemon::Run(std::function<void(CTcpDaemon &)> on_watch_dog)
         handler->on_req = s_OnHttpRequest;
     }
 
-    m_TcpDaemon->Run(*this, on_watch_dog);
+    m_TcpDaemon->Run(*this, on_watch_dog, callback_queue_size);
 }
 
 

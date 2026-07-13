@@ -36,6 +36,8 @@
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_convert_utils.hpp"
 #include "active_proc_per_request.hpp"
+#include "cass_processor_base.hpp"
+#include "http_reply.hpp"
 
 
 extern bool     g_AllowProcessorTiming;
@@ -590,7 +592,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                 }
             }
 
-            if (source == ePSGS_Fromework) {
+            if (source == ePSGS_Framework) {
                 // This call is when the framework notices that the processor
                 // reports something not InProgress (like error, cancel,
                 // timeout or found).
@@ -895,31 +897,6 @@ void CPSGS_Dispatcher::x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
     CDiagContext::SetRequestContext(NULL);
 }
 
-#if 0
-CRequestStatus::ECode
-CPSGS_Dispatcher::x_MapProcessorFinishToStatus(IPSGS_Processor::EPSGS_Status  status) const
-{
-    switch (status) {
-        case IPSGS_Processor::ePSGS_Done:
-            return CRequestStatus::e200_Ok;
-        case IPSGS_Processor::ePSGS_NotFound:
-        case IPSGS_Processor::ePSGS_Canceled:   // not found because it was not let to finish
-            return CRequestStatus::e404_NotFound;
-        case IPSGS_Processor::ePSGS_Ambiguity:
-            return CRequestStatus::e300_MultipleChoices;
-        case IPSGS_Processor::ePSGS_Error:
-            return CRequestStatus::e500_InternalServerError;
-        case IPSGS_Processor::ePSGS_Timeout:
-            return CRequestStatus::e504_GatewayTimeout;
-        case IPSGS_Processor::ePSGS_Unauthorized:
-            return CRequestStatus::e401_Unauthorized;
-        default:
-            break;
-    }
-    // Should not happened
-    return CRequestStatus::e500_InternalServerError;
-}
-#endif
 
 CRequestStatus::ECode
 CPSGS_Dispatcher::x_ConcludeRequestStatus(shared_ptr<CPSGS_Request> request,
@@ -1657,6 +1634,15 @@ void CPSGS_Dispatcher::PopulateStatus(CJsonNode &  status)
                                IPSGS_Processor::StatusToString(processor.m_FinishStatus));
                 proc.SetString("processor reported status",
                                IPSGS_Processor::StatusToString(processor.m_Processor->GetStatus()));
+                proc.SetBoolean("finish signalled by proc", processor.m_Processor->GetFinishSignalled());
+
+                if (processor.m_Processor->GetGroupName() == "CASSANDRA") {
+                    CPSGS_CassProcessorBase *  cass_proc = dynamic_cast<CPSGS_CassProcessorBase*>(processor.m_Processor.get());
+                    if (cass_proc) {
+                        proc.SetString("fetches", cass_proc->SerializeAllFetches());
+                    }
+                }
+
                 processors.Append(proc);
             }
 

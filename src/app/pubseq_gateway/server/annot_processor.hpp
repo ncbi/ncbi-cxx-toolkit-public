@@ -108,12 +108,6 @@ private:
                         unsigned int  data_size, int  chunk_no);
 
 private:
-    void x_Peek(bool  need_wait);
-    bool x_Peek(unique_ptr<CCassFetch> &  fetch_details,
-                bool  need_wait);
-    void x_FinishIfNeeded(void);
-
-private:
     // The processor filters out some of the requested named annotations
     // This vector holds those which can be processed
     vector<string>              m_ValidNames;

@@ -194,7 +194,8 @@ void CPSGS_Reply::Clear(void)
 }
 
 
-shared_ptr<idblob::CCassDataCallbackReceiver> CPSGS_Reply::GetDataReadyCB(void)
+shared_ptr<idblob::CCassDataCallbackReceiverWithContext>
+CPSGS_Reply::GetDataReadyCB(void)
 {
     return m_Reply->GetDataReadyCB();
 }

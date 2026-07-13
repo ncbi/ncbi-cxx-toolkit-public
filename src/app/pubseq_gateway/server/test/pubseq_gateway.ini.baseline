@@ -19,6 +19,7 @@ port={port}
 ; Number of HTTP workers (1...100)
 ; Default: 32
 workers=32
+http_max_running=128
 
 ; Listener backlog (5...2048)
 ; Default: 256
@@ -45,7 +46,9 @@ configuration_domain=PSG_TEST
 
 slim_max_blob_size=10KB
 
-ProcessorMaxConcurrency=20000
+ProcessorMaxConcurrency=30000
+processor_throttle_by_ip = 99%
+processor_throttle_threshold = 99%
 
 
 [DEBUG]

@@ -791,6 +791,8 @@ int CPubseqGatewayApp::Run(void)
     }
 
     try {
+        size_t      callback_queue_size = m_CassConnection->GetQueueSizeIo();
+
         m_HttpDaemon->Run([this](CTcpDaemon &  tcp_daemon)
                 {
                     // This lambda is called once per second.
@@ -822,7 +824,7 @@ int CPubseqGatewayApp::Run(void)
                         this->m_Timing->RotateRequestStat();
                         this->m_Timing->RotateAvgPerfTimeSeries();
                     }
-                });
+                }, callback_queue_size);
     } catch (const CException &  exc) {
         ERR_POST(Critical << exc);
         ret_code = 1;

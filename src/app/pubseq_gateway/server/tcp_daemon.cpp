@@ -37,6 +37,8 @@
 #include "http_request.hpp"
 #include "active_proc_per_request.hpp"
 #include "pubseq_gateway_convert_utils.hpp"
+#include "cass_fetch.hpp"
+#include "cass_processor_base.hpp"
 
 
 #include "shutdown_data.hpp"
@@ -112,15 +114,12 @@ void CTcpWorkersList::s_WorkerExecute(void *  _worker)
 {
     CTcpWorker *   worker = static_cast<CTcpWorker *>(_worker);
     worker->Execute();
-    PSG_INFO("worker " << worker->m_id << " finished");
 }
 
 
 CTcpWorkersList::~CTcpWorkersList()
 {
-    PSG_INFO("CTcpWorkersList::~()>>");
     JoinWorkers();
-    PSG_INFO("CTcpWorkersList::~()<<");
     m_Daemon->m_WorkersList = nullptr;
 }
 
@@ -128,13 +127,15 @@ CTcpWorkersList::~CTcpWorkersList()
 void CTcpWorkersList::Start(struct uv_export_t *  exp,
                             unsigned short  nworkers,
                             CHttpDaemon &  http_daemon,
-                            function<void(CTcpDaemon &  daemon)>  OnWatchDog)
+                            function<void(CTcpDaemon &  daemon)>  OnWatchDog,
+                            size_t  callback_queue_size)
 {
     int         err_code;
 
     for (unsigned int  i = 0; i < nworkers; ++i) {
         m_Workers.emplace_back(new CTcpWorker(i + 1, exp,
-                                              m_Daemon, http_daemon));
+                                              m_Daemon, http_daemon,
+                                              callback_queue_size));
     }
 
     for (auto &  it: m_Workers) {
@@ -352,6 +353,9 @@ void CTcpWorker::Stop(void)
 void CTcpWorker::Execute(void)
 {
     try {
+        // Set the thread name
+        pthread_setname_np(pthread_self(), "psg_worker");
+
         if (m_internal)
             NCBI_THROW(CPubseqGatewayException, eWorkerAlreadyStarted,
                        "Worker has already been started");
@@ -365,7 +369,6 @@ void CTcpWorker::Execute(void)
         err_code = uv_import(m_internal->m_loop.Handle(),
                              reinterpret_cast<uv_stream_t*>(&m_internal->m_listener),
                              m_exp);
-        // PSG_ERROR("worker " << worker->m_id << " uv_import: " << err_code);
         if (err_code != 0)
             NCBI_THROW2(CPubseqGatewayUVException, eUvImportFailure,
                         "uv_import failed", err_code);
@@ -410,9 +413,6 @@ void CTcpWorker::Execute(void)
         err_code = uv_run(m_internal->m_loop.Handle(), UV_RUN_DEFAULT);
 
         UnregisterUVLoop(uv_thread_self());
-
-        PSG_INFO("uv_run (1) worker " << m_id <<
-                 " returned " <<  err_code);
     } catch (const CPubseqGatewayUVException &  exc) {
         PSG_ERROR("Libuv exception while preparing/running worker " << m_id <<
                   " UV error code: " << exc.GetUVLibraryErrorCode() <<
@@ -429,7 +429,6 @@ void CTcpWorker::Execute(void)
     }
 
     m_shuttingdown = true;
-    PSG_INFO("worker " << m_id << " is closing");
     if (m_internal) {
         try {
             int         err_code;
@@ -574,10 +573,16 @@ void CTcpWorker::OnClientClosed(uv_handle_t *  handle)
 }
 
 
-void CTcpWorker::WakeWorker(void)
+void CTcpWorker::WakeWorker(weak_ptr<void>  fetch)
 {
-    if (m_internal)
+    if (m_internal) {
+
+        // Put the callback into the callback queue and wakeup the worker
+        // thread. This is Cassandra reporting that there is an event (data or error).
+
+        m_CallbackQueue.Push(fetch);
         uv_async_send(&m_internal->m_async_work);
+    }
 }
 
 
@@ -689,15 +694,32 @@ CTcpWorker::PopulateThrottlingData(SThrottlingData &  throttling_data,
 
 void CTcpWorker::OnAsyncWork(void)
 {
-    // If shutdown is in progress, close outstanding requests
-    // otherwise pick data from them and send back to the client
-    m_protocol.OnAsyncWork(m_shuttingdown || m_shutdown);
+    SPSGSCallbackPayload     payload;
+    while (m_CallbackQueue.Pop(payload)) {
+        // This is the case of Cassandra data ready callback
+        shared_ptr<void>    locked_void = payload.m_Fetch.lock();
+        if (locked_void) {
+            // Only if the target object still exists
+
+            shared_ptr<CCassFetch>      cass_fetch = static_pointer_cast<CCassFetch>(locked_void);
+            CPSGS_CassProcessorBase *   cass_proc = cass_fetch->GetProcessor();
+
+            // If a processor already signalled finished it means it thinks
+            // all the fetches are done, i.e. no need to call Wait() at all
+            if (!cass_proc->GetFinishSignalled()) {
+                bool            final_state = cass_fetch->GetLoader()->Wait();
+                if (final_state) {
+                    cass_proc->ProcessEvent();
+                }
+            }
+        }
+        payload.m_Fetch.reset();
+    }
 }
 
 
 void CTcpWorker::s_OnAsyncWork(uv_async_t *  handle)
 {
-    PSG_INFO("Worker async work requested");
     CTcpWorker *       worker =
         static_cast<CTcpWorker*>(
                 uv_key_get(&CTcpWorkersList::s_thread_worker_key));
@@ -980,7 +1002,8 @@ bool CTcpDaemon::OnRequest(CHttpProto **  http_proto)
 
 
 void CTcpDaemon::Run(CHttpDaemon &  http_daemon,
-                     function<void(CTcpDaemon &  daemon)>  OnWatchDog)
+                     function<void(CTcpDaemon &  daemon)>  OnWatchDog,
+                     size_t  callback_queue_size)
 {
     int         rc;
 
@@ -1040,7 +1063,7 @@ void CTcpDaemon::Run(CHttpDaemon &  http_daemon,
                         "uv_export_start failed", rc);
 
         try {
-            workers.Start(exp, m_NumWorkers, http_daemon, OnWatchDog);
+            workers.Start(exp, m_NumWorkers, http_daemon, OnWatchDog, callback_queue_size);
         } catch (const exception &  exc) {
             uv_export_close(exp);
             throw;

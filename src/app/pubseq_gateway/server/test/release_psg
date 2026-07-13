@@ -887,7 +887,7 @@ def stability_test(commands, options, args):
         # Run the clients
         clients = []
         for client_number in range(100):
-            clientCmdLine = ['h2load', '-n', '10000', '-c', '4',
+            clientCmdLine = ['h2load', '-n', '1000000', '-c', '4',
                              '-t', '4', '-m', '4',
                              f'http://localhost:{PORT1}/{testCase}']
             print_verbose(f'Runnig client #{client_number}: ' +

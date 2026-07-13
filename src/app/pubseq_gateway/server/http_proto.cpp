@@ -174,10 +174,32 @@ void CHttpProto::OnClientClosedConnection(uv_stream_t *  conn,
 }
 
 
-void CHttpProto::WakeWorker(void)
+void CHttpProto::WakeWorker(weak_ptr<void>  fetch)
 {
     if (m_Worker)
-        m_Worker->WakeWorker();
+        m_Worker->WakeWorker(fetch);
+}
+
+
+void CHttpProto::WakeWorker(void *  proc)
+{
+    if (m_Worker) {
+        // This is libh2o event when the output is ready
+        IPSGS_Processor *   processor = static_cast<IPSGS_Processor *>(proc);
+        if (processor->GetFinishSignalled()) {
+            // The processor has already signalled its finish so it is in
+            // the final state and thus will neither send anything nor
+            // signal finishing again. So the output ready is needed mostly
+            // for the infrastructure to make the final flush with closing
+            // the stream
+            CPubseqGatewayApp::GetInstance()->SignalFinishProcessing(
+                        processor, CPSGS_Dispatcher::ePSGS_Framework);
+        } else {
+            // The processor has not finished yet. Let it to process output
+            // ready event
+            processor->ProcessEvent();
+        }
+    }
 }
 
 
@@ -187,15 +209,6 @@ void CHttpProto::OnTimer(void)
     for (auto &  it: lst) {
         // call http connection OnTimer()
         std::get<1>(it).OnTimer();
-    }
-}
-
-
-void CHttpProto::OnAsyncWork(bool  cancel)
-{
-    auto &      lst = m_Worker->GetConnList();
-    for (auto &  it: lst) {
-        std::get<1>(it).PeekAsync(true);
     }
 }
 

@@ -49,6 +49,7 @@
 #include "pubseq_gateway_exception.hpp"
 #include "pubseq_gateway_logging.hpp"
 #include "throttling.hpp"
+#include "cass_cb_queue.hpp"
 USING_NCBI_SCOPE;
 
 class CTcpWorkersList;
@@ -96,7 +97,8 @@ public:
     void Start(struct uv_export_t *  exp,
                unsigned short  nworkers,
                CHttpDaemon &  http_daemon,
-               std::function<void(CTcpDaemon &  daemon)> OnWatchDog = nullptr);
+               std::function<void(CTcpDaemon &  daemon)> OnWatchDog,
+               size_t  callback_queue_size);
 
     bool AnyWorkerIsRunning(void);
     void KillAll(void);
@@ -115,6 +117,7 @@ struct CTcpWorkerInternal_t {
     uv_async_t      m_async_stop;
     uv_async_t      m_async_work;
     uv_timer_t      m_timer;
+    thread::id      m_ThreadId;
 
     CTcpWorkerInternal_t() :
         m_listener({0}),
@@ -142,10 +145,12 @@ struct CTcpWorker
     CHttpDaemon &                                       m_HttpDaemon;
     CHttpProto                                          m_protocol;
     std::unique_ptr<CTcpWorkerInternal_t>               m_internal;
+    CPSGS_CallbackQueue                                 m_CallbackQueue;
 
     CTcpWorker(unsigned int  id, struct uv_export_t *  exp,
                CTcpDaemon *  daemon,
-               CHttpDaemon &  http_daemon) :
+               CHttpDaemon &  http_daemon,
+               size_t  callback_queue_size) :
         m_id(id),
         m_thread(0),
         m_started(false),
@@ -156,14 +161,15 @@ struct CTcpWorker
         m_exp(exp),
         m_Daemon(daemon),
         m_HttpDaemon(http_daemon),
-        m_protocol(m_HttpDaemon)
+        m_protocol(m_HttpDaemon),
+        m_CallbackQueue(callback_queue_size)
     {}
 
     void Stop(void);
     void Execute(void);
     void CloseAll(void);
     void OnClientClosed(uv_handle_t *  handle);
-    void WakeWorker(void);
+    void WakeWorker(weak_ptr<void>  fetch);
     std::list<std::tuple<uv_tcp_t, CHttpConnection>> &  GetConnList(void);
     std::vector<SConnectionRunTimeProperties>  GetConnProps(void);
     void PopulateThrottlingData(SThrottlingData &  throttling_data,
@@ -299,8 +305,8 @@ public:
     bool OnRequest(CHttpProto **  http_proto);
 
     void Run(CHttpDaemon &  http_daemon,
-             std::function<void(CTcpDaemon &  daemon)>
-                                                    OnWatchDog = nullptr);
+             std::function<void(CTcpDaemon &  daemon)>  OnWatchDog,
+             size_t  callback_queue_size);
 };
 
 #endif

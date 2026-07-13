@@ -47,6 +47,9 @@ void CassMonitorThreadedFunction(void)
     auto        app = CPubseqGatewayApp::GetInstance();
     size_t      loop_count = 0;
 
+    // Set the thread name
+    pthread_setname_np(pthread_self(), "cass_monitor");
+
     for ( ; ; ) {
         // The thread should wake up once per minute; sleeping for 1 second is
         // to have the shutdown request checking more often

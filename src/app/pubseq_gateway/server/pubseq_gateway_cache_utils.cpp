@@ -75,10 +75,7 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
     COperationTiming &      timing = app->GetTiming();
     try {
         if (m_NeedTrace) {
-            m_Reply->SendTrace(
-                "Cache request: " +
-                ToJsonString(fetch_request, "CACHE"),
-                m_Request->GetStartTimestamp());
+            x_SendTrace("Cache request: " + ToJsonString(fetch_request, "CACHE"));
         }
 
         auto    records = cache->FetchBioseqInfo(fetch_request);
@@ -90,7 +87,7 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
                        ToJsonString(item,
                                     SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
             }
-            m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
+            x_SendTrace(msg);
         }
 
         switch (records.size()) {
@@ -119,9 +116,7 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
                     // Many found and could not select one => treat as not
                     // found
                     if (m_NeedTrace) {
-                        m_Reply->SendTrace(
-                            result.message + "\nSo treat it as not found",
-                            m_Request->GetStartTimestamp());
+                        x_SendTrace(result.message + "\nSo treat it as not found");
                     }
                     ambiguity_msg = result.message;
                     ambiguity_json = result.ambiguity_json;
@@ -135,11 +130,9 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
                         prefix = "Selected record:\n";
                     else
                         prefix = "Record selected in accordance to priorities (live & not HUP, dead & not HUP, HUP + largest gi/version):\n";
-                    m_Reply->SendTrace(
-                        prefix +
-                        ToJsonString(records[result.index],
-                                     SPSGS_ResolveRequest::fPSGS_AllBioseqFields),
-                        m_Request->GetStartTimestamp());
+                    x_SendTrace(prefix +
+                                ToJsonString(records[result.index],
+                                             SPSGS_ResolveRequest::fPSGS_AllBioseqFields));
                 }
 
                 cache_hit = true;
@@ -149,16 +142,14 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
         }
     } catch (const exception &  exc) {
         if (m_NeedTrace)
-            m_Reply->SendTrace("Cache fetch exception. Report failure.",
-                               m_Request->GetStartTimestamp());
+            x_SendTrace("Cache fetch exception. Report failure.");
         ERR_POST(Critical << "Exception while bioseq info cache lookup: "
                           << exc.what());
         app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_LMDBError);
         return ePSGS_CacheFailure;
     } catch (...) {
         if (m_NeedTrace)
-            m_Reply->SendTrace("Cache fetch exception. Report failure.",
-                               m_Request->GetStartTimestamp());
+            x_SendTrace("Cache fetch exception. Report failure.");
         ERR_POST(Critical << "Unknown exception while bioseq info cache lookup");
         app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_LMDBError);
         return ePSGS_CacheFailure;
@@ -166,16 +157,14 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
 
     if (cache_hit) {
         if (m_NeedTrace)
-            m_Reply->SendTrace("Report cache hit",
-                               m_Request->GetStartTimestamp());
+            x_SendTrace("Report cache hit");
         timing.Register(processor, eLookupLmdbBioseqInfo, eOpStatusFound, start);
         app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_BioseqInfoCacheHit);
         return ePSGS_CacheHit;
     }
 
     if (m_NeedTrace)
-        m_Reply->SendTrace("Report cache no hit",
-                           m_Request->GetStartTimestamp());
+        x_SendTrace("Report cache no hit");
     timing.Register(processor, eLookupLmdbBioseqInfo, eOpStatusNotFound, start);
     app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_BioseqInfoCacheMiss);
     return ePSGS_CacheNotHit;
@@ -206,10 +195,8 @@ CPSGCache::x_LookupINSDCBioseqInfo(IPSGS_Processor *  processor,
     COperationTiming &      timing = app->GetTiming();
     try {
         if (m_NeedTrace) {
-            m_Reply->SendTrace(
-                    "Cache request for INSDC types: " +
-                    ToJsonString(fetch_request, "CACHE"),
-                    m_Request->GetStartTimestamp());
+            x_SendTrace("Cache request for INSDC types: " +
+                        ToJsonString(fetch_request, "CACHE"));
         }
 
         auto                            records = cache->FetchBioseqInfo(fetch_request);
@@ -226,7 +213,7 @@ CPSGCache::x_LookupINSDCBioseqInfo(IPSGS_Processor *  processor,
                        ToJsonString(item,
                                     SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
             }
-            m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
+            x_SendTrace(msg);
         }
 
         switch (decision.status) {
@@ -248,9 +235,7 @@ CPSGCache::x_LookupINSDCBioseqInfo(IPSGS_Processor *  processor,
         }
     } catch (const exception &  exc) {
         if (m_NeedTrace)
-            m_Reply->SendTrace("Cache fetch for INSDC types exception. "
-                               "Report failure.",
-                               m_Request->GetStartTimestamp());
+            x_SendTrace("Cache fetch for INSDC types exception. Report failure.");
 
         ERR_POST(Critical << "Exception while INSDC bioseq info cache lookup: "
                           << exc.what());
@@ -258,9 +243,7 @@ CPSGCache::x_LookupINSDCBioseqInfo(IPSGS_Processor *  processor,
         return ePSGS_CacheFailure;
     } catch (...) {
         if (m_NeedTrace)
-            m_Reply->SendTrace("Cache fetch for INSDC types exception. "
-                               "Report failure.",
-                               m_Request->GetStartTimestamp());
+            x_SendTrace("Cache fetch for INSDC types exception. Report failure.");
 
         ERR_POST(Critical << "Unknown exception while INSDC bioseq info cache lookup");
         app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_LMDBError);
@@ -269,16 +252,14 @@ CPSGCache::x_LookupINSDCBioseqInfo(IPSGS_Processor *  processor,
 
     if (cache_hit) {
         if (m_NeedTrace)
-            m_Reply->SendTrace("Report cache for INSDC types hit",
-                               m_Request->GetStartTimestamp());
+            x_SendTrace("Report cache for INSDC types hit");
         timing.Register(processor, eLookupLmdbBioseqInfo, eOpStatusFound, start);
         app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_BioseqInfoCacheHit);
         return ePSGS_CacheHit;
     }
 
     if (m_NeedTrace)
-        m_Reply->SendTrace("Report cache for INSDC types no hit",
-                           m_Request->GetStartTimestamp());
+        x_SendTrace("Report cache for INSDC types no hit");
     timing.Register(processor, eLookupLmdbBioseqInfo, eOpStatusNotFound, start);
     app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_BioseqInfoCacheMiss);
     return ePSGS_CacheNotHit;
@@ -308,10 +289,7 @@ CPSGCache::x_LookupSi2csi(IPSGS_Processor *  processor,
 
     try {
         if (m_NeedTrace) {
-            m_Reply->SendTrace(
-                "Cache request: " +
-                ToJsonString(fetch_request, "CACHE"),
-                m_Request->GetStartTimestamp());
+            x_SendTrace("Cache request: " + ToJsonString(fetch_request, "CACHE"));
         }
 
         auto    records = cache->FetchSi2Csi(fetch_request);
@@ -321,7 +299,7 @@ CPSGCache::x_LookupSi2csi(IPSGS_Processor *  processor,
             for (const auto &  item : records) {
                 msg += "\n" + ToJsonString(item);
             }
-            m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
+            x_SendTrace(msg);
         }
 
         switch (records.size()) {
@@ -342,10 +320,8 @@ CPSGCache::x_LookupSi2csi(IPSGS_Processor *  processor,
                 break;
             default:
                 if (m_NeedTrace) {
-                    m_Reply->SendTrace(
-                        to_string(records.size()) + " hits. "
-                        "Cannot decide what to choose so treat as no hit",
-                        m_Request->GetStartTimestamp());
+                    x_SendTrace(to_string(records.size()) + " hits. "
+                                "Cannot decide what to choose so treat as no hit");
                 }
 
                 // More than one record: there is no basis to choose, so
@@ -355,16 +331,14 @@ CPSGCache::x_LookupSi2csi(IPSGS_Processor *  processor,
         }
     } catch (const exception &  exc) {
         if (m_NeedTrace)
-            m_Reply->SendTrace("Cache fetch exception. Report failure.",
-                               m_Request->GetStartTimestamp());
+            x_SendTrace("Cache fetch exception. Report failure.");
         ERR_POST(Critical << "Exception while csi cache lookup: "
                           << exc.what());
         app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_LMDBError);
         return ePSGS_CacheFailure;
     } catch (...) {
         if (m_NeedTrace)
-            m_Reply->SendTrace("Cache fetch exception. Report failure.",
-                               m_Request->GetStartTimestamp());
+            x_SendTrace("Cache fetch exception. Report failure.");
         ERR_POST(Critical << "Unknown exception while csi cache lookup");
         app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_LMDBError);
         return ePSGS_CacheFailure;
@@ -373,16 +347,14 @@ CPSGCache::x_LookupSi2csi(IPSGS_Processor *  processor,
     COperationTiming &      timing = app->GetTiming();
     if (cache_hit) {
         if (m_NeedTrace)
-            m_Reply->SendTrace("Report cache hit",
-                               m_Request->GetStartTimestamp());
+            x_SendTrace("Report cache hit");
         timing.Register(processor, eLookupLmdbSi2csi, eOpStatusFound, start);
         app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_Si2csiCacheHit);
         return ePSGS_CacheHit;
     }
 
     if (m_NeedTrace)
-        m_Reply->SendTrace("Report cache no hit",
-                           m_Request->GetStartTimestamp());
+        x_SendTrace("Report cache no hit");
     timing.Register(processor, eLookupLmdbSi2csi, eOpStatusNotFound, start);
     app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_Si2csiCacheMiss);
     return ePSGS_CacheNotHit;
@@ -413,10 +385,7 @@ EPSGS_CacheLookupResult  CPSGCache::x_LookupBlobProp(
 
     try {
         if (m_NeedTrace) {
-            m_Reply->SendTrace(
-                "Cache request: " +
-                ToJsonString(fetch_request, "CACHE"),
-                m_Request->GetStartTimestamp());
+            x_SendTrace("Cache request: " + ToJsonString(fetch_request, "CACHE"));
         }
 
         auto    records = cache->FetchBlobProp(fetch_request);
@@ -426,7 +395,7 @@ EPSGS_CacheLookupResult  CPSGCache::x_LookupBlobProp(
             for (const auto &  item : records) {
                 msg += "\n" + ToJsonString(item);
             }
-            m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
+            x_SendTrace(msg);
         }
 
         switch (records.size()) {
@@ -448,10 +417,8 @@ EPSGS_CacheLookupResult  CPSGCache::x_LookupBlobProp(
                         max_last_modified_index = k;
                 }
                 if (m_NeedTrace) {
-                    m_Reply->SendTrace(
-                        "Record with max last_modified selected\n" +
-                        ToJsonString(records[max_last_modified_index]),
-                        m_Request->GetStartTimestamp());
+                    x_SendTrace("Record with max last_modified selected\n" +
+                                ToJsonString(records[max_last_modified_index]));
                 }
 
                 last_modified = records[max_last_modified_index].GetModified();
@@ -461,16 +428,14 @@ EPSGS_CacheLookupResult  CPSGCache::x_LookupBlobProp(
         }
     } catch (const exception &  exc) {
         if (m_NeedTrace)
-            m_Reply->SendTrace("Cache fetch exception. Report failure.",
-                               m_Request->GetStartTimestamp());
+            x_SendTrace("Cache fetch exception. Report failure.");
         ERR_POST(Critical << "Exception while blob prop cache lookup: "
                           << exc.what());
         app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_LMDBError);
         return ePSGS_CacheFailure;
     } catch (...) {
         if (m_NeedTrace)
-            m_Reply->SendTrace("Cache fetch exception. Report failure.",
-                               m_Request->GetStartTimestamp());
+            x_SendTrace("Cache fetch exception. Report failure.");
         ERR_POST(Critical << "Unknown exception while blob prop cache lookup");
         app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_LMDBError);
         return ePSGS_CacheFailure;
@@ -479,18 +444,22 @@ EPSGS_CacheLookupResult  CPSGCache::x_LookupBlobProp(
     COperationTiming &      timing = app->GetTiming();
     if (cache_hit) {
         if (m_NeedTrace)
-            m_Reply->SendTrace("Report cache hit",
-                               m_Request->GetStartTimestamp());
+            x_SendTrace("Report cache hit");
         timing.Register(processor, eLookupLmdbBlobProp, eOpStatusFound, start);
         app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_BlobPropCacheHit);
         return ePSGS_CacheHit;
     }
 
     if (m_NeedTrace)
-        m_Reply->SendTrace("Report cache no hit",
-                           m_Request->GetStartTimestamp());
+        x_SendTrace("Report cache no hit");
     timing.Register(processor, eLookupLmdbBlobProp, eOpStatusNotFound, start);
     app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_BlobPropCacheMiss);
     return ePSGS_CacheNotHit;
+}
+
+
+void CPSGCache::x_SendTrace(const string &  msg) const
+{
+    m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
 }
 

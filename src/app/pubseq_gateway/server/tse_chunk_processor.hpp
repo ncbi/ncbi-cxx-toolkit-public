@@ -113,9 +113,6 @@ private:
                            CCassSplitHistoryFetch *  fetch_details);
 
 private:
-    void x_Peek(bool  need_wait);
-    bool x_Peek(unique_ptr<CCassFetch> &  fetch_details,
-                bool  need_wait);
     void x_OnMyNCBIError(const string &  cookie,
                          CRequestStatus::ECode  status,
                          int  code,

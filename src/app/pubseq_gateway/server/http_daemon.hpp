@@ -78,7 +78,8 @@ public:
                 double  conn_force_close_wait_sec);
     ~CHttpDaemon();
 
-    void Run(std::function<void(CTcpDaemon &)> on_watch_dog = nullptr);
+    void Run(std::function<void(CTcpDaemon &)> on_watch_dog,
+             size_t  callback_queue_size);
     h2o_globalconf_t *  HttpCfg(void);
     uint16_t NumOfConnections(void) const;
     size_t GetBelowSoftLimitConnCount(void) const;

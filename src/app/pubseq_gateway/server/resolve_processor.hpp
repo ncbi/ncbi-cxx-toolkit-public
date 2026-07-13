@@ -74,11 +74,6 @@ private:
     void x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution);
 
 private:
-    void x_Peek(bool  need_wait);
-    bool x_Peek(unique_ptr<CCassFetch> &  fetch_details,
-                bool  need_wait);
-
-private:
     SPSGS_ResolveRequest *      m_ResolveRequest;
 };
 

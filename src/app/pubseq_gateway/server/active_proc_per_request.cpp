@@ -41,7 +41,7 @@ using namespace std;
 
 
 SActiveProcPerRequest   g_ActiveProcPerRequest;
-atomic<bool>            g_ActiveProcPerRequestLock;
+mutex                   g_ActiveProcPerRequestLock;
 
 
 void RegisterProcessorGroupName(const string &  group_name,
@@ -60,7 +60,7 @@ void RegisterActiveProcGroup(CPSGS_Request::EPSGS_Type  request_type,
 {
     size_t                      index = 0;
     auto *                      item = & g_ActiveProcPerRequest.m_ProcPerRequest[request_type];
-    CSpinlockGuard              guard(&g_ActiveProcPerRequestLock);
+    lock_guard<mutex>           guard(g_ActiveProcPerRequestLock);
 
     ++item->m_RequestCounter;
     for (const auto & proc: proc_group->m_Processors) {
@@ -75,7 +75,7 @@ void UnregisterActiveProcGroup(CPSGS_Request::EPSGS_Type  request_type,
 {
     size_t                      index = 0;
     auto *                      item = & g_ActiveProcPerRequest.m_ProcPerRequest[request_type];
-    CSpinlockGuard              guard(&g_ActiveProcPerRequestLock);
+    lock_guard<mutex>           guard(g_ActiveProcPerRequestLock);
 
     for (const auto & proc: proc_group->m_Processors) {
         index = g_ActiveProcPerRequest.GetProcessorIndex(proc.m_Processor->GetPriority());
@@ -103,7 +103,7 @@ size_t  GetActiveProcGroupCounter(void)
 SActiveProcPerRequest  GetActiveProcGroupSnapshot(void)
 {
     SActiveProcPerRequest       ret;
-    CSpinlockGuard              guard(&g_ActiveProcPerRequestLock);
+    lock_guard<mutex>           guard(g_ActiveProcPerRequestLock);
     ret = g_ActiveProcPerRequest;
     return ret;
 }

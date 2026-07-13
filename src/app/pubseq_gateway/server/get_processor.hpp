@@ -97,11 +97,6 @@ private:
                         unsigned int  data_size, int  chunk_no);
 
 private:
-    void x_Peek(bool  need_wait);
-    bool x_Peek(unique_ptr<CCassFetch> &  fetch_details,
-                bool  need_wait);
-
-private:
     SPSGS_BlobBySeqIdRequest *      m_BlobRequest;
     vector<SCass_BlobId>            m_ExcludeBlobs;
 };
