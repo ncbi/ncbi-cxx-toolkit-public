@@ -898,6 +898,7 @@ static struct SINTERNAL_Data* s_InternalMapper(const char** svc,
             net_info->path[0] = '\0';
         }
     }
+    assert(!(data->type & fSERV_Http) ^ !(data->type & (fSERV_Dns | fSERV_Standalone)));
     if (types  &&  !(data->type &= types))
         goto out;
     if ((frag = strchr(net_info->path, '#')) != 0) {
