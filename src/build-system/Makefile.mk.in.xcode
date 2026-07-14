@@ -3,6 +3,7 @@
 
 
 [Compiler]
+PtbExtensions = OTHER_CFLAGS
 ARCHS = x86_64 arm64
 GCC_WARN_ABOUT_RETURN_TYPE = YES
 GCC_WARN_UNUSED_VARIABLE = YES
@@ -19,13 +20,13 @@ GCC_ENABLE_CPP_EXCEPTIONS = YES
 GCC_ENABLE_CPP_RTTI = YES
 #SDKROOT = $(DEVELOPER_SDK_DIR)/MacOSX10.8.sdk
 SDKROOT =
-OTHER_CPLUSPLUSFLAGS = -std=gnu++20 -stdlib=libc++ -Wno-deprecated-register
+OTHER_CFLAGS = -mmacosx-version-min=14.0
+OTHER_CPLUSPLUSFLAGS = -std=gnu++20 -stdlib=libc++ -Wno-deprecated-register -mmacosx-version-min=14.0
 FRAMEWORK_SEARCH_PATHS = /System/Library/Frameworks/CoreServices.framework/Frameworks
 USE_HEADERMAP = NO
 
 [Compiler.x86_64]
-PtbExtensions = OTHER_CFLAGS
-OTHER_CFLAGS = -msse4.2
+OTHER_CFLAGS = -mmacosx-version-min=14.0 -msse4.2
 
 [Compiler.debug]
 COPY_PHASE_STRIP = NO
