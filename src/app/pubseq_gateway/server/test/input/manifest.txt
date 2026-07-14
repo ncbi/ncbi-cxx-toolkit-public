@@ -649,3 +649,9 @@ pir_without_type_db                     | -url "ID/resolve?seq_id=CCPC54&all_inf
 pir_ambiguity_cache                     | -url "ID/resolve?seq_id=A04056&use_cache=yes&disable_processor=osg"                                                                                                                   | resolve pir without type when multiple bioseq_info records selected   | resolve
 pir_ambiguity_db                        | -url "ID/resolve?seq_id=A04056&use_cache=no&disable_processor=osg"                                                                                                                    | resolve pir without type when multiple bioseq_info records selected   | resolve
 
+pdb_double_bar_cache                    | -url "ID/resolve?seq_id=2554901&fmt=json&all_info=yes&use_cache=yes&disable_processor=wgs"                                                                                            | resolve pdb when si2csi has double bar at the end                     | resolve
+pdb_double_bar_db                       | -url "ID/resolve?seq_id=2554901&fmt=json&all_info=yes&use_cache=no&disable_processor=wgs"                                                                                             | resolve pdb when si2csi has double bar at the end                     | resolve
+
+pdb_get_double_bar_cache                | -url "ID/get?seq_id=2554901&fmt=json&all_info=yes&use_cache=yes&disable_processor=wgs"                                                                                                | get pdb when si2csi has double bar at the end                     | get
+pdb_get_double_bar_db                   | -url "ID/get?seq_id=2554901&fmt=json&all_info=yes&use_cache=no&disable_processor=wgs"                                                                                                 | get pdb when si2csi has double bar at the end                     | get
+

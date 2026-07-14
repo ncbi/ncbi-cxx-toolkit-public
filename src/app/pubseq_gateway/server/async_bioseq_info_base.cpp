@@ -79,7 +79,8 @@ CPSGS_AsyncBioseqInfoBase::x_MakeRequest(void)
     details.reset(new CCassBioseqInfoFetch());
 
     string      accession = StripTrailingVerticalBars(
-                                m_BioseqResolution.GetBioseqInfo().GetAccession());
+                                m_BioseqResolution.GetBioseqInfo().GetAccession(),
+                                m_BioseqResolution.GetBioseqInfo().GetSeqIdType());
     CBioseqInfoFetchRequest     bioseq_info_request;
     bioseq_info_request.SetAccession(accession);
 

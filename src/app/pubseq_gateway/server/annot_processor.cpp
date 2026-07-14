@@ -246,7 +246,8 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
         // Note: the accession and seq_id_type may be adjusted in the bioseq
         // info record. However the request must be done using the original
         // accession and seq_id_type
-        string  accession = StripTrailingVerticalBars(bioseq_resolution.GetOriginalAccession());
+        string  accession = StripTrailingVerticalBars(bioseq_resolution.GetOriginalAccession(),
+                                                      bioseq_resolution.GetOriginalSeqIdType());
         CCassNAnnotTaskFetch *  fetch_task =
                 new CCassNAnnotTaskFetch(bioseq_na_keyspace.connection,
                                          bioseq_na_keyspace.keyspace,

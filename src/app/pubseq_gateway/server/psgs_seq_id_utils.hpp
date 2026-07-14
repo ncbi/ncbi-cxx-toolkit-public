@@ -52,7 +52,7 @@ struct SPSGSeqId {
 };
 
 void PSGSortSeqIds(list<SPSGSeqId>& seq_ids, IPSGS_Processor *  processor);
-string StripTrailingVerticalBars(const string &  seq_id);
+string StripTrailingVerticalBars(const string &  seq_id, int16_t  seq_id_type);
 CSeq_id_Base::E_Choice   DetectSeqIdTypeForIPG(const string &  seq_id);
 bool IsAccessionLike(const string &  user_input,
                      shared_ptr<CPSGS_Request> request,

@@ -188,7 +188,8 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveFinished(
     // Note: the part of the resolution process is a accession substitution
     // However the request must be done using the original accession and
     // seq_id_type
-    string      accession = StripTrailingVerticalBars(bioseq_resolution.GetOriginalAccession());
+    string      accession = StripTrailingVerticalBars(bioseq_resolution.GetOriginalAccession(),
+                                                      bioseq_resolution.GetOriginalSeqIdType());
     auto        sat_info = app->GetBioseqKeyspace();
     CCassAccVerHistoryTaskFetch *  fetch_task =
         new CCassAccVerHistoryTaskFetch(sat_info.connection,

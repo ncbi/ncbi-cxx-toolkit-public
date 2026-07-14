@@ -265,7 +265,7 @@ EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
     string* err_msg)
 {
     bool    need_trace = m_Request->NeedTrace();
-    string  stripped_seq_id = StripTrailingVerticalBars(request_seq_id);
+    string  stripped_seq_id = StripTrailingVerticalBars(request_seq_id, request_seq_id_type);
 
     // First variation of Set()
     if (request_seq_id_type > 0) {

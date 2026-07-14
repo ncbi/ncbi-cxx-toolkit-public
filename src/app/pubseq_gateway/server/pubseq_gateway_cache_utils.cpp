@@ -58,7 +58,8 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
     auto    version = bioseq_resolution.GetBioseqInfo().GetVersion();
     auto    seq_id_type = bioseq_resolution.GetBioseqInfo().GetSeqIdType();
     auto    gi = bioseq_resolution.GetBioseqInfo().GetGI();
-    string  seq_id = StripTrailingVerticalBars(bioseq_resolution.GetBioseqInfo().GetAccession());
+    string  seq_id = StripTrailingVerticalBars(bioseq_resolution.GetBioseqInfo().GetAccession(),
+                                               bioseq_resolution.GetBioseqInfo().GetSeqIdType());
 
     CBioseqInfoFetchRequest     fetch_request;
     fetch_request.SetAccession(seq_id);
@@ -180,7 +181,8 @@ CPSGCache::x_LookupINSDCBioseqInfo(IPSGS_Processor *  processor,
 
     auto    version = bioseq_resolution.GetBioseqInfo().GetVersion();
     auto    gi = bioseq_resolution.GetBioseqInfo().GetGI();
-    string  seq_id = StripTrailingVerticalBars(bioseq_resolution.GetBioseqInfo().GetAccession());
+    string  seq_id = StripTrailingVerticalBars(bioseq_resolution.GetBioseqInfo().GetAccession(),
+                                               bioseq_resolution.GetBioseqInfo().GetSeqIdType());
 
     CBioseqInfoFetchRequest     fetch_request;
     fetch_request.SetAccession(seq_id);
@@ -276,7 +278,8 @@ CPSGCache::x_LookupSi2csi(IPSGS_Processor *  processor,
     if (cache == nullptr)
         return ePSGS_CacheNotHit;
 
-    string  seq_id = StripTrailingVerticalBars(bioseq_resolution.GetBioseqInfo().GetAccession());
+    string  seq_id = StripTrailingVerticalBars(bioseq_resolution.GetBioseqInfo().GetAccession(),
+                                               bioseq_resolution.GetBioseqInfo().GetSeqIdType());
     auto    seq_id_type = bioseq_resolution.GetBioseqInfo().GetSeqIdType();
 
     CSi2CsiFetchRequest     fetch_request;

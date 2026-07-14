@@ -687,7 +687,7 @@ CPSGS_AsyncResolveBase::x_PreparePrimaryBioseqInfoQuery(
     details.reset(new CCassBioseqInfoFetch());
 
     CBioseqInfoFetchRequest     bioseq_info_request;
-    bioseq_info_request.SetAccession(StripTrailingVerticalBars(seq_id));
+    bioseq_info_request.SetAccession(StripTrailingVerticalBars(seq_id, seq_id_type));
     if (version != -1)
         bioseq_info_request.SetVersion(version);
     if (with_seq_id_type) {
@@ -745,7 +745,7 @@ CPSGS_AsyncResolveBase::x_PreparePrimaryBioseqInfoQuery(
 
 
 void CPSGS_AsyncResolveBase::x_PrepareSi2csiQuery(const string &  secondary_id,
-                                               int16_t  effective_seq_id_type)
+                                                  int16_t  effective_seq_id_type)
 {
     ++m_BioseqResolution.m_CassQueryCount;
 
@@ -753,7 +753,7 @@ void CPSGS_AsyncResolveBase::x_PrepareSi2csiQuery(const string &  secondary_id,
     details.reset(new CCassSi2csiFetch());
 
     CSi2CsiFetchRequest     si2csi_request;
-    si2csi_request.SetSecSeqId(StripTrailingVerticalBars(secondary_id));
+    si2csi_request.SetSecSeqId(StripTrailingVerticalBars(secondary_id, effective_seq_id_type));
     if (effective_seq_id_type != -1)
         si2csi_request.SetSecSeqIdType(effective_seq_id_type);
 

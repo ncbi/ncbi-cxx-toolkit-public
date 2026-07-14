@@ -116,8 +116,23 @@ void PSGSortSeqIds(list<SPSGSeqId>& seq_ids,
 }
 
 
-string StripTrailingVerticalBars(const string &  seq_id)
+string StripTrailingVerticalBars(const string &     seq_id,
+                                 int16_t            seq_id_type)
 {
+    if (seq_id_type == CSeq_id_Base::e_Pdb) {
+        // Special case for e_Pdb:
+        // - strip if '|' is only one
+        // - do not strip if there are 2 at the end
+        if (seq_id.size() >= 2) {
+            size_t      last_index = seq_id.size() - 1;
+            if (seq_id[last_index] == '|' && seq_id[last_index - 1] == '|') {
+                // It has "||" at the end, no stripping
+                return seq_id;
+            }
+        }
+    }
+
+    // Here: not e_Pdb seq id with double '||' at the end
     string      stripped_v_bars = seq_id;
     while (!stripped_v_bars.empty() && stripped_v_bars[stripped_v_bars.size() - 1] == '|') {
         stripped_v_bars.erase(stripped_v_bars.size() - 1, 1);
