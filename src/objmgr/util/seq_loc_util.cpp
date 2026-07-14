@@ -1038,6 +1038,10 @@ ECompare s_CompareOverlapping(const CSeq_loc& me,
                               TSynMap&        syns,
                               CScope*         scope)
 {
+    // shortcut using likely cached total range
+    if ( me.GetId() && you.GetId() && !me.GetTotalRange().IntersectingWith(you.GetTotalRange()) ) {
+        return eNoOverlap;
+    }
     TRangeInfoMap me_infos, you_infos;
     s_SeqLocToRangeInfoMap(me, me_infos, syns, scope);
     s_SeqLocToRangeInfoMap(you, you_infos, syns, scope);
