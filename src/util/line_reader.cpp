@@ -365,7 +365,7 @@ const char* s_MemChr2(const char* p, const char* end, char c1, char c2)
             return p;
         } else {
             const char* p3
-                = static_cast<const char*>(memchr(p, c2, p2 - p - 1));
+                = static_cast<const char*>(memchr(p, c2, p2 - p));
             if (p3 == nullptr) {
                 return p2;
             } else {
