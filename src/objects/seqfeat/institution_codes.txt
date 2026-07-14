@@ -5512,6 +5512,7 @@ NCCP<PAK>	c	National Culture Collection of Pakistan
 NCCPF	c	National Culture Collection of Pathogenic Fungi			
 NCDC	c	National Collection of Dairy Cultures			
 NCE	s	University of Newcastle upon Tyne, School of Biological Sciences			
+NCEF-FAAS	c	Fujian Academy of Agriculture Sciences, Institute of Edible & Medicinal Fungi,			
 NCF	s	Department of Forest Insects, Northwest College of Forestry			
 NCFB	c	National Collection of Food Bacteria	NCDO		
 NCH	s	Norwich Botanical Society			
