@@ -839,13 +839,15 @@ static bool fta_check_feat_overlap(const TGeneLocList& gelocs, Gene& g, const Mi
         auto it = gelop->ammp.begin();
         for (; it != gelop->ammp.end(); ++it) {
             auto   ammp = *it;
+            if (max < ammp.min || min > ammp.max)
+                continue;
             int    ver1 = 0;
             string label1;
             ammp.pId->GetLabel(&label1, &ver1);
             string label2;
             int    ver2 = 0;
             ml.pId->GetLabel(&label2, &ver2);
-            if (max < ammp.min || min > ammp.max || ver1 != ver2)
+            if (ver1 != ver2)
                 continue;
             if (label1 == label2)
                 break;
