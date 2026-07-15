@@ -69,7 +69,7 @@ static const char* x_OS(TNcbiOSType ostype)
     TNcbiOSType msb = x_Msb(ostype);
     switch (msb) {
     case fOS_Unknown:
-        return "unknown";
+        return "Unknown";
     case fOS_IRIX:
         return "IRIX";
     case fOS_Solaris:
@@ -94,7 +94,7 @@ static const char* x_Bits(TNcbiCapacity capacity)
     static char buf[40];
     switch (capacity) {
     case fCapacity_Unknown:
-        return "unknown";
+        return "Unknown";
     case fCapacity_32:
         return "32";
     case fCapacity_64:
@@ -226,8 +226,9 @@ int main(int argc, const char* argv[])
     } else
         val = 0;
 
-    CORE_LOGF(eLOG_Note, ("Looking for service `%s' type 0x%04X",
-                          service, types & fSERV_All));
+    CORE_LOGF(eLOG_Note, ("Looking up `%s' %sserver type(s) 0x%04X", service,
+                          types & fSERV_ReverseDns ? "REVERSE " : "",
+                          types & fSERV_All));
     verify((net_info = ConnNetInfo_Create(service)));
 
     if (!net_info->lb_disable  &&  parameter) {

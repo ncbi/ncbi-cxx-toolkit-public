@@ -315,7 +315,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
         goto out;
     }
     CORE_TRACEF(("[%s]  LBNULL using %sserver type \"%s\"",
-                 iter->name, iter->reverse_dns ? "REVERSED " : "", SERV_TypeStr(type)));
+                 iter->name, iter->reverse_dns ? "REVERSE " : "", SERV_TypeStr(type)));
 
     if (!iter->reverse_dns  &&  (type & fSERV_Http)) {
         vhost = ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
