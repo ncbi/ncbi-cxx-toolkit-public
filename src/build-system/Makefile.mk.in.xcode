@@ -26,7 +26,8 @@ FRAMEWORK_SEARCH_PATHS = /System/Library/Frameworks/CoreServices.framework/Frame
 USE_HEADERMAP = NO
 
 [Compiler.x86_64]
-OTHER_CFLAGS = -target arm64-apple-macos14.0 -msse4.2
+OTHER_CFLAGS = -target x86_64-apple-macos14.0 -msse4.2
+OTHER_CPLUSPLUSFLAGS = -std=gnu++20 -stdlib=libc++ -Wno-deprecated-register -target x86_64-apple-macos14.0
 
 [Compiler.debug]
 COPY_PHASE_STRIP = NO
