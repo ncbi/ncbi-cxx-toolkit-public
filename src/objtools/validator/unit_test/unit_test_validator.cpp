@@ -24691,6 +24691,7 @@ BOOST_AUTO_TEST_CASE(Test_NoCDSbetweenUTRs)
     TestUTRPair(true, true);
 }
 
+/* RW-2721 - temporarily disable until taxonomy issues have been resolved
 BOOST_AUTO_TEST_CASE(Test_FormatBadSpecificHostAlternateName)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
@@ -24711,6 +24712,7 @@ BOOST_AUTO_TEST_CASE(Test_FormatBadSpecificHostAlternateName)
 
     CLEAR_ERRORS
 }
+*/
 
 BOOST_FIXTURE_TEST_CASE(Test_VR_803, CGenBankFixture)
 {
