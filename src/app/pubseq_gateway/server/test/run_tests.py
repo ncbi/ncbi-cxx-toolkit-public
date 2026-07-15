@@ -11,23 +11,37 @@ def toInt(val):
 
 params = sys.argv[1:]
 if '-h' in params or '--help' in params:
-    print('Usage: run_tests.py [-h|--help] [--https] [host|port|host:port]')
+    print('Usage: run_tests.py [-h|--help] [--https] [--hup-cookie cookie] [host|port|host:port]')
     print('Default host: localhost')
     print('Default port: 2180')
     sys.exit(0)
 
-if len(params) not in [0, 1, 2]:
-    print('Incorrect number of arguments')
-    print('Use the --help option for more information')
-    sys.exit(1)
-
 host = None
 port = None
 https = False
+hup_cookie = None
 
 if '--https' in params:
     https = True
     params.remove('--https')
+
+for index in range(len(params)):
+    if params[index] == '--hup-cookie':
+        if index == len(params) - 1:
+            print('Incorrect arguments')
+            print('Use the --help option for more information')
+            sys.exit(1)
+        hup_cookie = params[index + 1]
+        del params[index]   # --hup-cookie
+        del params[index]   # cookie
+
+        # the cookie typically comes from a web interface so some characters
+        # need to be replaced
+        hup_cookie = hup_cookie.replace("%3D", "=")
+        hup_cookie = hup_cookie.replace("%3B", ";")
+        hup_cookie = hup_cookie.replace("%40", "@")
+        hup_cookie = hup_cookie.replace("%2540ncbi.nlm.nih.gov", "")
+        break
 
 if len(params) not in [0, 1]:
     print('Incorrect arguments')
@@ -71,7 +85,13 @@ if port is not None:
 else:
     server += ':2180'
 
+if not hup_cookie:
+    print('HUP cookie is not provided. The HUP tests will fail.')
+
+
 cmd = 'udc --variable PSG_SERVER:' + server + ' --variable PSG_HTTPS:' + str(https) + ' ' + dirname + '/psg.robot'
+if hup_cookie:
+    cmd = 'HUP_COOKIE="' + hup_cookie + '" ' + cmd
 retCode = os.system(cmd)
 if retCode != 0:
     low = retCode & 0xFF

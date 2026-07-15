@@ -10,7 +10,8 @@ usage() {
 
 cdir=$(dirname $0)
 https="False"
-cookie=""
+cookie="false"
+bad_cookie="false"
 
 while (( $# )); do
     case $1 in
@@ -46,9 +47,10 @@ while (( $# )); do
             https=$1
             ;;
         -cookie)
-            (( $# > 1 )) || usage
-            shift
-            cookie=$1
+            cookie="true"
+            ;;
+        -bad-cookie)
+            bad_cookie="true"
             ;;
         -h|*) # Help
             usage
@@ -244,8 +246,14 @@ if echo $TESTS | grep -w $obasename > /dev/null; then
 fi
 
 # The most common case
-if [[ "${cookie}" != "" ]]; then
-    curl "${curl_https}" -s --cookie "WebCubbyUser=\"${cookie}\"" -i "${full_url}" | grep --text -v '^HTTP/' | grep --text -v '^Connection: keep-alive' | grep --text -v '^transfer-encoding: chunked' | grep --text -v -i '^Date: ' | grep --text -v -i '^Server: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
+if [[ "${cookie}" == "true" || "${bad_cookie}" == "true" ]]; then
+    effective_cookie="${HUP_COOKIE}"
+    if [[ "${bad_cookie}" == "true" ]]; then
+        effective_cookie="invalid_cookie"
+    fi
+
+    # The HUP_COOKIE variable is set by the udc invoking script
+    curl "${curl_https}" -s --cookie "WebCubbyUser=\"${effective_cookie}\"" -i "${full_url}" | grep --text -v '^HTTP/' | grep --text -v '^Connection: keep-alive' | grep --text -v '^transfer-encoding: chunked' | grep --text -v -i '^Date: ' | grep --text -v -i '^Server: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
 else
     curl "${curl_https}" -s -i "${full_url}" | grep --text -v '^HTTP/' | grep --text -v '^Connection: keep-alive' | grep --text -v '^transfer-encoding: chunked' | grep --text -v -i '^Date: ' | grep --text -v -i '^Server: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
 fi
