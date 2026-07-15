@@ -684,6 +684,7 @@ BLMGJFO	s	Bureau of Land Management, Grand Junction Field Office
 BLMLK	s	Bureau of Land Management			
 BLMPR	s	Bureau of Land Management, Prineville Field Office			
 BLMRD	s	Redding Bureau of Land Management Field Office			
+BLRI	s	Blue Ridge Parkway			
 BLS	s	Bialystok University of Technology			
 BLT	s	Belfast Natural History and Philosophical Society			
 BLUZ	s	Museo de Biologia			
@@ -1328,6 +1329,7 @@ CIP<COL>	s	Centro de Investigaciones Pesqueras
 CIP<ECU>	c	International Potato Center			
 CIP<PER>	b	Centro Internacional de las Papas			
 CIPDE	c	Collection of Insect Pathogens, Dept. of Entomology			
+CIPHER	s	Centro Internacional de la Papa			
 CIPRU	s	Crop Improvement and Protection Research Unit			
 CIPT	c	Collection Institut Pasteur Tuberculose			
 CIQR	s	El Colegio de la Frontera Sur			
@@ -2771,6 +2773,7 @@ HAG	s	Universidad Nacional Amazonica de Madre de Dios (UNAMAD)
 HAH	s	Hoyt Arboretum			
 HAHV	s	Hungarian University of Agriculture and Life Sciences			
 HAI	s	University of Haifa			
+HAIKIAM	s	Universidad Regional Amazonica Ikiam			
 HAJB	s	Jardin Botanico Nacional			
 HAJU	s	Herbario Dr. Armando Jesus Urquiola			
 HAK	s	Hokkaido University, Faculty of Fisheries			
@@ -2816,6 +2819,7 @@ HBBS	s	Museo Civico di Scienze Naturali
 HBC	s	Henry Brockhouse Collection			
 HBCFS	s	Bard College Field Station			
 HBDC	s	Hebei Institute for Drug Control			
+HBE	s	Private Herbarium of Frantisek Bednar			
 HBEI	s	Fundacao Universidade Federal do Pampa			
 HBFC	s	Hebei Forestry College, Basic Courses Department			
 HBFH	s	Harbor Branch Oceanographic Institution, Marine Botany Department			
@@ -2918,6 +2922,7 @@ HFLA	s	Sapienza University of Rome - Scuola di Specializzazione in Beni Naturali
 HFN	s	Herbarium Frisicum			
 HFP	c	Hokkaido Forest Products Research Institute			
 HFR	s	Finnish Forest Research Institute			
+HFRH	s	California State Polytechnic University Humboldt			
 HFRI	s	Hunan Forestry Research Institute			
 HFSL	s	Centro de Ensino, Faculdade Sao Lucas Ltda.			
 HFU	s	Herbarium of Fayoum University			
@@ -3226,6 +3231,7 @@ HUMO	s	Universidad Autonoma del Estado de Morelos, Centro de Educacion Ambiental
 HUMP	s	Muzeum v Humpolci			
 HUMZ	s	Hokkaido University, Laboratory of Marine Zoology			
 HUMZ<IRN>	s	University of Mazandaran			
+HUNC	s	Universidad Nacional de Cajamarca			
 HUNEB	s	Universidade do Estado da Bahia			
 HUNI	s	Universidade Federal do Estado do Rio de Janeiro			
 HUNPHU	s	Universidad Nacional Pedro Henriquez Urena			
@@ -4038,6 +4044,7 @@ KLA	s	Herbarium, Department of Agriculture, Malaysia
 KLE	s	University of Keele, Biological Sciences Department			
 KLGU	s	Kaliningrad State University, Department of Botany and Plant Ecology			
 KLH	s	K. E. Tsiolkovsky Kaluga State Pedagogical University, Department of Botany and Ecology			
+KLM	s	Sladecek Museum of Local History			
 KLN	s	Lynn Museum and Art Gallery			
 KLU	s	University of Malaya			
 KM<CAN>	s	Kelowna Museum			
@@ -4058,6 +4065,7 @@ KMU	s	Karl-Marx-Universitat Leipzeg
 KMUT	s	Komaba Museum, University of Tokyo			
 KMV	s	Kunming Municipal Museum			
 KMVC	s	Krajske Muzeum Vychodnich Cech			
+KN	s	Kyung Hee University Natural History Museum			
 KNFHC	s	Klamath National Forest			
 KNFY	s	Klamath National Forest, Resources Department			
 KNH	s	Kongju National University			
@@ -4675,6 +4683,7 @@ MBY	s	Museum Biologi Yogyakarta
 MBZH	s	Museo y Biblioteca de la Zoologia			
 MC	s	Avery Island Archives			
 MCA	s	Muhlenberg College, Biology Department			
+MCALBA	s	Museo Civico Archeologico e di Scienze Naturali Federico Eusebio			
 MCAS	s	Museo Civico Archeologico e di Scienze Naturali "F. Eusebio"			
 MCAT	s	Museo Civico Alpino Arnaldo Tazzetti			
 MCBR	s	Museo Civico "Baldassarre Romano"			
@@ -5084,6 +5093,7 @@ MNNIT	c	Motilal Nehru National Institute of Technology
 MNNW	s	Museum fur Naturkunde			
 MNRJ	s	Museu Nacional/Universidade Federal de Rio de Janeiro	MN		
 MNSB	s	Museum of Natural Sciences			
+MNSCOL	s	Leceo Classico Virgilio			
 MNSL	s	Museum of Natural Sciences			
 MNT	s	Montserrat National Trust			
 MNUFR	s	Mongolian National University			
@@ -5369,10 +5379,12 @@ MWC	s	Museum of Western Colorado
 MWCF	s	Mary Washington College, Department of Biology			
 MWFB	s	University of California, Davis, Museum of Wildlife and Fisheries Biology			
 MWG	s	Moscow State University, Department of Biogeography			
+MWH	s	M. White Herbarium			
 MWI	s	R. M. Myers Herbarium Western Illinois University			
 MWNH	s	Museum Wiesbaden, Department of Natural Science			
 MWSJ	s	Missouri Western State College, Biology Department			
 MY	s	Universidad Central de Venezuela, Botanica			
+MYCL	s	Mycotheca			
 MYCO	s	The Hoosier Mushroom Society			
 MYDC	s	Mianyang Institute for Drug Control			
 MYF	s	Universidad Central de Venezuela			
@@ -6303,6 +6315,7 @@ PKM	s	V. G. Belinsk Pedagogical Institute of Penza
 PKNU	s	Pukyong National University			
 PL	s	Zapadoceske muzeum			
 PLAT	s	State University of New York, College at Plattsburgh			
+PLE	s	Pymatuning Laboratory of Ecology			
 PLES	s	Plyos State Museum			
 PLFV	s	Principality of Liechtenstein			
 PLH	s	Plymouth City Museum and Art Gallery			
@@ -6474,6 +6487,7 @@ PUM	s	Universita DI Pisa
 PUN	s	Punjabi University, Botany Department			
 PUO	s	Portland University			
 PUP	s	University of Peshawar, Botany Department			
+PUPH	s	Polytechnic University of the Philippines			
 PUR	s	Arthur Herbarium Purdue University			
 PURC	s	Purdue University			
 PUS	s	Puslinch House			
@@ -6758,6 +6772,7 @@ RSPF	s	Universidade de Passo Fundo
 RSPP	s	Rockefeller State Park Preserve			
 RSU	s	Ryazan State University			
 RSY	s	Buteshire Natural History Society, The Museum			
+RTC	s	Station Biologique de Roscoff			
 RTCI	c	Research Laboratory, Takeda Chemical Industry			
 RTE	s	Holmesdale Natural History Club Museum			
 RTHM	s	Munidipal Museum and Art Gallery			
@@ -7092,6 +7107,7 @@ SIIS	s	Staten Island Institute of Arts and Sciences
 SIM	s	Staten Island Institute of Arts and Sciences, Science Department			
 SIMF	s	Taurida National University, Botany Department			
 SIMS	s	Sherkin Island Marine Station			
+SINAI	s	Arish University			
 SINDH	s	University of Sindh, Jamshoro			
 SING	s	Singapore Botanic Gardens			
 SINU	s	National University of Singapore, Biological Sciences Department			
@@ -7488,6 +7504,7 @@ SUHC	s	Salisbury University, Department of Biology
 SUK	s	Shivaji University Kolhapur			
 SUM<CZE>	s	Okresni vlastivedne muzeum v Sumperku			
 SUM<ZAF>	s	Stellenbosch University			
+SUMAS	s	Igbo-Eno Udenu Local Government Area Enugu State Nigeria			
 SUMCC	s	Sohag University			
 SUN	s	Sunderland Museum			
 SUND	s	Sunderland Natural History and Antiquarian Society			
@@ -7611,6 +7628,7 @@ TAU<ISR>	s	Tel-Aviv University
 TAUF	s	Aristotle University of Thessaloniki, Laboratory of Forest Botany - Geobotany			
 TAUH	s	Taibah University			
 TAWES	s	Maryland Department of Natural Resources			
+TAY	s	Taylor University			
 TB	s	Tbilisi State University, Botany Department			
 TBG	b	Tsukuba Botanical Garden			
 TBGH	s	Telangana Botanical Garden, Dr. BRR Government Degree College, Jadcherla			
@@ -9045,6 +9063,7 @@ YUZM	s	Yasouj University Zoological Museum
 YXDC	s	Yuxi District Institute for Drug Control			
 YZB	s	Rare plants research institute of Yangtze river, Hubei province			
 YZU	s	Yuzhou University			
+YZUH	s	Yangtze University			
 Z	sb	Institut fur Systematische Botanik Universitat Zurich			
 ZAD	s	Mount Makulu Research Station			
 ZAGR 	s	University of Zagreb	ZAGR		
