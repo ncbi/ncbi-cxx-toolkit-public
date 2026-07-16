@@ -9876,6 +9876,10 @@ case "$host_os:$compiler:$compiler_version" in
          done
          CC="$CC $TARGET"
          CXX="$CXX $TARGET"
+      elif test "$with_ncbi_public" = yes; then
+         TARGET='-mmacosx-version-min=14.0'
+         CC="$CC $TARGET"
+         CXX="$CXX $TARGET"
       fi
    else
       LDFLAGS="-Wl,-flat_namespace -Wl,-headerpad_max_install_names $LDFLAGS"
