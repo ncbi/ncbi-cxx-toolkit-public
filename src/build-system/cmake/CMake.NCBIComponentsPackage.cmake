@@ -307,4 +307,6 @@ if(NCBI_COMPONENT_IPS4O_FOUND)
     set(HAVE_IPS4O_HPP TRUE)
 endif()
 
-
+#############################################################################
+# ARROW
+NCBI_define_Pkgcomponent(NAME ARROW PACKAGE Arrow FIND Arrow)

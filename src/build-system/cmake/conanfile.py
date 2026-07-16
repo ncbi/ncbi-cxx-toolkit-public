@@ -14,6 +14,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         "with_req": ""
     }
     _req_map = {
+        "ARROW":      ["arrow"],
         "AWS_SDK":    ["aws-sdk-cpp"],
         "BACKWARD":   ["backward-cpp"],
         "BerkeleyDB": ["libdb"],
@@ -70,6 +71,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
             print("NCBI artifactory is not found")
 
         self._default_requires("abseil/[>=20230125.3 <=20250127.0]")
+        self._optional_requires("arrow/24.0.0")
         self._optional_requires("aws-sdk-cpp/[>=1.9.234 <=1.11.352]")
         if self.settings.os == "Linux":
             self._default_requires("backward-cpp/1.6")

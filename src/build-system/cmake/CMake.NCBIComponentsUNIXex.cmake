@@ -149,6 +149,7 @@ set(NCBI_ThirdParty_OPENTELEMETRY ${NCBI_TOOLS_ROOT}/opentelemetry-cpp-1.20.0 CA
 set(NCBI_ThirdParty_AWS_SDK       ${NCBI_TOOLS_ROOT}/aws-sdk-cpp-1.11.245 CACHE PATH "AWS_SDK root")
 set(NCBI_ThirdParty_TBB           ${NCBI_TOOLS_ROOT}/oneTBB-2022.3.0 CACHE PATH "(one)TBB root")
 set(NCBI_ThirdParty_IPS4O         ${NCBI_TOOLS_ROOT}/ips4o-0.0.20250115 CACHE PATH "IPS4o root")
+set(NCBI_ThirdParty_ARROW         ${NCBI_TOOLS_ROOT}/apache-arrow-21.0.0 CACHE PATH "ARROW root")
 
 #############################################################################
 #############################################################################
@@ -1018,3 +1019,8 @@ if(NOT NCBI_COMPONENT_IPS4O_FOUND)
             "-I${NCBI_COMPONENT_IPS4O_INCLUDE} -I${TBB_INCLUDE_DIR}")
     endif()
 endif()
+
+#############################################################################
+# ARROW
+NCBI_define_Xcomponent(NAME ARROW LIB parquet arrow arrow_bundled_dependencies ADD_COMPONENT THRIFT)
+NCBIcomponent_report(ARROW)
