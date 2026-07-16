@@ -319,6 +319,8 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 /* Substitute (redirected) service name */
 #define REG_CONN_SERVICE_NAME       DEF_CONN_REG_SECTION "_" "SERVICE_NAME"
 
+/* Server type restriction override */
+#define REG_CONN_SERVER_TYPE        DEF_CONN_REG_SECTION "_" "SERVER_TYPE"
 
 /* Local service dispatcher */
 #define REG_CONN_LOCAL_SERVICES     DEF_CONN_REG_SECTION "_" "LOCAL_SERVICES"

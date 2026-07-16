@@ -181,16 +181,16 @@ int main(int argc, const char* argv[])
             *((char*) val) = '\0';
             if (strcmp(++val, "-") == 0)
                 val = 0;
-            CORE_LOGF(eLOG_Note, ("Using argument affinity %s=%s%s%s", arg,
-                                  val ? "\"" : "",
-                                  val ? val  : "NULL",
-                                  val ? "\"" : ""));
+            CORE_LOGF(eLOG_Note, ("Using argument affinity %s%s%s%s", arg,
+                                  val ? "=\"" : "",
+                                  val ? val   : "",
+                                  val ? "\""  : ""));
             okay = 1/*true*/;
         }
         for (a += okay;  a < argc;  ++a) {
             ESERV_Type type;
             if (strcasecmp(argv[a], "ANY") == 0) {
-                CORE_LOG(eLOG_Note, "Resetting service type to ANY");
+                CORE_LOG(eLOG_Note, "Resetting server types to ANY");
                 types &= ~fSERV_All;
                 continue;
             }
@@ -198,11 +198,11 @@ int main(int argc, const char* argv[])
                 &&  !*value  &&  type != fSERV_Firewall) {
                 if (a == 2 + okay) {
                     CORE_LOGF(eLOG_Note,
-                              ("Setting service type to %s", argv[a]));
+                              ("Setting server type to %s", argv[a]));
                     types  = type;
                 } else {
                     CORE_LOGF(eLOG_Note,
-                              ("Including service type %s", argv[a]));
+                              ("Including server type %s", argv[a]));
                     types |= type;
                 }
                 continue;
@@ -226,7 +226,7 @@ int main(int argc, const char* argv[])
     } else
         val = 0;
 
-    CORE_LOGF(eLOG_Note, ("Looking up `%s' %sserver type(s) 0x%04X", service,
+    CORE_LOGF(eLOG_Note, ("Looking up `%s' of %sserver type(s) 0x%04X", service,
                           types & fSERV_ReverseDns ? "REVERSE " : "",
                           types & fSERV_All));
     verify((net_info = ConnNetInfo_Create(service)));
