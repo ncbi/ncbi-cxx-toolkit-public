@@ -107,6 +107,7 @@ if (APPLE)
     endif()
     string(REPLACE " " "," HOST_CPU ${HOST_CPU})
     string(REPLACE ";" "," HOST_CPU ${HOST_CPU})
+    set(CMAKE_OSX_DEPLOYMENT_TARGET 14.0)
 endif(APPLE)
 
 
