@@ -58,8 +58,19 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
     auto    version = bioseq_resolution.GetBioseqInfo().GetVersion();
     auto    seq_id_type = bioseq_resolution.GetBioseqInfo().GetSeqIdType();
     auto    gi = bioseq_resolution.GetBioseqInfo().GetGI();
-    string  seq_id = StripTrailingVerticalBars(bioseq_resolution.GetBioseqInfo().GetAccession(),
-                                               bioseq_resolution.GetBioseqInfo().GetSeqIdType());
+    string  seq_id;
+
+    if (bioseq_resolution.m_ResolutionResult == ePSGS_Si2csiCache ||
+        bioseq_resolution.m_ResolutionResult == ePSGS_Si2csiDB ||
+        bioseq_resolution.m_ResolutionResult == ePSGS_BioseqCache ||
+        bioseq_resolution.m_ResolutionResult == ePSGS_BioseqDB) {
+        // No need to strip trailing bars because the data are coming from the
+        // cassandra DB
+        seq_id = bioseq_resolution.GetBioseqInfo().GetAccession();
+    } else {
+        seq_id = StripTrailingVerticalBars(bioseq_resolution.GetBioseqInfo().GetAccession(),
+                                           bioseq_resolution.GetBioseqInfo().GetSeqIdType());
+    }
 
     CBioseqInfoFetchRequest     fetch_request;
     fetch_request.SetAccession(seq_id);
@@ -181,8 +192,19 @@ CPSGCache::x_LookupINSDCBioseqInfo(IPSGS_Processor *  processor,
 
     auto    version = bioseq_resolution.GetBioseqInfo().GetVersion();
     auto    gi = bioseq_resolution.GetBioseqInfo().GetGI();
-    string  seq_id = StripTrailingVerticalBars(bioseq_resolution.GetBioseqInfo().GetAccession(),
-                                               bioseq_resolution.GetBioseqInfo().GetSeqIdType());
+    string  seq_id;
+
+    if (bioseq_resolution.m_ResolutionResult == ePSGS_Si2csiCache ||
+        bioseq_resolution.m_ResolutionResult == ePSGS_Si2csiDB ||
+        bioseq_resolution.m_ResolutionResult == ePSGS_BioseqCache ||
+        bioseq_resolution.m_ResolutionResult == ePSGS_BioseqDB) {
+        // No need to strip trailing bars because the data are coming from the
+        // cassandra DB
+        seq_id = bioseq_resolution.GetBioseqInfo().GetAccession();
+    } else {
+        seq_id = StripTrailingVerticalBars(bioseq_resolution.GetBioseqInfo().GetAccession(),
+                                           bioseq_resolution.GetBioseqInfo().GetSeqIdType());
+    }
 
     CBioseqInfoFetchRequest     fetch_request;
     fetch_request.SetAccession(seq_id);
@@ -278,8 +300,18 @@ CPSGCache::x_LookupSi2csi(IPSGS_Processor *  processor,
     if (cache == nullptr)
         return ePSGS_CacheNotHit;
 
-    string  seq_id = StripTrailingVerticalBars(bioseq_resolution.GetBioseqInfo().GetAccession(),
-                                               bioseq_resolution.GetBioseqInfo().GetSeqIdType());
+    string  seq_id;
+    if (bioseq_resolution.m_ResolutionResult == ePSGS_Si2csiCache ||
+        bioseq_resolution.m_ResolutionResult == ePSGS_Si2csiDB ||
+        bioseq_resolution.m_ResolutionResult == ePSGS_BioseqCache ||
+        bioseq_resolution.m_ResolutionResult == ePSGS_BioseqDB) {
+        // No need to strip trailing bars because the data are coming from the
+        // cassandra DB
+        seq_id = bioseq_resolution.GetBioseqInfo().GetAccession();
+    } else {
+        seq_id = StripTrailingVerticalBars(bioseq_resolution.GetBioseqInfo().GetAccession(),
+                                           bioseq_resolution.GetBioseqInfo().GetSeqIdType());
+    }
     auto    seq_id_type = bioseq_resolution.GetBioseqInfo().GetSeqIdType();
 
     CSi2CsiFetchRequest     fetch_request;

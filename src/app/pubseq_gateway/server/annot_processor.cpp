@@ -246,8 +246,19 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
         // Note: the accession and seq_id_type may be adjusted in the bioseq
         // info record. However the request must be done using the original
         // accession and seq_id_type
-        string  accession = StripTrailingVerticalBars(bioseq_resolution.GetOriginalAccession(),
-                                                      bioseq_resolution.GetOriginalSeqIdType());
+        string  accession;
+        if (bioseq_resolution.m_ResolutionResult == ePSGS_Si2csiCache ||
+            bioseq_resolution.m_ResolutionResult == ePSGS_Si2csiDB ||
+            bioseq_resolution.m_ResolutionResult == ePSGS_BioseqCache ||
+            bioseq_resolution.m_ResolutionResult == ePSGS_BioseqDB) {
+            // No need to strip trailing bars because the data are coming from the
+            // cassandra DB
+            accession = bioseq_resolution.GetOriginalAccession();
+        } else {
+            accession = StripTrailingVerticalBars(bioseq_resolution.GetOriginalAccession(),
+                                                  bioseq_resolution.GetOriginalSeqIdType());
+        }
+
         CCassNAnnotTaskFetch *  fetch_task =
                 new CCassNAnnotTaskFetch(bioseq_na_keyspace.connection,
                                          bioseq_na_keyspace.keyspace,

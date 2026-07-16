@@ -78,9 +78,21 @@ CPSGS_AsyncBioseqInfoBase::x_MakeRequest(void)
     shared_ptr<CCassBioseqInfoFetch>   details;
     details.reset(new CCassBioseqInfoFetch());
 
-    string      accession = StripTrailingVerticalBars(
+    string      accession;
+
+    if (m_BioseqResolution.m_ResolutionResult == ePSGS_Si2csiCache ||
+        m_BioseqResolution.m_ResolutionResult == ePSGS_Si2csiDB ||
+        m_BioseqResolution.m_ResolutionResult == ePSGS_BioseqCache ||
+        m_BioseqResolution.m_ResolutionResult == ePSGS_BioseqDB) {
+        // No need to strip trailing bars because the data are coming from the
+        // cassandra DB
+        accession = m_BioseqResolution.GetBioseqInfo().GetAccession();
+    } else {
+        accession = StripTrailingVerticalBars(
                                 m_BioseqResolution.GetBioseqInfo().GetAccession(),
                                 m_BioseqResolution.GetBioseqInfo().GetSeqIdType());
+    }
+
     CBioseqInfoFetchRequest     bioseq_info_request;
     bioseq_info_request.SetAccession(accession);
 

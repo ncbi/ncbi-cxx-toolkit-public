@@ -163,7 +163,8 @@ private:
                                          CBioseqInfoRecord::TVersion  version,
                                          CBioseqInfoRecord::TSeqIdType  seq_id_type,
                                          CBioseqInfoRecord::TGI  gi,
-                                         bool  with_seq_id_type);
+                                         bool  with_seq_id_type,
+                                         bool  data_from_db);
     void x_PrepareAccessionLikeBioseqInfoQuery(void);
     void x_PrepareSecondarySi2csiQuery(void);
     void x_PrepareSecondaryAsIsSi2csiQuery(void);

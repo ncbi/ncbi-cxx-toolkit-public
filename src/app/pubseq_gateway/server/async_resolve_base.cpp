@@ -523,7 +523,9 @@ void CPSGS_AsyncResolveBase::x_Process(void)
                                              m_EffectiveSeqIdType)) {
                     m_ResolveStage = eFinished;
                     x_PreparePrimaryBioseqInfoQuery(m_PrimarySeqId, m_EffectiveVersion,
-                                                    m_EffectiveSeqIdType, -1, true);
+                                                    m_EffectiveSeqIdType, -1,
+                                                    true,   // true => with seq id type
+                                                    false); // false => data is not from db
                 }
                 break;
             }
@@ -548,9 +550,10 @@ void CPSGS_AsyncResolveBase::x_Process(void)
         case ePrimaryBioseq:
             m_ResolveStage = eSecondarySi2csi;
 
-            // true => with seq_id_type
             x_PreparePrimaryBioseqInfoQuery(m_PrimarySeqId, m_EffectiveVersion,
-                                            m_EffectiveSeqIdType, -1, true);
+                                            m_EffectiveSeqIdType, -1,
+                                            true,   // true => with seq_id_type
+                                            false); // false => data is not from db
             break;
 
         case eSecondarySi2csi:
@@ -573,13 +576,20 @@ void CPSGS_AsyncResolveBase::x_Process(void)
             // Really, there is no stage after that. This is post processing.
             // What is done is defined in the found or error callbacks.
             // true => with seq_id_type
-            m_ResolveStage = eAsLikelyAccessionBioseq;
-            x_PreparePrimaryBioseqInfoQuery(
-                m_BioseqResolution.GetBioseqInfo().GetAccession(),
-                m_BioseqResolution.GetBioseqInfo().GetVersion(),
-                m_BioseqResolution.GetBioseqInfo().GetSeqIdType(),
-                m_BioseqResolution.GetBioseqInfo().GetGI(),
-                true);
+            {
+                bool  data_from_db = (m_BioseqResolution.m_ResolutionResult == ePSGS_Si2csiCache ||
+                                      m_BioseqResolution.m_ResolutionResult == ePSGS_Si2csiDB ||
+                                      m_BioseqResolution.m_ResolutionResult == ePSGS_BioseqCache ||
+                                      m_BioseqResolution.m_ResolutionResult == ePSGS_BioseqDB);
+                m_ResolveStage = eAsLikelyAccessionBioseq;
+                x_PreparePrimaryBioseqInfoQuery(
+                    m_BioseqResolution.GetBioseqInfo().GetAccession(),
+                    m_BioseqResolution.GetBioseqInfo().GetVersion(),
+                    m_BioseqResolution.GetBioseqInfo().GetSeqIdType(),
+                    m_BioseqResolution.GetBioseqInfo().GetGI(),
+                    true,   // true => with seq id type
+                    data_from_db);
+            }
             break;
         case eAsLikelyAccessionBioseq:
             m_ResolveStage = eFinished;
@@ -675,7 +685,8 @@ CPSGS_AsyncResolveBase::x_PreparePrimaryBioseqInfoQuery(
                             CBioseqInfoRecord::TVersion  version,
                             CBioseqInfoRecord::TSeqIdType  seq_id_type,
                             CBioseqInfoRecord::TGI  gi,
-                            bool  with_seq_id_type)
+                            bool  with_seq_id_type,
+                            bool  data_from_db)
 {
     ++m_BioseqResolution.m_CassQueryCount;
     m_BioseqInfoRequestedAccession = seq_id;
@@ -687,7 +698,14 @@ CPSGS_AsyncResolveBase::x_PreparePrimaryBioseqInfoQuery(
     details.reset(new CCassBioseqInfoFetch());
 
     CBioseqInfoFetchRequest     bioseq_info_request;
-    bioseq_info_request.SetAccession(StripTrailingVerticalBars(seq_id, seq_id_type));
+    string                      accession;
+
+    if (data_from_db) {
+        accession = seq_id;
+    } else {
+        accession = StripTrailingVerticalBars(seq_id, seq_id_type);
+    }
+    bioseq_info_request.SetAccession(accession);
     if (version != -1)
         bioseq_info_request.SetVersion(version);
     if (with_seq_id_type) {
@@ -753,7 +771,11 @@ void CPSGS_AsyncResolveBase::x_PrepareSi2csiQuery(const string &  secondary_id,
     details.reset(new CCassSi2csiFetch());
 
     CSi2CsiFetchRequest     si2csi_request;
-    si2csi_request.SetSecSeqId(StripTrailingVerticalBars(secondary_id, effective_seq_id_type));
+
+    // Note: a lookup in the si2csi table is always first so stripping of the
+    // seq id is done unconditionally
+    si2csi_request.SetSecSeqId(StripTrailingVerticalBars(secondary_id,
+                                                         effective_seq_id_type));
     if (effective_seq_id_type != -1)
         si2csi_request.SetSecSeqIdType(effective_seq_id_type);
 
@@ -873,7 +895,8 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
             x_PreparePrimaryBioseqInfoQuery(
                 m_BioseqInfoRequestedAccession, m_BioseqInfoRequestedVersion,
                 m_BioseqInfoRequestedSeqIdType, m_BioseqInfoRequestedGI,
-                false);
+                false,  // false => without seq id type
+                true);  // true => data is from db
             return;
         }
 

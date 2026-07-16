@@ -185,11 +185,22 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveFinished(
     shared_ptr<CCassAccVerHistoryFetch> details;
     details.reset(new CCassAccVerHistoryFetch(*m_AccVerHistoryRequest));
 
-    // Note: the part of the resolution process is a accession substitution
+    // Note: the part of the resolution process is an accession substitution
     // However the request must be done using the original accession and
     // seq_id_type
-    string      accession = StripTrailingVerticalBars(bioseq_resolution.GetOriginalAccession(),
-                                                      bioseq_resolution.GetOriginalSeqIdType());
+    string      accession;
+    if (bioseq_resolution.m_ResolutionResult == ePSGS_Si2csiCache ||
+        bioseq_resolution.m_ResolutionResult == ePSGS_Si2csiDB ||
+        bioseq_resolution.m_ResolutionResult == ePSGS_BioseqCache ||
+        bioseq_resolution.m_ResolutionResult == ePSGS_BioseqDB) {
+        // No need to strip trailing bars because the data are coming from the
+        // cassandra DB
+        accession = bioseq_resolution.GetOriginalAccession();
+    } else {
+        accession = StripTrailingVerticalBars(bioseq_resolution.GetOriginalAccession(),
+                                              bioseq_resolution.GetOriginalSeqIdType());
+    }
+
     auto        sat_info = app->GetBioseqKeyspace();
     CCassAccVerHistoryTaskFetch *  fetch_task =
         new CCassAccVerHistoryTaskFetch(sat_info.connection,
