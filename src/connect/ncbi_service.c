@@ -318,27 +318,23 @@ size_t SERV_CheckDomain(const char* domain)
 static const char* x_ServiceScheme(const char* svc, ESERV_Type* type)
 {
     const char* scheme = strstr(svc, "://");
-    ESERV_Type x_type;
     size_t len;
     char* tmp;
 
-    if (!scheme  ||  !scheme[3])
-        return svc;
-
-    len = (size_t)(scheme - svc);
-    if (len <= sizeof(NCBI_SCHEME_SERVICE))
+    if (!scheme  ||  !scheme[3]  ||  (len = (size_t)(scheme - svc)) <= sizeof(NCBI_SCHEME_SERVICE))
         return svc;
     len -= sizeof(NCBI_SCHEME_SERVICE);
     if (strncasecmp(svc + len, "+" NCBI_SCHEME_SERVICE, sizeof(NCBI_SCHEME_SERVICE)) != 0)
         return svc;
 
-    // Special case
+    /* Special case */
     if (len == 3  &&  strncasecmp(svc, "tcp", 3) == 0) {
         *type = fSERV_Standalone;
         return scheme + 3;
     }
-    // Look for a standard server type, excluding FIREWALL
+    /* Look for a standard server type, excluding FIREWALL */
     if ((tmp = strndup(svc, len)) != 0) {
+        ESERV_Type  x_type;
         const char* end = SERV_ReadType(tmp, &x_type);
         if (end  &&  !*end  &&  x_type != fSERV_Firewall) {
             svc = scheme + 3;
@@ -1108,26 +1104,27 @@ static SERV_ITER x_Open(const char*         service,
                          val  ? val            : "", &"\""[!val],
                          val  ? " ignored"     : ""));
             if (val)
-                type = (ESERV_Type) fSERV_Any;
+                type = (ESERV_Type) fSERV_Any/*0*/;
         } else if (*val)
             type = x_type;
     }
     if (type/*!= fSERV_Any*/) {
-        assert(!(type & fSERV_Stateless));
         assert(svc  &&  *svc);
-        if (!(types & fSERV_All))
-            types |= type;
-        else if (types & type) {
+        assert(!(type & (fSERV_Stateless | fSERV_Firewall)));
+        if (types & type) {
             TSERV_TypeOnly x_types = (TSERV_TypeOnly)(types & type);
             types = (types & ~fSERV_All) | x_types;
             assert(x_types);
+        } else if (!(types & fSERV_All)  &&  type != fSERV_Dns) {
+            /* NB: fSERV_Dns must always be requested explicitly */
+            types |= type;
         } else {
             if (url) {
                 free(url);
                 url = 0;
             }
             CORE_LOGF_X(16, eLOG_Critical,
-                        ("[%s]  Explicit server type %s(0x%04X) voids required"
+                        ("[%s]  Explicit server type %s(0x%04X) violates the required"
                          " server type mask 0x%04X -- service search impossible",
                          svc, SERV_TypeStr(type), type, types & fSERV_All));
             free((void*) svc);
@@ -1136,7 +1133,7 @@ static SERV_ITER x_Open(const char*         service,
     }
 
     if (url  &&  (data = s_InternalMapper(&svc, types, url)) != 0) {
-        /* Service resolved to some parsable URL -- proceed internally */
+        /* Service resolves by some parsable URL -- proceed internally */
         if (!svc) {
             char* tmp  = ConnNetInfo_URL(&data->net_info);
             if (tmp) {
@@ -1318,7 +1315,7 @@ static SERV_ITER x_Open(const char*         service,
         do_dispd   = 0/*false*/;
     }
     if (iter->external) {
-        /* disable all resolvers that can't do external */
+        /* disable all resolvers that cannot do external */
 #ifdef NCBI_CXX_TOOLKIT
 #  ifdef NCBI_OS_UNIX
         do_lbdns   =
@@ -1408,7 +1405,7 @@ static SERV_ITER x_Open(const char*         service,
             &&  !do_local
 #ifdef NCBI_OS_UNIX
             &&  !do_lbsmd
-#endif /*NXBI_OS_UNIX*/
+#endif /*NCBI_OS_UNIX*/
 #ifdef NCBI_CXX_TOOLKIT
 #  ifdef NCBI_OS_UNIX
             &&  !do_lbdns
@@ -1595,24 +1592,22 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
                    info, infostr ? infostr : "<NULL>"));
         x_RETURN(0/*failure*/);
     }
-    if (!(types = iter->types &
-          (TSERV_TypeOnly)(~(fSERV_Stateless | fSERV_Firewall)))) {
-        if (info->type == fSERV_Dns  &&  !iter->reverse_dns) {
+    types = iter->types & (TSERV_TypeOnly)(~(fSERV_Stateless | fSERV_Firewall));
+    if (info->type == fSERV_Dns) {
+        if (!(types & fSERV_Dns)  &&  !iter->reverse_dns) {
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  DNS entry unwarranted @%p:\n%s", iter->name,
                        info, infostr ? infostr : "<NULL>"));
             x_RETURN(0/*failure*/);
         }
-    } else if ((info->type != fSERV_Firewall
-                &&  !(types & info->type))  ||
-               (info->type == fSERV_Firewall
-                &&  !(types & info->u.firewall.type))) {
-        if (info->type != fSERV_Dns  ||  !iter->reverse_dns) {
+    } else if (types) {
+        if ((info->type != fSERV_Firewall  &&  !(types & info->type))  ||
+            (info->type == fSERV_Firewall  &&  !(types & info->u.firewall.type))) {
             CORE_LOGF(eLOG_Critical,
-                      ("[%s]  Mismatched type 0x%X vs 0x%X @%p:\n%s",
+                      ("[%s]  Mismatched type 0x%04X vs 0x%04hX @%p:\n%s",
                        iter->name, (int)(info->type == fSERV_Firewall
                                          ? info->u.firewall.type
-                                         : info->type), (int) types,
+                                         : info->type), types,
                        info, infostr ? infostr : "<NULL>"));
             x_RETURN(0/*failure*/);
         }
