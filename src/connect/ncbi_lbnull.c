@@ -294,7 +294,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     else
         return 0;
 
-    CORE_TRACEF(("SERV_LBNULL_Open(\"%s%s%s%s%s\")",
+    CORE_TRACEF(("SERV_LBNULL_Open(\"%s%s\" + \"%s\" + \"%s%s\")",
                  default_prefix ? default_prefix : "", &"-"[!default_prefix],
                  iter->name,
                  &"."[!default_domain], default_domain ? default_domain : ""));
@@ -306,14 +306,15 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     }
     assert(len);
     if (iter->arg) {
-        assert(iter->arglen);
+        assert(iter->arglen  &&  (!iter->val  ||  strlen(iter->val) == iter->vallen));
         CORE_LOGF_X(88, eLOG_Error,
                     ("[%s]  Argument affinity lookup not supported by LBNULL:"
                      " %s%s%s%s%s", iter->name, iter->arg, &"="[!iter->val],
                      &"\""[!iter->val], iter->val ? iter->val : "",
                      &"\""[!iter->val]));
         goto out;
-    }
+    } else
+        assert(!iter->arglen  &&  !iter->val  &&  !iter->vallen);
     CORE_TRACEF(("[%s]  LBNULL using %sserver type \"%s\"",
                  iter->name, iter->reverse_dns ? "REVERSE " : "", SERV_TypeStr(type)));
 

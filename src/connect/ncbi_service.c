@@ -311,6 +311,45 @@ size_t SERV_CheckDomain(const char* domain)
 }
 
 
+/* See <corelib/ncbi_url.hpp> */
+#define NCBI_SCHEME_SERVICE     "ncbilb"
+
+/* Parse "type+ncbilb://..." */
+static const char* x_ServiceScheme(const char* svc, ESERV_Type* type)
+{
+    const char* scheme = strstr(svc, "://");
+    ESERV_Type x_type;
+    size_t len;
+    char* tmp;
+
+    if (!scheme  ||  !scheme[3])
+        return svc;
+
+    len = (size_t)(scheme - svc);
+    if (len <= sizeof(NCBI_SCHEME_SERVICE))
+        return svc;
+    len -= sizeof(NCBI_SCHEME_SERVICE);
+    if (strncasecmp(svc + len, "+" NCBI_SCHEME_SERVICE, sizeof(NCBI_SCHEME_SERVICE)) != 0)
+        return svc;
+
+    // Special case
+    if (len == 3  &&  strncasecmp(svc, "tcp", 3) == 0) {
+        *type = fSERV_Standalone;
+        return scheme + 3;
+    }
+    // Look for a standard server type, excluding FIREWALL
+    if ((tmp = strndup(svc, len)) != 0) {
+        const char* end = SERV_ReadType(tmp, &x_type);
+        if (end  &&  !*end  &&  x_type != fSERV_Firewall) {
+            svc = scheme + 3;
+            *type = x_type;
+        }
+        free(tmp);
+    }
+    return svc;
+}
+
+
 /* "svc" (of length "len") is assumed to be syntactically correct.  That is,
  * it does not start or end with a dash, nor does it have any dashes in a
  * succession.  Also, this routine may _only_ be called for domain-enabled
@@ -319,7 +358,7 @@ size_t SERV_CheckDomain(const char* domain)
  * where a legacy name appears to start (which also equates to the entire
  * prefix length).  Return 0 when none found.
  */
-static size_t x_SearchPrefix(const char* svc, size_t len)
+static size_t x_ServicePrefix(const char* svc, size_t len)
 {
     /* See: CXX-14373 */
     static const struct {
@@ -429,12 +468,13 @@ static int x_srvncasecmp(const char* s1, const char* s2, size_t m, size_t n)
  *        returned "service name" value, and are only valid until the result
  *        is deallocated with free().  Both may not be free()'d on their own.
  */
-static char* x_ServiceName(unsigned int* depth,
+static char* x_ServiceName(unsigned int* depth, ESERV_Type* type,
                            const char* service, const char* svc,
                            int*/*bool*/ ismask, int*/*bool*/ isfast,
                            const char** prefix, const char** domain, char** url)
 {
     size_t len, pfxlen, domlen;
+    const char* x_url;
     char buf[256];
     char* str;
 
@@ -450,9 +490,15 @@ static char* x_ServiceName(unsigned int* depth,
             *prefix = 0;
         if ( domain )
             *domain = 0;
+        *type = (ESERV_Type) fSERV_Any/*0*/;
     } else {
         assert(service  &&  *service  &&  svc  &&  *svc  &&  service != svc
                &&  strcasecmp(service, svc) != 0  &&  !*ismask  &&  (!url  ||  !*url));
+    }
+    x_url = svc;
+    if (svc  &&  *svc) {
+        svc = x_ServiceScheme(svc, type);
+        assert(svc  &&  *svc);
     }
     len = !svc ? 0 : !*ismask ? strcspn(svc, ".") : strlen(svc);
     if (!svc  ||  (!*ismask  &&  !len)
@@ -477,14 +523,14 @@ static char* x_ServiceName(unsigned int* depth,
     } else if (!SERV_CheckServiceName(svc, len, svc[len], *ismask)
                ||  (svc[len]/*NB:'.'*/
                     &&  !(domlen = SERV_CheckDomain(svc + len)))) {
-        if (url  &&  !(*url = strdup(svc))) {
+        if (url  &&  !(*url = strdup(x_url))) {
             svc = 0/*fatal*/;
             goto out;
         }
         *ismask = 0/*false*/;
         return 0/*use URL*/;
     } else
-        pfxlen = domlen ? x_SearchPrefix(svc, len) : 0;
+        pfxlen = domlen ? x_ServicePrefix(svc, len) : 0;
     assert(!pfxlen  ||  (3 < pfxlen  &&  pfxlen < len  &&  svc[pfxlen - 1] == '-'));
     if (!*ismask  &&  !*isfast) {
         char        tmp[sizeof(buf)];
@@ -522,11 +568,15 @@ static char* x_ServiceName(unsigned int* depth,
             CORE_UNLOCK;
         }
         if (*(s = ConnNetInfo_TrimInPlace(buf))) {
+            ESERV_Type x_type = (ESERV_Type) fSERV_Any/*0*/;
             CORE_TRACEF(("[%s]  SERV_ServiceName(\"%s\"): \"%s\"",
                          service, svc, s));
+            x_url = s;
+            s = (char*) x_ServiceScheme(s, &x_type);
             if (x_srvncasecmp(svc, s, pfxlen, len) != 0  ||  (s[len]  &&  s[len] != '.')) {
                 if (++(*depth) < SERV_SERVICE_NAME_RECURSION_MAX) {
-                    char* rv = x_ServiceName(depth, service, s, ismask, isfast,
+                    char* rv = x_ServiceName(depth, type, service, x_url,
+                                             ismask, isfast,
                                              prefix, domain, url);
                     if (rv  ||  *depth >= SERV_SERVICE_NAME_RECURSION_MAX)
                         return rv;
@@ -537,13 +587,15 @@ static char* x_ServiceName(unsigned int* depth,
                     return 0/*fatal*/;
                 }
             } else if (s[len]/*NB:'.'*/  &&  !(keylen = SERV_CheckDomain(s + len))) {
-                if (url  &&  !(*url = strdup(s)))
+                if (url  &&  !(*url = strdup(x_url)))
                     svc = 0/*fatal*/;
             } else {
                 if (s[len]/*NB:'.'*/)
                     domlen = keylen;
                 else
                     domlen = pfxlen = 0;
+                if (x_type/*!= fSERV_Any*/)
+                    *type = x_type;
                 svc = s, *isfast = 1/*true*/;
             }
         } else
@@ -584,9 +636,9 @@ static char* x_ServiceName(unsigned int* depth,
                 *prefix = pfx;
                 assert(strlen(*prefix) == pfxlen);
             }
-            assert(*str  &&  strlen(str) == dom - 1);
+            assert(strlen(str) == dom - 1);
             assert(!*ismask  ||  !(pfxlen  ||  domlen));
-            assert(SERV_CheckServiceName(str, --dom, !!domlen, *ismask));
+            assert(!*str  ||  SERV_CheckServiceName(str, --dom, !!domlen, *ismask));
         }
     } else
         str = 0;
@@ -597,18 +649,20 @@ static char* x_ServiceName(unsigned int* depth,
 #ifdef __GNUC__
 inline
 #endif /*__GNUC__*/
-static char* s_ServiceName(const char* service, int*/*bool*/ ismask, int*/*bool*/ isfast,
+static char* s_ServiceName(const char* service, ESERV_Type* type,
+                           int*/*bool*/ ismask, int*/*bool*/ isfast,
                            const char** prefix, const char** domain, char** url)
 {
     unsigned int depth = 0;
-    return x_ServiceName(&depth, service, 0/*svc*/, ismask, isfast, prefix, domain, url);
+    return x_ServiceName(&depth, type, service, 0/*svc*/, ismask, isfast, prefix, domain, url);
 }
 
 
 char* SERV_ServiceName(const char* service)
 {
+    ESERV_Type type/*unused*/;
     int ismask = 0/*false*/, isfast = 0/*false*/;
-    return s_ServiceName(service, &ismask, &isfast, 0/*prefix*/, 0/*domain*/, 0/*url*/);
+    return s_ServiceName(service, &type, &ismask, &isfast, 0/*prefix*/, 0/*domain*/, 0/*url*/);
 }
 
 
@@ -784,19 +838,6 @@ static void x_InternalClose(SERV_ITER iter)
 #ifdef __GNUC__
 inline
 #endif /*__GNUC__*/
-static int/*bool*/ x_IsEmptyPath(const char* path)
-{
-    if (*path == '/')
-        ++path;
-    if (*path == '?')
-        ++path;
-    return !*path  ||  *path == '#' ? 1/*T*/ : 0/*F*/;
-}
-
-
-#ifdef __GNUC__
-inline
-#endif /*__GNUC__*/
 static int/*bool*/ x_NonHttpOkay(TSERV_TypeOnly types)
 {
     return !types  ||   (types & ~fSERV_Http);
@@ -808,7 +849,20 @@ inline
 #endif /*__GNUC__*/
 static int/*bool*/ x_HttpNotOkay(TSERV_TypeOnly types)
 {
-    return  types  &&  !(types &  fSERV_Http);
+    return (types  &&  !(types &  fSERV_Http));
+}
+
+
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
+static int/*bool*/ x_IsEmptyPath(const char* path)
+{
+    if (*path == '/')
+        ++path;
+    if (*path == '?')
+        ++path;
+    return !*path  ||  *path == '#' ? 1/*T*/ : 0/*F*/;
 }
 
 
@@ -839,7 +893,7 @@ static struct SINTERNAL_Data* s_InternalMapper(const char** svc,
 
     reverse_dns = types & fSERV_ReverseDns ? 1/*T*/ : 0/*F*/;
     types &= fSERV_All;
-    if (types  &&  !(types & (fSERV_Dns | fSERV_Http | fSERV_Standalone)))
+    if (types  &&  !(types &= fSERV_Dns | fSERV_Http | fSERV_Standalone))
         return 0;
     if (!(data = (struct SINTERNAL_Data*) calloc(1, sizeof(*data)))) {
         CORE_LOGF_ERRNO_X(11, eLOG_Error, errno,
@@ -864,10 +918,12 @@ static struct SINTERNAL_Data* s_InternalMapper(const char** svc,
     }
     if (!*svc) {
         const char* prefix;
+        ESERV_Type type/*unused*/;
         int ismask = 0/*false*/, isfast = 1/*false*/;
-        char* x_name = s_ServiceName(net_info->host, &ismask, &isfast,
+        char* x_name = s_ServiceName(net_info->host, &type,
+                                     &ismask, &isfast,
                                      &prefix, 0/*domain*/, 0/*url*/);
-        assert(!prefix  ||  x_name);
+        assert(!type  &&  (!prefix  ||  x_name));
         assert(name == url);
         if (x_name) {
             if (!prefix)
@@ -889,13 +945,24 @@ static struct SINTERNAL_Data* s_InternalMapper(const char** svc,
         }
     }
     data->type = fSERV_Http;
-    if (!net_info->scheme/*==eURL_Unspec*/  &&  (net_info->port  ||  (types & fSERV_Dns))) {
-        int/*bool*/ bare = !net_info->path[0]  &&  strncmp(url, "//", 2) != 0;
-        if (( bare  &&  x_NonHttpOkay(types))  ||
-            (!bare  &&  x_HttpNotOkay(types)  &&  x_IsEmptyPath(net_info->path))) {
-            data->type = fSERV_Dns | (net_info->port ? fSERV_Standalone : 0);
-            net_info->req_method = eReqMethod_Connect;
-            net_info->path[0] = '\0';
+    if (!net_info->scheme/*==eURL_Unspec*/) {
+        TSERV_TypeOnly type = SERV_GetImplicitServerTypeInternalEx(*svc, (ESERV_Type) fSERV_Any);
+        if (!(type & fSERV_Http)  &&  (net_info->port  ||  (types & fSERV_Dns))) {
+            int/*bool*/ bare = !net_info->path[0]  &&  strncmp(url, "//", 2) != 0;
+            if (( bare  &&  x_NonHttpOkay(types))  ||
+                (!bare  && (x_HttpNotOkay(types)   ||  type)  &&  x_IsEmptyPath(net_info->path))) {
+                TSERV_TypeOnly x_type = (types & fSERV_Dns) | (net_info->port ? fSERV_Standalone : 0);
+                assert(x_type);
+                if (type)
+                    type &= x_type;
+                else
+                    type  = x_type;
+                if (!types  ||  (type &= types)) {
+                    data->type = type ? type : x_type;
+                    net_info->req_method = eReqMethod_Connect;
+                    net_info->path[0] = '\0';
+                }
+            }
         }
     }
     assert(!(data->type & fSERV_Http) ^ !(data->type & (fSERV_Dns | fSERV_Standalone)));
@@ -1009,17 +1076,65 @@ static SERV_ITER x_Open(const char*         service,
     struct SINTERNAL_Data* data = 0;
     const char *svc, *prefix, *domain;
     const SSERV_VTable* op;
+    ESERV_Type type;
     SERV_ITER iter;
     char* url;
 
     if ( host_info )
         *host_info = 0;
 
-    svc = s_ServiceName(service, &ismask, &exact, &prefix, &domain, &url);
+    svc = s_ServiceName(service, &type, &ismask, &exact, &prefix, &domain, &url);
     assert(!svc  ||  *svc  ||  ismask);
     assert(!url  ||  (*url  &&  !ismask));
     assert(!url  ||  !(prefix  ||  domain));
     assert((svc  &&  *svc)  ||  !(prefix  ||  domain));
+
+    if (!svc  ||  url)
+        type = (ESERV_Type) fSERV_Any/*0*/;
+    if (svc  &&  !ismask) {
+        char        buf[40];
+        ESERV_Type  x_type;
+        const char* end, *val = ConnNetInfo_GetValueService(svc, REG_CONN_SERVER_TYPE,
+                                                            buf, sizeof(buf), 0);
+        assert(*svc);
+        if (!val
+            ||  (*val
+                 &&  (!(end = SERV_ReadType(val, &x_type))  ||  *end  ||  x_type == fSERV_Firewall))) {
+            CORE_LOGF_X(17, eLOG_Error,
+                        ("[%s]  %s server type%s%s%s%s", svc,
+                         !val ? "Cannot read"  :
+                         !end ? "Unrecognized" : "Invalid",
+                         val  ? " \""          : "",
+                         val  ? val            : "", &"\""[!val],
+                         val  ? " ignored"     : ""));
+            if (val)
+                type = (ESERV_Type) fSERV_Any;
+        } else if (*val)
+            type = x_type;
+    }
+    if (type/*!= fSERV_Any*/) {
+        assert(!(type & fSERV_Stateless));
+        assert(svc  &&  *svc);
+        if (!(types & fSERV_All))
+            types |= type;
+        else if (types & type) {
+            TSERV_TypeOnly x_types = (TSERV_TypeOnly)(types & type);
+            types = (types & ~fSERV_All) | x_types;
+            assert(x_types);
+        } else {
+            if (url) {
+                free(url);
+                url = 0;
+            }
+            CORE_LOGF_X(16, eLOG_Critical,
+                        ("[%s]  Explicit server type %s(0x%04X) voids required"
+                         " server type mask 0x%04X -- service search impossible",
+                         svc, SERV_TypeStr(type), type, types & fSERV_All));
+            free((void*) svc);
+            svc = 0;
+        }
+    }
+
     if (url  &&  (data = s_InternalMapper(&svc, types, url)) != 0) {
         /* Service resolved to some parsable URL -- proceed internally */
         if (!svc) {
@@ -1035,7 +1150,7 @@ static SERV_ITER x_Open(const char*         service,
         } else
             assert(*svc);
         assert(ismask == 0);
-        types         &= fSERV_ReverseDns | fSERV_All;
+        types         &= fSERV_ReverseDns | fSERV_Stateless | fSERV_All;
         preferred_host = 0;
         preferred_port = 0;
         preference     = 0.0;
@@ -1301,19 +1416,17 @@ static SERV_ITER x_Open(const char*         service,
             &&  !do_lbnull  &&  !do_linkerd  &&  !do_namerd
 #endif /*NCBI_CXX_TOOLKIT*/
             &&  !do_dispd) {
-            assert(*service  ||  !svc);
             if (svc) {
                 size_t len1 = strcspn(service, ".");
                 size_t len2 = strlen(svc);
                 assert(len1  &&  len2);
                 if (len1 == len2  &&  strncasecmp(service, svc, len1) == 0)
                     svc = 0;
-            }
+            } else
+                assert(!*service  &&  ismask);
             CORE_LOGF_X(1, eLOG_Error,
-                        ("%s%s%sNo service mappers available%s%s%s",
-                         *service ? "["     : "",
+                        ("[%s]  No service mappers available%s%s%s",
                          *service ? service : "*",
-                         *service ? "]  "   : "",
                          svc ? " for: \""   : "",
                          svc ? svc          : "",
                          &"\""[!svc]));
