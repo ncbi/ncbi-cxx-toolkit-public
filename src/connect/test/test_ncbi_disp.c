@@ -161,12 +161,12 @@ int main(int argc, const char* argv[])
     if (argc > 2) {
         int a = 2;
         int/*bool*/ okay = 0/*false*/;
-        if (strcasecmp(argv[a],"heap") == 0 || strcasecmp(argv[a],"all") == 0){
+        if (strcasecmp(argv[a],"heap") == 0 || strcasecmp(argv[a],"both") == 0) {
             HEAP_Options(eOff, eDefault);
             CORE_LOG(eLOG_Note, "Using slow heap walks with checks");
             okay = 1/*true*/;
         }
-        if (strcasecmp(argv[a],"lbsm") == 0 || strcasecmp(argv[a],"all") == 0){
+        if (strcasecmp(argv[a],"lbsm") == 0 || strcasecmp(argv[a],"both") == 0) {
 #ifdef NCBI_OS_MSWIN
             if (strcasecmp(argv[a],"lbsm") == 0)
                 CORE_LOG(eLOG_Warning, "Option \"lbsm\" has no use on MSWIN");
