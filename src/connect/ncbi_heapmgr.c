@@ -1371,14 +1371,14 @@ extern TNCBI_Size HEAP_Idle(const HEAP heap)
                 b = heap->base + b->prevfree;
             } while (b != f);
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
-            {{
+            if (unlikely(!s_HEAP_fast)) {
                 TNCBI_Size alt_size = 0;
                 do {
                     alt_size += b->head.size;
                     b = heap->base + b->nextfree;
                 } while (b != f);
                 assert(alt_size == size);
-            }}
+            }
 #endif /*_DEBUG && !NDEBUG*/
         }
         assert(size == HEAP_SIZE(size));
