@@ -143,7 +143,7 @@ extern NCBI_XCONNECT_EXPORT void HEAP_Free
  * As an exception, if "prev" points to a used block and "prev"'s next block is
  * not "ptr", but a free block, whose next is "ptr", then "prev" gets bumped up
  * internally to that free block's pointer value.
- * NOTE:  This call will be removed.
+ * @note This call will be removed.
  */
 extern NCBI_XCONNECT_EXPORT void HEAP_FreeFast
 (HEAP               heap,  /* heap handle         */
