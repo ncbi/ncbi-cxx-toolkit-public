@@ -97,11 +97,11 @@ extern NCBI_XCONNECT_EXPORT HEAP HEAP_Create
 
 
 /* Attach to an already existing heap (in read-only mode), calculating the heap
- * extent by a heap end marker (but only within the maximal specified size).
+ * extent by a heap end marker (but only within the maximum specified size).
  */
 extern NCBI_XCONNECT_EXPORT HEAP HEAP_Attach
 (const void* base,         /* base of the heap to attach to                  */
- TNCBI_Size  maxsize,      /* maximal heap extent, or 0 for unlimited search */
+ TNCBI_Size  maxsize,      /* maximum heap extent, or 0 for unlimited search */
  int         serial        /* serial number to assign                        */
  );
 
@@ -252,10 +252,10 @@ extern NCBI_XCONNECT_EXPORT int HEAP_Serial(const HEAP heap);
 
 /* Set heap access speed (and ignore second parameter):
  * fast == eOn  turns on fast heap operations (default);
- * fast == eOff turns off fast heap operations (more checks, slower);
+ * fast == eOff turns off fast heap operations (more checks, much slower);
  * fast == eDefault does not change the current setting.
- * This call is intended for internal uses;  and default settings (fast ops
- * w/o structure integrity checks) should suffice for most users.
+ * @note This call is intended for internal use;  and default settings
+ * (fast ops w/o structure consistency checks) should suffice for most users.
  */
 extern NCBI_XCONNECT_EXPORT void HEAP_Options(ESwitch fast, ESwitch unused);
 
