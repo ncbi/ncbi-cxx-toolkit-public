@@ -526,7 +526,7 @@ AutoPtr<CTypeStrings> CEnumDataType::GetFullCType(void) const
     if (!type.empty()) {
         if (NStr::EndsWith(type, "string")) {
             return AutoPtr<CTypeStrings>(
-                new CStringTypeStrings("NCBI_NS_STD::string",Comments(),true));
+                new CStringTypeStrings("std::string",Comments(),true));
         } else if (NStr::EndsWith(type, "CStringUTF8")) {
             return AutoPtr<CTypeStrings>(
                 new CStringTypeStrings("NCBI_NS_NCBI::CStringUTF8",Comments(),true));

@@ -706,7 +706,7 @@ const char* CStringDataType::GetDefaultCType(void) const
     if (m_Type == eStringTypeUTF8) {
         return "NCBI_NS_NCBI::CStringUTF8";
     }
-    return "NCBI_NS_STD::string";
+    return "std::string";
 }
 
 CStringStoreDataType::CStringStoreDataType(void)
@@ -830,7 +830,7 @@ const char* COctetStringDataType::GetDefaultCType(void) const
     if (x_AsBitString()) {
         return CBitStringDataType::GetDefaultCType();
     }
-    return "NCBI_NS_STD::vector<char>";
+    return "std::vector<char>";
 }
 
 const char* COctetStringDataType::GetXMLContents(void) const

@@ -128,7 +128,7 @@ void CChoicePtrTypeStrings::GenerateClassCode(CClassCode& code,
         code.Methods() << "\n"
             "};\n"
             "\n"
-            "NCBI_NS_STD::string "<<methodPrefix<<"SelectionName(" STATE_ENUM " index)\n"
+            "std::string "<<methodPrefix<<"SelectionName(" STATE_ENUM " index)\n"
             "{\n"
             "    return NCBI_NS_NCBI::CInvalidChoiceSelection::GetName(index, sm_SelectionNames, sizeof(sm_SelectionNames)/sizeof(sm_SelectionNames[0]));\n"
             "}\n"

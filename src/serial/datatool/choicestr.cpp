@@ -53,7 +53,7 @@ BEGIN_NCBI_SCOPE
 
 #define STATE_ENUM "E_Choice"
 #define STATE_MEMBER "m_choice"
-#define STRING_TYPE_FULL "NCBI_NS_STD::string"
+#define STRING_TYPE_FULL "std::string"
 #define STRING_TYPE "string"
 #define STRING_MEMBER "m_string"
 #define UTF8_STRING_MEMBER "m_string_utf8"
@@ -879,7 +879,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         methods << "\n"
             "};\n"
             "\n"
-            "NCBI_NS_STD::string "<<methodPrefix<<"SelectionName(" STATE_ENUM " index)\n"
+            "std::string "<<methodPrefix<<"SelectionName(" STATE_ENUM " index)\n"
             "{\n"
             "    return NCBI_NS_NCBI::CInvalidChoiceSelection::GetName(index, sm_SelectionNames, sizeof(sm_SelectionNames)/sizeof(sm_SelectionNames[0]));\n"
             "}\n"
