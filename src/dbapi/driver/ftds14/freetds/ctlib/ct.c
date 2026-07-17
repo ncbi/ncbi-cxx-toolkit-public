@@ -2894,7 +2894,7 @@ ct_get_data(CS_COMMAND * cmd, CS_INT item, CS_VOID * buffer, CS_INT buflen, CS_I
 	TDSRESULTINFO *resinfo;
 	TDSCOLUMN *curcol;
 	unsigned char *src;
-	TDS_INT srclen;
+        TDS_INT srclen = 0;
 
 	tdsdump_log(TDS_DBG_FUNC, "ct_get_data(%p, %d, %p, %d, %p)\n", cmd, item, buffer, buflen, outlen);
 
@@ -2930,6 +2930,7 @@ ct_get_data(CS_COMMAND * cmd, CS_INT item, CS_VOID * buffer, CS_INT buflen, CS_I
 		/* reset these values */
 		cmd->get_data_item = item;
 		cmd->get_data_bytes_returned = 0;
+                cmd->conv_len = 0;
 
 		/* get at the source data and length */
 		curcol = resinfo->columns[item - 1];
@@ -2938,6 +2939,25 @@ ct_get_data(CS_COMMAND * cmd, CS_INT item, CS_VOID * buffer, CS_INT buflen, CS_I
 		if (is_blob_col(curcol)) {
 			blob = (TDSBLOB *) src;
 			src = (unsigned char *) blob->textvalue;
+                } else if (curcol->column_cur_size > 0) {
+                        int type = _cs_convert_not_client(cmd->con->ctx,
+                                                          curcol,
+                                                          &cmd->converted,
+                                                          &src);
+                        switch (type) {
+                        case CS_DATE_TYPE:
+                                cmd->conv_len = sizeof(CS_DATE);
+                                break;
+                        case CS_BIGTIME_TYPE:
+                                cmd->conv_len = sizeof(CS_BIGTIME);
+                                break;
+                        case CS_BIGDATETIME_TYPE:
+                                cmd->conv_len = sizeof(CS_BIGDATETIME);
+                                break;
+                        default:
+                                assert(type == CS_ILLEGAL_TYPE);
+                        }
+                        srclen = cmd->conv_len;
 		}
 
 		/* now populate the io_desc structure for this data item */
@@ -2998,9 +3018,12 @@ ct_get_data(CS_COMMAND * cmd, CS_INT item, CS_VOID * buffer, CS_INT buflen, CS_I
 		/* get at the source data */
 		curcol = resinfo->columns[item - 1];
 		src = curcol->column_data;
-		if (is_blob_col(curcol))
+                if (is_blob_col(curcol)) {
 			src = (unsigned char *) ((TDSBLOB *) src)->textvalue;
-
+                } else if (cmd->conv_len != 0) {
+                        src = &cmd->converted.ti;
+                        srclen = cmd->conv_len;
+                }
 	}
 
 	/*
@@ -3008,7 +3031,9 @@ ct_get_data(CS_COMMAND * cmd, CS_INT item, CS_VOID * buffer, CS_INT buflen, CS_I
 	 * what we may have already returned
 	 */
 
-	srclen = curcol->column_cur_size;
+        if (srclen == 0) {
+                srclen = curcol->column_cur_size;
+        }
         if (srclen < 0) {
                 /* this is NULL */
                 if (outlen)

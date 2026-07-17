@@ -296,6 +296,8 @@ struct _cs_command
 	int bind_count;
 	int get_data_item;
 	int get_data_bytes_returned;
+        CONV_RESULT converted;
+        int conv_len;
 	CS_IODESC *iodesc;
 	CS_INT send_data_started;
 	CSREMOTE_PROC *rpc;
