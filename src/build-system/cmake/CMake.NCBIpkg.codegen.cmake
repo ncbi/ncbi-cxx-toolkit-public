@@ -230,7 +230,8 @@ function(NCBI_internal_generate_cpp GEN_SOURCES GEN_HEADERS)
                     string(RANDOM _subdir)
                     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${_subdir})
                     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${_subdir}/${_cmdname} ${_script})
-                    file(COPY ${CMAKE_CURRENT_BINARY_DIR}/${_subdir}/${_cmdname} DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ)
+                    file(COPY ${CMAKE_CURRENT_BINARY_DIR}/${_subdir}/${_cmdname} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+                        FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
                     file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/${_subdir})
                     add_custom_command(
                         OUTPUT ${_this_srcfiles} ${_this_incfiles}
@@ -295,7 +296,8 @@ function(NCBI_internal_generate_cpp GEN_SOURCES GEN_HEADERS)
                     string(RANDOM _subdir)
                     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${_subdir})
                     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${_subdir}/${_cmdname} ${_script})
-                    file(COPY ${CMAKE_CURRENT_BINARY_DIR}/${_subdir}/${_cmdname} DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ)
+                    file(COPY ${CMAKE_CURRENT_BINARY_DIR}/${_subdir}/${_cmdname} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+                        FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
                     file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/${_subdir})
                     add_custom_command(
                         OUTPUT ${_this_srcfiles} ${_this_incfiles}
