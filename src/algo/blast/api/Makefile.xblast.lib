@@ -86,7 +86,7 @@ LIB = xblast
 DLL_LIB = $(BLAST_LDEP) $(SOBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS) 
-CPPFLAGS = -DNCBI_MODULE=BLAST $(ORIG_CPPFLAGS)
+CPPFLAGS = -DNCBI_MODULE=BLAST -I$(srcdir)/../core $(ORIG_CPPFLAGS)
 # Strict gcc flags
 #CFLAGS  = $(FAST_CFLAGS)  -pedantic -std=c99 -Wall -W -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wundef -Winline -Wno-parentheses
 CXXFLAGS = $(FAST_CXXFLAGS) 
@@ -94,8 +94,8 @@ LDFLAGS  = $(FAST_LDFLAGS)
 
 LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
 
-.core_%.c: # $(srcdir)/../core/%.c
-	echo '#include "$(srcdir)/../core/$*.c"' > $@
+.core_%.c: $(srcdir)/Makefile.xblast.lib # $(srcdir)/../core/%.c
+	echo '#include "$*.c"' > $@
 
 WATCHERS = morgulis boratyng camacho fongah2
 
