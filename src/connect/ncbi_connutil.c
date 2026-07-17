@@ -167,8 +167,8 @@ typedef int (*FStrNCmp)(const char* s1, const char* s2, size_t n);
  * [in]
  *    if "svclen" == 0: ignored;
  *    if "svclen" != 0, is a boolean "service_only" (if non-zero then no
- *    fallback to generic search in the "CONN_param" environment, or the
- *    "[CONN]param" registry entry, gets performed);
+ *    fallback to generic search in either the "CONN_param" environment,
+ *    or the "[CONN]param" registry entry, gets performed);
  * [out]
  *    0 if the search ended up with a service-specific value returned (always
  *      so if the [in] value was non-zero with "svclen" != 0);
@@ -188,7 +188,7 @@ static const char* x_GetValue(const char* svc/*ign if !svclen*/, size_t svclen,
     char        buf[128];
     char*       s;
 
-    assert(!svclen  ||  svc);
+    assert(!svclen  ||  (svc  &&  strnlen(svc, svclen + 1) >= svclen));
     assert(param  &&  *param  &&  parlen == strlen(param));
     assert(value  &&  value_size  &&  !*value);
     assert(generic  &&  strncompar);
