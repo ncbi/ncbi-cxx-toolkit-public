@@ -54,7 +54,7 @@
    /* Larger sizes did not seem to work everywhere; although recent tests show
     * that 65507 is okay now (cf. SOLARIS/MSWIN right below) */
 #  define MAX_DGRAM_SIZE    59550
-#elif defined(NCBI_OS_SOLARIS)  ||  defined(NCBI_OS_MSWIN)
+#elif defined(NCBI_OS_SOLARIS)  ||  defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
    /* 65508 was reported too large */
 #  define MAX_DGRAM_SIZE    65507
 #else
