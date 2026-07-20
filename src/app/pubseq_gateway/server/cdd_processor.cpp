@@ -363,7 +363,7 @@ void CPSGS_CDDProcessor::x_ProcessResolveRequest(void)
         annot_request.m_TSEOption == SPSGS_BlobRequestBase::EPSGS_TSEOption::ePSGS_WholeTSE ||
         annot_request.m_TSEOption == SPSGS_BlobRequestBase::EPSGS_TSEOption::ePSGS_OrigTSE) {
         // Send whole TSE.
-        m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_CDDProcessor::GetBlobByBlobId));
+        m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_CDDProcessor::GetBlobBySeqId));
         m_ThreadPool->AddTask(m_PoolTask);
     }
     else {
