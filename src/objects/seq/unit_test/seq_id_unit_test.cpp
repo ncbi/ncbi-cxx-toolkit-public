@@ -262,6 +262,8 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromStdAcc)
                                               kCautious
                                               | CSeq_id::fParse_NoThrow)));
     BOOST_CHECK_EQUAL(id->Which(), CSeq_id::e_not_set);
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("A12345.1", kCautious)));
+    BOOST_CHECK(id->IsEmbl());
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("J12345", kCautious)));
     BOOST_CHECK(id->IsGenbank());
 
@@ -467,13 +469,13 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromSPAcc)
     // NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("Q7CQJO"))); // valid PIR
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("Q7CQJ01")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("07CQJ0")));
-    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("A2ASS6.1", kCautious)));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("A2ASS6", kCautious)));
     BOOST_CHECK(id->IsSwissprot());
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("A29SS6.1")));
 
-    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("Q3ECS7.1")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("Q3ECS7.1", kCautious)));
     BOOST_CHECK(id->IsSwissprot());
-    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("Q3ECS7.1", kCautious)));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("Q3ECS7", kCautious)));
 
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("A0A022YWF9")));
     BOOST_CHECK(id->IsSwissprot());
