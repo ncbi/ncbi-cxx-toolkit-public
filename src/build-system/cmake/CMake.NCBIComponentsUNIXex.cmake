@@ -1022,5 +1022,10 @@ endif()
 
 #############################################################################
 # ARROW
-NCBI_define_Xcomponent(NAME ARROW LIB parquet arrow arrow_bundled_dependencies ADD_COMPONENT THRIFT)
+if(NOT NCBI_COMPONENT_ARROW_FOUND)
+    NCBI_define_Xcomponent(NAME ARROW MODULE parquet LIB parquet arrow arrow_bundled_dependencies ADD_COMPONENT THRIFT)
+    if(NCBI_PTBCFG_COMPONENT_StaticComponents)
+        set(NCBI_COMPONENT_ARROW_DEFINES ${NCBI_COMPONENT_ARROW_DEFINES} PARQUET_STATIC ARROW_STATIC)
+    endif()
+endif()
 NCBIcomponent_report(ARROW)
