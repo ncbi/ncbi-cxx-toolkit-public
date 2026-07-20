@@ -15,6 +15,5 @@ LIBS = $(BLAST_THIRD_PARTY_LIBS) $(GENBANK_THIRD_PARTY_LIBS) $(CMPRS_LIBS) \
 
 REQUIRES = objects -Cygwin SQLITE3
 
-CHECK_REQUIRES = -BSD
 CHECK_COPY = clusterdbcmd_test.py clusterdbcmd_test_data.py
 CHECK_CMD = python3 -m unittest clusterdbcmd_test /CHECK_NAME=clusterdbcmd
