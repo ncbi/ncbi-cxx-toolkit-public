@@ -1903,16 +1903,16 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
             &&  ((flags & (fParse_Cautiously | fParse_RawText))
                  == (fParse_Cautiously | fParse_RawText))) {
             if (non_dig_pos == NPOS) {
-                if (main_acc[0] <= 'I'
-                    ||  (main_acc[0] == 'N'  &&  main_acc[1] < '2')
-                    ||  main_acc[0] == 'S' ||  main_acc[0] == 'T') {
+                if (((main_acc[0] <= 'I'  || main_acc[0] == 'S'  ||
+                      main_acc[0] == 'T')  &&  !has_version)
+                    ||  (main_acc[0] == 'N'  &&  main_acc[1] < '2')) {
                     // A-I, S, T: PIR vs. INSDC
                     // N0, N1: internal INSDC collisions
                     return eAcc_unknown;
                 }
-            } else if (non_dig_pos == 2  &&  isdigit(ucdata[5])
-                       &&  isalpha(ucdata[2])  &&  isalnum(ucdata[3])
-                       &&  isalnum(ucdata[4])
+            } else if ( !has_version  &&  non_dig_pos == 2
+                       &&  isdigit(ucdata[5])  &&  isalpha(ucdata[2])
+                       &&  isalnum(ucdata[3])  &&  isalnum(ucdata[4])
                        &&  ctre::match<kSPishPIR>(main_acc)) {
                 // PIR vs. Swissprot; 25 PIR accessions, 3 overlaps as
                 // of 2026-02-25.
