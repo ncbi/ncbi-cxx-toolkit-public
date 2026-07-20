@@ -62,6 +62,7 @@ def main():
              "blastdbcmd.exe",
              "makeblastdb.exe",
              "makeclusterdb.exe",
+             "clusterdbcmd.exe",
              "makembindex.exe",
              "makeprofiledb.exe",
              "blastdb_aliastool.exe",

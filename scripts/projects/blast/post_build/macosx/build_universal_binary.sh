@@ -47,6 +47,7 @@ blast_programs=("blast_formatter"
 "dustmasker"
 "makeblastdb"
 "makeclusterdb"
+"clusterdbcmd"
 "makembindex"
 "makeprofiledb"
 "psiblast"
@@ -79,7 +80,5 @@ tar czf ${RELEASE_TAG}-universal-macosx.tar.gz $RELEASE_TAG
 
 rm -rf $RELEASE_TAG
 rm $arm_package 
-/sbin/md5 -r ${RELEASE_TAG}-universal-macosx.tar.gz > ${RELEASE_TAG}-universal-macosx.tar.gz.md5
-/sbin/md5 -r ${RELEASE_TAG}-universal.dmg > ${RELEASE_TAG}-universal.dmg.md5
- 
-
+/sbin/md5 -r ${RELEASE_TAG}-universal-macosx.tar.gz | col -b > ${RELEASE_TAG}-universal-macosx.tar.gz.md5
+/sbin/md5 -r ${RELEASE_TAG}-universal.dmg | col -b > ${RELEASE_TAG}-universal.dmg.md5
