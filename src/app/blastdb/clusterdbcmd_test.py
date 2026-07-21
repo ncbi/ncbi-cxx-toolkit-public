@@ -68,6 +68,7 @@ class TestClusterDBCmd(unittest.TestCase):
         # working directory).
         cls.env = dict(os.environ)
         cls.env["BLASTDB"] = cls.workdir
+        cls.env["PATH"] = os.getcwd() + os.pathsep + cls.env.get("PATH", "")
 
     @classmethod
     def tearDownClass(cls) -> None:
