@@ -148,7 +148,7 @@ static constexpr ctll::fixed_string kSPishPIR{
     "|R5NT28"
     "|R6UC46"
     "|W5WLB2"
-    "|(?:P[12]|W[1-7])WLC1"
+    "|(?:P[12]|W[124-7])WLC1"
     "|R3ZM12"
 };
 
@@ -2457,9 +2457,8 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
     } else {
         SIZE_TYPE non_dig_pos = main_acc.find_first_not_of(kDigits, digit_pos);
         if (main_size == 6  &&  digit_pos == 1
-            &&  ((flags & (fParse_Cautiously | fParse_RawText))
-                 == (fParse_Cautiously | fParse_RawText))) {
-            if (non_dig_pos == NPOS) {
+            &&  (flags & fParse_RawText) != 0) {
+            if (non_dig_pos == NPOS  &&  (flags & fParse_Cautiously) != 0) {
                 if (((main_acc[0] <= 'I'  || main_acc[0] == 'S'  ||
                       main_acc[0] == 'T')  &&  !has_version)
                     ||  (main_acc[0] == 'N'  &&  main_acc[1] < '2')) {
@@ -2471,9 +2470,16 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
                        &&  isdigit(ucdata[5])  &&  isalpha(ucdata[2])
                        &&  isalnum(ucdata[3])  &&  isalnum(ucdata[4])
                        &&  ctre::match<kSPishPIR>(main_acc)) {
-                // PIR vs. Swissprot; 25 PIR accessions, 3 overlaps as
-                // of 2026-02-25.
-                return eAcc_unreserved_prot;
+                // 25 PIR IDs are syntactically valid UniProt (historically
+                // Swissprot) accessions.  However, as of 2026-07-21, only
+                // three actually exist in UniProt, and none of them is
+                // fully public.
+                if ((flags & fParse_Cautiously) != 0  // &&  main_acc[0] == 'Q'
+                    ) {
+                    return eAcc_unreserved_prot;
+                } else {
+                    return eAcc_pir;
+                }
             }
         }
         if (non_dig_pos != NPOS  &&  (flags & fParse_RawText) != 0) {
