@@ -84,7 +84,11 @@ string CGC_AssemblyUnit::GetAccession() const
 
 string CGC_AssemblyUnit::GetDisplayName() const
 {
-    return GetFullAssembly()->GetName() + ' ' + GetName();
+    string display_name = GetName();
+    if (GetFullAssembly()->IsAssembly_set()) {
+        display_name.insert(0, GetFullAssembly()->GetName() + ' ');
+    }
+    return display_name;
 }
 
 
