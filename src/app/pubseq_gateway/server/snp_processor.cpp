@@ -452,6 +452,8 @@ void CPSGS_SNPProcessor::x_ProcessAnnotationRequest(void)
             return;
         }
         if (!m_Config->m_AllowNonRefSeq) {
+            // This should never be executed since the client will mark unresolvable non-refseq request
+            // as not supported.
             x_Finish(ePSGS_NotFound);
             return;
         }
@@ -987,6 +989,7 @@ void CPSGS_SNPProcessor::x_OnSeqIdResolveFinished(SBioseqResolution&& bioseq_res
         m_ThreadPool->AddTask(m_PoolTask);
     }
     catch (...) {
+        x_ReportResultStatusForAllNA(SPSGS_AnnotRequest::ePSGS_RS_Error);
         x_Finish(ePSGS_Error);
     }
 }
