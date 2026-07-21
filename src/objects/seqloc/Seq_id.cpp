@@ -2470,10 +2470,10 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
                        &&  isdigit(ucdata[5])  &&  isalpha(ucdata[2])
                        &&  isalnum(ucdata[3])  &&  isalnum(ucdata[4])
                        &&  ctre::match<kSPishPIR>(main_acc)) {
-                // 25 PIR IDs are syntactically valid UniProt (historically
-                // Swissprot) accessions.  However, as of 2026-07-21, only
-                // three actually exist in UniProt, and none of them is
-                // fully public.
+                // 25 PIR IDs are syntactically valid Swissprot accessions.
+                // However, as of 2026-07-21, only three actually exist, and
+                // all three are preliminary (UniProt) rather than fully
+                // public.
                 if ((flags & fParse_Cautiously) != 0  // &&  main_acc[0] == 'Q'
                     ) {
                     return eAcc_unreserved_prot;
