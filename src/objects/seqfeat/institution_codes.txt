@@ -156,6 +156,7 @@ AK	s	Auckland War Memorial Museum
 AKASH	s	University of Azad Jammu and Kashmir Pakistan			
 AKDE	s	Akdeniz University, Herbarium of the Education Faculty			
 AKDU	s	Akdeniz University Herbarium			
+AKM	s	Akmenes Region Museum			
 AKPM	s	Akita Prefectural Museum			
 AKSU	s	Aksaray University			
 AKU<JPN>	c	Faculty of Agriculture			
@@ -1021,6 +1022,7 @@ CB<CZE>	s	Jihoceske Muzeum
 CBAH	s	Departmant of Biyology, Faculty of Engineering and Natural Sciences, Manisa Celal Bayar University			
 CBAS	c	Bacteria Collection of Environmemt and Health (Colecao de Bacterias do Ambiente e Saude)			
 CBB	s	Herbarium of Canakkale Botanical Garden			
+CBBC	s	Biotechnology Center in Borj-Cedria			
 CBBG	s	Crested Butte Botanic Gardens			
 CBC	s	Centre for Biodiversity Conservation			
 CBD<ITA>	s	Collezione Ittiologica Balma-Delmastro			
@@ -1175,6 +1177,7 @@ CEAM	s	Centro de Entomologica y Acarologia
 CEB	s	Tadulako University			
 CEB<FRA>	c	Centre d'Etudes du Bouchet			
 CEBU	s	University of San Carlos, Biology Department			
+CECA-JBBFJ	s	Centro de Educacion y Cultura Ambiental, Sociedad Jardin Botanico de Los Mochis			
 CECT	c	Coleccion Espanola de Cultivos Tipo			
 CEDD	s	International Center for Ethnomedicine and Drug Development			
 CEDiT	s	Centre of Excellence for Dinophyte Taxonomy			
@@ -1597,6 +1600,7 @@ CRFS	s	Colecao de Referencia de Fauna de Solo
 CRGF	c	Collection de Recursos Geneticos Fungicos, Instituto de Ecologia y Systematica			
 CRH	s	Centre de Recherche en Hydrobiologie			
 CRI	s	Universidade do Extremo Sul Catarinense, Bairro Universitario			
+CRIAP-IMIPAS	s	Centro Regional de Investigacion Acuicola y Pesquera, Bahia de Banderas, Instituto Mexicano de Investigacion en Pesca y Acuacultura Sustentables			
 CRIFC	s	Central Research Institute for Field Crops in Turkey			
 CRK	s	University College, Plant Science Department			
 CRL	c	Centro de Referencia Para Lactobacilos			
@@ -2277,6 +2281,8 @@ FBWA	s	Forstlichen Bundsversuchsanstalt
 FC	s	Universidade Federal Rural da Amazonia			
 FC-DPV	s	Departmento de Paleontologia, Facultad de Ciencias			
 FCAB	s	Pontificia Universidade Catolica do Rio de Janeiro, Nucleo Interdisciplinar de Meio Ambiente			
+FCB-UAEM	s	Facultad de Ciencias Biologicas, Universidad Autonoma del Estado de Morelos			
+FCB-UJED	s	Facultad de Ciencias Biologicas, Universidad Juarez del Estado de Durango			
 FCBP	c	First Fungal Culture Bank of Pakistan			
 FCCM	s	Fundacao Municipal da Casa da Cultura de Maraba			
 FCDA	s	Fresno County Department of Agriculture			
@@ -2458,6 +2464,7 @@ FSUH	s	Frostburg State University
 FSUM	s	Florida State University Museum	FSU		
 FSUMC	s	Frostburg State University, Mammal Collection			
 FSUNS	s	Faculty of Science, The University of Novi Sad			
+FSUU-BIRC	s	Father Saturnino Urios University-Biodiversity Informatics and Research Center (FSUU-BIRC)			
 FT	s	Centro Studi Erbario Tropicale, Universita degli Studi di Firenze			
 FTCC	c	Food Technology Culture Collection			
 FTCMU	c	Department of Food Science and Technology, Faculty of Agriculture			
@@ -2731,6 +2738,7 @@ GUL	s	Suleyman Demirel University
 GUM	s	Glasgow University Museum (Hunter Museum)			
 GUM<IRN>	s	Guilan University Mycological Herbarium			
 GUMACC	c	Gotheburg University Marine Algal Culture Collection			
+GUPA	s	Department of Geology, University of Patras			
 GUYN	s	Fundacion Jardin Botanico del Orinoco			
 GVCH	s	Government Victoria College Palakkad			
 GVF	s	George Vanderbilt Foundation			
@@ -3562,6 +3570,7 @@ IMYZA	c	Instituto de Microbiologia y Zoologia Agricola
 IN	s	InfoBoss Cyber Herbarium			
 INA<PRT>	s	Instituto Nun'Alvres, Departamento de Biologia			
 INA<RUS>	c	Culture Collection of the Institute of New Antibiotics			
+INABIOEC	s	Instituto Nacional de Biodiversidad del Ecuador			
 InaCC	c	Indonesian Culture Collection, Research Center for Biology, Indonesian Institute of Sciences			
 INALI	s	Instituto Limnologia			
 iNAT	b	iNaturalist		https://www.inaturalist.org/observations/	
@@ -3831,6 +3840,7 @@ JBC	b	Francisco Javier Clavijero Botanic Garden
 JBCC	s	Alaska State Museum			
 JBCVC	sb	Jardin Botanico Canario Viera y Clavijo			
 JBG	s	Johannesburg Botanic Garden			
+JBGE	s	Jardin Botanique de Geneve			
 JBGP	s	Jardin Botanico Guillermo Pineres			
 JBL	s	Jardin Botanico Lankester, Universidad de Costa Rica			
 JBN	s	Jardin Botanico Nacional			
@@ -4145,6 +4155,7 @@ KTHM	s	Maratha Vidya Prasarak Samaj's K.R.T. Arts, B.H. Commerce and A.M. Scienc
 KTU	s	University of Silesia, Department of Plant Systematics			
 KTUH	s	Kuwait University, Botany and Microbiology Department			
 KU	s	University of Kansas Natural History Museum	KUMNA,KUNHM,KUVP,UK		
+KU Leuven	s	KU Leuven			
 KU-MACC	c	Kobe University Macroalgal Culture Collection			
 KU:H	s	University of Kansas Natural History Museum, Herpetology Collection			
 KU:I	s	University of Kansas Natural History Museum, Ichthyology collection	KU:KUI	https://ichthyology.specify.ku.edu/specify/bycatalog/KUI/&spec;/	
@@ -4399,6 +4410,7 @@ LMCH	c	Laboratoire de Microbiologie
 LMD	c	Laboratorium voor Microbiologie der Landbouwhogeschool			
 LMJ	s	Centro de Investigacao Cientifica Algodoeira, Botanical Department			
 LMKG	s	Landesmuseum fur Karnten			
+LMM	s	Regional Museum of Lapland			
 LMND	s	Landessammlungen fur Naturkunde	LNMD		
 LMNH	s	Museum d'Histoire naturelle			
 LMO	s	Landesmuseum Natur und Mensch			
@@ -4491,6 +4503,8 @@ LTM	s	Tekovske muzeum
 LTN	s	Luton Museum and Art Gallery			
 LTR	s	University of Leicester, Biology Department			
 LTU	s	Louisiana Tech University			
+LU:LTEtt	s	Lycee Technique d'Ettelbruck			
+LU:PCH	s	Administration des ponts et chaussees Luxembourg			
 LU<CHN>	s	Lingnan University			
 LU<RUS>	s	St. Petersburg University			
 LUA	s	Instituto de Investigacao Agronomica			
@@ -4498,6 +4512,7 @@ LUAI	s	ex-Centro Nacional de Investigacao Cientifica (CNIC)
 LUB	s	Naturhistorisches Museum zu Luebeck			
 LUBA	s	Instituto Superior de Ciencias da Educacao			
 LUBEE	b	Lubee Bat Conservancy			
+LUBG	s	Lund University Botanical Garden			
 LUC	s	Loyola University of Chicago			
 LUCAS	s	Francesc de Lucas i Alcover			
 LUCCA	s	Comune di Lucca			
@@ -5995,6 +6010,7 @@ NWH	s	Norfolk Museums and Archaeology Service, Natural History Department
 NWK	s	Newark District Council Museum			
 NWMSU	s	Northwest Missouri State University			
 NWOSU	s	Northwestern Oklahoma State University, Biology Department			
+NWSGL	s	Naturwissenschaftliche Sammlungen des Kantons Glarus			
 NWSW	s	Naturwissenschaftliche Sammlungen der Stadt Winterthur	NMWIN		
 NWT	s	Harper Adams Agricultural College			
 NWTC	s	Northwest Normal University			
@@ -7464,6 +7480,7 @@ STI	s	Stirling Smith Art Gallery and Museum
 STIU	s	University of Stirling, Biological Sciences Department			
 STK	s	Stoke-on-Trent Athenaeum			
 STL	s	Instituto Nacional de Limnologia, Departamento Macrofitas			
+STLIN	s	Station Linne			
 STM<DEU>	s	Stettinger Museum			
 STM<FRA>	c	Laboratoire des Symbioses Tropicales et Mediterraneennes			
 STM<GBR>	s	Streatham Antiquarian and Natural History Society			
@@ -7937,6 +7954,7 @@ UAC	s	University of Calgary, Department of Biological Sciences
 UAC<PRT>	s	University of the Azores			
 UAC<PRT>:DTP	s	Dalberto Teixeira Pombo Arthropod Collection, University of the Azores			
 UACAM	s	Universidad Autonoma de Campeche			
+UACB-UAZ	s	Unidad Academica de Ciencias Biologicas, Universidad Autonoma de Zacatecas			
 UACC	s	Univeridad Autonoma de Chapingo			
 UACCC	c	University of Alabama Chytrid Culture Collection	UA-SEC		
 UADBA	s	Universite d?Antananarivo, Departement de Biologie Animale			
@@ -8012,6 +8030,7 @@ UC<USA-CA>	s	University of California, University Herbarium
 UC<USA-MI>	c	Upjohn Culture Collection			
 UCAC	s	University of Central Arkansas, Department of Biology			
 UCAM	s	Universidad Autonoma de Campeche			
+UCAR	s	University of Carthage			
 UCB	s	University of California at Berkeley			
 UCBD	s	University College, Thiruvananthapuram			
 UCBG	s	University of Botswana, Department of Biological Sciences			
@@ -8149,6 +8168,7 @@ UGM	s	University of Guam	ESUG,UGG
 UGMD	s	Zoology Museum of the University of Ghent			
 UGSB	sc	University of Giessen Systematics and Biodiversity collection			
 UH	s	University of Hawaii			
+UHasselt	s	Hasselt University			
 UHCC	c	University of Helsinki Cyanobacteria Culture Collection			
 UHI	s	Ussishkin House, Botany Department			
 UHIM	s	The University of Hawaii Insect Museum			
@@ -8209,6 +8229,7 @@ UMBC	s	Univeristy of Malawi
 UMBS	s	University of Michigan			
 UMCC	c	Unimore Microbial Culture Collection			
 UMCE	s	Herbario Federico Johow, Universidad Metropolitana de Ciencias de la Educacion			
+UMCE_IE	s	INSTITUTO DE ENTOMOLOGIA UNIVERSIDAD METROPOLITANA DE CIENCIAS DE LA EDUCACION			
 UMD	s	University of Minnesota, Duluth			
 UMDC	s	University of Maryland			
 UMDE	s	University of Maine	UMO		
@@ -8313,6 +8334,7 @@ UNG	s	University of North Georgia
 UNGGVH	s	University of North Georgia			
 UNH	s	University of New Hampshire			
 UNI	s	University of Northern Iowa			
+Unicauca	s	Universidad del Cauca			
 UNIFR	s	University of Fribourg			
 UNIMAS	s	Universiti Malaysia Sarawak			
 UNIN	s	University of the North, Botany Department			
@@ -8591,6 +8613,7 @@ UWGM	s	University of Wisconsin Geology Museum
 UWI	s	University of the West Indies (Trinidad and Tobago)			
 UWIC	s	University of the West Indies, Trinidad and Tobago			
 UWIJ	s	University of the West Indies, Jamaica			
+UWIMona	s	University of the West Indies, Mona, Jamaica			
 UWIZM	s	The University of the West Indies Zoology Museum			
 UWL	s	University of Wisconsin, Biology Department			
 UWM	s	University of Wisconsin, Biological Sciences Department			
@@ -8653,6 +8676,7 @@ VF	s	Universidad de Valencia, Departamento de Biologia Vegetal, Botanica
 VFM	s	Forest Inventory and Planning Institute			
 VFWD	s	Vermont Fish and Wildlife Department			
 VFWO	s	U.S. Fish and Wildlife Service, Ventura Fish and Wildlife Office			
+VGAVM	s	Vitebsk State Academy of Veterinary Medicine			
 VGBI	s	Botanical Garden-Institute Vladivostok			
 VGEO	s	Pacific Geographical Institute of the Far Eastern Branch of the Russian Academy of Sciences			
 VGZ	s	Voronezh State Biosphere Reserve, Research Department			
@@ -8679,6 +8703,7 @@ VIZR	c	Collection for plant protection, All-Russian Institute of Plant Protectio
 VKM	c	All-Russian Collection of Microorganisms		http://www.vkm.ru/strains.php?vkm=	
 VKPM	c	Russian National Collection of Industrial Microorganisms			
 VLA	s	Far Eastern Branch, Russian Academy of Sciences, Botany Department			
+VLIZ	s	Vlaams Instituut voor de Zee			
 VLV	s	G. B. Ely?kov Pacific Institute of Bioorganic Chemistry			
 VM	s	Okresni vlastivedne muzeum (Museum of the Moravian Wallachia region, state funded organisation)			
 VMI	s	Virginia Military Institute			
@@ -8721,6 +8746,7 @@ VSCC	s	Volunteer State Community College
 VSM<NOR>	s	Det Kgl. Norske Videnskabers Selskab Museet			
 VSM<SVK>	s	Eastern Slovakian (Vychodoslovenske) Museum, Natural History Department			
 VSRI	s	N.I. Vavilov All-Russian Scientific Research Instiutte of Plant Industry			
+VSU	s	Vitebsk State University named after P.M. Masherov			
 VSUBGH	s	Visayas State University			
 VSUH	s	Virginia State University, Life Sciences Department			
 VT	s	Pringle Herbarium, University of Vermont			
