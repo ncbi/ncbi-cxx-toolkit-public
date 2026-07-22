@@ -1,5 +1,6 @@
 
 NCBI_begin_app(blast_usage_report)
+  NCBI_sources(blast_usage_report)
   NCBI_uses_toolkit_libraries(blast_app_util)
   NCBI_add_definitions(NCBI_MODULE=BLAST)
   NCBI_requires(-Cygwin)
