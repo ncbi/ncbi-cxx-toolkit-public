@@ -246,8 +246,13 @@ CPSGS_ResolveBase::x_ResolveAsAccesionLike(SBioseqResolution &  bioseq_resolutio
     CPSGCache           psg_cache(true, m_Request, m_Reply);
 
     // Try BIOSEQ_INFO
+
+    // Capitalize seq_id
+    string      upper_seq_id = m_CurrentSeqIdToResolve->seq_id;
+    NStr::ToUpper(upper_seq_id);
+
     CBioseqInfoRecord   bioseq_info;
-    bioseq_info.SetAccession(m_CurrentSeqIdToResolve->seq_id);
+    bioseq_info.SetAccession(upper_seq_id);
     bioseq_resolution.SetBioseqInfo(bioseq_info);
 
     EPSGS_CacheLookupResult     bioseq_cache_lookup_result = psg_cache.LookupBioseqInfo(

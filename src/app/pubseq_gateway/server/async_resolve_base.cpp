@@ -628,7 +628,12 @@ CPSGS_AsyncResolveBase::x_PrepareAccessionLikeBioseqInfoQuery(void)
     // The request is based on seq id only and exactly as the user provided it
 
     ++m_BioseqResolution.m_CassQueryCount;
-    m_BioseqInfoRequestedAccession = m_CurrentSeqIdToResolve->seq_id;
+
+    // Capitalize seq_id
+    string      upper_seq_id = m_CurrentSeqIdToResolve->seq_id;
+    NStr::ToUpper(upper_seq_id);
+
+    m_BioseqInfoRequestedAccession = upper_seq_id;
     m_BioseqInfoRequestedVersion = -1;
     m_BioseqInfoRequestedSeqIdType = -1;
     m_BioseqInfoRequestedGI = -1;
@@ -637,7 +642,7 @@ CPSGS_AsyncResolveBase::x_PrepareAccessionLikeBioseqInfoQuery(void)
     details.reset(new CCassBioseqInfoFetch());
 
     CBioseqInfoFetchRequest     bioseq_info_request;
-    bioseq_info_request.SetAccession(m_CurrentSeqIdToResolve->seq_id);
+    bioseq_info_request.SetAccession(upper_seq_id);
 
     auto    bioseq_keyspace = CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace();
     CCassBioseqInfoTaskFetch *  fetch_task =
