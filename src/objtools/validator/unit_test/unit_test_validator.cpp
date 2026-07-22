@@ -24691,28 +24691,25 @@ BOOST_AUTO_TEST_CASE(Test_NoCDSbetweenUTRs)
     TestUTRPair(true, true);
 }
 
-/* RW-2721 - temporarily disable until taxonomy issues have been resolved
 BOOST_AUTO_TEST_CASE(Test_FormatBadSpecificHostAlternateName)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
-    SetOrgMod(entry, COrgMod::eSubtype_nat_host, "Gromphadorina portentosa");
+    SetOrgMod(entry, COrgMod::eSubtype_nat_host, "Candida versatilis");
 
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadSpecificHost",
-            "Specific host value is alternate name: Gromphadorina portentosa should be Gromphadorhina portentosa"));
-    // AddChromosomeNoLocation(expected_errors, entry);
+            "Specific host value is alternate name: Candida versatilis should be Wickerhamiella versatilis"));
 
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
     CValidErrorFormat format(*objmgr);
     string val = format.FormatForSubmitterReport(*(eval->GetErrs().back()), scope);
-    BOOST_CHECK_EQUAL(val, "lcl|good\tGromphadorina portentosa should be Gromphadorhina portentosa");
+    BOOST_CHECK_EQUAL(val, "lcl|good\tCandida versatilis should be Wickerhamiella versatilis");
 
     CLEAR_ERRORS
 }
-*/
 
 BOOST_FIXTURE_TEST_CASE(Test_VR_803, CGenBankFixture)
 {
