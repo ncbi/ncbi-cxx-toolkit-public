@@ -2000,7 +2000,7 @@ bool SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                        tokens[i].size() - pos - 1);
             }
             if (hints.specialN_version == 3) {
-                if (pos == NPOS) {
+                if (pos == tokens[i].size()) {
                     s = hints.prev_specialN_acc;
                     from = s;
                 }
