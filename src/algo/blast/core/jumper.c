@@ -39,7 +39,7 @@
 
 
 JUMP jumper_default [] = {
- {1, 1, 9, 0},  /* this was added for illumina */
+ {1, 1, 9, 0},  /* this was added for Illumina */
  {1, 0, 10, 0},    /* insert in 1 */ 
  {0, 1, 10, 0},    /* deletion in 1 */
  {2, 0, 10, 0}, 
