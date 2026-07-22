@@ -8801,6 +8801,7 @@ WB<DEU>	s	Universitat Wurzburg
 WB<USA-WI>	c	Department of Bacteriology, University of Wisconsin			
 WBCH	s	Wisbech and Fenland Museum			
 WBG	s	Waimea Botanical Garden			
+WBH	s	Westmont College			
 WBR	s	Laboratoire de Paleontologie, Unversite de Montpellier			
 WBS	s	Landbouwuniversiteit			
 WBU	s	Wayland Baptist University			
