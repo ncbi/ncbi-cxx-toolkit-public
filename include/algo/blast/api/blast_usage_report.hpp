@@ -52,7 +52,7 @@ public:
     ~CBlastPhoneHomePolicy() = default;
 
     /// Apply policy for an application.
-    void Apply(CNcbiApplicationAPI* app) {}
+    void Apply(CNcbiApplicationAPI* ) override {}
 
     /// Print a message about collecting data, disablig telemetry and privacy policies.
     void Print();
