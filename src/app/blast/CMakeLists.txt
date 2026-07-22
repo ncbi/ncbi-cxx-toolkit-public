@@ -13,6 +13,7 @@ NCBI_add_app(
   blast_formatter
   deltablast
   seedtop
+  blast_usage_report
 )
 
 NCBI_project_watchers(camacho madden fongah2)

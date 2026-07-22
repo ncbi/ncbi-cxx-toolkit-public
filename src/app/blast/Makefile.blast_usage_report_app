@@ -1,0 +1,43 @@
+#
+# Makefile:  app/blast/Makefile.blast_usage_report_app
+# Using:     Makefile.blast_usage_report.app
+# (Please restrict changes you plan to commit to the latter.)
+#
+
+###  PICK UP COMMON SETTINGS
+import_root = ../..
+project_path = app/blast
+user_makefile = Makefile.blast_usage_report_app
+include $(import_root)/Makefile.mk
+
+###  IMPORT THE ORIGINAL PROJECT SETTINGS -- DON'T TOUCH THESE TWO LINES !!!
+TMPL = blast_usage_report
+include Makefile.blast_usage_report.app
+
+### LOCAL_LDFLAGS automatically added
+LDFLAGS  = $(LOCAL_LDFLAGS) $(FAST_LDFLAGS:ppc=i386) 
+
+
+#############################################################################
+##  YOU CAN LOCALLY OVERRIDE THE ORIGINAL(IMPORTED) PROJECT SETTINGS HERE  ##
+##                                                                         ##
+##  However, if you are planning to check in these settings later, then    ##
+##  it may be more convenient to edit directly in "Makefile.blastp.app".  ##
+#
+# PRE_LIBS = 
+# LIBS     = $(ORIG_LIBS)
+# CPPFLAGS = $(ORIG_CPPFLAGS)
+# CFLAGS   = $(ORIG_CFLAGS)
+# CXXFLAGS = $(ORIG_CXXFLAGS)
+# LDFLAGS  = $(ORIG_LDFLAGS)
+#                                                                          ##
+#############################################################################
+
+
+###  APPLICATION BUILD RULES  -- DON'T EDIT OR MOVE THIS LINE !!!
+include $(import_root)/Makefile.app
+
+
+###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) HERE
+
+# Original MD5 checksum: 15817fa6d4aeab35a0375184246555d1
