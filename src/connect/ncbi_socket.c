@@ -10012,7 +10012,7 @@ int gettimeofday(struct timeval* tp, void* unused)
         tp->tv_usec = (long)(ts.tv_nsec / 1000);
     } else {
         /* Seconds since January 1, 1601 (UTC) to January 1, 1970 (UTC) */
-        static const ULONGLONG EPOCH = 11644473600L;
+        static const ULONGLONG EPOCH = 11644473600LL;
         /* The number of 100-nanosecond intervals since January 1, 1601 (UTC) */
         FILETIME       systime;
         ULARGE_INTEGER time;
