@@ -18,7 +18,8 @@ rpsblast \
 rpstblastn \
 blast_formatter \
 deltablast \
-seedtop 
+seedtop \
+blast_usage_report 
 
 USR_PROJ = legacy_blast update_blastdb get_species_taxids cleanup-blastdb-volumes
 
@@ -55,4 +56,5 @@ seedtop: lib
 	${MAKE} ${MFLAGS} -f Makefile.seedtop_app
 deltablast: lib
 	${MAKE} ${MFLAGS} -f Makefile.deltablast_app
-
+blast_usage_report: lib
+	${MAKE} ${MFLAGS} -f Makefile.blast_usage_report_app
