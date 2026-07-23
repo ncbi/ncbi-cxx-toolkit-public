@@ -131,9 +131,9 @@ int CBlastUsageReportApp::Run(void)
         }
         else if (args[kArgPrivacyMsg]){
             CNcbiOstream& out = args[kArgOutput].AsOutputFile();
-            std::streambuf* old = std::cout.rdbuf(out.rdbuf());
+            std::streambuf* old = std::cerr.rdbuf(out.rdbuf());
             m_PhoneHomePolicy.Print();
-            std::cout.rdbuf(old);
+            std::cerr.rdbuf(old);
         }
         else if (args[kArgStatus]){
             CNcbiOstream& out = args[kArgOutput].AsOutputFile();
