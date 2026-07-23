@@ -56,6 +56,7 @@
 #include <objects/general/Person_id.hpp>
 #include <util/multipattern_search.hpp>
 #include <util/regexp/ctre/ctre.hpp>
+#include <objects/seqblock/GB_block.hpp>
 
 #include "discrepancy_core.hpp"
 #include "utils.hpp"
@@ -281,6 +282,33 @@ DISCREPANCY_CASE(SEQUENCE_READ_ARCHIVE, SEQUENCE, eSubmitter | eSmart, "Sequence
                             const CUser_field::C_Data::TStrs& strs = user_field->GetData().GetStrs();
                             if (!strs.empty() && !strs[0].empty()) {
                                 m_Objs["[n] sequence[s] contain[S] Sequence Read Archive IDs"].Add(*context.BioseqObjRef());
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+// EXTRA_ACCESSIONS
+
+DISCREPANCY_CASE(EXTRA_ACCESSIONS, SEQUENCE, eSubmitter | eSmart, "Sequences with extra accessions")
+{
+    const CBioseq& bioseq = context.CurrentBioseq();
+    if (bioseq.CanGetInst() && bioseq.GetInst().IsNa()) {
+        for (const auto& desc : context.GetAllSeqdesc()) {
+            if (desc.IsGenbank()) {
+                const CGB_block& gbb = desc.GetGenbank();
+                if (gbb.IsSetExtra_accessions()) {
+                    const list<string>* xtra = nullptr;
+                    xtra = &gbb.GetExtra_accessions();
+                    if (xtra) {
+                        for (auto& str : *xtra) {
+                            if (!str.empty()) {
+                                m_Objs["[n] sequence[s] contain[S] extra accessions"].Add(*context.BioseqObjRef());
                                 return;
                             }
                         }
