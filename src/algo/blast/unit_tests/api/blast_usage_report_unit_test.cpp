@@ -46,35 +46,6 @@ USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 
 BOOST_AUTO_TEST_SUITE(BLAST_USAGE_REPORT)
-BOOST_AUTO_TEST_CASE(Blast_usage_report_timeout)
-{
-	CUsageReportAPI::SetURL("http://iwebdev/staff/fongah2/blast_test/sleep_15s.cgi");
-	CStopWatch sw(CStopWatch::eStart);
-	{
-	    std::stringstream test_buffer;
-	    std::streambuf* cerr_buffer = std::cerr.rdbuf(test_buffer.rdbuf());
-		CBlastUsageReport * report(new CBlastUsageReport());
-		std::cerr.rdbuf(cerr_buffer);
-		//BOOST_REQUIRE_EQUAL(test_buffer.str(), CBlastPhoneHomePolicy::kPrivacyNotice);
-		report->AddParam(CBlastUsageReport::eNumThreads, 1);
-		delete report;
-	}
-	double t = sw.Elapsed();
-	BOOST_REQUIRE(t < 15);
-	sw.Restart();
-	CUsageReportAPI::SetURL("http://iwebdev/staff/fongah2/blast_test/invalid");
-	{
-	    std::stringstream test_buffer;
-	    std::streambuf* cerr_buffer = std::cerr.rdbuf(test_buffer.rdbuf());
-		CBlastUsageReport * report(new CBlastUsageReport());
-		std::cerr.rdbuf(cerr_buffer);
-		//BOOST_REQUIRE_EQUAL(test_buffer.str(), CBlastPhoneHomePolicy::kPrivacyNotice);
-		report->AddParam(CBlastUsageReport::eNumThreads, 1);
-		delete report;
-	}
-	t = sw.Elapsed();
-	BOOST_REQUIRE(t < 10);
-}
 
 class CBlastPhoneHomeTestFixture {
 public:
@@ -211,6 +182,36 @@ void CBlastPhoneHomeTestFixture::x_RestoreConfigs()
             }
         }
     }
+}
+
+BOOST_FIXTURE_TEST_CASE(Blast_usage_report_timeout, CBlastPhoneHomeTestFixture)
+{
+    CUsageReportAPI::SetURL("http://iwebdev/staff/fongah2/blast_test/sleep_15s.cgi");
+    CStopWatch sw(CStopWatch::eStart);
+    {
+        std::stringstream test_buffer;
+        std::streambuf* cerr_buffer = std::cerr.rdbuf(test_buffer.rdbuf());
+        CBlastUsageReport * report(new CBlastUsageReport());
+        std::cerr.rdbuf(cerr_buffer);
+        BOOST_REQUIRE_EQUAL(test_buffer.str(), CBlastPhoneHomePolicy::kPrivacyNotice);
+        report->AddParam(CBlastUsageReport::eNumThreads, 1);
+        delete report;
+    }
+    double t = sw.Elapsed();
+    BOOST_REQUIRE(t < 15);
+    sw.Restart();
+    CUsageReportAPI::SetURL("http://iwebdev/staff/fongah2/blast_test/invalid");
+    {
+        std::stringstream test_buffer;
+        std::streambuf* cerr_buffer = std::cerr.rdbuf(test_buffer.rdbuf());
+        CBlastUsageReport * report(new CBlastUsageReport());
+        std::cerr.rdbuf(cerr_buffer);
+        BOOST_REQUIRE_EQUAL(test_buffer.str(), CBlastPhoneHomePolicy::kPrivacyNotice);
+        report->AddParam(CBlastUsageReport::eNumThreads, 1);
+        delete report;
+    }
+    t = sw.Elapsed();
+    BOOST_REQUIRE(t < 10);
 }
 
 BOOST_FIXTURE_TEST_CASE(Check_usage_configurations, CBlastPhoneHomeTestFixture)
