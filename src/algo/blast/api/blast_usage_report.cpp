@@ -319,9 +319,7 @@ bool CBlastPhoneHomePolicy::UpdatePhoneHomeStatus()
     return IsEnabled();
 }
 
-void CBlastPhoneHomePolicy::Print()
-{
-	std::cerr << R"DELIM( 
+const string CBlastPhoneHomePolicy::kPrivacyNotice = R"DELIM( 
 BLAST+ Usage Reporting and Privacy Notice
 -----------------------------------------
 
@@ -362,7 +360,12 @@ You may enable or disable usage data sharing at any time by running the utility:
 NLM Web Policies: https://www.nlm.nih.gov/web_policies.html
 
 )DELIM";
+
+void CBlastPhoneHomePolicy::Print()
+{
+    std::cerr << kPrivacyNotice;
 }
+
 
 void CBlastPhoneHomePolicy::Save()
 {

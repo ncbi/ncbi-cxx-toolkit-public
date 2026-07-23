@@ -104,6 +104,7 @@ public:
     static const string kNCBIUsageReportRegistryParam;
     static const string kBlastUsageReportRegistry;
     static const string kBlastUsageReportRegistryParam;
+    static const string kPrivacyNotice;
 
 private:
 
