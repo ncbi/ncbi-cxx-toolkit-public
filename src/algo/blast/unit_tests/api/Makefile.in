@@ -49,6 +49,7 @@ gencode_singleton_unit_test \
 bl2seq_unit_test \
 stat_unit_test \
 magicblast_unit_test \
+blast_usage_report_unit_test \
 rmblast_blasthits_unit_test \
 rmblast_traceback_unit_test
 
@@ -156,3 +157,5 @@ stat_unit_test: lib
 	${MAKE} ${MFLAGS} -f Makefile.stat_unit_test_app
 magicblast_unit_test:
 	${MAKE} ${MFLAGS} -f Makefile.magicblast_unit_test_app
+blast_usage_report_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.blast_usage_report_unit_test_app
