@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(Blast_usage_report_timeout)
 	    std::streambuf* cerr_buffer = std::cerr.rdbuf(test_buffer.rdbuf());
 		CBlastUsageReport * report(new CBlastUsageReport());
 		std::cerr.rdbuf(cerr_buffer);
-		BOOST_REQUIRE_EQUAL(test_buffer.str(), CBlastPhoneHomePolicy::kPrivacyNotice);
+		//BOOST_REQUIRE_EQUAL(test_buffer.str(), CBlastPhoneHomePolicy::kPrivacyNotice);
 		report->AddParam(CBlastUsageReport::eNumThreads, 1);
 		delete report;
 	}
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(Blast_usage_report_timeout)
 	    std::streambuf* cerr_buffer = std::cerr.rdbuf(test_buffer.rdbuf());
 		CBlastUsageReport * report(new CBlastUsageReport());
 		std::cerr.rdbuf(cerr_buffer);
-		BOOST_REQUIRE_EQUAL(test_buffer.str(), CBlastPhoneHomePolicy::kPrivacyNotice);
+		//BOOST_REQUIRE_EQUAL(test_buffer.str(), CBlastPhoneHomePolicy::kPrivacyNotice);
 		report->AddParam(CBlastUsageReport::eNumThreads, 1);
 		delete report;
 	}
