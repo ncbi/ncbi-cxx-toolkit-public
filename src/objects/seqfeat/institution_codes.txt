@@ -512,7 +512,7 @@ BCCM/DCG	c	Belgian Coordinated Collections of Microorganisms / DCG Diatoms Colle
 BCCM/GENECORNER	c	Belgian Coordinated Collections of Microorganisms / GeneCorner Plasmid Collection	BCCM/GeneCorner,BCCM/LMBP,GeneCorner,LMBP		
 BCCM/IHEM	c	Belgian Coordinated Collections of Microorganisms / IHEM Fungi collection: Human & Animal Health	IHEM		
 BCCM/ITM	c	Belgian Coordinated Collections of Microorganisms / ITM Mycobacteria Collection	ITM		
-BCCM/LMG	c	Belgian Coordinated Collections of Microorganisms/ LMG Bacteria Collection	LMG	http://bccm.belspo.be/catalogues/lmg-strain-details?NUM=	
+BCCM/LMG	c	Belgian Coordinated Collections of Microorganisms/ LMG Bacteria Collection		http://bccm.belspo.be/catalogues/lmg-strain-details?NUM=	
 BCCM/MUCL	c	Belgian Coordinated Collections of Microorganisms / MUCL Agro-food & Environmental Fungal Collection	MUCL		
 BCCM/ULC	c	Belgian Coordinated Collections of Microorganisms / ULC Cyanobacteria Collection	ULC	https://bccm.belspo.be/catalogues/bm-details?accession_number=	
 BCCN	c	Brucella Culture Collection			
@@ -3476,7 +3476,7 @@ IFIP	s	Instituto Federal de Educacao, Ciencia e Tecnologia Goiano
 IFM<AUS>	c	IFM Quality Services Pty Ltd			
 IFM<JPN>	c	Research Center for Pathogenic Fungi and Microbial Toxicoses, Chiba University			
 IFMG	s	Instituto Federal de Minas Gerais - Campus Bambui			
-IFO	c	Institute for Fermentation	NBRC	https://www.nite.go.jp/nbrc/catalogue/NBRCCatalogueDetailServlet?ID=IFO&CAT=	
+IFO	c	Institute for Fermentation		https://www.nite.go.jp/nbrc/catalogue/NBRCCatalogueDetailServlet?ID=IFO&CAT=	
 IFP	s	Institute of Applied Ecology, Academia Sinica			
 IFRD	s	Research Institute of Resource Insects			
 IFRDCC	c	International Fungal Research and Development Culture Collection			
@@ -5508,7 +5508,7 @@ NBMB	s	New Brunswick Museum
 NBME	s	National Butterfly Museum (Saruman Museum)			
 NBPC	s	National Birds of Prey Centre			
 NBPGR	b	National Bureau of Plant Genetic Resources			
-NBRC	c	NITE Biological Resource Center	IFO	https://www.nite.go.jp/nbrc/catalogue/NBRCCatalogueDetailServlet?ID=NBRC&CAT=	
+NBRC	c	NITE Biological Resource Center		https://www.nite.go.jp/nbrc/catalogue/NBRCCatalogueDetailServlet?ID=NBRC&CAT=	
 NBRP	b	National Bio-Resource Project			
 NBSB	s	National Biomonitoring Specimen Bank, U.S. Geological Survey			
 NBSB:Bird	s	National Biomonitoring Specimen Bank, U.S. Geological Survey, bird collection			
@@ -6194,7 +6194,7 @@ OWU	s	Ohio Wesleyan University, Botany-Microbiology Department
 OXD	s	Wadham College			
 OXF	s	University of Oxford (Fielding-Druce Herbarium)			
 OXM	s	Magdalen College Library			
-P	s	Herbier National de Paris	P<FRA>		
+P	s	Herbier National de Paris			
 PA	s	Universidade Federal do Oeste do Para			
 PAC	s	Pennsylvania State University, Biology Department			
 PACA	s	Instituto Anchietano de Pesquisas/UNISINOS			
@@ -7968,7 +7968,7 @@ UAIC<USA-AL>	s	University of Alabama, Ichthyological Collection
 UAIC<USA-AZ>	s	University of Arizona			
 UALF	s	Federal University of Alfenas			
 UALRVC	s	University of Arkansas at Little Rock, Vertebrate Collection			
-UAM	s	University of Alaska, Museum of the North	UAF	http://arctos.database.museum/SpecimenDetail.cfm?GUID=	
+UAM	s	University of Alaska, Museum of the North		http://arctos.database.museum/SpecimenDetail.cfm?GUID=	
 UAM:Alg	s	University of Alaska, Museum of the North, The Algae collection			
 UAM:Bird	s	University of Alaska, Museum of the North, Bird Collection			
 UAM:Bryo	s	University of Alaska, Museum of the North, Bryozoan Collection			
