@@ -87,13 +87,13 @@ NCBI_PARAM_DEF_EX(bool, CGI, Print_Request_Method, true, eParam_NoThread,
 typedef NCBI_PARAM_TYPE(CGI, Print_Request_Method) TPrintRequestMethodParam;
 
 
-/// Deprecated flag, use generic Log_Http_Headers instead.
+/// Deprecated flag, use generic Print_Http_Headers instead.
 NCBI_PARAM_DECL(bool, CGI, Print_JA3_SIG);
 NCBI_PARAM_DEF_EX(bool, CGI, Print_JA3_SIG, false, eParam_NoThread,
                   CGI_PRINT_JA3_SIG);
 typedef NCBI_PARAM_TYPE(CGI, Print_JA3_SIG) TPrintJA3SigParam;
 
-/// Deprecated flag, use generic Log_Http_Headers instead.
+/// Deprecated flag, use generic Print_Http_Headers instead.
 NCBI_PARAM_DECL(bool, CGI, Print_JA_SIG);
 NCBI_PARAM_DEF_EX(bool, CGI, Print_JA_SIG, false, eParam_NoThread,
     CGI_PRINT_JA_SIG);
@@ -798,7 +798,7 @@ void CCgiApplication::LogRequest(const CCgiContext& ctx) const
         }
     }
 
-    // Print HTTP headers listed in CGI/Log_Http_Headers parameter.
+    // Print HTTP headers listed in CGI/Print_Http_Headers parameter.
     const string print_http_headers = TPrintHttpHeadersParam::GetDefault();
     vector<string> http_headers;
     NStr::Split(print_http_headers, ",; \t", http_headers, NStr::fSplit_Tokenize);
