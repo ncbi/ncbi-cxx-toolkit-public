@@ -144,27 +144,5 @@ BOOST_AUTO_TEST_CASE(SSeqRange_RangeSelection)
     }
 }
 
-BOOST_AUTO_TEST_CASE(Blast_usage_report_timeout)
-{
-	CUsageReportAPI::SetURL("http://iwebdev/staff/fongah2/blast_test/sleep_15s.cgi");
-	CStopWatch sw(CStopWatch::eStart);
-	{
-		CBlastUsageReport * report(new CBlastUsageReport());
-		report->AddParam(CBlastUsageReport::eNumThreads, 1);
-		delete report;
-	}
-	double t = sw.Elapsed();
-	BOOST_REQUIRE(t < 15);
-	sw.Restart();
-	CUsageReportAPI::SetURL("http://iwebdev/staff/fongah2/blast_test/invalid");
-	{
-		CBlastUsageReport * report(new CBlastUsageReport());
-		report->AddParam(CBlastUsageReport::eNumThreads, 1);
-		delete report;
-	}
-	t = sw.Elapsed();
-	BOOST_REQUIRE(t < 10);
-}
-
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */

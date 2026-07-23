@@ -53,6 +53,7 @@ NCBI_add_app(
   bl2seq_unit_test
   stat_unit_test
   magicblast_unit_test
+  blast_usage_report_unit_test
   rmblast_blasthits_unit_test
   rmblast_traceback_unit_test
 )
