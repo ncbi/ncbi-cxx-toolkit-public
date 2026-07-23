@@ -691,7 +691,7 @@ static int CkQualPosaa(CGb_qual& cur, bool error_msgs)
 
     const Char* str = cur.GetVal().c_str();
 
-    if (StringEquNI(str, "(pos:", 5)) {
+    if (StringEquNI(str, "(pos:")) {
         str += 5;
 
         while (*str == ' ')
@@ -707,7 +707,7 @@ static int CkQualPosaa(CGb_qual& cur, bool error_msgs)
                 while (*str != '\0' && (*str == ',' || *str == ' '))
                     str++;
 
-                if (StringEquNI(str, "aa:", 3)) {
+                if (StringEquNI(str, "aa:")) {
                     str += 3;
 
                     while (*str == ' ')
@@ -910,7 +910,7 @@ static int CkQualSeqaa(CGb_qual& cur, bool error_msgs)
     const Char* str  = cur.GetVal().c_str();
     const Char* eptr = nullptr;
 
-    if (StringEquNI(str, "(seq:", 5)) {
+    if (StringEquNI(str, "(seq:")) {
         str += 5;
 
         while (*str == ' ')
@@ -923,7 +923,7 @@ static int CkQualSeqaa(CGb_qual& cur, bool error_msgs)
             while (*str != '\0' && (*str == ',' || *str == ' '))
                 str++;
 
-            if (StringEquNI(str, "aa:", 3)) {
+            if (StringEquNI(str, "aa:")) {
                 str += 3;
 
                 while (*str == ' ')
@@ -1067,16 +1067,16 @@ static int CkQualSite(CGb_qual& cur, bool error_msgs)
     const Char* yes_or_no = "not \'YES\', \'NO\' or \'ABSENT\'";
 
     str = cur.GetVal().c_str();
-    if (StringEquNI(str, "(5'site:", 8)) {
+    if (StringEquNI(str, "(5'site:")) {
         bptr = str;
         str += 8;
 
-        if (StringEquNI(str, "YES", 3) || StringEquNI(str, "NO", 2) ||
-            StringEquNI(str, "ABSENT", 6)) {
+        if (StringEquNI(str, "YES") || StringEquNI(str, "NO") ||
+            StringEquNI(str, "ABSENT")) {
 
-            if (StringEquNI(str, "YES", 3))
+            if (StringEquNI(str, "YES"))
                 str += 3;
-            else if (StringEquNI(str, "NO", 2))
+            else if (StringEquNI(str, "NO"))
                 str += 2;
             else
                 str += 6;
@@ -1089,15 +1089,15 @@ static int CkQualSite(CGb_qual& cur, bool error_msgs)
                 ;
 
 
-            if (StringEquNI(str, "3'site:", 7)) {
+            if (StringEquNI(str, "3'site:")) {
                 str += 7;
 
-                if (StringEquNI(str, "YES", 3) ||
-                    StringEquNI(str, "NO", 2) ||
-                    StringEquNI(str, "ABSENT", 6)) {
-                    if (StringEquNI(str, "YES", 3))
+                if (StringEquNI(str, "YES") ||
+                    StringEquNI(str, "NO") ||
+                    StringEquNI(str, "ABSENT")) {
+                    if (StringEquNI(str, "YES"))
                         str += 3;
-                    else if (StringEquNI(str, "NO", 2))
+                    else if (StringEquNI(str, "NO"))
                         str += 2;
                     else
                         str += 6;

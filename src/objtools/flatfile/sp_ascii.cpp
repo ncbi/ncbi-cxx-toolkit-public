@@ -774,7 +774,7 @@ static CBioSource::EGenome GetSPGenomeFrom_OS_OG(const TDataBlkList& dbl)
             for (const auto& subdbp : dbp.GetSubBlocks())
                 if (subdbp.mType == ParFlatSP_OG) {
                     p = subdbp.mBuf.ptr + ParFlat_COL_DATA_SP;
-                    if (StringEquNI(p, "Plastid;", 8))
+                    if (StringEquNI(p, "Plastid;"))
                         for (p += 8; *p == ' ';)
                             p++;
                     gmod = StringMatchIcase(SP_organelle, p);
@@ -1194,7 +1194,7 @@ static CRef<COrg_ref> fill_orgref(SetOfSpecies& sosp)
             }
         }
 
-        if ((StringEquNI(p, "PV.", 3) && (p[3] == ' ' || p[3] == '\t' || p[3] == '\0')) ||
+        if ((StringEquNI(p, "PV.") && (p[3] == ' ' || p[3] == '\t' || p[3] == '\0')) ||
             NStr::EqualNocase(p, "AD11A") || NStr::EqualNocase(p, "AD11P")) {
             if (! org_ref->IsSetTaxname())
                 org_ref->SetTaxname(p);
@@ -1307,7 +1307,7 @@ static ViralHostList GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end
     StringCat(line, subdbp->mBuf.ptr);
     subdbp->mBuf.ptr[subdbp->mBuf.len - 1] = ch;
 
-    if (! StringEquNI(line, "\nOH   NCBI_TaxID=", 17)) {
+    if (! StringEquNI(line, "\nOH   NCBI_TaxID=")) {
         ch = '\0';
         p  = StringChr(line + 1, '\n');
         if (p)
@@ -1399,7 +1399,7 @@ static TTaxId GetTaxIdFrom_OX(DataBlkCIter dbp, DataBlkCIter dbp_end)
             p    = StringChr(line, '\n');
             if (p)
                 *p = '\0';
-            if (! StringEquNI(line, "OX   NCBI_TaxID=", 16)) {
+            if (! StringEquNI(line, "OX   NCBI_TaxID=")) {
                 if (StringLen(line) > 20)
                     line[20] = '\0';
                 FtaErrPost(SEV_ERROR, ERR_SOURCE_UnknownOXType, "Unknown beginning of OX line: \"{}\".", line);
@@ -1982,7 +1982,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
             else if (NStr::EqualNocase(token1, "GeneDB_Spombe"))
                 token1 = "PomBase";
             else if (NStr::EqualNocase(token1, "PomBase") &&
-                     StringEquNI(token2, "PomBase:", 8))
+                     StringEquNI(token2, "PomBase:"))
                 token2 += 8;
 
             CRef<CDbtag> tag = MakeStrDbtag(token1, token2);
@@ -3711,46 +3711,47 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, s
         }
         if (q)
             *q++ = '\0';
-        if (StringEquNI(p, "Name=", 5)) {
+        if (StringEquNI(p, "Name=")) {
+            p += 5;
             if (name) {
                 FtaErrPost(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"Name=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = true;
                 break;
             }
-            p += 5;
             if (p != q)
                 name = StringSave(p);
-        } else if (StringEquNI(p, "Synonyms=", 9)) {
+        } else if (StringEquNI(p, "Synonyms=")) {
+            p += 9;
             if (syns) {
                 FtaErrPost(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"Synonyms=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = true;
                 break;
             }
-            p += 9;
             if (p != q)
                 syns = StringSave(p);
-        } else if (StringEquNI(p, "OrderedLocusNames=", 18)) {
+        } else if (StringEquNI(p, "OrderedLocusNames=")) {
+            p += 18;
             if (ltags) {
                 FtaErrPost(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"OrderedLocusNames=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = true;
                 break;
             }
-            p += 18;
             if (p != q)
                 ltags = StringSave(p);
-        } else if (StringEquNI(p, "ORFNames=", 9)) {
+        } else if (StringEquNI(p, "ORFNames=")) {
+            p += 9;
             if (orfs) {
                 FtaErrPost(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"ORFNames=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = true;
                 break;
             }
-            p += 9;
             if (p != q)
                 orfs = StringSave(p);
-        } else if (StringEquNI(p, "and ", 4)) {
+        } else if (StringEquNI(p, "and ")) {
+            p += 4;
             if (q)
                 *--q = ';';
-            q = p + 4;
+            q = p;
 
             if (! name && ! syns && ! ltags && ! orfs)
                 continue;
