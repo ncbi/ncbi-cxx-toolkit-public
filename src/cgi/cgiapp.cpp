@@ -87,16 +87,26 @@ NCBI_PARAM_DEF_EX(bool, CGI, Print_Request_Method, true, eParam_NoThread,
 typedef NCBI_PARAM_TYPE(CGI, Print_Request_Method) TPrintRequestMethodParam;
 
 
-/// Deprecated flag, use Print_JA_SIG instead
+/// Deprecated flag, use generic Log_Http_Headers instead.
 NCBI_PARAM_DECL(bool, CGI, Print_JA3_SIG);
-NCBI_PARAM_DEF_EX(bool, CGI, Print_JA3_SIG, true, eParam_NoThread,
+NCBI_PARAM_DEF_EX(bool, CGI, Print_JA3_SIG, false, eParam_NoThread,
                   CGI_PRINT_JA3_SIG);
 typedef NCBI_PARAM_TYPE(CGI, Print_JA3_SIG) TPrintJA3SigParam;
 
+/// Deprecated flag, use generic Log_Http_Headers instead.
 NCBI_PARAM_DECL(bool, CGI, Print_JA_SIG);
-NCBI_PARAM_DEF_EX(bool, CGI, Print_JA_SIG, true, eParam_NoThread,
+NCBI_PARAM_DEF_EX(bool, CGI, Print_JA_SIG, false, eParam_NoThread,
     CGI_PRINT_JA_SIG);
 typedef NCBI_PARAM_TYPE(CGI, Print_JA_SIG) TPrintJASigParam;
+
+/// Comma, semicolon, or space separated list of HTTP headers to log as an 'extra' message.
+/// Each entry is converted to environment format (dashes to underscores), prefixed with HTTP_
+/// and checked against CGI environment.
+static const char* kDefaultLogHttpHeaders = "x-ja3-sig, x-ja4-sig";
+NCBI_PARAM_DECL(string, CGI, Log_Http_Headers);
+NCBI_PARAM_DEF_EX(string, CGI, Log_Http_Headers, kDefaultLogHttpHeaders, eParam_NoThread,
+    CGI_LOG_HTTP_HEADERS);
+typedef NCBI_PARAM_TYPE(CGI, Log_Http_Headers) TLogHttpHeadersParam;
 
 
 NCBI_PARAM_DECL(bool, CGI, Allow_Sigpipe);
@@ -788,35 +798,40 @@ void CCgiApplication::LogRequest(const CCgiContext& ctx) const
         }
     }
 
-    // Print X-JA*-Sig
-    // Use legacy Print_JA3_SIG flag only if Print_JA_SIG is not defined.
-    bool print_ja = TPrintJASigParam::GetDefault();
-    bool print_ja3 = TPrintJA3SigParam::GetDefault();
-    if (print_ja || print_ja3) {
-        CParamBase::EParamSource ja_src;
-        TPrintJASigParam::GetState(nullptr, &ja_src);
-        bool have_ja_param = ja_src != CParamBase::eSource_Default;
-        TPrintJA3SigParam::GetState(nullptr, &ja_src);
-        bool have_ja3_param = ja_src != CParamBase::eSource_Default;
-        // Prefer Print_JA_SIG over JA3, report contradicting flags.
-        if (have_ja_param || have_ja3_param) {
-            if (have_ja_param) {
-                if (have_ja3_param && print_ja != print_ja3) {
-                    ERR_POST_ONCE("PRINT_JA_SIG and PRINT_JA3_SIG flags do not match.");
-                }
-            }
-            else {
-                print_ja = print_ja3;
+    // Print HTTP headers listed in CGI/Log_Http_Headers parameter.
+    const string log_http_headers = TLogHttpHeadersParam::GetDefault();
+    vector<string> http_headers;
+    NStr::Split(log_http_headers, ",; ", http_headers, NStr::fSplit_Tokenize);
+    if ( !http_headers.empty() ) {
+        auto extra = diag.Extra();
+        for (const auto& header : http_headers) {
+            string log_name = NStr::Replace(header, "-", "_");
+            string env_name = log_name;
+            NStr::ToUpper(env_name);
+            string val = req.GetRandomProperty(env_name);
+            if ( !val.empty() ) {
+                extra.Print(log_name, val);
             }
         }
-        if (print_ja) {
-            str = req.GetRandomProperty("X_JA3_SIG");
-            if (!str.empty()) {
-                diag.Extra().Print("ja3_sig", str);
+    }
+    else {
+        // Check legacy flags for x-ja*-sig headers.
+        string ja3_str = req.GetRandomProperty("X_JA3_SIG");
+        string ja4_str = req.GetRandomProperty("X_JA4_SIG");
+        if ( !ja3_str.empty() || !ja4_str.empty() ) {
+            if ( TPrintJASigParam::GetDefault() ) {
+                ERR_POST_ONCE(Warning << "Deprecated configuration flag is set: CGI/Print_JA_SIG");
+                auto extra = diag.Extra();
+                if ( !ja3_str.empty() ) {
+                    extra.Print("ja3_sig", ja3_str);
+                }
+                if ( !ja4_str.empty() ) {
+                    extra.Print("ja4_sig", ja4_str);
+                }
             }
-            str = req.GetRandomProperty("X_JA4_SIG");
-            if (!str.empty()) {
-                diag.Extra().Print("ja4_sig", str);
+            if ( !ja3_str.empty() && TPrintJA3SigParam::GetDefault() ) {
+                ERR_POST_ONCE(Warning << "Deprecated configuration flag is set: CGI/Print_JA3_SIG");
+                diag.Extra().Print("ja3_sig", ja3_str);
             }
         }
     }
