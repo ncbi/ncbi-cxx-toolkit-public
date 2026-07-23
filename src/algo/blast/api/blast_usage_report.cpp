@@ -321,7 +321,7 @@ bool CBlastPhoneHomePolicy::UpdatePhoneHomeStatus()
 
 void CBlastPhoneHomePolicy::Print()
 {
-	cout << R"DELIM( 
+	std::cerr << R"DELIM( 
 BLAST+ Usage Reporting and Privacy Notice
 -----------------------------------------
 
