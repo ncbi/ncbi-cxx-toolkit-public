@@ -351,6 +351,10 @@ export BOOST_TEST_CATCH_SYSTEM_ERRORS
 BOOST_TEST_COLOR_OUTPUT=no
 export BOOST_TEST_COLOR_OUTPUT
 
+# Prevent false positive test failures in Blast code related to NCBI IEB Remote Software Logging Policy
+BLAST_USAGE_REPORT=false
+export BLAST_USAGE_REPORT
+
 # Check on linkerd and set backup
 echo test | nc -w 1 linkerd 4142 > /dev/null 2>&1
 if test \$? -ne 0;  then
