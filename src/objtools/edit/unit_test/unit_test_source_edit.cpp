@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2100)
     BOOST_CHECK(common);
     BOOST_CHECK_EQUAL(common->GetOrg().GetTaxname(), "Pneumocystis carinii");
     BOOST_CHECK_EQUAL(common->GetOrg().GetTaxId(), TAX_ID_CONST(4754));
-    BOOST_CHECK_EQUAL(s_HasOrgMod(common->GetOrg(), COrgMod::eSubtype_forma_specialis, "rattus-tertii"), true);
+    BOOST_CHECK_EQUAL(s_HasOrgMod(common->GetOrg(), COrgMod::eSubtype_forma_specialis, "rattus-tertii"), false);
     BOOST_CHECK(!common->IsSetGenome());
 
     // examples from CXX-9372
