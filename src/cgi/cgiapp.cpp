@@ -99,14 +99,14 @@ NCBI_PARAM_DEF_EX(bool, CGI, Print_JA_SIG, false, eParam_NoThread,
     CGI_PRINT_JA_SIG);
 typedef NCBI_PARAM_TYPE(CGI, Print_JA_SIG) TPrintJASigParam;
 
-/// Comma, semicolon, or space separated list of HTTP headers to log as an 'extra' message.
+/// Comma, semicolon, tab, or space separated list of HTTP headers to log as an 'extra' message.
 /// Each entry is converted to environment format (dashes to underscores), prefixed with HTTP_
 /// and checked against CGI environment.
-static const char* kDefaultLogHttpHeaders = "x-ja3-sig, x-ja4-sig";
-NCBI_PARAM_DECL(string, CGI, Log_Http_Headers);
-NCBI_PARAM_DEF_EX(string, CGI, Log_Http_Headers, kDefaultLogHttpHeaders, eParam_NoThread,
-    CGI_LOG_HTTP_HEADERS);
-typedef NCBI_PARAM_TYPE(CGI, Log_Http_Headers) TLogHttpHeadersParam;
+static const char* kDefaultPrintHttpHeaders = "x-ja3-sig, x-ja4-sig";
+NCBI_PARAM_DECL(string, CGI, Print_Http_Headers);
+NCBI_PARAM_DEF_EX(string, CGI, Print_Http_Headers, kDefaultPrintHttpHeaders, eParam_NoThread,
+    CGI_PRINT_HTTP_HEADERS);
+typedef NCBI_PARAM_TYPE(CGI, Print_Http_Headers) TPrintHttpHeadersParam;
 
 
 NCBI_PARAM_DECL(bool, CGI, Allow_Sigpipe);
@@ -799,9 +799,9 @@ void CCgiApplication::LogRequest(const CCgiContext& ctx) const
     }
 
     // Print HTTP headers listed in CGI/Log_Http_Headers parameter.
-    const string log_http_headers = TLogHttpHeadersParam::GetDefault();
+    const string print_http_headers = TPrintHttpHeadersParam::GetDefault();
     vector<string> http_headers;
-    NStr::Split(log_http_headers, ",; ", http_headers, NStr::fSplit_Tokenize);
+    NStr::Split(print_http_headers, ",; \t", http_headers, NStr::fSplit_Tokenize);
     if ( !http_headers.empty() ) {
         auto extra = diag.Extra();
         for (const auto& header : http_headers) {
