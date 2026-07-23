@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed Jul 22 05:33:04 EDT 2026; formally
+/* time_t value corresponding to Thu Jul 23 05:33:04 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1784712784UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1784799184UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -548,7 +548,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BCCM/GENECORNER\tc\tBelgian Coordinated Collections of Microorganisms / GeneCorner Plasmid Collection\tBCCM/GeneCorner,BCCM/LMBP,GeneCorner,LMBP\t\t",
 "BCCM/IHEM\tc\tBelgian Coordinated Collections of Microorganisms / IHEM Fungi collection: Human & Animal Health\tIHEM\t\t",
 "BCCM/ITM\tc\tBelgian Coordinated Collections of Microorganisms / ITM Mycobacteria Collection\tITM\t\t",
-"BCCM/LMG\tc\tBelgian Coordinated Collections of Microorganisms/ LMG Bacteria Collection\tLMG\thttp://bccm.belspo.be/catalogues/lmg-strain-details?NUM=\t",
+"BCCM/LMG\tc\tBelgian Coordinated Collections of Microorganisms/ LMG Bacteria Collection\t\thttp://bccm.belspo.be/catalogues/lmg-strain-details?NUM=\t",
 "BCCM/MUCL\tc\tBelgian Coordinated Collections of Microorganisms / MUCL Agro-food & Environmental Fungal Collection\tMUCL\t\t",
 "BCCM/ULC\tc\tBelgian Coordinated Collections of Microorganisms / ULC Cyanobacteria Collection\tULC\thttps://bccm.belspo.be/catalogues/bm-details?accession_number=\t",
 "BCCN\tc\tBrucella Culture Collection\t\t\t",
@@ -3512,7 +3512,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IFM<AUS>\tc\tIFM Quality Services Pty Ltd\t\t\t",
 "IFM<JPN>\tc\tResearch Center for Pathogenic Fungi and Microbial Toxicoses, Chiba University\t\t\t",
 "IFMG\ts\tInstituto Federal de Minas Gerais - Campus Bambui\t\t\t",
-"IFO\tc\tInstitute for Fermentation\tNBRC\thttps://www.nite.go.jp/nbrc/catalogue/NBRCCatalogueDetailServlet?ID=IFO&CAT=\t",
+"IFO\tc\tInstitute for Fermentation\t\thttps://www.nite.go.jp/nbrc/catalogue/NBRCCatalogueDetailServlet?ID=IFO&CAT=\t",
 "IFP\ts\tInstitute of Applied Ecology, Academia Sinica\t\t\t",
 "IFRD\ts\tResearch Institute of Resource Insects\t\t\t",
 "IFRDCC\tc\tInternational Fungal Research and Development Culture Collection\t\t\t",
@@ -5544,7 +5544,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NBME\ts\tNational Butterfly Museum (Saruman Museum)\t\t\t",
 "NBPC\ts\tNational Birds of Prey Centre\t\t\t",
 "NBPGR\tb\tNational Bureau of Plant Genetic Resources\t\t\t",
-"NBRC\tc\tNITE Biological Resource Center\tIFO\thttps://www.nite.go.jp/nbrc/catalogue/NBRCCatalogueDetailServlet?ID=NBRC&CAT=\t",
+"NBRC\tc\tNITE Biological Resource Center\t\thttps://www.nite.go.jp/nbrc/catalogue/NBRCCatalogueDetailServlet?ID=NBRC&CAT=\t",
 "NBRP\tb\tNational Bio-Resource Project\t\t\t",
 "NBSB\ts\tNational Biomonitoring Specimen Bank, U.S. Geological Survey\t\t\t",
 "NBSB:Bird\ts\tNational Biomonitoring Specimen Bank, U.S. Geological Survey, bird collection\t\t\t",
@@ -6230,7 +6230,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "OXD\ts\tWadham College\t\t\t",
 "OXF\ts\tUniversity of Oxford (Fielding-Druce Herbarium)\t\t\t",
 "OXM\ts\tMagdalen College Library\t\t\t",
-"P\ts\tHerbier National de Paris\tP<FRA>\t\t",
+"P\ts\tHerbier National de Paris\t\t\t",
 "PA\ts\tUniversidade Federal do Oeste do Para\t\t\t",
 "PAC\ts\tPennsylvania State University, Biology Department\t\t\t",
 "PACA\ts\tInstituto Anchietano de Pesquisas/UNISINOS\t\t\t",
@@ -8004,7 +8004,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UAIC<USA-AZ>\ts\tUniversity of Arizona\t\t\t",
 "UALF\ts\tFederal University of Alfenas\t\t\t",
 "UALRVC\ts\tUniversity of Arkansas at Little Rock, Vertebrate Collection\t\t\t",
-"UAM\ts\tUniversity of Alaska, Museum of the North\tUAF\thttp://arctos.database.museum/SpecimenDetail.cfm?GUID=\t",
+"UAM\ts\tUniversity of Alaska, Museum of the North\t\thttp://arctos.database.museum/SpecimenDetail.cfm?GUID=\t",
 "UAM:Alg\ts\tUniversity of Alaska, Museum of the North, The Algae collection\t\t\t",
 "UAM:Bird\ts\tUniversity of Alaska, Museum of the North, Bird Collection\t\t\t",
 "UAM:Bryo\ts\tUniversity of Alaska, Museum of the North, Bryozoan Collection\t\t\t",
