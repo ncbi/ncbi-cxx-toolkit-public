@@ -99,6 +99,7 @@ private:
     TIds m_Ids;
     TIds::const_iterator m_NextId;
     char m_TimeStat = 'r';
+    CAtomicCounter m_FailedCount;
 };
 
 
@@ -140,6 +141,7 @@ void* CTestThread::Main(void)
 
 void CPerfTestApp::Init(void)
 {
+    m_FailedCount.Set(0);
     CONNECT_Init(&GetConfig());
 
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -363,8 +365,9 @@ int CPerfTestApp::Run(void)
                 cout << *gi << endl;
             }
         }
-        if ((m_PrintInfo || m_PrintData) && bad_count) {
-            ERR_POST(Warning << "Failed to load " << bad_count << " records");
+        if ( bad_count ) {
+            ERR_POST("Failed to load " << bad_count << " GIs");
+            m_FailedCount.Add(bad_count);
         }
     }
     else if (m_Bulk == "acc") {
@@ -378,8 +381,9 @@ int CPerfTestApp::Run(void)
                 cout << id->AsString() << endl;
             }
         }
-        if ((m_PrintInfo || m_PrintData) && bad_count) {
-            ERR_POST(Warning << "Failed to load " << bad_count << " records");
+        if ( bad_count ) {
+            ERR_POST("Failed to load " << bad_count << " accessions");
+            m_FailedCount.Add(bad_count);
         }
     }
     else if (m_Bulk == "info") {
@@ -409,20 +413,19 @@ int CPerfTestApp::Run(void)
                     << hashes[i] << endl;
             }
         }
-        if ((m_PrintInfo || m_PrintData)) {
-            if (bad_labels)
-                ERR_POST(Warning << "Failed to load " << bad_labels << " labels");
-            if (bad_taxids)
-                ERR_POST(Warning << "Failed to load " << bad_taxids << " tax-ids");
-            if (bad_lengths)
-                ERR_POST(Warning << "Failed to load " << bad_lengths << " lengths");
-            if (bad_types)
-                ERR_POST(Warning << "Failed to load " << bad_types << " types");
-            if (bad_states)
-                ERR_POST(Warning << "Failed to load " << bad_states << " states");
-            if (bad_hashes)
-                ERR_POST(Warning << "Failed to load " << bad_hashes << " hashes");
-        }
+        if (bad_labels)
+            ERR_POST("Failed to load " << bad_labels << " labels");
+        if (bad_taxids)
+            ERR_POST("Failed to load " << bad_taxids << " tax-ids");
+        if (bad_lengths)
+            ERR_POST("Failed to load " << bad_lengths << " lengths");
+        if (bad_types)
+            ERR_POST("Failed to load " << bad_types << " types");
+        if (bad_states)
+            ERR_POST("Failed to load " << bad_states << " states");
+        if (bad_hashes)
+            ERR_POST("Failed to load " << bad_hashes << " hashes");
+        m_FailedCount.Add(bad_labels + bad_taxids + bad_lengths + bad_types + bad_states + bad_hashes);
     }
     else if (m_Bulk == "bioseq") {
         CScope::TIds bulk_ids;
@@ -438,8 +441,9 @@ int CPerfTestApp::Run(void)
                 cout << MSerial_AsnText << *h->GetCompleteBioseq() << endl;
             }
         }
-        if ((m_PrintInfo || m_PrintData) && bad_count) {
-            ERR_POST(Warning << "Failed to load " << bad_count << " records");
+        if ( bad_count) {
+            ERR_POST("Failed to load " << bad_count << " bioseqs");
+            m_FailedCount.Add(bad_count);
         }
     }
     else if (m_Bulk == "cdd") {
@@ -448,6 +452,7 @@ int CPerfTestApp::Run(void)
         CScope::TBioseqHandles bhs = m_Scope->GetBioseqHandles(cdd_ids);
         CScope::TCDD_Entries cdds = m_Scope->GetCDDAnnots(cdd_ids);
         LOG_POST("Checking actual CDDs after GetCDDAnnot()");
+        size_t failed_resolve_count = 0;
         size_t has_cdd_count = 0;
         size_t no_cdd_count = 0;
         size_t bad_has_cdd_count = 0;
@@ -455,6 +460,10 @@ int CPerfTestApp::Run(void)
         SAnnotSelector sel;
         sel.AddNamedAnnots("CDD");
         for ( size_t i = 0; i < cdd_ids.size(); ++i ) {
+            if (!bhs[i]) {
+                // Failed to resolve seq-id
+                failed_resolve_count++;
+            }
             if ( !cdds[i] ) {
                 ++no_cdd_count;
                 // reported no CDD annots
@@ -481,6 +490,9 @@ int CPerfTestApp::Run(void)
                 cout << MSerial_AsnText << cdds[i].GetCompleteTSE() << endl;
             }
         }
+        if ( failed_resolve_count ) {
+            ERR_POST("Failed to resolve " << failed_resolve_count << " seq-ids");
+        }
         if ( bad_has_cdd_count ) {
             ERR_POST("GetCDDAnnot() returned annot without CDDs for " << bad_has_cdd_count << " records");
         }
@@ -493,6 +505,7 @@ int CPerfTestApp::Run(void)
         if ( !no_cdd_count ) {
             LOG_POST(Warning << " there were no sequences without CDD");
         }
+        m_FailedCount.Add(failed_resolve_count + bad_has_cdd_count + bad_no_cdd_count);
     }
     else {
         if (thread_count == 0) {
@@ -531,6 +544,10 @@ int CPerfTestApp::Run(void)
     cout << thread_count << " thr; ";
     cout << endl;
 
+    if (m_FailedCount.Get() > 0) {
+        cout << "Failed tests: " << m_FailedCount.Get() << endl;
+        return -2;
+    }
     return 0;
 }
 
@@ -804,6 +821,12 @@ void CPerfTestApp::TestId(CSeq_id_Handle idh)
     }
     try {
         if (!m_NamedAnnots.empty()) {
+            CBioseq_Handle bh = m_Scope->GetBioseqHandle(idh);
+            if (!bh) {
+                ERR_POST("Failed to resolve seq-id " << idh.AsString());
+                m_FailedCount.Add(1);
+                return;
+            }
             CSeq_loc loc;
             loc.SetWhole().Assign(*idh.GetSeqId());
             SAnnotSelector sel;
@@ -818,7 +841,8 @@ void CPerfTestApp::TestId(CSeq_id_Handle idh)
         if (m_GetInfo) {
             CScope::TIds ids = m_Scope->GetIds(idh);
             if (ids.empty()) {
-                atomic_out << "Failed to get synonyms for " << idh.AsString() << endl;
+                ERR_POST("Failed to get synonyms for " << idh.AsString());
+                m_FailedCount.Add(1);
                 return;
             }
             CSeq_inst::TMol moltype = m_Scope->GetSequenceType(idh);
@@ -842,7 +866,8 @@ void CPerfTestApp::TestId(CSeq_id_Handle idh)
         if (m_GetData) {
             CBioseq_Handle bh = m_Scope->GetBioseqHandle(idh);
             if (!bh) {
-                atomic_out << "Failed to load bioseq " << idh.AsString() << endl;
+                ERR_POST("Failed to load bioseq " << idh.AsString());
+                m_FailedCount.Add(1);
                 return;
             }
             if (m_PrintBlobId) {
@@ -863,6 +888,7 @@ void CPerfTestApp::TestId(CSeq_id_Handle idh)
     }
     catch (CException& ex) {
         ERR_POST("Error testing seq-id " << idh.AsString() << " : " << ex);
+        m_FailedCount.Add(1);
     }
     if (m_PrintInfo || m_PrintData) {
         atomic_out << endl;
