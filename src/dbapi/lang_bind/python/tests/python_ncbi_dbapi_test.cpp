@@ -183,6 +183,7 @@ NCBITEST_INIT_VARIABLES(parser)
 
 NCBITEST_AUTO_INIT()
 {
+    SetDiagDieLevel(eDiag_Error);
     CPluginManager_DllResolver::EnableGlobally(true);
 
     CNcbiEnvironment env;
