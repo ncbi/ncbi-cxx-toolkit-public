@@ -358,7 +358,7 @@ int CPerfTestApp::Run(void)
         CScope::TIds bulk_ids;
         bulk_ids.insert(bulk_ids.end(), m_Ids.begin(), m_Ids.end());
         CScope::TGIs gis = m_Scope->GetGis(bulk_ids);
-        size_t bad_count = 0;
+        int bad_count = 0;
         ITERATE(CScope::TGIs, gi, gis) {
             if (*gi == ZERO_GI) ++bad_count;
             if (m_PrintData) {
@@ -374,7 +374,7 @@ int CPerfTestApp::Run(void)
         CScope::TIds bulk_ids;
         bulk_ids.insert(bulk_ids.end(), m_Ids.begin(), m_Ids.end());
         CScope::TIds ids = m_Scope->GetAccVers(bulk_ids);
-        size_t bad_count = 0;
+        int bad_count = 0;
         ITERATE(CScope::TIds, id, ids) {
             if (!(*id)) ++bad_count;
             if (m_PrintData) {
@@ -395,7 +395,7 @@ int CPerfTestApp::Run(void)
         auto types = m_Scope->GetSequenceTypes(bulk_ids);
         auto states = m_Scope->GetSequenceStates(bulk_ids);
         auto hashes = m_Scope->GetSequenceHashes(bulk_ids);
-        size_t bad_labels = 0, bad_taxids = 0, bad_lengths = 0, bad_types = 0, bad_states = 0, bad_hashes = 0;
+        int bad_labels = 0, bad_taxids = 0, bad_lengths = 0, bad_types = 0, bad_states = 0, bad_hashes = 0;
         for (size_t i = 0; i < bulk_ids.size(); ++i) {
             if (labels[i].empty()) ++bad_labels; // label may be calculated even if the bioseq fails to load
             if (taxids[i] == -1) ++bad_taxids;
@@ -431,7 +431,7 @@ int CPerfTestApp::Run(void)
         CScope::TIds bulk_ids;
         bulk_ids.insert(bulk_ids.end(), m_Ids.begin(), m_Ids.end());
         CScope::TBioseqHandles handles = m_Scope->GetBioseqHandles(bulk_ids);
-        size_t bad_count = 0;
+        int bad_count = 0;
         ITERATE(CScope::TBioseqHandles, h, handles) {
             if (!(*h)) {
                 ++bad_count;
@@ -452,11 +452,11 @@ int CPerfTestApp::Run(void)
         CScope::TBioseqHandles bhs = m_Scope->GetBioseqHandles(cdd_ids);
         CScope::TCDD_Entries cdds = m_Scope->GetCDDAnnots(cdd_ids);
         LOG_POST("Checking actual CDDs after GetCDDAnnot()");
-        size_t failed_resolve_count = 0;
-        size_t has_cdd_count = 0;
-        size_t no_cdd_count = 0;
-        size_t bad_has_cdd_count = 0;
-        size_t bad_no_cdd_count = 0;
+        int failed_resolve_count = 0;
+        int has_cdd_count = 0;
+        int no_cdd_count = 0;
+        int bad_has_cdd_count = 0;
+        int bad_no_cdd_count = 0;
         SAnnotSelector sel;
         sel.AddNamedAnnots("CDD");
         for ( size_t i = 0; i < cdd_ids.size(); ++i ) {
