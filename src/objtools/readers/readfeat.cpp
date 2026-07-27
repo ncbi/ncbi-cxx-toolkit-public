@@ -156,23 +156,23 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
     using TCharSet = ct::const_bitset<256, char>; // Without this, MAKE_CONST_MAP() doesn't expand correctly
     MAKE_CONST_MAP(s_IUPACmap, char, TCharSet, {
-        { 'A', { 'A' } },
-        { 'G', { 'G' } },
-        { 'C', { 'C' } },
-        { 'T', { 'T' } },
-        { 'U', { 'U' } },
-        { 'M', { 'A', 'C' } },
-        { 'R', { 'A', 'G' } },
-        { 'W', { 'A', 'T' } },
-        { 'S', { 'C', 'G' } },
-        { 'Y', { 'C', 'T' } },
-        { 'K', { 'G', 'T' } },
-        { 'V', { 'A', 'C', 'G' } },
-        { 'H', { 'A', 'C', 'T' } },
-        { 'D', { 'A', 'G', 'T' } },
-        { 'B', { 'C', 'G', 'T' } },
-        { 'N', { 'A', 'C', 'G', 'T' } },
-    });
+                                                   { 'A', { 'A' } },
+                                                   { 'G', { 'G' } },
+                                                   { 'C', { 'C' } },
+                                                   { 'T', { 'T' } },
+                                                   { 'U', { 'U' } },
+                                                   { 'M', { 'A', 'C' } },
+                                                   { 'R', { 'A', 'G' } },
+                                                   { 'W', { 'A', 'T' } },
+                                                   { 'S', { 'C', 'G' } },
+                                                   { 'Y', { 'C', 'T' } },
+                                                   { 'K', { 'G', 'T' } },
+                                                   { 'V', { 'A', 'C', 'G' } },
+                                                   { 'H', { 'A', 'C', 'T' } },
+                                                   { 'D', { 'A', 'G', 'T' } },
+                                                   { 'B', { 'C', 'G', 'T' } },
+                                                   { 'N', { 'A', 'C', 'G', 'T' } },
+                                               });
 }
 
 
@@ -2506,8 +2506,10 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature(
                 }
 
                 for (const auto& id : ids) {
-                    auto id_string = id->GetSeqIdString(true);
-                    auto res       = m_ProcessedTranscriptIds.insert(id_string);
+                    const auto id_string     = id->GetSeqIdString(true);
+                    auto       normalized_id = id_string;
+                    NStr::ToLower(normalized_id);
+                    auto res = m_ProcessedTranscriptIds.insert(normalized_id);
                     if (res.second == false) { // Insertion failed because Seq-id already encountered
                         x_ProcessMsg(
                             ILineError::eProblem_DuplicateIDs, eDiag_Error, feat_name, qual, val, "Transcript ID " + id_string + " appears on multiple mRNA features");
@@ -2536,8 +2538,10 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature(
 
                 if (featType == CSeqFeatData::e_Cdregion) {
                     for (const auto& id : ids) {
-                        auto id_string = id->GetSeqIdString(true);
-                        auto res       = m_ProcessedProteinIds.insert(id_string);
+                        const auto id_string     = id->GetSeqIdString(true);
+                        auto       normalized_id = id_string;
+                        NStr::ToLower(normalized_id);
+                        auto res = m_ProcessedProteinIds.insert(normalized_id);
                         if (res.second == false) { // Insertion failed because Seq-id already encountered
                             x_ProcessMsg(
                                 ILineError::eProblem_DuplicateIDs, eDiag_Error, feat_name, qual, val, "Protein ID " + id_string + " appears on multiple CDS features");
@@ -3535,11 +3539,12 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable(
 }
 
 CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable(
-    const string&       seqid,
-    const string&       annotname,
-    const TFlags        flags,
-    ITableFilter*       filter)
+    const string& seqid,
+    const string& annotname,
+    const TFlags  flags,
+    ITableFilter* filter)
 {
+    _ASSERT(m_pImpl); // Must be set in constructor
     return m_pImpl->ReadSequinFeatureTable(seqid, annotname, flags, filter);
 }
 

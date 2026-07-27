@@ -285,7 +285,7 @@ R"(>Feature 10_1_Jianfeng
 <1	>509	CDS
 			note	EF-1a
 			product	elongation factor-1 alpha
-			protein_id	AQX83263.1
+			protein_id	aqx83263.1
 			label	elongation factor-1 alpha CDS
 <1	>509	mRNA
 			product	elongation factor-1 alpha
@@ -298,7 +298,7 @@ R"(>Feature 10_1_Jianfeng
 			label	elongation factor-1 alpha CDS
 <1	>509	mRNA
 			product	elongation factor-1 alpha
-            transcript_id dummy_id
+            transcript_id DUMMY_ID
 			label	elongation factor-1 alpha mRNA
 >Feature 10_3_Jianfeng
 <1	>509	CDS
