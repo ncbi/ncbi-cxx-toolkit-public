@@ -1090,22 +1090,22 @@ static SERV_ITER x_Open(const char*         service,
     if (svc  &&  !ismask) {
         char        buf[40];
         ESERV_Type  x_type;
-        const char* end, *val = ConnNetInfo_GetValueService(svc, REG_CONN_SERVER_TYPE,
+        const char* end, *typ = ConnNetInfo_GetValueService(svc, REG_CONN_SERVER_TYPE,
                                                             buf, sizeof(buf), 0);
         assert(*svc);
-        if (!val
-            ||  (*val
-                 &&  (!(end = SERV_ReadType(val, &x_type))  ||  *end  ||  x_type == fSERV_Firewall))) {
+        if (!typ
+            ||  (*typ
+                 &&  (!(end = SERV_ReadType(typ, &x_type))  ||  *end  ||  x_type == fSERV_Firewall))) {
             CORE_LOGF_X(17, eLOG_Error,
                         ("[%s]  %s server type%s%s%s%s", svc,
-                         !val ? "Cannot read"  :
+                         !typ ? "Cannot read"  :
                          !end ? "Unrecognized" : "Invalid",
-                         val  ? " \""          : "",
-                         val  ? val            : "", &"\""[!val],
-                         val  ? " ignored"     : ""));
-            if (val)
+                         typ  ? " \""          : "",
+                         typ  ? typ            : "", &"\""[!typ],
+                         typ  ? " ignored"     : ""));
+            if (typ)
                 type = (ESERV_Type) fSERV_Any/*0*/;
-        } else if (*val)
+        } else if (*typ)
             type = x_type;
     }
     if (type/*!= fSERV_Any*/) {
