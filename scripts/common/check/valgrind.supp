@@ -676,6 +676,11 @@
    ...
    fun:grp_once_init
 }
+{
+   gRPC -- apparent optimization shortcut
+   Memcheck:Cond
+   fun:_Z28TcpOptionsFromEndpointConfigRKN17grpc_event_engine12experimental14EndpointConfigE
+}
 
 
 #===============================================================================
