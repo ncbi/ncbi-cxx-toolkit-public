@@ -295,7 +295,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
             if (types == fSERV_Any  &&  info->type == fSERV_Dns)
                 break;
             data->i_cand++;
-            data->cand[i].status = info->rate;
+            data->cand[i].status = 0.0;
             if (iter->ok_down)
                 break;
             ++i;
@@ -303,6 +303,8 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     }
 
     if (data->i_cand) {
+        for (n = 0;  n < data->i_cand;  ++n)
+            data->cand[n].status = data->cand[n].info->rate;
         n = LB_Select(iter, data, s_GetCandidate, 1.0);
         info = (SSERV_Info*) data->cand[n].info;
         if (iter->reverse_dns  &&  info->type != fSERV_Dns) {

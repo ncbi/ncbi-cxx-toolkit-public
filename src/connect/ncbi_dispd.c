@@ -88,32 +88,38 @@ static int/*bool*/ s_AddServerInfo(struct SDISPD_Data* data, SSERV_Info* info)
 {
     size_t n;
     const char* name = SERV_NameOfInfo(info);
+
     /* First check that the new server info updates an existing one */
     for (n = 0;  n < data->n_cand;  ++n) {
         if (strcasecmp(name, SERV_NameOfInfo(data->cand[n].info)) == 0
             &&  SERV_EqualInfo(info, data->cand[n].info)) {
             /* Replace older version */
             free((void*) data->cand[n].info);
-            data->cand[n].info   = info;
-            data->cand[n].status = info->rate;
-            return 1/*success*/;
+            goto done;
         }
     }
+    assert(n == data->n_cand);
+
     /* Next, add new service to the list */
     if (data->n_cand == data->a_cand) {
-        SLB_Candidate* temp;
-        n = data->a_cand + 10;
-        temp = (SLB_Candidate*)(data->cand
-                                ? realloc(data->cand, n * sizeof(*temp))
-                                : malloc (            n * sizeof(*temp)));
+        size_t m = data->a_cand + 10;
+        SLB_Candidate* temp
+            = (SLB_Candidate*)(data->cand
+                               ? realloc(data->cand, m * sizeof(*temp))
+                               : malloc (            m * sizeof(*temp)));
         if (!temp)
             return 0/*failure*/;
         data->cand = temp;
-        data->a_cand = n;
+        data->a_cand = m;
     }
-    data->cand[data->n_cand].info   = info;
-    data->cand[data->n_cand].status = info->rate;
+#if defined(_DEBUG)  &&  !defined(NDEBUG)
+    data->cand[n].info = 0;     /* race condition obviation */
+#endif /*_DEBUG && !NDEBUG*/
     data->n_cand++;
+
+ done:
+    data->cand[n].info   = info;
+    data->cand[n].status = 0.0;
     return 1/*success*/;
 }
 
@@ -348,6 +354,8 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
             return 0;
     }
 
+    for (n = 0;  n < data->n_cand;  ++n)
+        data->cand[n].status = data->cand[n].info->rate;
     n = LB_Select(iter, data, s_GetCandidate, DISPD_LOCAL_BONUS);
     info       = (SSERV_Info*) data->cand[n].info;
     info->rate =               data->cand[n].status;
