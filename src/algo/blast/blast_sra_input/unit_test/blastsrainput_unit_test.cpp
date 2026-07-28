@@ -31,6 +31,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_cookies.hpp>
 #include <corelib/ncbi_message.hpp>
+#include <corelib/perf_log.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <corelib/impl/ncbi_dbsvcmapper.hpp>
 #include <corelib/test_boost.hpp>
@@ -69,6 +70,7 @@ NCBITEST_AUTO_INIT()
     CEndpointKey fake_endpoint("1.2.3.4:5", 0);
     CFakeDataLoaderFactory fake_dl_factory;
     CMessage_Basic empty_message(kEmptyStr, eDiag_Trace);
+    CPerfLogger::IsON();
     CPluginManager_DllResolver dummy_resolver;
 }
 
