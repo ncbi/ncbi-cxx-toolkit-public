@@ -272,32 +272,36 @@ static int/*bool*/ s_AddServerInfo(struct SNAMERD_Data* data, SSERV_Info* info
             CORE_TRACEF(("[%s]  Replacing server info " FMT_SIZE_T
                          ": \"%s\" %p", name, n, infoname, info));
             free((void*) data->cand[n].info);
-            data->cand[n].info   = info;
-            data->cand[n].status = info->rate;
-            return 1/*success*/;
+            goto done;
         }
     }
+    assert(n == data->n_cand);
 
     /* Grow candidates container at capacity - trigger growth when there's no
        longer room for a new entry */
     if (data->n_cand == data->a_cand) {
-        SLB_Candidate* temp;
-        n = data->a_cand + 10;
-        temp = (SLB_Candidate*)(data->cand
-                                ? realloc(data->cand, n * sizeof(*temp))
-                                : malloc (            n * sizeof(*temp)));
+        size_t m = data->a_cand + 10;
+        SLB_Candidate* temp
+            = (SLB_Candidate*)(data->cand
+                               ? realloc(data->cand, m * sizeof(*temp))
+                               : malloc (            m * sizeof(*temp)));
         if ( ! temp)
             return 0/*failure*/;
         data->cand = temp;
-        data->a_cand = n;
+        data->a_cand = m;
     }
 
     /* Add the new service to the array */
-    CORE_TRACEF(("[%s]  Adding server info " FMT_SIZE_T ": \"%s\" %p",
-                 name, data->n_cand, infoname, info));
-    data->cand[data->n_cand].info   = info;
-    data->cand[data->n_cand].status = info->rate;
+    CORE_TRACEF(("[%s]  Adding server info " FMT_SIZE_T
+                 ": \"%s\" %p", name, n, infoname, info));
+#if defined(_DEBUG)  &&  !defined(NDEBUG)
+    data->cand[n].info = 0;     /* race condition obviation */
+#endif /*_DEBUG && !NDEBUG*/
     data->n_cand++;
+
+ done:
+    data->cand[n].info   = info;
+    data->cand[n].status = 0.0;
     return 1/*success*/;
 }
 
@@ -910,6 +914,8 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     }
 
     /* Pick a randomized candidate */
+    for (n = 0;  n < data->n_cand;  ++n)
+        data->cand[n].status = data->cand[n].info->rate;
     n = LB_Select(iter, data, s_GetCandidate, NAMERD_LOCAL_BONUS);
     assert(n < data->n_cand);
     info       = (SSERV_Info*) data->cand[n].info;

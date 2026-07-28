@@ -98,8 +98,7 @@ size_t LB_Select(SERV_ITER     iter,          void*  data,
             } else /* assert(latch); */
                 status *= info->coef;
         }
-        total       += status;
-        cand->status = total;
+        total += status;
 #ifdef NCBI_LB_DEBUG
         {{
             char addr[80];
@@ -107,10 +106,11 @@ size_t LB_Select(SERV_ITER     iter,          void*  data,
             SOCK_HostPortToString(info->host, info->port, addr, sizeof(addr));
             CORE_LOGF(eLOG_Note,
                       ("%d: %s %s\tR=%lf\tS=%lf\tT=%lf\tA=%lf\tP=%lf",
-                       (int) n, name, addr, info->rate, status, total,
+                       (int) n, name, addr, cand->status, status, total,
                        access, point));
         }}
 #endif /*NCBI_LB_DEBUG*/
+        cand->status = total;
     }
     assert(n > 0);
 
