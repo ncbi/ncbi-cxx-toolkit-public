@@ -157,26 +157,26 @@ int main(int argc, const char* argv[])
     /* Make sure can talk HTTPS (DISPD) */
     SOCK_SetupSSL(NcbiSetupTls);
 
-    arg = 0;
+    arg = val = 0;
     if (argc > 2) {
-        int a = 2;
-        int/*bool*/ okay = 0/*false*/;
+        int a = 2, next = 0;
         if (strcasecmp(argv[a],"heap") == 0 || strcasecmp(argv[a],"both") == 0) {
-            HEAP_Options(eOff, eDefault);
             CORE_LOG(eLOG_Note, "Using slow heap walks with checks");
-            okay = 1/*true*/;
+            HEAP_Options(eOff, eDefault);
+            next = 1;
         }
         if (strcasecmp(argv[a],"lbsm") == 0 || strcasecmp(argv[a],"both") == 0) {
 #ifdef NCBI_OS_MSWIN
             if (strcasecmp(argv[a],"lbsm") == 0)
                 CORE_LOG(eLOG_Warning, "Option \"lbsm\" has no use on MSWIN");
 #else
-            LBSMD_FastHeapAccess(eOn);
             CORE_LOG(eLOG_Note, "Using live (faster) LBSM heap access");
+            LBSMD_FastHeapAccess(eOn);
 #endif /*NCBI_OS_MSWIN*/
-            okay = 1/*true*/;
+            next = 1;
         }
-        if ((val = strchr(argv[a], '=')) != 0) {
+        a += next;
+        if (a < argc  &&  (val = strchr(argv[a], '=')) != 0) {
             arg = argv[a];
             *((char*) val) = '\0';
             if (strcmp(++val, "-") == 0)
@@ -185,25 +185,29 @@ int main(int argc, const char* argv[])
                                   val ? "=\"" : "",
                                   val ? val   : "",
                                   val ? "\""  : ""));
-            okay = 1/*true*/;
-        }
-        for (a += okay;  a < argc;  ++a) {
+            next = 1;
+        } else
+            next = 0;
+        for (a += next, next = 0;  a < argc;  ++a) {
             ESERV_Type type;
             if (strcasecmp(argv[a], "ANY") == 0) {
                 CORE_LOG(eLOG_Note, "Resetting server types to ANY");
                 types &= ~fSERV_All;
+                ++next;
                 continue;
             }
             if ((value = SERV_ReadType(argv[a], &type)) != 0
                 &&  !*value  &&  type != fSERV_Firewall) {
-                if (a == 2 + okay) {
+                if (!next) {
                     CORE_LOGF(eLOG_Note,
                               ("Setting server type to %s", argv[a]));
                     types  = type;
+                    ++next;
                 } else {
                     CORE_LOGF(eLOG_Note,
                               ("Including server type %s", argv[a]));
                     types |= type;
+                    ++next;
                 }
                 continue;
             }
@@ -223,23 +227,27 @@ int main(int argc, const char* argv[])
             }
             CORE_LOGF(eLOG_Fatal, ("Unknown option `%s'", argv[a]));
         }
-    } else
-        val = 0;
+    }
 
     CORE_LOGF(eLOG_Note, ("Looking up `%s' of %sserver type(s) 0x%04X", service,
                           types & fSERV_ReverseDns ? "REVERSE " : "",
                           types & fSERV_All));
     verify((net_info = ConnNetInfo_Create(service)));
 
-    if (!net_info->lb_disable  &&  parameter) {
-        value = LBSMD_GetHostParameter(SERV_LOCALHOST, parameter);
-        CORE_LOGF(eLOG_Note, ("Querying LBSM host environment `%s': %s%s%s",
-                              parameter,
-                              &"`"[!value],
-                              value ? value : "Not found",
-                              &"'"[!value]));
-        if (value)
-            free((void*) value);
+    if (parameter) {
+        if (!net_info->lb_disable) {
+            value = LBSMD_GetHostParameter(SERV_LOCALHOST, parameter);
+            CORE_LOGF(eLOG_Note, ("Querying LBSM host environment `%s':"
+                                  " %s%s%s", parameter,
+                                  &"`"[!value],
+                                  value ? value : "Not found",
+                                  &"'"[!value]));
+            if (value)
+                free((void*) value);
+        } else {
+            CORE_LOGF(eLOG_Warning, ("Cannot query LBSM host environment `%s':"
+                                     " LB disabled", parameter));
+        }
     }
 
     CORE_LOG(eLOG_Trace, "Opening service mapper");
@@ -250,7 +258,7 @@ int main(int argc, const char* argv[])
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       net_info, 0/*skip*/, 0/*n_skip*/,
                       getenv("NCBI_EXTERNAL")  ||  getenv("HTTP_NCBI_EXTERNAL")
-                      ? 1 : 0, arg, val);
+                      ? 1 : 0, arg, val/*NB:ignored for NULL/empty "arg"*/);
     ConnNetInfo_Destroy(net_info);
     if (iter) {
         HOST_INFO hinfo;
