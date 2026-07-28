@@ -22,6 +22,7 @@ REQUIRES = Boost.Test.Included
 # Comment out if you do not want it to run automatically as part of
 # "make check".
 CHECK_CMD =
+CHECK_REQUIRES = in-house-resources
 # If your test application uses config file, then uncomment this line -- and,
 # remember to rename 'unit_test_discrepancy_report.ini' to '<your_app_name>.ini'.
 #CHECK_COPY = unit_test_discrepancy_report.ini

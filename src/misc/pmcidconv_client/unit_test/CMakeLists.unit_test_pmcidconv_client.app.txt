@@ -6,6 +6,7 @@ NCBI_begin_app(unit_test_pmcidconv_client)
     pmcidconv_client xformat tables macro ncbi_xloader_genbank
   )
   NCBI_requires(Boost.Test.Included)
+  NCBI_set_test_requires(in-house-resources)
   NCBI_add_test()
   NCBI_project_watchers(stakhovv)
 NCBI_end_app()
