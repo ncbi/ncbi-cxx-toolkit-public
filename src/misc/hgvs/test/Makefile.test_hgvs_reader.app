@@ -22,5 +22,6 @@ LIBS = $(SQLITE3_LIBS) $(GENBANK_THIRD_PARTY_LIBS) \
 REQUIRES = Boost.Test.Included SQLITE3
 
 CHECK_CMD = test_hgvs_reader
+CHECK_REQUIRES = in-house-resources
 
 WATCHERS = gotvyans
