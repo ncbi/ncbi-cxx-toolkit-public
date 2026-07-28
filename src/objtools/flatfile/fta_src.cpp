@@ -2335,19 +2335,14 @@ static bool CheckForENV(const SourceFeatBlkList& sfbl, IndexblkPtr ibp, Parser::
 /**********************************************************/
 static char* CheckPcrPrimersTag(char* str)
 {
-    if (StringEquN(str, "fwd_name", 8) ||
-        StringEquN(str, "rev_name", 8))
-        str += 8;
-    else if (StringEquN(str, "fwd_seq", 7) ||
-             StringEquN(str, "rev_seq", 7))
-        str += 7;
-    else
+    if (ConsumeStr(str, "fwd_name") || ConsumeStr(str, "rev_name") ||
+        ConsumeStr(str, "fwd_seq") || ConsumeStr(str, "rev_seq")) {
+    } else
         return nullptr;
 
-    if (*str == ' ')
-        str++;
-    if (*str == ':')
-        return (str + 1);
+    ConsumeChar(str, ' ');
+    if (ConsumeChar(str, ':'))
+        return str;
     return nullptr;
 }
 
