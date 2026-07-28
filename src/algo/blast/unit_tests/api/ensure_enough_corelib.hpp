@@ -40,6 +40,7 @@
 
 #include <corelib/ncbi_cookies.hpp>
 #include <corelib/ncbi_message.hpp>
+#include <corelib/perf_log.hpp>
 #include <corelib/plugin_manager_store.hpp>
 #include <corelib/impl/ncbi_dbsvcmapper.hpp>
 #include <corelib/impl/rwstreambuf.hpp>
@@ -66,6 +67,7 @@ void BLAST_Test_EnsureEnoughCorelib(void)
     CFakeDataLoaderFactory fake_dl_factory;
     CHttpCookie empty_cookie;
     CMessage_Basic empty_message(kEmptyStr, eDiag_Trace);
+    CPerfLogger::IsON();
     CPluginManager_DllResolver dummy_resolver;
     CPluginManagerGetterImpl::GetMutex();
     CRWStreambuf detached_buf;
