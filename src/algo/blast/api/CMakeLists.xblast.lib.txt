@@ -79,9 +79,16 @@ set(SRC_BLAST_CXX_CORE
 
 
 NCBI_begin_lib(xblast)
-  NCBI_sources(${SRC_BLAST_C_CORE} ${SRC_BLAST_CXX_CORE})
+   if(NCBI_DLL_BUILD AND MaxDebug IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+    set(extra_lib blast)
+    set(extra_src "")
+  else()
+    set(extra_lib "")
+    set(extra_src ${SRC_BLAST_C_CORE})
+  endif()
+ NCBI_sources(${extra_src} ${SRC_BLAST_CXX_CORE})
   NCBI_uses_toolkit_libraries(
-    xalgoblastdbindex xalgodustmask xalgowinmask
+    xalgoblastdbindex xalgodustmask xalgowinmask ${extra_lib}
     xnetblastcli
     seq blastdb utrtprof
   )
