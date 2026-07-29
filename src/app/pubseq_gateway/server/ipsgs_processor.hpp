@@ -189,6 +189,23 @@ public:
     virtual void ProcessEvent(void)
     {}
 
+public:
+    /// The type is used for getting processor state. See methods below.
+    typedef list<pair<string, string>> TInternalState;
+
+    /// Get internal state values.
+    /// The method is used for debugging purposes. E.g. when a backlog event
+    /// occurs the infrastructure may invoke the method for all the working
+    /// processors and print the collected data into applog.
+    virtual TInternalState GetInternalState() const
+    { return TInternalState(); }
+
+    /// Get the internal state which is shared between all instances of
+    /// this processor type
+    virtual TInternalState GetSharedInternalState() const
+    { return TInternalState(); }
+
+public:
     /// Provides the user request
     /// @return
     ///  User request
