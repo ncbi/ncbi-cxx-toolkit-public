@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Thu Jul 23 05:33:04 EDT 2026; formally
+/* time_t value corresponding to Wed Jul 29 05:33:08 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1784799184UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1785317588UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -775,7 +775,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BNP\ts\tBanff Park Museum\t\t\t",
 "BNPL\ts\tBrighton Public Library\t\t\t",
 "BNRH\ts\tBuffelskloof Nature Reserve\t\t\t",
-"BNS\ts\tBristol Museum and Art Gallery\t\t\t",
 "BNU\ts\tBeijing Normal University, Biology Department\t\t\t",
 "BO\ts\tHerbarium Bogoriense (Research Centre for Biology)\t\t\t",
 "BOC\ts\tBingham Oceanographic Collection\tYPM\t\t",
@@ -853,7 +852,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BRNU\ts\tMasaryk University, Department of Botany\t\t\t",
 "BROC\ts\tState University of New York, Biological Sciences Department\t\t\t",
 "BRPP\ts\tBotanica Royal Park of Palm Hills\t\t\t",
-"BRS\ts\tAgriculture and Agri-Food Canada\t\t\t",
+"BRS\ts\tBrandon Research Centre Herbarium - AAFC\t\t\t",
 "BRSL\ts\tWroclaw University, Botany Department\t\t\t",
 "BRSMG\ts\tBristol City Museum and Art Gallery\t\t\t",
 "BRSN\ts\tUniversity of Wales, Bangor Research Unit\t\t\t",
@@ -953,7 +952,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BZR\ts\tMusees de la Ville de Beziers\t\t\t",
 "BZT\ts\tBiological Institute Titograd\t\t\t",
 "C\ts\tNatural History Museum of Denmark\t\t\t",
-"CA\ts\tChicago Academy of Sciences\tCASM,CHAS\t\t",
+"CA\ts\tChicago Academy of Sciences\t\t\t",
 "CA:Bird\ts\tChicago Academy of Sciences, Ornithology Collection\tCHAS:Bird\t\t",
 "CA:Fish\ts\tChicago Academy of Sciences, Ichthyology collection\tCHAS:Fish\t\t",
 "CA:HERP\ts\tChicago Academy of Sciences, Herpetology collection\tCHAS:HERP\t\t",
@@ -1091,7 +1090,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CBY\ts\tRoyal Museum and Art Gallery\t\t\t",
 "CC\tc\tCSIRO Canberra Rhizobium Collection\t\t\t",
 "CC-OBE\ts\tColorado College Department of Organismal Biology & Ecology\t\t\t",
-"CCA-Marburg \tc\tCulture Collection of Algae at the University of Marburg\tCCA\t\t",
+"CCA-Marburg \tc\tCulture Collection of Algae at the University of Marburg\t\t\t",
 "CCAA\ts\tUniversidade Federal do Maranhao - UFMA\t\t\t",
 "CCAC<BRA>\ts\tUniversidade Federal do Ceara, Centro Ciencias Agrarias\t\t\t",
 "CCAC<DEU>\tc\tCulture Collection of Algae at the University of Cologne\t\t\t",
@@ -1417,7 +1416,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CM\ts\tCarnegie Museum of Natural History\tCMNH<USA-PA>\t\t",
 "CM-CNRG\tc\tColeccion de Microorganismos del CNRG\t\t\t",
 "CM-IEA\ts\tUniversidad Autonoma de Tamaulipas (Mexico)\t\t\t",
-"CM-MBM-UAC\ts\tColeccion Mastozoologica Universidad Autonoma de Campeche\tCM-UAC,CMMBMUAC\t\t",
+"CM-MBM-UAC\ts\tColeccion Mastozoologica Universidad Autonoma de Campeche\t\t\t",
 "CM-UFMG\tc\tCollection of Microorganisms, DNA and Cells of Universidade Federal de Minas Gerais (UFMG) (Colecao de Micro-organismos, DNA e Celulas da UFMG)\t\t\t",
 "CM-UMSNH\ts\tUniversidad de Michoacan (Mexico)\t\t\t",
 "CM:Herps\ts\tCarnegie Museum of Natural History, Herpetology Collection\tCMHerps\t\t",
