@@ -739,7 +739,6 @@ BNMMNH	s	Brukenthal National Museum Museum of Natural History
 BNP	s	Banff Park Museum			
 BNPL	s	Brighton Public Library			
 BNRH	s	Buffelskloof Nature Reserve			
-BNS	s	Bristol Museum and Art Gallery			
 BNU	s	Beijing Normal University, Biology Department			
 BO	s	Herbarium Bogoriense (Research Centre for Biology)			
 BOC	s	Bingham Oceanographic Collection	YPM		
@@ -817,7 +816,7 @@ BRNM	s	Moravian Museum
 BRNU	s	Masaryk University, Department of Botany			
 BROC	s	State University of New York, Biological Sciences Department			
 BRPP	s	Botanica Royal Park of Palm Hills			
-BRS	s	Agriculture and Agri-Food Canada			
+BRS	s	Brandon Research Centre Herbarium - AAFC			
 BRSL	s	Wroclaw University, Botany Department			
 BRSMG	s	Bristol City Museum and Art Gallery			
 BRSN	s	University of Wales, Bangor Research Unit			
@@ -917,7 +916,7 @@ BZM	s	Museum fur Naturkunde, Berlin
 BZR	s	Musees de la Ville de Beziers			
 BZT	s	Biological Institute Titograd			
 C	s	Natural History Museum of Denmark			
-CA	s	Chicago Academy of Sciences	CASM,CHAS		
+CA	s	Chicago Academy of Sciences			
 CA:Bird	s	Chicago Academy of Sciences, Ornithology Collection	CHAS:Bird		
 CA:Fish	s	Chicago Academy of Sciences, Ichthyology collection	CHAS:Fish		
 CA:HERP	s	Chicago Academy of Sciences, Herpetology collection	CHAS:HERP		
@@ -1055,7 +1054,7 @@ CBUMAG	s	Universidad del Magdalena
 CBY	s	Royal Museum and Art Gallery			
 CC	c	CSIRO Canberra Rhizobium Collection			
 CC-OBE	s	Colorado College Department of Organismal Biology & Ecology			
-CCA-Marburg 	c	Culture Collection of Algae at the University of Marburg	CCA		
+CCA-Marburg 	c	Culture Collection of Algae at the University of Marburg			
 CCAA	s	Universidade Federal do Maranhao - UFMA			
 CCAC<BRA>	s	Universidade Federal do Ceara, Centro Ciencias Agrarias			
 CCAC<DEU>	c	Culture Collection of Algae at the University of Cologne			
@@ -1381,7 +1380,7 @@ CLU	s	Universita della Calabria
 CM	s	Carnegie Museum of Natural History	CMNH<USA-PA>		
 CM-CNRG	c	Coleccion de Microorganismos del CNRG			
 CM-IEA	s	Universidad Autonoma de Tamaulipas (Mexico)			
-CM-MBM-UAC	s	Coleccion Mastozoologica Universidad Autonoma de Campeche	CM-UAC,CMMBMUAC		
+CM-MBM-UAC	s	Coleccion Mastozoologica Universidad Autonoma de Campeche			
 CM-UFMG	c	Collection of Microorganisms, DNA and Cells of Universidade Federal de Minas Gerais (UFMG) (Colecao de Micro-organismos, DNA e Celulas da UFMG)			
 CM-UMSNH	s	Universidad de Michoacan (Mexico)			
 CM:Herps	s	Carnegie Museum of Natural History, Herpetology Collection	CMHerps		
