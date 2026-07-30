@@ -652,14 +652,19 @@ CTL_Connection::CancelFinished(size_t was_timeout)
 I_ConnectionExtra::TSockHandle
 CTL_Connection::GetLowLevelHandle(void) const
 {
-    int fd = -1;
-#ifdef CS_ENDPOINT
+#ifdef NCBI_OS_MSWIN
+    static const TSockHandle kBadHandle = NULL;
+#else
+    static const TSockHandle kBadHandle = -1;
+#endif
+    TSockHandle fd = kBadHandle;
+#if defined(CS_ENDPOINT)
     // Check(...)
     ct_con_props(x_GetSybaseConn(), CS_GET, CS_ENDPOINT, &fd, CS_UNUSED, 0);
 #elif defined(FTDS_IN_USE)
     fd = tds_conn(x_GetSybaseConn()->tds_socket)->s;
 #endif
-    return fd >= 0 ? fd : impl::CConnection::GetLowLevelHandle();
+    return fd != kBadHandle ? fd : impl::CConnection::GetLowLevelHandle();
 }
 
 
