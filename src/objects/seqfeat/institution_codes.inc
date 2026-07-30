@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed Jul 29 05:33:08 EDT 2026; formally
+/* time_t value corresponding to Thu Jul 30 05:33:04 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1785317588UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1785403984UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -2699,7 +2699,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "GNUG\ts\tGuizhou Normal University, Geography Department\t\t\t",
 "GO\ts\tPhilosophical Society\t\t\t",
 "GOD\ts\tCharterhouse School Museum\t\t\t",
-"GODU\ts\tHungarian University of Agriculture and Life Sciences\t\t\t",
 "GOE<DEU>\ts\tInstitut und Museum fuer Geologie und Palaeontologie\t\t\t",
 "GOE<GBR>\ts\tGoole Scientific Society\t\t\t",
 "GOET\ts\tHerbarium Universitat Gottingen\t\t\t",
@@ -3146,7 +3145,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HPEC\ts\tSEDUC - CE\t\t\t",
 "HPH\ts\tMonroe County Department of Parks\t\t\t",
 "HPL\ts\tJardim Botanico Plantarum\t\t\t",
-"HPM\ts\tHouston Museum of Natural Science\t\t\t",
 "HPNP\ts\tPumat National Park\t\t\t",
 "HPP\ts\tUniversity of Helsinki, Plant Biology Department\t\t\t",
 "HPPR\ts\tInstituto Superior Pedagogico de Pinar del Rio, Departamento de Biologia\t\t\t",
@@ -3702,7 +3700,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IPO\ts\tPlant Research International\t\t\t",
 "IPPAS\tc\tCulture Collection of Microalgae IPPAS\tIPPRAS\t\t",
 "IPRN\ts\tInstituto de Pesquisas de Recursos Naturais Renovaveis\t\t\t",
-"IPS\ts\tIpswich Museum\t\t\t",
 "IPSLI\ts\tIpswich Literary Institute\t\t\t",
 "IPSM\ts\tIpswich Museum\t\t\t",
 "IPSN\ts\tInstituto de Paleontologia de Sabadella\t\t\t",
@@ -6868,7 +6865,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SACL\ts\tSanta Clara University, Biology Department\t\t\t",
 "SACON\ts\tSalim Ali Centre for Ornithology and Natural History\t\t\t",
 "SACS\ts\tShenyang Agricultural College\t\t\t",
-"SACT\ts\tCalifornia State University, Biological Sciences Department\t\t\t",
+"SACT\ts\tCalifornia State University, Biological Sciences Department, Sacramento\t\t\t",
 "SAEZIP\ts\tBird Research SaeZiP\t\t\t",
 "SAF\ts\tDepartment of Agricultural and Forest Sciences\t\t\t",
 "SAFB\ts\tUniversity of Saskatchewan, Forestry Department\t\t\t",
@@ -7551,7 +7548,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SUFA\ts\tSulaimania University\t\t\t",
 "SUFAF\ts\tSiirt University Flora and Fauna Center\t\t\t",
 "SUG\ts\tSugadaira Research Station, Mountain Science Center, University of Tsukuba\t\t\t",
-"SUH\ts\tSohag University\t\t\t",
 "SUHC\ts\tSalisbury University, Department of Biology\t\t\t",
 "SUK\ts\tShivaji University Kolhapur\t\t\t",
 "SUM<CZE>\ts\tOkresni vlastivedne muzeum v Sumperku\t\t\t",
@@ -8598,7 +8594,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UTMC\ts\tUniversidad del Magdalena\t\t\t",
 "UTMC<IRN>\tc\tUniversity of Tehran Microorganisms Collection\t\t\t",
 "UTMZ\ts\tUniversity of Tennessee, Museum of Zoology\t\t\t",
-"UTPB <<USA-TX>\ts\tDixie State University\t\t\t",
 "UTPB <<USA-TX>\ts\tUniversity of Texas Permian Basin\t\t\t",
 "UTU\ts\tDixie State University\t\t\t",
 "UTV\ts\tUniversita degli Studi della Tuscia, Dipartimento di Agrobiologia e Agrochimica\t\t\t",
@@ -8643,7 +8638,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UWFC\ts\tUniversity of Washington Burke Museum Fish\t\t\t",
 "UWFC:Ichthyology\ts\tUniversity of Washington Burke Museum Fish, Ichthyology Collection\t\t\t",
 "UWFP\ts\tUniversity of West Florida, Department of Biology\t\t\t",
-"UWGB\ts\tUniversity of Wisconsin-Green Bay, MAC 212\t\t\t",
+"UWGB\ts\tUniversity of Wisconsin-Green Bay\t\t\t",
 "UWGM\ts\tUniversity of Wisconsin Geology Museum\t\t\t",
 "UWI\ts\tUniversity of the West Indies (Trinidad and Tobago)\t\t\t",
 "UWIC\ts\tUniversity of the West Indies, Trinidad and Tobago\t\t\t",

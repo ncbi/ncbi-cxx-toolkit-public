@@ -2663,7 +2663,6 @@ GNUC	s	Gyeongsang National University, Biology Department
 GNUG	s	Guizhou Normal University, Geography Department			
 GO	s	Philosophical Society			
 GOD	s	Charterhouse School Museum			
-GODU	s	Hungarian University of Agriculture and Life Sciences			
 GOE<DEU>	s	Institut und Museum fuer Geologie und Palaeontologie			
 GOE<GBR>	s	Goole Scientific Society			
 GOET	s	Herbarium Universitat Gottingen			
@@ -3110,7 +3109,6 @@ HPEA	s	CONICET
 HPEC	s	SEDUC - CE			
 HPH	s	Monroe County Department of Parks			
 HPL	s	Jardim Botanico Plantarum			
-HPM	s	Houston Museum of Natural Science			
 HPNP	s	Pumat National Park			
 HPP	s	University of Helsinki, Plant Biology Department			
 HPPR	s	Instituto Superior Pedagogico de Pinar del Rio, Departamento de Biologia			
@@ -3666,7 +3664,6 @@ IPN	s	Instituto Politecnico Nacional
 IPO	s	Plant Research International			
 IPPAS	c	Culture Collection of Microalgae IPPAS	IPPRAS		
 IPRN	s	Instituto de Pesquisas de Recursos Naturais Renovaveis			
-IPS	s	Ipswich Museum			
 IPSLI	s	Ipswich Literary Institute			
 IPSM	s	Ipswich Museum			
 IPSN	s	Instituto de Paleontologia de Sabadella			
@@ -6832,7 +6829,7 @@ SACC	s	St. Ambrose College
 SACL	s	Santa Clara University, Biology Department			
 SACON	s	Salim Ali Centre for Ornithology and Natural History			
 SACS	s	Shenyang Agricultural College			
-SACT	s	California State University, Biological Sciences Department			
+SACT	s	California State University, Biological Sciences Department, Sacramento			
 SAEZIP	s	Bird Research SaeZiP			
 SAF	s	Department of Agricultural and Forest Sciences			
 SAFB	s	University of Saskatchewan, Forestry Department			
@@ -7515,7 +7512,6 @@ SUF	s	Shimonoseki University of Fisheries
 SUFA	s	Sulaimania University			
 SUFAF	s	Siirt University Flora and Fauna Center			
 SUG	s	Sugadaira Research Station, Mountain Science Center, University of Tsukuba			
-SUH	s	Sohag University			
 SUHC	s	Salisbury University, Department of Biology			
 SUK	s	Shivaji University Kolhapur			
 SUM<CZE>	s	Okresni vlastivedne muzeum v Sumperku			
@@ -8562,7 +8558,6 @@ UTM	s	University of Tennessee at Martin
 UTMC	s	Universidad del Magdalena			
 UTMC<IRN>	c	University of Tehran Microorganisms Collection			
 UTMZ	s	University of Tennessee, Museum of Zoology			
-UTPB <<USA-TX>	s	Dixie State University			
 UTPB <<USA-TX>	s	University of Texas Permian Basin			
 UTU	s	Dixie State University			
 UTV	s	Universita degli Studi della Tuscia, Dipartimento di Agrobiologia e Agrochimica			
@@ -8607,7 +8602,7 @@ UWEC	s	University of Wisconsin, Department of Biology
 UWFC	s	University of Washington Burke Museum Fish			
 UWFC:Ichthyology	s	University of Washington Burke Museum Fish, Ichthyology Collection			
 UWFP	s	University of West Florida, Department of Biology			
-UWGB	s	University of Wisconsin-Green Bay, MAC 212			
+UWGB	s	University of Wisconsin-Green Bay			
 UWGM	s	University of Wisconsin Geology Museum			
 UWI	s	University of the West Indies (Trinidad and Tobago)			
 UWIC	s	University of the West Indies, Trinidad and Tobago			
