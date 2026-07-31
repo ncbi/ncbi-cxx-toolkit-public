@@ -158,18 +158,18 @@ static void normalize_comment(string& comment)
  *                                              01-4-94
  *
  **********************************************************/
-static CRef<CDate> get_lanl_date(char* s)
+static CRef<CDate> get_lanl_date(const char* s)
 {
     int day   = 0;
     int month = 0;
     int year;
     int cal;
 
-    const char* months[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+    string_view months[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
     CRef<CDate> date(new CDate);
     for (cal = 0; cal < 12; cal++) {
-        if (StringEquNI(s + 1, months[cal], 3)) {
+        if (StringEquNI(s + 1, months[cal])) {
             month = cal + 1;
             break;
         }
@@ -405,15 +405,14 @@ static CRef<CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
     if (pp->source == Parser::ESource::USPTO)
         s = bptr;
     else {
-        q          = (pp->format == Parser::EFormat::EMBL) ? (char*)"Patent number" : (char*)"Patent:";
-        size_t len = StringLen(q);
-        if (! StringEquNI(bptr, q, len)) {
+        string_view sv = (pp->format == Parser::EFormat::EMBL) ? "Patent number" : "Patent:";
+        if (! StringEquNI(bptr, sv)) {
             FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Illegal format: \"{}\"", temp);
             MemFree(temp);
             return cit_pat;
         }
 
-        for (s = bptr + len; *s == ' ';)
+        for (s = bptr + sv.size(); *s == ' ';)
             s++;
     }
 
@@ -971,7 +970,6 @@ static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTi
 {
     char* s;
     char* ss;
-    char* tit;
     char* pages;
     char* press;
 
@@ -982,7 +980,6 @@ static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTi
     Char  c;
     Int4  i;
 
-    tit     = nullptr;
     ref_fmt = GB_REF;
 
     tbptr = bptr ? StringSave(bptr) : nullptr;
@@ -1010,19 +1007,23 @@ static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTi
     p = tbptr;
     CRef<CTitle::C_E> book_title(new CTitle::C_E);
 
-    if (StringEquN(tbptr, "(in)", 4)) {
-        for (s = tbptr + 4; *s == ' ';)
+    s = tbptr;
+    if (StringEquN(s, "(in)", 4)) {
+        s += 4;
+        while (*s == ' ')
             s++;
         for (bptr = s; *s != ';' && *s != '(' && *s != '\0';)
             s++;
-        if (StringEquNI(s, "(Eds.)", 6)) {
-            tit     = s + 6;
+        char* tit = s;
+        if (StringEquNI(tit, "(Eds.)")) {
+            tit += 6;
             IS_AUTH = true;
-        } else if (StringEquNI(s, "(Ed.)", 5)) {
-            tit     = s + 5;
+        } else if (StringEquNI(tit, "(Ed.)")) {
+            tit += 5;
             IS_AUTH = true;
-        } else if (*s == ';')
-            tit = s;
+        } else if (*tit != ';') {
+            tit = nullptr;
+        }
         if (tit)
             while (*tit == ' ' || *tit == ';' || *tit == '\n')
                 tit++;
@@ -1292,9 +1293,10 @@ static CRef<CCit_sub> get_sub(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
     if (StringStr(s, "E-mail"))
         medium = CCit_sub::eMedium_email;
 
-    if (StringEquNI(s, " on tape", 8)) {
+    if (StringEquNI(s, " on tape")) {
+        s += 8;
         medium = CCit_sub::eMedium_tape;
-        for (s += 8; *s != '\0' && *s != ':';)
+        while (*s != '\0' && *s != ':')
             s++;
     }
     if (*s != '\0' && *(s + 1) != '\0') {
@@ -1478,18 +1480,18 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
 
         nearend -= 8;
         end = nearend + 2;
-        if (StringEquNI(nearend + 1, "In press", 8)) {
-            pre            = CImprint::ePrepub_in_press;
-            *(nearend + 1) = '\0';
+        if (StringEquNI((nearend + 9) - 8, "In press")) {
+            pre = CImprint::ePrepub_in_press;
+            *((nearend + 9) - 8) = '\0';
         }
-        if (StringEquNI(nearend, "Submitted", 9)) {
+        if (StringEquNI(nearend, "Submitted")) {
             pre      = CImprint::ePrepub_submitted;
             *nearend = '\0';
         }
         if (pre == 0 && *end == '(' && isdigit(*(end + 1)) != 0) {
             for (nearend = end - 1; nearend > bptr && *nearend != ' ';)
                 nearend--;
-            if (StringEquNI(nearend + 1, "In press", 8)) {
+            if (StringEquNI(nearend + 1, "In press")) {
                 pre            = CImprint::ePrepub_in_press;
                 *(nearend + 1) = '\0';
             }
