@@ -1008,8 +1008,7 @@ static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTi
     CRef<CTitle::C_E> book_title(new CTitle::C_E);
 
     s = tbptr;
-    if (StringEquN(s, "(in)", 4)) {
-        s += 4;
+    if (ConsumeStr(s, "(in)")) {
         while (*s == ' ')
             s++;
         for (bptr = s; *s != ';' && *s != '(' && *s != '\0';)
@@ -1307,9 +1306,8 @@ static CRef<CCit_sub> get_sub(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
             s++;
         for (;;) {
             for (b = strip_sub_str; *b; b++) {
-                size_t l_str = StringLen(*b);
-                if (StringEquN(s, *b, l_str)) {
-                    for (s += l_str; *s == ' ' || *s == '.';)
+                if (ConsumeStr(s, *b)) {
+                    while (*s == ' ' || *s == '.')
                         s++;
                     break;
                 }
@@ -1383,10 +1381,8 @@ static CRef<CCit_sub> get_sub_gsdb(char* bptr, CRef<CAuth_list>& auth_list, CRef
     cit_sub->SetDate(*date);
 
     if (title.NotEmpty()) {
-        const Char* s     = title->GetName().c_str();
-        size_t      l_str = StringLen("Published by");
-        if (StringEquN(s, "Published by", l_str)) {
-            s += l_str;
+        const Char* s = title->GetName().c_str();
+        if (ConsumeStr(s, "Published by")) {
             while (*s == ' ')
                 s++;
         }
