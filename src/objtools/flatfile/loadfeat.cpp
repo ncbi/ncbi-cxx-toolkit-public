@@ -452,7 +452,6 @@ static string_view ncRNA_class_values[] = {
     "ribozyme",
     "scRNA",
     "siRNA",
-    "sgRNA",
     "miRNA",
     "piRNA",
     "pre_miRNA",
@@ -703,13 +702,13 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
     }
 
     const string& val = qual.GetVal();
-    if (NStr::EqualNocase(val, "taxon") || NStr::StartsWith(val, "GI:", NStr::eNocase))
+    if (NStr::EqualNocase(val, "taxon") || StringEquNI(val.c_str(), "GI:", 3))
         return tag;
 
     string line = val;
 
-    if (NStr::StartsWith(line, "MGD:MGI:", NStr::eNocase))
-        line.erase(0, 4);
+    if (StringEquNI(line.c_str(), "MGD:MGI:", 8))
+        line = line.substr(4);
 
     size_t colon = line.find(':');
     if (colon == string::npos) {
@@ -1422,12 +1421,21 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
         qval2.reset();
     }
 
+    size_t len = 0;
     if (qval_str.empty() && feat.IsSetComment() && rna_ref.GetType() == CRNA_ref::eType_rRNA) {
-        const string& comment = feat.GetComment();
-        if (NStr::EndsWith(comment, "S ribosomal RNA", NStr::eNocase) ||
-            NStr::EndsWith(comment, "S rRNA", NStr::eNocase)) {
-            qval_str = comment;
-            feat.ResetComment();
+        string comment = feat.GetComment();
+        len            = comment.size();
+
+        if (len > 15 && len < 20) {
+            if (StringEquNI(comment.c_str() + len - 15, "S ribosomal RNA", 15)) {
+                qval_str = comment;
+                feat.ResetComment();
+            }
+        } else if (len > 6 && len < 20) {
+            if (StringEquNI(comment.c_str() + len - 6, "S rRNA", 6)) {
+                qval_str = comment;
+                feat.ResetComment();
+            }
         }
     }
 
@@ -1442,7 +1450,6 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
         fta_StringCpy(p + 10, p + 11);
     }
 
-    size_t len = 0;
     for (p = qval; p; p = qval + len) {
         p = StringIStr(p, "ribosomalrna");
         if (! p)
@@ -1495,16 +1502,18 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
             p += 9;
             continue;
         }
-        p += 9;
-        if (ConsumeStr(p, " RNA"))
+        if (StringEquN(p + 9, " RNA", 4)) {
+            p += 13;
             continue;
-        len = p - qval;
+        }
+        len = p - qval + 14;
+        p += 9;
         string s(qval, p);
         s.append(" RNA");
         s.append(p);
         MemFree(qval);
         qval = StringSave(s);
-        p    = qval + len + 5;
+        p    = qval + len;
     }
 
     for (p = qval;;) {
@@ -1512,7 +1521,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
         if (! p)
             break;
         p += 14;
-        if (StringEquNI(p, " ribosomal RNA"))
+        if (StringEquNI(p, " ribosomal RNA", 14))
             fta_StringCpy(p, p + 14);
     }
 
@@ -1644,7 +1653,10 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const string& 
     for (p = end; *p == ' ' || *p == ')' || *p == '(';)
         p++;
     q = p;
-    ConsumeStr(p, "F MET") || ConsumeStr(p, "F MT");
+    if (StringEquN(p, "F MET", 5))
+        p += 5;
+    else if (StringEquN(p, "F MT", 4))
+        p += 4;
     while (IS_UPPER(*p))
         p++;
     if (p > q) {
@@ -1764,8 +1776,8 @@ static CRef<CTrna_ext> fta_get_trna_from_comment(const string& comment, unsigned
     }
     ShrinkSpaces(comm);
 
-    p = comm;
-    if (ConsumeStr(p, "CODON RECOGNIZED ")) {
+    if (StringEquN(comm, "CODON RECOGNIZED ", 17)) {
+        p = comm + 17;
         q = StringChr(p, ' ');
         if (q && StringEqu(q + 1, "PUTATIVE"))
             *q = '\0';
@@ -1774,14 +1786,14 @@ static CRef<CTrna_ext> fta_get_trna_from_comment(const string& comment, unsigned
             *remove = q ? 2 : 1;
             return ret;
         }
-    } else if (ConsumeStr(p, "PUTATIVE ")) {
-        if (p[1] == ' ' &&
-            p[5] == ' ' && StringEquN(&p[6], "TRNA", 4)) {
-            ret->SetAa().SetNcbieaa(fta_get_aa_from_symbol(p[0]));
-            if (get_aa_from_trna(*ret) != 0) {
-                MemFree(comm);
-                return ret;
-            }
+    }
+
+    if (StringEquN(comm, "PUTATIVE ", 9) && comm[10] == ' ' &&
+        comm[14] == ' ' && StringEquN(&comm[15], "TRNA", 4)) {
+        ret->SetAa().SetNcbieaa(fta_get_aa_from_symbol(comm[9]));
+        if (get_aa_from_trna(*ret) != 0) {
+            MemFree(comm);
+            return ret;
         }
     }
 
@@ -5520,7 +5532,11 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
         if (tRNA != string_view::npos) {
             for (p = offset + tRNA + 4; *p == ' ' || *p == '\t';)
                 p++;
-            ConsumeChar(p, '\n') && ConsumeStr(p, "DE   ");
+            if (*p == '\n') {
+                p++;
+                if (StringEquN(p, "DE   ", 5))
+                    p += 5;
+            }
             if (NStr::StartsWith(p, "Synthetase"sv, NStr::eNocase))
                 return;
         }

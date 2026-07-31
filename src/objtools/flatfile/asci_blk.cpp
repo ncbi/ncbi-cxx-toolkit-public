@@ -39,6 +39,7 @@
 #include "ftacpp.hpp"
 
 #include <objects/biblio/Id_pat.hpp>
+#include <objects/biblio/Id_pat_.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/general/Object_id.hpp>
@@ -854,42 +855,31 @@ void GetLenSubNode(DataBlk& dbp)
 }
 
 /**********************************************************/
-CRef<CPatent_seq_id> MakeUsptoPatSeqId(string_view acc)
+CRef<CPatent_seq_id> MakeUsptoPatSeqId(const char* acc)
 {
     CRef<CPatent_seq_id> pat_id;
+    const char*          p;
+    const char*          q;
 
-    if (acc.empty())
-        return pat_id;
+    if (! acc || *acc == '\0')
+        return (pat_id);
 
     pat_id = new CPatent_seq_id;
 
-    auto p = acc.begin(), e = acc.end();
-    auto q = find(p, e, '|');
-    if (q == e)
-        return pat_id;
-    p = q + 1;
+    p = StringChr(acc, '|');
 
-    q = find(p, e, '|');
-    pat_id->SetCit().SetCountry(string(p, q));
-    if (q == e)
-        return pat_id;
-    p = q + 1;
+    q = StringChr(p + 1, '|');
+    pat_id->SetCit().SetCountry(string(p + 1, q));
 
-    q = find(p, e, '|');
-    pat_id->SetCit().SetId().SetNumber(string(p, q));
-    if (q == e)
-        return pat_id;
-    p = q + 1;
+    p = StringChr(q + 1, '|');
+    pat_id->SetCit().SetId().SetNumber(string(q + 1, p));
 
-    q = find(p, e, '|');
-    pat_id->SetCit().SetDoc_type(string(p, q));
-    if (q == e)
-        return pat_id;
-    p = q + 1;
+    q = StringChr(p + 1, '|');
+    pat_id->SetCit().SetDoc_type(string(p + 1, q));
 
-    pat_id->SetSeqid(fta_atoi(string_view(p, e)));
+    pat_id->SetSeqid(fta_atoi(q + 1));
 
-    return pat_id;
+    return (pat_id);
 }
 
 /**********************************************************

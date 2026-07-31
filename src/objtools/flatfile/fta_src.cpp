@@ -320,7 +320,6 @@ static string_view OrganelleFirstToken[] = {
     "chromatophore",
     "hydrogenosome",
     "mitochondrion",
-    "nitroplast",
     "nucleomorph",
     "plastid",
 };
@@ -631,10 +630,6 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkList& sfbl, Int
             }
             if (qual_str == "variety") {
                 variety = val_ptr;
-                continue;
-            }
-            if (qual_str == "chromosome") {
-                sfbp->genome = CBioSource::eGenome_chromosome;
                 continue;
             }
             if (qual_str == "submitter_seqid") {
@@ -1963,7 +1958,7 @@ static bool UpdateRawBioSource(SourceFeatBlkList& sfbl, Parser::ESource source, 
                         dropped = true;
                         break;
                     }
-                    if (i == 5)
+                    if (i == 4)
                         ibp->got_plastid = true;
                     if (newgen < 0)
                         newgen = StringMatchIcase(GenomicSourceFeatQual,
@@ -1975,7 +1970,7 @@ static bool UpdateRawBioSource(SourceFeatBlkList& sfbl, Parser::ESource source, 
                         dropped = true;
                         break;
                     }
-                    if (i == 5)
+                    if (i == 4)
                         ibp->got_plastid = true;
                     if (newgen < 0)
                         newgen = StringMatchIcase(GenomicSourceFeatQual, val_ptr);
@@ -2335,14 +2330,19 @@ static bool CheckForENV(const SourceFeatBlkList& sfbl, IndexblkPtr ibp, Parser::
 /**********************************************************/
 static char* CheckPcrPrimersTag(char* str)
 {
-    if (ConsumeStr(str, "fwd_name") || ConsumeStr(str, "rev_name") ||
-        ConsumeStr(str, "fwd_seq") || ConsumeStr(str, "rev_seq")) {
-    } else
+    if (StringEquN(str, "fwd_name", 8) ||
+        StringEquN(str, "rev_name", 8))
+        str += 8;
+    else if (StringEquN(str, "fwd_seq", 7) ||
+             StringEquN(str, "rev_seq", 7))
+        str += 7;
+    else
         return nullptr;
 
-    ConsumeChar(str, ' ');
-    if (ConsumeChar(str, ':'))
-        return str;
+    if (*str == ' ')
+        str++;
+    if (*str == ':')
+        return (str + 1);
     return nullptr;
 }
 
@@ -3219,7 +3219,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
         GetSeqLocation(*feat, tsfbp->location, seqid, &err, pp, "source");
 
         if (err) {
-            FtaErrPost(SEV_REJECT, ERR_FEATURE_Dropped, "/source|{}| range check detects problems. Entry dropped.", tsfbp->location);
+            FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped, "/source|{}| range check detects problems. Entry dropped.", tsfbp->location);
             break;
         }
 
