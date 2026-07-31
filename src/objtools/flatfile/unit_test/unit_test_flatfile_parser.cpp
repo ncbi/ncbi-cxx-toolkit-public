@@ -59,7 +59,7 @@ static CRef<CSeq_entry> s_BuildRawBioseq(const list<CRef<CSeq_id>>& ids)
     pEntry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
     string seqdata { "AATTGGGGCCAAAATTGGCCAAATTGGCCATGC" };
     pEntry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set(seqdata);
-    pEntry->SetSeq().SetInst().SetLength(seqdata.size());
+    pEntry->SetSeq().SetInst().SetLength(static_cast<TSeqPos>(seqdata.size()));
  
     for (auto pId : ids) {
         pEntry->SetSeq().SetId().push_back(pId);
