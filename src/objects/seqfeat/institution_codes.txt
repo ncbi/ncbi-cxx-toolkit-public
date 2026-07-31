@@ -8142,6 +8142,7 @@ UFRJ<museum>:POR	s	Departramento de Zoologia, Universidade Federal do Rio de Jan
 UFRJIM	c	Departamento de Microbiologia Medica			
 UFRN 	s	Universidade Federal do Rio Grande do Norte			
 UFRN:Fungos	s	Universidade Federal do Rio Grande do Norte, Fungal collection	UFRN :FungosFungos		
+UFRO	c	Microbiological Resource Bank, Universidad de La Frontera			
 UFROH	s	Universidad de La Frontera			
 UFRPE	s	Universidade Federal Rural de Pernambuco			
 UFRR	s	Universidade Federal de Roraima			
