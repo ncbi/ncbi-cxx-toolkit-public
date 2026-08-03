@@ -16,3 +16,5 @@ LIBS = $(BLAST_THIRD_PARTY_LIBS) $(GENBANK_THIRD_PARTY_LIBS) \
 
 REQUIRES = objects -Cygwin
 
+CHECK_CMD = blast_usage_report -privacy /CHECK_NAME=blast_usage_report_privacy
+CHECK_CMD = blast_usage_report -status /CHECK_NAME=blast_usage_report_status
