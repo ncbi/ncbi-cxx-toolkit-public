@@ -409,29 +409,23 @@ static void BuildFeatureBlock(DataBlk& dbp)
 /**********************************************************/
 static void fta_check_mult_ids(const DataBlk& dbp, string_view mtag, string_view ptag)
 {
-    char* p;
-    Char  ch;
-    Int4  muids;
-    Int4  pmids;
-
     if (! dbp.mBuf.ptr || (mtag.empty() && ptag.empty()))
         return;
 
-    ch                    = dbp.mBuf.ptr[dbp.mBuf.len];
-    dbp.mBuf.ptr[dbp.mBuf.len] = '\0';
+    string_view buf(dbp.mBuf.ptr, dbp.mBuf.len);
 
-    muids = 0;
-    pmids = 0;
-    for (p = dbp.mBuf.ptr;; p++) {
-        p = StringChr(p, '\n');
-        if (! p)
+    unsigned muids = 0;
+    unsigned pmids = 0;
+    for (;;) {
+        size_t p = buf.find('\n');
+        if (p == string_view::npos)
             break;
-        if (! mtag.empty() && fta_StartsWith(p + 1, mtag))
+        buf.remove_prefix(p + 1);
+        if (! mtag.empty() && buf.starts_with(mtag))
             muids++;
-        else if (! ptag.empty() && fta_StartsWith(p + 1, ptag))
+        else if (! ptag.empty() && buf.starts_with(ptag))
             pmids++;
     }
-    dbp.mBuf.ptr[dbp.mBuf.len] = ch;
 
     if (muids > 1) {
         FtaErrPost(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple MEDLINE identifiers. Ignoring all but the first.");
