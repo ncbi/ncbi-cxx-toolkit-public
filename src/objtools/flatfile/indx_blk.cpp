@@ -109,8 +109,7 @@ static const char* ddbj_accpref[] = {
     "LA", "LB", "LC", "LD", "LE", "LF", "LG", "LH", "LI", "LJ", "LU", "LV",
     "LX", "LY", "LZ", "MA", "MB", "MC", "MD", "ME", "OF", "OG", "OH", "OI",
     "OJ", "PA", "PB", "PC", "PD", "PE", "PF", "PG", "PH", "PI", "PJ", "PK",
-    "PL", "PM", "PN", "PO", "PW", "QP", "QQ", "QR", "QS", "QT", "QU", "QV",
-    "QW", "QX", nullptr
+    "PL", "PM", "PN", "PO", "PW", "QP", "QQ", "QR", "QS", "QT", "QU", nullptr
 };
 
 static const char* ncbi_accpref[] = {
@@ -379,8 +378,9 @@ bool SkipTitleBuf(FileBuf& fbuf, FinfoBlk& finfo, string_view keyword)
 static bool CheckLocus(const char* locus, Parser::ESource source)
 {
     const char* p = locus;
-    if (source == Parser::ESource::NCBI || source == Parser::ESource::DDBJ)
-        ConsumeStr(p, "SEG_");
+    if (StringEquN(locus, "SEG_", 4) &&
+        (source == Parser::ESource::NCBI || source == Parser::ESource::DDBJ))
+        p += 4;
     for (; *p != '\0'; p++) {
         if (IS_DIGIT(*p) || IS_UPPER(*p))
             continue;
@@ -1437,8 +1437,7 @@ static bool IsPatentedAccPrefix(const Parser& parseInfo, string_view acc)
                  (acc == "PW"sv) || (acc == "QP"sv) ||
                  (acc == "QQ"sv) || (acc == "QR"sv) ||
                  (acc == "QS"sv) || (acc == "QT"sv) ||
-                 (acc == "QU"sv) || (acc == "QV"sv) ||
-                 (acc == "QW"sv) || (acc == "QX"sv)))
+                 (acc == "QU"sv)))
                 return true;
         }
 

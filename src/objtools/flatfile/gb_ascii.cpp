@@ -576,8 +576,12 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
     if (is_htc_div) {
         bptr = entry.mBuf.ptr;
         p    = bptr + lcp->molecule;
-        ConsumeChar(p, 'm') || ConsumeChar(p, 'r') ||
-            ConsumeStr(p, "pre-") || ConsumeStr(p, "transcribed ");
+        if (*p == 'm' || *p == 'r')
+            p++;
+        else if (StringEquN(p, "pre-", 4))
+            p += 4;
+        else if (StringEquN(p, "transcribed ", 12))
+            p += 12;
 
         if (! fta_StartsWith(p, "RNA"sv)) {
             FtaErrPost(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");

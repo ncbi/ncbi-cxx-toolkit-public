@@ -1252,8 +1252,12 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
 
         if (StringEquN(p + 1, "s-", 2))
             p += 3;
-        ConsumeChar(p, 'm') || ConsumeChar(p, 'r') ||
-          ConsumeStr(p, "pre-") || ConsumeStr(p, "transcribed ");
+        if (*p == 'm' || *p == 'r')
+            p++;
+        else if (StringEquN(p, "pre-", 4))
+            p += 4;
+        else if (StringEquN(p, "transcribed ", 12))
+            p += 12;
 
         if (! fta_StartsWith(p, "RNA"sv)) {
             FtaErrPost(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");
@@ -2595,8 +2599,12 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
         char* r = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_MOLTYPE));
         if (r) {
             p = r;
-            ConsumeChar(p, 'm') || ConsumeChar(p, 'r') ||
-                ConsumeStr(p, "pre-") || ConsumeStr(p, "transcribed ");
+            if (*r == 'm' || *r == 'r')
+                p = r + 1;
+            else if (StringEquN(r, "pre-", 4))
+                p = r + 4;
+            else if (StringEquN(r, "transcribed ", 12))
+                p = r + 12;
 
             if (! fta_StartsWith(p, "RNA"sv)) {
                 FtaErrPost(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");

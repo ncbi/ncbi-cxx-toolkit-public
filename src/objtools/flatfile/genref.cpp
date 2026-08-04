@@ -209,7 +209,7 @@ const char* leave_imp_feat[] = {
     "satellite",
 };
 
-const CRNA_ref::EType leave_rna_feat[] = {
+Int2 leave_rna_feat[] = {
     CRNA_ref::eType_tRNA,
     CRNA_ref::eType_rRNA,
     CRNA_ref::eType_snRNA,
@@ -839,15 +839,13 @@ static bool fta_check_feat_overlap(const TGeneLocList& gelocs, Gene& g, const Mi
         auto it = gelop->ammp.begin();
         for (; it != gelop->ammp.end(); ++it) {
             auto   ammp = *it;
-            if (max < ammp.min || min > ammp.max)
-                continue;
             int    ver1 = 0;
             string label1;
             ammp.pId->GetLabel(&label1, &ver1);
             string label2;
             int    ver2 = 0;
             ml.pId->GetLabel(&label2, &ver2);
-            if (ver1 != ver2)
+            if (max < ammp.min || min > ammp.max || ver1 != ver2)
                 continue;
             if (label1 == label2)
                 break;
@@ -1546,7 +1544,7 @@ static bool fta_rnas_cds_feat(const CSeq_feat& feat)
         return false;
 
     const CRNA_ref& rna_ref = feat.GetData().GetRna();
-    if (rna_ref.IsSetType() && rna_ref.GetType() >= CRNA_ref::eType_mRNA && rna_ref.GetType() <= CRNA_ref::eType_rRNA) /* mRNA, tRNA or rRNA */
+    if (rna_ref.IsSetType() && rna_ref.GetType() > 1 && rna_ref.GetType() < 5) /* mRNA, tRNA or rRNA */
         return true;
 
     return false;
@@ -1588,28 +1586,28 @@ static bool GetFeatNameAndLoc(Gene* glp, const CSeq_feat& feat, GeneNodePtr gnp)
 
             if (rna_ref.IsSetType()) {
                 switch (rna_ref.GetType()) {
-                case CRNA_ref::eType_premsg:
+                case 1:
                     p = "precursor_RNA";
                     break;
-                case CRNA_ref::eType_mRNA:
+                case 2:
                     p = "mRNA";
                     break;
-                case CRNA_ref::eType_tRNA:
+                case 3:
                     p = "tRNA";
                     break;
-                case CRNA_ref::eType_rRNA:
+                case 4:
                     p = "rRNA";
                     break;
-                case CRNA_ref::eType_snRNA:
+                case 5:
                     p = "snRNA";
                     break;
-                case CRNA_ref::eType_scRNA:
+                case 6:
                     p = "scRNA";
                     break;
-                case CRNA_ref::eType_snoRNA:
+                case 7:
                     p = "snoRNA";
                     break;
-                case CRNA_ref::eType_other:
+                case 255:
                     p = "misc_RNA";
                     break;
                 default:
@@ -1988,7 +1986,7 @@ static void GeneCheckForStrands(const TGeneList& gl)
 }
 
 /**********************************************************/
-static bool LocusTagCheck(TGeneList& gl, bool& resort, ParserPtr pp)
+static bool LocusTagCheck(TGeneList& gl, bool& resort)
 {
     TGeneList::iterator glpstart;
     TGeneList::iterator glpstop;
@@ -2028,15 +2026,11 @@ static bool LocusTagCheck(TGeneList& gl, bool& resort, ParserPtr pp)
                 continue;
 
             for (glp = glpstart;; ++glp) {
-                if (pp->diff_lt && pp->source == Parser::ESource::EMBL) {
-                    FtaErrPost(SEV_ERROR, ERR_FEATURE_InconsistentLocusTagAndGene, "Inconsistent pairs /gene+/locus_tag are encountered: \"{}\"+\"{}\" : {} feature at {} : \"{}\"+\"{}\" : {} feature at {}.", (glp->locus.empty()) ? "(NULL)" : glp->locus, (glp->locus_tag.empty()) ? "(NULL)" : glp->locus_tag, glp->fname, glp->location, (tglp->locus.empty()) ? "(NULL)" : tglp->locus, (tglp->locus_tag.empty()) ? "(NULL)" : tglp->locus_tag, tglp->fname, tglp->location);
-                } else {
-                    FtaErrPost(SEV_REJECT, ERR_FEATURE_InconsistentLocusTagAndGene, "Inconsistent pairs /gene+/locus_tag are encountered: \"{}\"+\"{}\" : {} feature at {} : \"{}\"+\"{}\" : {} feature at {}. Entry dropped.", (glp->locus.empty()) ? "(NULL)" : glp->locus, (glp->locus_tag.empty()) ? "(NULL)" : glp->locus_tag, glp->fname, glp->location, (tglp->locus.empty()) ? "(NULL)" : tglp->locus, (tglp->locus_tag.empty()) ? "(NULL)" : tglp->locus_tag, tglp->fname, tglp->location);
-                    ret = false;
-                }
+                FtaErrPost(SEV_REJECT, ERR_FEATURE_InconsistentLocusTagAndGene, "Inconsistent pairs /gene+/locus_tag are encountered: \"{}\"+\"{}\" : {} feature at {} : \"{}\"+\"{}\" : {} feature at {}. Entry dropped.", (glp->locus.empty()) ? "(NULL)" : glp->locus, (glp->locus_tag.empty()) ? "(NULL)" : glp->locus_tag, glp->fname, glp->location, (tglp->locus.empty()) ? "(NULL)" : tglp->locus, (tglp->locus_tag.empty()) ? "(NULL)" : tglp->locus_tag, tglp->fname, tglp->location);
                 if (glp == glpstop)
                     break;
             }
+            ret = false;
         }
 
         if (! glpstart->locus.empty() && ! glpstart->locus_tag.empty() &&
@@ -2230,7 +2224,7 @@ static void CheckGene(CRef<CSeq_entry> entry, ParserPtr pp, GeneRefFeats& gene_r
         gnp->gl.sort(CompareGeneListName);
 
         resort = false;
-        if (LocusTagCheck(gnp->gl, resort, pp) == false) {
+        if (LocusTagCheck(gnp->gl, resort) == false) {
             ibp->drop = true;
             delete gnp;
             return;

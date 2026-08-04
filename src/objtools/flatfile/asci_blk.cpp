@@ -39,6 +39,7 @@
 #include "ftacpp.hpp"
 
 #include <objects/biblio/Id_pat.hpp>
+#include <objects/biblio/Id_pat_.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/general/Object_id.hpp>
@@ -409,23 +410,29 @@ static void BuildFeatureBlock(DataBlk& dbp)
 /**********************************************************/
 static void fta_check_mult_ids(const DataBlk& dbp, string_view mtag, string_view ptag)
 {
+    char* p;
+    Char  ch;
+    Int4  muids;
+    Int4  pmids;
+
     if (! dbp.mBuf.ptr || (mtag.empty() && ptag.empty()))
         return;
 
-    string_view buf(dbp.mBuf.ptr, dbp.mBuf.len);
+    ch                    = dbp.mBuf.ptr[dbp.mBuf.len];
+    dbp.mBuf.ptr[dbp.mBuf.len] = '\0';
 
-    unsigned muids = 0;
-    unsigned pmids = 0;
-    for (;;) {
-        size_t p = buf.find('\n');
-        if (p == string_view::npos)
+    muids = 0;
+    pmids = 0;
+    for (p = dbp.mBuf.ptr;; p++) {
+        p = StringChr(p, '\n');
+        if (! p)
             break;
-        buf.remove_prefix(p + 1);
-        if (! mtag.empty() && buf.starts_with(mtag))
+        if (! mtag.empty() && fta_StartsWith(p + 1, mtag))
             muids++;
-        else if (! ptag.empty() && buf.starts_with(ptag))
+        else if (! ptag.empty() && fta_StartsWith(p + 1, ptag))
             pmids++;
     }
+    dbp.mBuf.ptr[dbp.mBuf.len] = ch;
 
     if (muids > 1) {
         FtaErrPost(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple MEDLINE identifiers. Ignoring all but the first.");
@@ -848,42 +855,31 @@ void GetLenSubNode(DataBlk& dbp)
 }
 
 /**********************************************************/
-CRef<CPatent_seq_id> MakeUsptoPatSeqId(string_view acc)
+CRef<CPatent_seq_id> MakeUsptoPatSeqId(const char* acc)
 {
     CRef<CPatent_seq_id> pat_id;
+    const char*          p;
+    const char*          q;
 
-    if (acc.empty())
-        return pat_id;
+    if (! acc || *acc == '\0')
+        return (pat_id);
 
     pat_id = new CPatent_seq_id;
 
-    auto p = acc.begin(), e = acc.end();
-    auto q = find(p, e, '|');
-    if (q == e)
-        return pat_id;
-    p = q + 1;
+    p = StringChr(acc, '|');
 
-    q = find(p, e, '|');
-    pat_id->SetCit().SetCountry(string(p, q));
-    if (q == e)
-        return pat_id;
-    p = q + 1;
+    q = StringChr(p + 1, '|');
+    pat_id->SetCit().SetCountry(string(p + 1, q));
 
-    q = find(p, e, '|');
-    pat_id->SetCit().SetId().SetNumber(string(p, q));
-    if (q == e)
-        return pat_id;
-    p = q + 1;
+    p = StringChr(q + 1, '|');
+    pat_id->SetCit().SetId().SetNumber(string(q + 1, p));
 
-    q = find(p, e, '|');
-    pat_id->SetCit().SetDoc_type(string(p, q));
-    if (q == e)
-        return pat_id;
-    p = q + 1;
+    q = StringChr(p + 1, '|');
+    pat_id->SetCit().SetDoc_type(string(p + 1, q));
 
-    pat_id->SetSeqid(fta_atoi(string_view(p, e)));
+    pat_id->SetSeqid(fta_atoi(q + 1));
 
-    return pat_id;
+    return (pat_id);
 }
 
 /**********************************************************

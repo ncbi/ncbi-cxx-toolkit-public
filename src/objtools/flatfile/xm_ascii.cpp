@@ -504,8 +504,12 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
         char* str = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_MOLTYPE));
         if (str) {
             p = str;
-            ConsumeChar(p, 'm') || ConsumeChar(p, 'r') ||
-                ConsumeStr(p, "pre-") || ConsumeStr(p, "transcribed ");
+            if (*str == 'm' || *str == 'r')
+                p = str + 1;
+            else if (StringEquN(str, "pre-", 4))
+                p = str + 4;
+            else if (StringEquN(str, "transcribed ", 12))
+                p = str + 12;
 
             if (! fta_StartsWith(p, "RNA"sv)) {
                 FtaErrPost(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");
