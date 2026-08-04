@@ -110,7 +110,7 @@ static const char* ddbj_accpref[] = {
     "LX", "LY", "LZ", "MA", "MB", "MC", "MD", "ME", "OF", "OG", "OH", "OI",
     "OJ", "PA", "PB", "PC", "PD", "PE", "PF", "PG", "PH", "PI", "PJ", "PK",
     "PL", "PM", "PN", "PO", "PW", "QP", "QQ", "QR", "QS", "QT", "QU", "QV",
-    "QW", "QX", nullptr
+    "QW", "QX", "QY", nullptr
 };
 
 static const char* ncbi_accpref[] = {
