@@ -216,7 +216,7 @@ if(OFF)
                vibrant_ogl)
 endif()
 if(NOT NCBI_COMPONENT_NCBI_C_DISABLED)
-    NCBI_define_Wcomponent(NCBI_C ncbiobj.lib ncbimmdb.lib ncbi.lib)
+    NCBI_define_VScomponent(NAME NCBI_C PACKAGE NCBI_C LIB ncbiobj ncbimmdb ncbi)
     if(NCBI_COMPONENT_NCBI_C_FOUND)
         set(NCBI_COMPONENT_NCBI_C_LIBPATH ${NCBI_ThirdParty_NCBI_C})
         set(NCBI_C_ncbi "ncbi")
@@ -264,7 +264,7 @@ NCBIcomponent_report(OpenGL)
 
 #############################################################################
 # LMDB
-NCBI_define_Wcomponent(LMDB liblmdb.lib)
+NCBI_define_VScomponent(NAME LMDB PACKAGE lmdb LIB liblmdb)
 NCBIcomponent_report(LMDB)
 if(NOT NCBI_COMPONENT_LMDB_FOUND)
     set(NCBI_COMPONENT_LMDB_FOUND ${NCBI_COMPONENT_LocalLMDB_FOUND})
@@ -276,9 +276,9 @@ set(HAVE_LIBLMDB ${NCBI_COMPONENT_LMDB_FOUND})
 #############################################################################
 # PCRE
 if(NOT NCBI_COMPONENT_PCRE_FOUND)
-    NCBI_define_Wcomponent(PCRE libpcre.lib)
+    NCBI_define_VScomponent(NAME PCRE PACKAGE PCRE INTERFACELIB pcre::pcre LIB libpcre)
     if(NCBI_COMPONENT_PCRE_FOUND)
-        set(NCBI_COMPONENT_PCRE_DEFINES PCRE_STATIC NOPOSIX)
+        target_compile_definitions(pcre::pcre INTERFACE PCRE_STATIC NOPOSIX)
     endif()
 endif()
 NCBIcomponent_report(PCRE)
@@ -291,9 +291,10 @@ endif()
 set(HAVE_LIBPCRE ${NCBI_COMPONENT_PCRE_FOUND})
 
 if(NOT NCBI_COMPONENT_PCRE2_FOUND)
-    NCBI_define_Wcomponent(PCRE2 pcre2-8-static.lib)
+    set(__lib_name pcre2-8-static)
+    NCBI_define_VScomponent(NAME PCRE2 PACKAGE PCRE2 INTERFACELIB pcre2::pcre2 LIB ${__lib_name})
     if(NCBI_COMPONENT_PCRE2_FOUND)
-        set(NCBI_COMPONENT_PCRE2_DEFINES PCRE2_STATIC)
+        target_compile_definitions(pcre2::pcre2 INTERFACE PCRE2_STATIC)
     endif()
 endif()
 NCBIcomponent_report(PCRE2)
@@ -307,7 +308,8 @@ set(HAVE_LIBPCRE2 ${NCBI_COMPONENT_PCRE2_FOUND})
 
 #############################################################################
 # Z
-NCBI_define_Wcomponent(Z libz.lib)
+set(__lib_name libz)
+NCBI_define_VScomponent(NAME Z PACKAGE ZLIB LIB ${__lib_name})
 NCBIcomponent_report(Z)
 if(NOT NCBI_COMPONENT_Z_FOUND)
     set(NCBI_COMPONENT_Z_FOUND ${NCBI_COMPONENT_LocalZ_FOUND})
@@ -319,9 +321,10 @@ set(HAVE_LIBZ ${NCBI_COMPONENT_Z_FOUND})
 #############################################################################
 # BZ2
 if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
-    NCBI_define_Wcomponent(BZ2 bz2_static.lib)
+    set(__lib_name bz2_static)
+    NCBI_define_VScomponent(NAME BZ2 PACKAGE BZip2 LIB ${__lib_name})
 else()
-    NCBI_define_Wcomponent(BZ2 libbzip2.lib)
+    NCBI_define_VScomponent(NAME BZ2 PACKAGE BZip2 LIB libbzip2)
 endif()
 NCBIcomponent_report(BZ2)
 if(NOT NCBI_COMPONENT_BZ2_FOUND)
@@ -334,15 +337,15 @@ set(HAVE_LIBBZ2 ${NCBI_COMPONENT_BZ2_FOUND})
 #############################################################################
 # LZO
 if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
-    NCBI_define_Wcomponent(LZO lzo2.lib)
+    NCBI_define_VScomponent(NAME LZO PACKAGE lzo LIB lzo2)
 else()
-    NCBI_define_Wcomponent(LZO liblzo.lib)
+    NCBI_define_VScomponent(NAME LZO PACKAGE lzo LIB liblzo)
 endif()
 NCBIcomponent_report(LZO)
 
 #############################################################################
 # ZSTD
-NCBI_define_Wcomponent(ZSTD libzstd_static.lib)
+NCBI_define_VScomponent(NAME ZSTD PACKAGE zstd INTERFACELIB zstd::libzstd LIB libzstd_static)
 NCBIcomponent_report(ZSTD)
 if(NCBI_COMPONENT_ZSTD_FOUND AND
     (DEFINED NCBI_COMPONENT_ZSTD_VERSION AND "${NCBI_COMPONENT_ZSTD_VERSION}" VERSION_LESS "1.4"))
@@ -355,61 +358,57 @@ endif()
 # BOOST
 if(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
 #include(${NCBI_TREE_CMAKECFG}/CMakeChecks.boost.cmake)
+set(_boost_pfx lib)
 
 #############################################################################
 # Boost.Test.Included
 if(NOT NCBI_COMPONENT_Boost.Test.Included_FOUND)
-    NCBI_define_Wcomponent(Boost.Test.Included)
+    NCBI_define_VScomponent(NAME Boost.Test.Included PACKAGE Boost INTERFACELIB Boost::headers)
     if(NCBI_COMPONENT_Boost.Test.Included_FOUND)
-        set(NCBI_COMPONENT_Boost.Test.Included_DEFINES BOOST_TEST_NO_LIB)
+        target_compile_definitions(Boost::headers INTERFACE BOOST_TEST_NO_LIB)
     endif()
 endif()
 
 #############################################################################
 # Boost.Test
 if(NOT NCBI_COMPONENT_Boost.Test_FOUND)
-    NCBI_define_Wcomponent(Boost.Test libboost_unit_test_framework.lib)
+    NCBI_define_VScomponent(NAME Boost.Test PACKAGE Boost INTERFACELIB Boost::unit_test_framework LIB ${_boost_pfx}boost_unit_test_framework)
     if(NCBI_COMPONENT_Boost.Test_FOUND)
-        set(NCBI_COMPONENT_Boost.Test_DEFINES BOOST_AUTO_LINK_SYSTEM)
-    endif()
-endif()
-
-#############################################################################
-# Boost.Spirit
-if(NOT NCBI_COMPONENT_Boost.Spirit_FOUND)
-    if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
-        NCBI_define_Wcomponent(Boost.Spirit libboost_thread.lib)
-    else()
-        NCBI_define_Wcomponent(Boost.Spirit libboost_thread.lib boost_thread.lib boost_system.lib boost_date_time.lib boost_chrono.lib)
-    endif()
-    if(NCBI_COMPONENT_Boost.Spirit_FOUND)
-        set(NCBI_COMPONENT_Boost.Spirit_DEFINES BOOST_AUTO_LINK_SYSTEM)
+        target_compile_definitions(Boost::unit_test_framework INTERFACE BOOST_AUTO_LINK_SYSTEM)
     endif()
 endif()
 
 #############################################################################
 # Boost.Thread
 if(NOT NCBI_COMPONENT_Boost.Thread_FOUND)
-    if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
-        NCBI_define_Wcomponent(Boost.Thread libboost_thread.lib libboost_date_time.lib libboost_chrono.lib)
-    else()
-        NCBI_define_Wcomponent(Boost.Thread libboost_thread.lib boost_thread.lib boost_system.lib boost_date_time.lib boost_chrono.lib)
-    endif()
+    NCBI_define_VScomponent(NAME Boost.Thread PACKAGE Boost INTERFACELIB Boost::thread LIB ${_boost_pfx}boost_thread  ${_boost_pfx}boost_date_time ${_boost_pfx}boost_chrono)
     if(NCBI_COMPONENT_Boost.Thread_FOUND)
-        set(NCBI_COMPONENT_Boost.Thread_DEFINES BOOST_AUTO_LINK_SYSTEM)
+        target_compile_definitions(Boost::thread INTERFACE BOOST_AUTO_LINK_SYSTEM)
+    endif()
+endif()
+
+#############################################################################
+# Boost.Spirit
+if(NOT NCBI_COMPONENT_Boost.Spirit_FOUND)
+    if(TARGET Boost::thread)
+        set(NCBI_COMPONENT_Boost.Spirit_FOUND YES)
+        set(NCBI_COMPONENT_Boost.Spirit_LIBS Boost::thread)
+    else()
+        NCBI_define_VScomponent(NAME Boost.Spirit PACKAGE Boost INTERFACELIB Boost::thread LIB ${_boost_pfx}boost_thread  ${_boost_pfx}boost_date_time ${_boost_pfx}boost_chrono)
+        if(NCBI_COMPONENT_Boost.Spirit_FOUND)
+            target_compile_definitions(Boost::thread INTERFACE BOOST_AUTO_LINK_SYSTEM)
+        endif()
     endif()
 endif()
 
 #############################################################################
 # Boost
 if(NOT NCBI_COMPONENT_Boost_FOUND)
-    if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
-        NCBI_define_Wcomponent(Boost libboost_filesystem.lib libboost_iostreams.lib libboost_date_time.lib libboost_regex.lib)
-    else()
-        NCBI_define_Wcomponent(Boost boost_filesystem.lib boost_iostreams.lib boost_date_time.lib boost_regex.lib boost_system.lib)
-    endif()
+    NCBI_define_VScomponent(NAME Boost PACKAGE Boost INTERFACELIB boost::boost LIB
+        ${_boost_pfx}boost_filesystem ${_boost_pfx}boost_iostreams ${_boost_pfx}boost_date_time ${_boost_pfx}boost_regex)
 endif()
 
+unset(_boost_pfx)
 endif(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
 NCBIcomponent_report(Boost.Test.Included)
 NCBIcomponent_report(Boost.Test)
@@ -420,49 +419,51 @@ NCBIcomponent_report(Boost)
 #############################################################################
 # JPEG
 if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
-    NCBI_define_Wcomponent(JPEG jpeg-static.lib)
+    set(_jpeg_lib jpeg-static)
+    NCBI_define_VScomponent(NAME JPEG PACKAGE JPEG LIB ${_jpeg_lib})
 else()
-    NCBI_define_Wcomponent(JPEG libjpeg.lib)
+    NCBI_define_VScomponent(NAME JPEG PACKAGE JPEG LIB libjpeg)
 endif()
 NCBIcomponent_report(JPEG)
 
 #############################################################################
 # PNG
-NCBI_define_Wcomponent(PNG libpng.lib)
+NCBI_define_VScomponent(NAME PNG PACKAGE PNG LIB libpng)
 NCBIcomponent_report(PNG)
 
 #############################################################################
 # GIF
-NCBI_define_Wcomponent(GIF libgif.lib)
+NCBI_define_VScomponent(NAME GIF PACKAGE GIF LIB libgif)
 NCBIcomponent_report(GIF)
 
 #############################################################################
 # TIFF
 if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
-    NCBI_define_Wcomponent(TIFF tiff.lib tiffxx.lib)
+    NCBI_define_VScomponent(NAME TIFF PACKAGE TIFF LIB tiff tiffxx)
 else()
-    NCBI_define_Wcomponent(TIFF libtiff.lib)
+    NCBI_define_VScomponent(NAME TIFF PACKAGE TIFF LIB libtiff)
 endif()
 NCBIcomponent_report(TIFF)
 
 #############################################################################
 # GNUTLS
-NCBI_define_Wcomponent(GNUTLS libgnutls-30.lib)
+NCBI_define_VScomponent(NAME GNUTLS PACKAGE GnuTLS LIB libgnutls-30)
 NCBIcomponent_report(GNUTLS)
 
 #############################################################################
 # NCBICRYPT
-NCBI_define_Wcomponent(NCBICRYPT ncbicrypt.lib)
+NCBI_define_VScomponent(NAME NCBICRYPT PACKAGE ncbicrypt LIB ncbicrypt)
 NCBIcomponent_report(NCBICRYPT)
 
 #############################################################################
 # FASTCGI
-NCBI_define_Wcomponent(FASTCGI libfcgi.lib)
+set(__lib_name libfcgi)
+NCBI_define_VScomponent(NAME FASTCGI PACKAGE ncbi-fastcgi LIB ${__lib_name})
 NCBIcomponent_report(FASTCGI)
 
 #############################################################################
 # BerkeleyDB
-NCBI_define_Wcomponent(BerkeleyDB libdb.lib)
+NCBI_define_VScomponent(NAME BerkeleyDB PACKAGE libdb LIB libdb)
 if(NCBI_COMPONENT_BerkeleyDB_FOUND)
     set(HAVE_BERKELEY_DB 1)
     set(HAVE_BDB         1)
@@ -473,11 +474,9 @@ NCBIcomponent_report(BerkeleyDB)
 #############################################################################
 # XML
 if(NOT NCBI_COMPONENT_XML_FOUND)
-    NCBI_define_Wcomponent(XML libxml2.lib)
-    if (NCBI_COMPONENT_XML_FOUND)
-        if(NOT BUILD_SHARED_LIBS)
-            set (NCBI_COMPONENT_XML_DEFINES LIBXML_STATIC)
-        endif()
+    NCBI_define_VScomponent(NAME XML PACKAGE libxml2 INTERFACELIB LibXml2::LibXml2 LIB libxml2)
+    if (NCBI_COMPONENT_XML_FOUND AND NCBI_PTBCFG_COMPONENT_StaticComponents)
+        target_compile_definitions(LibXml2::LibXml2 INTERFACE LIBXML_STATIC)
     endif()
 endif()
 NCBIcomponent_report(XML)
@@ -485,11 +484,9 @@ NCBIcomponent_report(XML)
 #############################################################################
 # XSLT
 if(NOT NCBI_COMPONENT_XSLT_FOUND)
-    NCBI_define_Wcomponent(XSLT libexslt.lib libxslt.lib)
-    if (NCBI_COMPONENT_XSLT_FOUND)
-        if(NOT BUILD_SHARED_LIBS)
-            set (NCBI_COMPONENT_XSLT_DEFINES LIBEXSLT_STATIC LIBXSLT_STATIC)
-        endif()
+    NCBI_define_VScomponent(NAME XSLT PACKAGE LibXslt INTERFACELIB libxslt::libxslt LIB libexslt libxslt)
+    if (NCBI_COMPONENT_XSLT_FOUND AND NCBI_PTBCFG_COMPONENT_StaticComponents)
+        target_compile_definitions(libxslt::libxslt INTERFACE LIBEXSLT_STATIC LIBXSLT_STATIC)
     endif()
 endif()
 NCBIcomponent_report(XSLT)
@@ -497,18 +494,16 @@ NCBIcomponent_report(XSLT)
 #############################################################################
 # EXSLT
 if(NOT NCBI_COMPONENT_EXSLT_FOUND)
-    NCBI_define_Wcomponent(EXSLT libexslt.lib)
-    if (NCBI_COMPONENT_EXSLT_FOUND)
-        if(NOT BUILD_SHARED_LIBS)
-            set (NCBI_COMPONENT_EXSLT_DEFINES LIBEXSLT_STATIC)
-        endif()
+    NCBI_define_VScomponent(NAME EXSLT PACKAGE LibExslt LIB libexslt)
+    if (NCBI_COMPONENT_EXSLT_FOUND AND NCBI_PTBCFG_COMPONENT_StaticComponents)
+        target_compile_definitions(LibExslt::LibExslt INTERFACE LIBEXSLT_STATIC)
     endif()
 endif()
 NCBIcomponent_report(EXSLT)
 
 #############################################################################
 # SQLITE3
-NCBI_define_Wcomponent(SQLITE3 sqlite3.lib)
+NCBI_define_VScomponent(NAME SQLITE3 PACKAGE SQLite3 LIB sqlite3)
 NCBIcomponent_report(SQLITE3)
 
 #############################################################################
@@ -517,8 +512,7 @@ set(NCBI_COMPONENT_LAPACK_FOUND NO)
 
 #############################################################################
 # Sybase
-NCBI_define_Wcomponent(Sybase # libsybdb.lib
-                       libsybct.lib libsybblk.lib libsybcs.lib)
+NCBI_define_VScomponent(NAME Sybase PACKAGE Sybase LIB libsybct libsybblk libsybcs)
 if (NCBI_COMPONENT_Sybase_FOUND)
     set(SYBASE_PATH ${NCBI_ThirdParty_Sybase}/Sybase)
     set(SYBASE_LCL_PATH "${NCBI_ThirdParty_SybaseLocalPath}")
@@ -574,7 +568,7 @@ NCBIcomponent_report(VDB)
 
 #############################################################################
 # PYTHON
-NCBI_define_Wcomponent(PYTHON python311.lib python3.lib)
+NCBI_define_VScomponent(NAME PYTHON PACKAGE cpython LIB python311 python3)
 if(NCBI_COMPONENT_PYTHON_FOUND)
     set(NCBI_COMPONENT_PYTHON_BINPATH ${NCBI_ThirdParty_PYTHON})
     set(NCBI_COMPONENT_PYTHON_VERSION 3.11)
@@ -599,118 +593,117 @@ else()
 
 if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
 
-NCBI_define_Wcomponent(PROTOBUF
-    libprotobuf.lib libutf8_range.lib libutf8_validity.lib utf8_range_lib.lib
-    absl_base.lib
-    absl_city.lib
-    absl_civil_time.lib
-    absl_cord.lib
-    absl_cord_internal.lib
-    absl_cordz_functions.lib
-    absl_cordz_handle.lib
-    absl_cordz_info.lib
-    absl_cordz_sample_token.lib
-    absl_crc32c.lib
-    absl_crc_cord_state.lib
-    absl_crc_cpu_detect.lib
-    absl_crc_internal.lib
-    absl_debugging_internal.lib
-    absl_decode_rust_punycode.lib
-    absl_demangle_internal.lib
-    absl_demangle_rust.lib
-    absl_die_if_null.lib
-    absl_examine_stack.lib
-    absl_exponential_biased.lib
-    absl_failure_signal_handler.lib
-    absl_flags_commandlineflag.lib
-    absl_flags_commandlineflag_internal.lib
-    absl_flags_config.lib
-    absl_flags_internal.lib
-    absl_flags_marshalling.lib
-    absl_flags_parse.lib
-    absl_flags_private_handle_accessor.lib
-    absl_flags_program_name.lib
-    absl_flags_reflection.lib
-    absl_flags_usage.lib
-    absl_flags_usage_internal.lib
-    absl_graphcycles_internal.lib
-    absl_hash.lib
-    absl_hashtablez_sampler.lib
-    absl_int128.lib
-    absl_kernel_timeout_internal.lib
-    absl_leak_check.lib
-    absl_log_flags.lib
-    absl_log_globals.lib
-    absl_log_initialize.lib
-    absl_log_internal_check_op.lib
-    absl_log_internal_conditions.lib
-    absl_log_internal_fnmatch.lib
-    absl_log_internal_format.lib
-    absl_log_internal_globals.lib
-    absl_log_internal_log_sink_set.lib
-    absl_log_internal_message.lib
-    absl_log_internal_nullguard.lib
-    absl_log_internal_proto.lib
-    absl_log_internal_structured_proto.lib
-    absl_log_severity.lib
-    absl_log_sink.lib
-    absl_low_level_hash.lib
-    absl_malloc_internal.lib
-    absl_periodic_sampler.lib
-    absl_poison.lib
-    absl_random_distributions.lib
-    absl_random_internal_distribution_test_util.lib
-    absl_random_internal_entropy_pool.lib
-    absl_random_internal_platform.lib
-    absl_random_internal_randen.lib
-    absl_random_internal_randen_hwaes.lib
-    absl_random_internal_randen_hwaes_impl.lib
-    absl_random_internal_randen_slow.lib
-    absl_random_internal_seed_material.lib
-    absl_random_seed_gen_exception.lib
-    absl_random_seed_sequences.lib
-    absl_raw_hash_set.lib
-    absl_raw_logging_internal.lib
-    absl_scoped_set_env.lib
-    absl_spinlock_wait.lib
-    absl_stacktrace.lib
-    absl_status.lib
-    absl_statusor.lib
-    absl_str_format_internal.lib
-    absl_strerror.lib
-    absl_string_view.lib
-    absl_strings.lib
-    absl_strings_internal.lib
-    absl_symbolize.lib
-    absl_synchronization.lib
-    absl_throw_delegate.lib
-    absl_time.lib
-    absl_time_zone.lib
-    absl_tracing_internal.lib
-    absl_utf8_for_code_point.lib
-    absl_vlog_config_internal.lib
+NCBI_define_VScomponent(NAME PROTOBUF PACKAGE protobuf LIB
+    libprotobuf libutf8_range libutf8_validity utf8_range_lib
+    absl_base
+    absl_city
+    absl_civil_time
+    absl_cord
+    absl_cord_internal
+    absl_cordz_functions
+    absl_cordz_handle
+    absl_cordz_info
+    absl_cordz_sample_token
+    absl_crc32c
+    absl_crc_cord_state
+    absl_crc_cpu_detect
+    absl_crc_internal
+    absl_debugging_internal
+    absl_decode_rust_punycode
+    absl_demangle_internal
+    absl_demangle_rust
+    absl_die_if_null
+    absl_examine_stack
+    absl_exponential_biased
+    absl_failure_signal_handler
+    absl_flags_commandlineflag
+    absl_flags_commandlineflag_internal
+    absl_flags_config
+    absl_flags_internal
+    absl_flags_marshalling
+    absl_flags_parse
+    absl_flags_private_handle_accessor
+    absl_flags_program_name
+    absl_flags_reflection
+    absl_flags_usage
+    absl_flags_usage_internal
+    absl_graphcycles_internal
+    absl_hash
+    absl_hashtablez_sampler
+    absl_int128
+    absl_kernel_timeout_internal
+    absl_leak_check
+    absl_log_flags
+    absl_log_globals
+    absl_log_initialize
+    absl_log_internal_check_op
+    absl_log_internal_conditions
+    absl_log_internal_fnmatch
+    absl_log_internal_format
+    absl_log_internal_globals
+    absl_log_internal_log_sink_set
+    absl_log_internal_message
+    absl_log_internal_nullguard
+    absl_log_internal_proto
+    absl_log_internal_structured_proto
+    absl_log_severity
+    absl_log_sink
+    absl_low_level_hash
+    absl_malloc_internal
+    absl_periodic_sampler
+    absl_poison
+    absl_random_distributions
+    absl_random_internal_distribution_test_util
+    absl_random_internal_entropy_pool
+    absl_random_internal_platform
+    absl_random_internal_randen
+    absl_random_internal_randen_hwaes
+    absl_random_internal_randen_hwaes_impl
+    absl_random_internal_randen_slow
+    absl_random_internal_seed_material
+    absl_random_seed_gen_exception
+    absl_random_seed_sequences
+    absl_raw_hash_set
+    absl_raw_logging_internal
+    absl_scoped_set_env
+    absl_spinlock_wait
+    absl_stacktrace
+    absl_status
+    absl_statusor
+    absl_str_format_internal
+    absl_strerror
+    absl_string_view
+    absl_strings
+    absl_strings_internal
+    absl_symbolize
+    absl_synchronization
+    absl_throw_delegate
+    absl_time
+    absl_time_zone
+    absl_tracing_internal
+    absl_utf8_for_code_point
+    absl_vlog_config_internal
 )
 if(NOT NCBI_COMPONENT_GRPC_FOUND)
-    NCBI_define_Wcomponent(GRPC
-        grpc++.lib
-        gpr.lib
-        grpc.lib
-        grpc_authorization_provider.lib
-        grpc_plugin_support.lib
-        grpc_unsecure.lib
-        grpc++.lib
-        grpc++_alts.lib
-        grpc++_error_details.lib
-        grpc++_reflection.lib
-        grpc++_unsecure.lib
-        grpcpp_channelz.lib
-        address_sorting.lib cares.lib
-        libprotoc.lib libupb.lib crypto.lib ssl.lib re2.lib 
-        absl_random_internal_entropy_pool.lib absl_random_internal_randen.lib
-        absl_random_internal_randen_hwaes.lib
-        absl_random_internal_randen_hwaes_impl.lib
-        absl_random_internal_randen_slow.lib absl_random_internal_platform.lib
-        absl_random_internal_seed_material.lib absl_random_seed_gen_exception.lib
+    NCBI_define_VScomponent(NAME GRPC PACKAGE gRPC INTERFACELIB grpc::grpc LIB
+        grpc++
+        gpr
+        grpc
+        grpc_authorization_provider
+        grpc_plugin_support
+        grpc_unsecure
+        grpc++_alts
+        grpc++_error_details
+        grpc++_reflection
+        grpc++_unsecure
+        grpcpp_channelz
+        address_sorting cares
+        libprotoc libupb crypto ssl re2 
+        absl_random_internal_entropy_pool absl_random_internal_randen
+        absl_random_internal_randen_hwaes
+        absl_random_internal_randen_hwaes_impl
+        absl_random_internal_randen_slow absl_random_internal_platform
+        absl_random_internal_seed_material absl_random_seed_gen_exception
     )
     if(NCBI_COMPONENT_GRPC_FOUND)
         set(NCBI_COMPONENT_GRPC_DEFINES _WIN32_WINNT=0x0600)
@@ -784,18 +777,16 @@ endif()
 
 ##############################################################################
 # XALAN
-NCBI_define_Wcomponent(XALAN xalan-c.lib XalanMsgLib.lib)
+NCBI_define_VScomponent(NAME XALAN PACKAGE XalanC INTERFACELIB xalan-c::xalan-c LIB xalan-c XalanMsgLib)
 NCBIcomponent_report(XALAN)
 
 ##############################################################################
 # XERCES
 if(NOT NCBI_COMPONENT_XERCES_FOUND)
-    NCBI_define_Wcomponent(XERCES xerces-c.lib)
+    NCBI_define_VScomponent(NAME XERCES PACKAGE XercesC LIB xerces-c)
     if(NCBI_COMPONENT_XERCES_FOUND)
-        if(BUILD_SHARED_LIBS)
-            set(NCBI_COMPONENT_XERCES_DEFINES XERCES_DLL)
-        else()
-            set(NCBI_COMPONENT_XERCES_DEFINES XML_LIBRARY)
+        if(NOT NCBI_PTBCFG_COMPONENT_StaticComponents)
+            target_compile_definitions(XercesC::XercesC INTERFACE XERCES_DLL)
         endif()
     endif()
 endif()
@@ -804,11 +795,9 @@ NCBIcomponent_report(XERCES)
 ##############################################################################
 # FTGL
 if(NOT NCBI_COMPONENT_FTGL_FOUND)
-    NCBI_define_Wcomponent(FTGL ftgl.lib)
-    if(NCBI_COMPONENT_FTGL_FOUND)
-        if(NOT BUILD_SHARED_LIBS)
-            set(NCBI_COMPONENT_FTGL_DEFINES FTGL_LIBRARY_STATIC)
-        endif()
+    NCBI_define_VScomponent(NAME FTGL PACKAGE ftgl LIB ftgl)
+    if(NCBI_COMPONENT_FTGL_FOUND AND NCBI_PTBCFG_COMPONENT_StaticComponents)
+        target_compile_definitions(ftgl::ftgl INTERFACE FTGL_LIBRARY_STATIC)
     endif()
 endif()
 NCBIcomponent_report(FTGL)
@@ -816,12 +805,7 @@ NCBIcomponent_report(FTGL)
 ##############################################################################
 # FreeType
 if(NOT NCBI_COMPONENT_FreeType_FOUND)
-    NCBI_define_Wcomponent(FreeType freetype.lib)
-    if(NCBI_COMPONENT_FreeType_FOUND)
-        if(BUILD_SHARED_LIBS)
-            set(NCBI_COMPONENT_FreeType_DEFINES DLL_IMPORT)
-        endif()
-    endif()
+    NCBI_define_VScomponent(NAME FreeType PACKAGE freetype INTERFACELIB Freetype::Freetype LIB freetype)
 endif()
 NCBIcomponent_report(FreeType)
 
@@ -831,27 +815,27 @@ NCBIcomponent_report(FreeType)
 if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
 
 if(NOT NCBI_COMPONENT_GLEW_FOUND)
-    if(BUILD_SHARED_LIBS)
-        NCBI_define_Wcomponent(GLEW glew32.lib)
+    if(NCBI_PTBCFG_COMPONENT_StaticComponents)
+        set(__lib_name libglew32)
     else()
-        NCBI_define_Wcomponent(GLEW libglew32.lib)
+        set(__lib_name glew32)
     endif()
-    if(NCBI_COMPONENT_GLEW_FOUND)
-        if(NOT BUILD_SHARED_LIBS)
-            set(NCBI_COMPONENT_GLEW_DEFINES GLEW_STATIC)
-        endif()
+    NCBI_define_VScomponent(NAME GLEW PACKAGE GLEW LIB ${__lib_name})
+
+    if(NCBI_COMPONENT_GLEW_FOUND AND NCBI_PTBCFG_COMPONENT_StaticComponents)
+        target_compile_definitions(GLEW::GLEW INTERFACE GLEW_STATIC)
     endif()
 endif()
 
 else()
 
 if(NOT NCBI_COMPONENT_GLEW_FOUND)
-    NCBI_define_Wcomponent(GLEW glew32mx.lib)
+    NCBI_define_VScomponent(NAME GLEW PACKAGE GLEW LIB glew32mx)
     if(NCBI_COMPONENT_GLEW_FOUND)
-        if(BUILD_SHARED_LIBS)
-            set(NCBI_COMPONENT_GLEW_DEFINES GLEW_MX)
+        if(NCBI_PTBCFG_COMPONENT_StaticComponents)
+            target_compile_definitions(GLEW::GLEW INTERFACE GLEW_MX GLEW_STATIC)
         else()
-            set(NCBI_COMPONENT_GLEW_DEFINES GLEW_MX GLEW_STATIC)
+            target_compile_definitions(GLEW::GLEW INTERFACE GLEW_MX)
         endif()
     endif()
 endif()
@@ -862,16 +846,16 @@ NCBIcomponent_report(GLEW)
 ##############################################################################
 # wxWidgets
 if(NOT NCBI_COMPONENT_wxWidgets_FOUND)
-    NCBI_define_Wcomponent( wxWidgets
-            wxbase.lib wxbase_net.lib wxbase_xml.lib wxmsw_core.lib wxmsw_gl.lib
-            wxmsw_html.lib wxmsw_aui.lib wxmsw_adv.lib wxmsw_richtext.lib wxmsw_propgrid.lib
-            wxmsw_xrc.lib wxexpat.lib wxjpeg.lib wxpng.lib wxregex.lib wxtiff.lib wxzlib.lib)
+    NCBI_define_VScomponent( NAME wxWidgets PACKAGE wxWidgets LIB
+            wxbase wxbase_net wxbase_xml wxmsw_core wxmsw_gl
+            wxmsw_html wxmsw_aui wxmsw_adv wxmsw_richtext wxmsw_propgrid
+            wxmsw_xrc wxexpat wxjpeg wxpng wxregex wxtiff wxzlib)
     if(NCBI_COMPONENT_wxWidgets_FOUND)
-        set(NCBI_COMPONENT_wxWidgets_INCLUDE ${NCBI_COMPONENT_wxWidgets_INCLUDE} ${NCBI_COMPONENT_wxWidgets_INCLUDE}/msvc)
-        if(BUILD_SHARED_LIBS)
-            set(NCBI_COMPONENT_wxWidgets_DEFINES __WXMSW__ NCBI_WXWIN_USE_PCH WXUSINGDLL=1)
+        set_property(TARGET wxWidgets::wxWidgets APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${NCBI_ThirdParty_wxWidgets}/include/msvc)
+        if(NCBI_PTBCFG_COMPONENT_StaticComponents)
+            target_compile_definitions(wxWidgets::wxWidgets INTERFACE __WXMSW__ NCBI_WXWIN_USE_PCH)
         else()
-            set(NCBI_COMPONENT_wxWidgets_DEFINES __WXMSW__ NCBI_WXWIN_USE_PCH)
+            target_compile_definitions(wxWidgets::wxWidgets INTERFACE __WXMSW__ NCBI_WXWIN_USE_PCH WXUSINGDLL=1)
         endif()
     endif()
 endif()
@@ -879,11 +863,16 @@ NCBIcomponent_report(wxWidgets)
 
 ##############################################################################
 # UV
+if(NCBI_PTBCFG_COMPONENT_StaticComponents)
+    set(_uv_lib libuv)
+else()
+    set(_uv_lib uv)
+endif()
 if(NOT NCBI_COMPONENT_UV_FOUND)
-    NCBI_define_Wcomponent(UV libuv.lib)
+    NCBI_define_VScomponent(NAME UV PACKAGE libuv INTERFACELIB libuv::uv_a LIB ${_uv_lib})
     if(NCBI_COMPONENT_UV_FOUND)
-        if(BUILD_SHARED_LIBS)
-            set(NCBI_COMPONENT_UV_DEFINES USING_UV_SHARED)
+        if(NOT NCBI_PTBCFG_COMPONENT_StaticComponents)
+            target_compile_definitions(libuv::uv_a INTERFACE USING_UV_SHARED)
         endif()
         set(NCBI_COMPONENT_UV_LIBS ${NCBI_COMPONENT_UV_LIBS} psapi.lib Iphlpapi.lib userenv.lib)
     endif()
@@ -893,10 +882,10 @@ NCBIcomponent_report(UV)
 ##############################################################################
 # NGHTTP2
 if(NOT NCBI_COMPONENT_NGHTTP2_FOUND)
-    NCBI_define_Wcomponent(NGHTTP2 nghttp2.lib)
+    NCBI_define_VScomponent(NAME NGHTTP2 PACKAGE libnghttp2 LIB nghttp2)
     if(NCBI_COMPONENT_NGHTTP2_FOUND)
-        if(NOT BUILD_SHARED_LIBS)
-            set(NCBI_COMPONENT_NGHTTP2_DEFINES NGHTTP2_STATICLIB)
+        if(NCBI_PTBCFG_COMPONENT_StaticComponents)
+            target_compile_definitions(libnghttp2::libnghttp2 INTERFACE NGHTTP2_STATICLIB)
         endif()
     endif()
 endif()
@@ -904,5 +893,5 @@ NCBIcomponent_report(NGHTTP2)
 
 ##############################################################################
 # GL2PS
-NCBI_define_Wcomponent(GL2PS gl2ps.lib)
+NCBI_define_VScomponent(NAME GL2PS PACKAGE gl2ps LIB gl2ps)
 NCBIcomponent_report(GL2PS)
