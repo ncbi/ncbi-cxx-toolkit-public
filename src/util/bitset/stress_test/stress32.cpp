@@ -71,6 +71,8 @@ For more information please visit:  http://bitmagic.io
 #include <util/bitset/bmtask.h>
 #include <util/bitset/bmsparsevec_parallel.h>
 #include <util/bitset/bmthreadpool.h>
+#include <util/bitset/bmsparsevec_float.h>
+#include <util/bitset/bmsparsevec_float_serial.h>
 
 #include <common/test_assert.h>
 
@@ -617,7 +619,8 @@ void FillSets(bvect_mini* bvect_min,
     if(fill_factor == 0)
     {
         unsigned n_id = (max - min) / 100;
-        printf("random filling : %i\n", n_id);
+        if (!is_silent)
+            printf("random filling : %i\n", n_id);
         for (i = 0; i < n_id; i++)
         {
             id = random_minmax(min, max);
@@ -628,7 +631,8 @@ void FillSets(bvect_mini* bvect_min,
     }
     else
     {
-        printf("fill_factor random filling : factor = %i\n", fill_factor);
+        if (!is_silent)
+            printf("fill_factor random filling : factor = %i\n", fill_factor);
 
         for(i = 0; i < fill_factor; i++)
         {
@@ -840,7 +844,8 @@ void FillSetsRandomOne(bvect_mini* bvect_min,
     unsigned bit_idx = unsigned(rand()) % range;
     bvect_min->set_bit(bit_idx);
     bvect_full->set_bit(bit_idx);
-    std::cout << "Bit_idx=" << bit_idx << endl;
+    if (!is_silent)
+        std::cout << "Bit_idx=" << bit_idx << endl;
 }
 
 static
@@ -879,7 +884,8 @@ void FillSetsRandom(bvect_mini* bvect_min,
         bvect_min->set_bit(bn);
         bvect_full->set_bit_no_check(bn);
     }
-    cout << "Ok" << endl;
+    if (!is_silent)
+        cout << "Ok" << endl;
 
 }
 
@@ -928,36 +934,43 @@ void FillSetsRandomMethod(bvect_mini* bvect_min,
     {
 
     case 0:
-        cout << "Random filling: method - FillSets - factor(0)" << endl;
+        if (!is_silent)
+            cout << "Random filling: method - FillSets - factor(0)" << endl;
         FillSets(bvect_min, bvect_full, min, max, 0);
         break;
 
     case 1:
-        cout << "Random filling: method - FillSets - factor(random)" << endl;
+        if (!is_silent)
+            cout << "Random filling: method - FillSets - factor(random)" << endl;
         factor = (unsigned)rand()%3;
         FillSets(bvect_min, bvect_full, min, max, factor?factor:1);
         break;
 
     case 2:
-        cout << "Random filling: method - Set-Clear Intervals - factor(random)" << endl;
+        if (!is_silent)
+            cout << "Random filling: method - Set-Clear Intervals - factor(random)" << endl;
         factor = (unsigned)rand()%10;
         FillSetClearIntervals(bvect_min, bvect_full, min, max, factor);
         break;
     case 3:
-        cout << "Random filling: method - FillRandom - factor(random)" << endl;
+        if (!is_silent)
+            cout << "Random filling: method - FillRandom - factor(random)" << endl;
         factor = (unsigned)rand()%3;
         FillSetsRandom(bvect_min, bvect_full, min, max, factor?factor:1);
         break;
     case 4:
-        cout << "Random set one bit" << endl;
+        if (!is_silent)
+            cout << "Random set one bit" << endl;
         FillSetsRandomOne(bvect_min, bvect_full, min, max);
         break;
     case 5:
-        cout << "Regular pattern filling" << endl;
+        if (!is_silent)
+            cout << "Regular pattern filling" << endl;
         FillSetsRegular(bvect_min, bvect_full, min, max, 2);
         break;
     default:
-        cout << "Random filling: method - Set Intervals - factor(random)" << endl;
+        if (!is_silent)
+            cout << "Random filling: method - Set Intervals - factor(random)" << endl;
         factor = (unsigned)rand()%10;
         FillSetsIntervals(bvect_min, *bvect_full, min, max, factor);
         break;
@@ -1121,7 +1134,8 @@ unsigned SerializationOperation(bvect*             bv_target,
     try
     {
        count = od.deserialize(*bv_target, smem1, nullptr, set_ASSIGN);
-       cout << slen1 << " " << slen2 << endl;
+       if (!is_silent)
+           cout << slen1 << " " << slen2 << endl;
        res = bv1.compare(*bv_target);
        if (res != 0)
        {
@@ -1137,7 +1151,8 @@ unsigned SerializationOperation(bvect*             bv_target,
            cout << "set_ASSIGN 1 failed!" << endl;
            exit (1);
        }
-       cout << "Deserialization ASSIGN into bv1 OK" << endl;
+       if (!is_silent)
+           cout << "Deserialization ASSIGN into bv1 OK" << endl;
     }
     catch(std::exception& ex)
     {
@@ -1159,10 +1174,12 @@ unsigned SerializationOperation(bvect*             bv_target,
    }
 
 
-   cout << "Operation deserialization... " << op << endl;
+   if (!is_silent)
+       cout << "Operation deserialization... " << op << endl;
 
     count = od.deserialize(*bv_target, smem2, 0, op);
-    cout << "OK" << endl;
+    if (!is_silent)
+        cout << "OK" << endl;
 
     // check if operation was ok
     {
@@ -1409,7 +1426,8 @@ unsigned SerializationOperation(bvect*             bv_target,
 
    if (check_reverse)
    {
-        cout << "Reverse check... " << endl;
+        if (!is_silent)
+            cout << "Reverse check... " << endl;
         bvect bv_tmp2(BM_GAP);
         od.deserialize(bv_tmp2, smem2, 0, set_ASSIGN);
         res = bv_tmp2.compare(bv2);
@@ -1423,7 +1441,8 @@ unsigned SerializationOperation(bvect*             bv_target,
             cout << "set_ASSIGN failed 2-1! " << endl;
             exit(1);
         }
-        cout << "Deserialization assign to bv_tmp2 OK" << endl;
+        if (!is_silent)
+            cout << "Deserialization assign to bv_tmp2 OK" << endl;
         try
         {
             unsigned count_rev = od.deserialize(bv_tmp2, smem1, 0, op);
@@ -1482,7 +1501,8 @@ void SerializationOperation2Test(bvect*        bv_target,
     bvect bv_ro1(bv1, bm::finalization::READONLY);
     bvect bv_ro2(bv2, bm::finalization::READONLY);
 
-    cout << "Serialization operation count..." << endl;
+    if (!is_silent)
+        cout << "Serialization operation count..." << endl;
 
     unsigned scount1 = SerializationOperation(0, 
                                               bv1,
@@ -1490,11 +1510,13 @@ void SerializationOperation2Test(bvect*        bv_target,
                                               op_count,
                                               true //reverse check
                                             );
-    cout << "Serialization operation count OK." << endl;
+    if (!is_silent)
+        cout << "Serialization operation count OK." << endl;
 
 
 
-    cout << "Serialization operation. " << endl;
+    if (!is_silent)
+        cout << "Serialization operation. " << endl;
     unsigned scount2 = SerializationOperation(bv_target,
         bv1,
         bv2,
@@ -6118,12 +6140,14 @@ void TestRandomSubset(const bvect& bv, bm::random_subset<bvect>& rsub)
       { 0, 1, 2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, bcnt / 5, bcnt / 4, bcnt / 3, bcnt / 2, (bcnt * 2)/3, bcnt };
     bvect::size_type samples_size = sizeof(samples)/sizeof(*samples);
 
-    printf("Taking random sub-sets: ");
+    if (!is_silent)
+        printf("Taking random sub-sets: ");
     
     for (unsigned i = 0; i < samples_size; ++i)
     {
         unsigned sample_count = samples[i];
-        printf(" %u, ", sample_count);
+        if (!is_silent)
+            printf(" %u, ", sample_count);
         rsub.sample(bv_subset, bv, sample_count);
         if (sample_count > bcnt)
             sample_count = bcnt;
@@ -6157,7 +6181,8 @@ void TestRandomSubset(const bvect& bv, bm::random_subset<bvect>& rsub)
         
         
     }
-    printf("\n");
+    if (!is_silent)
+        printf("\n");
 }
 
 static
@@ -7112,6 +7137,14 @@ void AndOrOperationsTest(bool detailed)
         bvect::statistics st;
         bvtarget.calc_stat(&st);
         assert(st.gap_blocks==0 && st.bit_blocks==0);
+    }
+    {
+        bvect bvtarget { 1248135 };
+        bvect bv1 { 0, bm::id_max };
+        bvect bv2 { 1, bm::id_max - 1 };
+        bvtarget.bit_or_and(bv1, bv2, bvect::opt_compress);
+        assert(bvtarget.test(1248135));
+        assert(bvtarget.count() == 1);
     }
 
     // check automatic optimization to FULL and empty blocks
@@ -9975,7 +10008,7 @@ void AggregatorTest()
 
     {
         bm::aggregator<bvect> agg;
-        bm::aggregator<bvect>::pipeline agg_pipe;
+        bm::aggregator<bvect>::pipeline<> agg_pipe;
         {
             bm::aggregator<bvect>::arg_groups* args = agg_pipe.add();
             assert(args);
@@ -10289,7 +10322,7 @@ void AggregatorTest()
             bvect bv0{ 1, 65536 }, bv1{ 1, 65536 }, bv2 {65536};
 
             {
-                bm::aggregator<bvect>::pipeline agg_pipe;
+                bm::aggregator<bvect>::pipeline<> agg_pipe;
                 {
                     bm::aggregator<bvect>::arg_groups* args = agg_pipe.add();
                     args->add(&bv0, 0); // AND
@@ -10495,7 +10528,7 @@ void AggregatorTest()
         bv1.optimize();
         bv2.optimize();
             {
-                bm::aggregator<bvect>::pipeline agg_pipe;
+                bm::aggregator<bvect>::pipeline<> agg_pipe;
                 {
                     bm::aggregator<bvect>::arg_groups* args = agg_pipe.add();
                     args->add(&bv0, 0); // AND
@@ -11362,7 +11395,8 @@ void StressTest(unsigned repetitions, int set_operation, bool detailed,
    bm::random_subset<bvect> rsub;
 
 
-   cout << "----------------------------StressTest" << endl;
+   if (!is_silent)
+       cout << "----------------------------StressTest" << endl;
 
    unsigned size = BITVECT_SIZE - 10;
 
@@ -11371,17 +11405,20 @@ void StressTest(unsigned repetitions, int set_operation, bool detailed,
    unsigned i;
    for (i = 0; i < repetitions; ++i)
    {
-        cout << endl << " - - - - - - - - - - - - STRESS STEP " << i; 
-        switch (set_operation)
+        if (!is_silent)
         {
-        case 0: cout << " [OR]"; break;
-        case 1: cout << " [SUB]";break;
-        case 2: cout << " [XOR]";break;
-        case 3: cout << " [AND]";break;
-        default:
-            cout << " [RANDOM]";
+            cout << endl << " - - - - - - - - - - - - STRESS STEP " << i; 
+            switch (set_operation)
+            {
+            case 0: cout << " [OR]"; break;
+            case 1: cout << " [SUB]";break;
+            case 2: cout << " [XOR]";break;
+            case 3: cout << " [AND]";break;
+            default:
+                cout << " [RANDOM]";
+            }
+            cout << endl;
         }
-        cout << endl;
 
         switch (rand() % 3)
         {
@@ -11554,22 +11591,4025 @@ void StressTest(unsigned repetitions, int set_operation, bool detailed,
         switch(operation)
         {
         case 0:
-            cout << "Operation OR" << endl;
+#if 0
+            if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+#endif
+            if (!is_silent)
+                cout << "Operation OR" << endl;
             bvect_min1->combine_or(*bvect_min2);
             break;
 
         case 1:
-            cout << "Operation SUB" << endl;
+#if 0
+            if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+#endif
+            if (!is_silent)
+                cout << "Operation SUB" << endl;
             bvect_min1->combine_sub(*bvect_min2);
             break;
 
         case 2:
-            cout << "Operation XOR" << endl;
+#if 0
+            if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+#endif
+            if (!is_silent)
+                cout << "Operation XOR" << endl;
             bvect_min1->combine_xor(*bvect_min2);
             break;
 
         default:
-            cout << "Operation AND" << endl;
+#if 0
+            if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+                if (!is_silent)
+#endif
+            if (!is_silent)
+                cout << "Operation AND" << endl;
             bvect_min1->combine_and(*bvect_min2);
             break;
         }
@@ -11582,7 +15622,8 @@ void StressTest(unsigned repetitions, int set_operation, bool detailed,
         {
         case 0:
             {
-            cout << "Operation OR" << endl;
+            if (!is_silent)
+                cout << "Operation OR" << endl;
 
             bm::id_t predicted_count = bm::count_or(*bvect_full1, *bvect_full2);
             bm::id_t predicted_any = bm::any_or(*bvect_full1, *bvect_full2);
@@ -11623,7 +15664,8 @@ void StressTest(unsigned repetitions, int set_operation, bool detailed,
 
         case 1:
             {
-            cout << "Operation SUB" << endl;
+            if (!is_silent)
+                cout << "Operation SUB" << endl;
             
             bm::id_t predicted_count = bm::count_sub(*bvect_full1, *bvect_full2);
             bm::id_t predicted_any = bm::any_sub(*bvect_full1, *bvect_full2);
@@ -11664,7 +15706,8 @@ void StressTest(unsigned repetitions, int set_operation, bool detailed,
 
         case 2:
             {
-            cout << "Operation XOR <<<" << endl;
+            if (!is_silent)
+                cout << "Operation XOR <<<" << endl;
            
             bm::id_t predicted_count = bm::count_xor(*bvect_full1, *bvect_full2);
             bm::id_t predicted_any = bm::any_xor(*bvect_full1, *bvect_full2);
@@ -11705,7 +15748,8 @@ void StressTest(unsigned repetitions, int set_operation, bool detailed,
 
         default:
             {
-            cout << "Operation AND" << endl;
+            if (!is_silent)
+                cout << "Operation AND" << endl;
 
             bm::id_t predicted_count = bm::count_and(*bvect_full1, *bvect_full2);
 
@@ -27867,23 +31911,410 @@ void TestSparseVectorTransform()
     cout << " --------------- Test set transformation with sparse vector OK" << endl;
 }
 
+enum class search_debug_op
+{
+    gt,
+    ge,
+    lt,
+    le,
+    range_0v,
+    eq
+};
+
+inline const char* SearchDebugName(search_debug_op op)
+{
+    switch (op)
+    {
+    case search_debug_op::gt:       return "GT";
+    case search_debug_op::ge:       return "GE";
+    case search_debug_op::lt:       return "LT";
+    case search_debug_op::le:       return "LE";
+    case search_debug_op::range_0v: return "RANGE_0V";
+    case search_debug_op::eq:       return "EQ";
+    default:                        return "UNKNOWN";
+    }
+}
+
+template<class SV>
+bool SearchDebugPredicate(search_debug_op op,
+                          typename SV::value_type sv_value,
+                          typename SV::value_type v)
+{
+    switch (op)
+    {
+    case search_debug_op::gt:       return sv_value > v;
+    case search_debug_op::ge:       return sv_value >= v;
+    case search_debug_op::lt:       return sv_value < v;
+    case search_debug_op::le:       return sv_value <= v;
+    case search_debug_op::range_0v:
+        return (v < 0) ? (sv_value <= 0 && sv_value >= v)
+                       : (sv_value >= 0 && sv_value <= v);
+    case search_debug_op::eq:       return sv_value == v;
+    default:                        return false;
+    }
+}
+
+inline string SearchDebugFileName(const string& dir, const char* file_name)
+{
+    if (dir.empty() || dir == ".")
+        return file_name;
+    char last_ch = dir[dir.size() - 1];
+    if (last_ch == '/' || last_ch == '\\')
+        return dir + file_name;
+    return dir + "/" + file_name;
+}
+
+template<class SV>
+void ReportSearchMismatch(search_debug_op op,
+                          const SV& sv,
+                          typename SV::value_type v,
+                          const bvect& bv_unfiltered,
+                          const bvect* bv_mask,
+                          const bvect& bv_expected,
+                          const bvect& bv_actual,
+                          bool save_dump = true,
+                          const string& dump_dir = ".")
+{
+    bvect bv_diff(bv_expected);
+    bv_diff ^= bv_actual;
+
+    auto mismatch_idx = *(bv_diff.first());
+    auto sv_value = sv.get(mismatch_idx);
+    const bool has_mask = bv_mask != 0;
+    const bool mask_bit = has_mask ? bv_mask->test(mismatch_idx) : false;
+    const bool unfiltered_bit = bv_unfiltered.test(mismatch_idx);
+    const bool expected_bit = bv_expected.test(mismatch_idx);
+    const bool actual_bit = bv_actual.test(mismatch_idx);
+    const bool predicate_match = SearchDebugPredicate<SV>(op, sv_value, v);
+
+    const char* mismatch_kind = "inconsistent mismatch";
+    if (expected_bit && !actual_bit)
+        mismatch_kind = "lost valid search hit";
+    else if (!expected_bit && actual_bit)
+        mismatch_kind = "false positive search hit";
+
+    cout << "Search mismatch: " << SearchDebugName(op) << endl;
+    cout << "BV_UNFILTERED.count()=" << bv_unfiltered.count() << endl;
+    if (has_mask)
+        cout << "BV_MASK.count()=" << bv_mask->count() << endl;
+    cout << "BV_EXPECTED.count()=" << bv_expected.count() << endl;
+    cout << "BV_ACTUAL.count()=" << bv_actual.count() << endl;
+    cout << "BV_DIFF.count()=" << bv_diff.count() << endl;
+    cout << "mismatch_idx=" << mismatch_idx << endl;
+    if (has_mask)
+        cout << "mask bit=" << mask_bit << ' ';
+    cout << "unfiltered bit=" << unfiltered_bit
+         << " expected bit=" << expected_bit
+         << " actual bit=" << actual_bit << endl;
+    cout << "v[]=" << sv_value << "  v=" << v
+         << " predicate test=" << predicate_match << endl;
+    cout << "mismatch kind: " << mismatch_kind << endl;
+
+    if (has_mask)
+    {
+        cout << "BV_MASK=\n";
+        print_bv(cout, *bv_mask);
+    }
+    cout << "BV_EXPECTED=\n";
+    print_bv(cout, bv_expected);
+    cout << "BV_ACTUAL=\n";
+    print_bv(cout, bv_actual);
+    cout << "diff=\n";
+    print_bv(cout, bv_diff);
+
+    if (save_dump)
+    {
+        const string sv_fname = SearchDebugFileName(dump_dir, "search_debug.sv");
+        const string mask_fname = SearchDebugFileName(dump_dir, "search_debug_mask.bv");
+        const string meta_fname = SearchDebugFileName(dump_dir, "search_debug.txt");
+
+        size_t sv_blob_size = 0;
+        int sv_save_res = bm::file_save_svector(sv, sv_fname, &sv_blob_size, false);
+        if (has_mask)
+            bm::SaveBVector(mask_fname.c_str(), *bv_mask, true);
+
+        ofstream meta(meta_fname.c_str());
+        if (meta.good())
+        {
+            meta << "test=" << SearchDebugName(op) << " search" << endl;
+            meta << "has_mask=" << has_mask << endl;
+            meta << "sparse_vector_file=" << sv_fname << endl;
+            if (has_mask)
+                meta << "mask_file=" << mask_fname << endl;
+            meta << "sparse_vector_save_result=" << sv_save_res << endl;
+            meta << "sparse_vector_blob_size=" << sv_blob_size << endl;
+            meta << "sv_size=" << sv.size() << endl;
+            if constexpr (SV::is_compressed())
+                meta << "sv_effective_size=" << sv.effective_size() << endl;
+            meta << "query_value=" << v << endl;
+            meta << "mismatch_idx=" << mismatch_idx << endl;
+            meta << "mismatch_value=" << sv_value << endl;
+            if (has_mask)
+                meta << "mask_bit=" << mask_bit << endl;
+            meta << "unfiltered_bit=" << unfiltered_bit << endl;
+            meta << "expected_bit=" << expected_bit << endl;
+            meta << "actual_bit=" << actual_bit << endl;
+            meta << "predicate_match=" << predicate_match << endl;
+            meta << "mismatch_kind=" << mismatch_kind << endl;
+            meta << "bv_unfiltered_count=" << bv_unfiltered.count() << endl;
+            if (has_mask)
+                meta << "bv_mask_count=" << bv_mask->count() << endl;
+            meta << "bv_expected_count=" << bv_expected.count() << endl;
+            meta << "bv_actual_count=" << bv_actual.count() << endl;
+            meta << "bv_diff_count=" << bv_diff.count() << endl;
+        }
+        cout << "Debug dump saved: " << sv_fname;
+        if (has_mask)
+            cout << ", " << mask_fname;
+        cout << ", " << meta_fname << endl;
+    }
+    cout << endl << endl;
+}
+
+template<class SV>
+void RunSearchDebugOp(bm::sparse_vector_scanner<SV>& scanner,
+                      const SV& sv,
+                      search_debug_op op,
+                      typename SV::value_type v,
+                      bvect& bv_out)
+{
+    switch (op)
+    {
+    case search_debug_op::gt:
+        scanner.find_gt(sv, v, bv_out);
+        break;
+    case search_debug_op::ge:
+        scanner.find_ge(sv, v, bv_out);
+        break;
+    case search_debug_op::lt:
+        scanner.find_lt(sv, v, bv_out);
+        break;
+    case search_debug_op::le:
+        scanner.find_le(sv, v, bv_out);
+        break;
+    case search_debug_op::range_0v:
+        scanner.find_range(sv, 0, v, bv_out);
+        break;
+    case search_debug_op::eq:
+        scanner.find_eq(sv, v, bv_out);
+        break;
+    default:
+        bv_out.clear();
+        break;
+    }
+}
+
+template<class SV>
+void ReplaySearchDebugDump(search_debug_op op,
+                           typename SV::value_type v,
+                           const string& dump_dir = ".")
+{
+    const string sv_fname = SearchDebugFileName(dump_dir, "search_debug.sv");
+    const string mask_fname = SearchDebugFileName(dump_dir, "search_debug_mask.bv");
+    SV sv(bm::use_null);
+    int load_res = bm::file_load_svector(sv, sv_fname);
+    if (load_res != 0)
+    {
+        cout << "Cannot load sparse vector dump: " << sv_fname
+             << " error=" << load_res << endl;
+        assert(load_res == 0); exit(1);
+    }
+
+    bvect bv_mask;
+    bm::LoadBVector(mask_fname.c_str(), bv_mask);
+
+    bm::sparse_vector_scanner<SV> scanner;
+    bvect bv_unfiltered, bv_expected, bv_actual;
+
+    RunSearchDebugOp(scanner, sv, op, v, bv_unfiltered);
+    bv_expected = bv_unfiltered;
+    bv_expected &= bv_mask;
+
+    scanner.set_and_mask(&bv_mask);
+    RunSearchDebugOp(scanner, sv, op, v, bv_actual);
+    scanner.set_and_mask(0);
+
+    bool eq = bv_expected.equal(bv_actual);
+    cout << "Replay search debug dump: " << SearchDebugName(op) << endl;
+    cout << "  sv_file=" << sv_fname << endl;
+    cout << "  mask_file=" << mask_fname << endl;
+    cout << "  query_value=" << v << endl;
+    cout << "  unfiltered_count=" << bv_unfiltered.count() << endl;
+    cout << "  mask_count=" << bv_mask.count() << endl;
+    cout << "  expected_count=" << bv_expected.count() << endl;
+    cout << "  actual_count=" << bv_actual.count() << endl;
+    cout << "  equal=" << eq << endl;
+
+    if (!eq)
+    {
+        ReportSearchMismatch(op, sv, v, bv_unfiltered, &bv_mask,
+                             bv_expected, bv_actual, false /* save_dump */);
+        assert(eq); exit(1);
+    }
+}
+
+inline
+void ReplayGTSearchDebugDumpU32(sparse_vector_u32::value_type v,
+                                const string& dump_dir = ".")
+{
+    ReplaySearchDebugDump<sparse_vector_u32>(search_debug_op::gt, v, dump_dir);
+}
+
 template<class SV>
 void CheckGTSearch(const SV& sv, typename SV::value_type v,
                    bm::sparse_vector_scanner<SV>& scanner)
 {
-    bvect bv_res, bv_gt, bv_control;
-    bvect bv_ge, bv_ge_control;
-    bvect bv_lt, bv_lt_control;
-    bvect bv_le, bv_le_control;
-    bvect bv_r_0v, bv_r_0v_control;
+    bvect bv_res, bv_gt, bv_gt_mask1, bv_gt_mask2, bv_control;
+    bvect bv_ge, bv_ge_mask1, bv_ge_mask2, bv_ge_control;
+    bvect bv_lt, bv_lt_mask1, bv_lt_mask2, bv_lt_control;
+    bvect bv_le, bv_le_mask1, bv_le_mask2, bv_le_control;
+    bvect bv_r_0v, bv_r_0v_mask1, bv_r_0v_mask2, bv_r_0v_control;
 
     scanner.find_gt_horizontal(sv, v, bv_res);
+    
     scanner.find_gt(sv, v, bv_gt);
     scanner.find_ge(sv, v, bv_ge);
     scanner.find_lt(sv, v, bv_lt);
     scanner.find_le(sv, v, bv_le);
     scanner.find_range(sv, 0, v, bv_r_0v);
+    
+    // AND mask search
+    //
+    if (!bv_gt.empty() && !SV::is_compressed())
+    {
+        bvect bv_mask;
+        bvect::size_type pos;
+        bool b = bv_gt.find(0, pos);
+        assert(b);
+        bv_mask.set(pos);
+        bv_mask.set(bm::id_max-1);
+        
+        scanner.set_and_mask(&bv_mask);
+        scanner.find_gt(sv, v, bv_gt_mask1);
+        
+        bvect bv_r1 (bv_gt);
+        bv_r1 &= bv_mask;
 
+        bool eq = bv_r1.equal(bv_gt_mask1);
+        if (!eq)
+        {
+            ReportSearchMismatch(search_debug_op::gt, sv, v, bv_gt,
+                                 &bv_mask, bv_r1, bv_gt_mask1);
+            assert(eq); exit(1);
+        }
+        
+        bv_mask.clear();
+        bm::random_subset<bvect> rsub;
+        
+        bvect::size_type sample_size = bv_gt.count();
+        sample_size = sample_size % 10;
+        bvect bv_subset;
+        rsub.sample(bv_subset, bv_gt, sample_size);
+        bv_subset.set(bm::id_max/2);
+        bvect::size_type lt_pos;
+        if (bv_lt.find(0, lt_pos))
+            bv_subset.set(lt_pos);
+        bvect::size_type le_pos;
+        if (bv_le.find(0, le_pos))
+            bv_subset.set(le_pos);
+
+        scanner.set_and_mask(&bv_subset);
+
+        // AND mask: GT
+        scanner.find_gt(sv, v, bv_gt_mask2);
+
+        bvect bv_r2 (bv_gt);
+        bv_r2 &= bv_subset;
+        
+
+        eq = bv_r2.equal(bv_gt_mask2);
+        if (!eq)
+        {
+            ReportSearchMismatch(search_debug_op::gt, sv, v, bv_gt,
+                                 &bv_subset, bv_r2, bv_gt_mask2);
+            scanner.find_gt(sv, v, bv_gt_mask2);
+            assert(eq); exit(1);
+        }
+
+        // AND mask: GE
+        scanner.find_ge(sv, v, bv_ge_mask2);
+        bvect bv_r3(bv_ge);
+        bv_r3 &= bv_subset;
+
+        eq = bv_r3.equal(bv_ge_mask2);
+        if (!eq)
+        {
+            ReportSearchMismatch(search_debug_op::ge, sv, v, bv_ge,
+                                 &bv_subset, bv_r3, bv_ge_mask2);
+            scanner.find_ge(sv, v, bv_ge_mask2);
+            assert(eq); exit(1);
+        }
+
+        // AND mask: LT
+        scanner.find_lt(sv, v, bv_lt_mask2);
+        bvect bv_r4(bv_lt);
+        bv_r4 &= bv_subset;
+
+        eq = bv_r4.equal(bv_lt_mask2);
+        if (!eq)
+        {
+            ReportSearchMismatch(search_debug_op::lt, sv, v, bv_lt,
+                                 &bv_subset, bv_r4, bv_lt_mask2);
+            scanner.find_lt(sv, v, bv_lt_mask2);
+            assert(eq); exit(1);
+        }
+
+        // AND mask: LE
+        scanner.find_le(sv, v, bv_le_mask2);
+        bvect bv_r5(bv_le);
+        bv_r5 &= bv_subset;
+
+        eq = bv_r5.equal(bv_le_mask2);
+        if (!eq)
+        {
+            ReportSearchMismatch(search_debug_op::le, sv, v, bv_le,
+                                 &bv_subset, bv_r5, bv_le_mask2);
+            scanner.find_le(sv, v, bv_le_mask2);
+            assert(eq); exit(1);
+        }
+
+        // AND mask: RANGE [0..v]
+        scanner.find_range(sv, 0, v, bv_r_0v_mask2);
+        bvect bv_r6(bv_r_0v);
+        bv_r6 &= bv_subset;
+
+        eq = bv_r6.equal(bv_r_0v_mask2);
+        if (!eq)
+        {
+            ReportSearchMismatch(search_debug_op::range_0v, sv, v, bv_r_0v,
+                                 &bv_subset, bv_r6, bv_r_0v_mask2);
+            scanner.find_range(sv, 0, v, bv_r_0v_mask2);
+            assert(eq); exit(1);
+        }
+    
+        // AND mask: empty mask for GT/GE/LT/LE/RANGE
+
+        bv_mask.clear();
+        scanner.set_and_mask(&bv_mask);
+        scanner.find_gt(sv, v, bv_gt_mask1); // empty search
+        bool e = bv_gt_mask1.any();
+        assert(!e);
+        scanner.find_ge(sv, v, bv_ge_mask1); // empty search
+        e = bv_ge_mask1.any();
+        assert(!e);
+        scanner.find_lt(sv, v, bv_lt_mask1); // empty search
+        e = bv_lt_mask1.any();
+        assert(!e);
+        scanner.find_le(sv, v, bv_le_mask1); // empty search
+        e = bv_le_mask1.any();
+        assert(!e);
+        scanner.find_range(sv, 0, v, bv_r_0v_mask1); // empty search
+        e = bv_r_0v_mask1.any();
+        assert(!e);
+
+        scanner.set_and_mask(0);
+    } // AND mask tests
+    
     {
     bvect bv_r_vv, bv_r_vv_control;
     scanner.find_range(sv, v, v, bv_r_vv);
@@ -27891,12 +32322,9 @@ void CheckGTSearch(const SV& sv, typename SV::value_type v,
     bool eq = bv_r_vv.equal(bv_r_vv_control);
     if (!eq)
     {
-        print_bv(cout, bv_r_vv);
-        print_bv(cout, bv_r_vv_control);
-        bv_r_vv ^= bv_r_vv_control;
-        cout << "diff=" << endl;
-        //print_bv(bv_r_vv);
-        assert(eq);exit(1);
+        ReportSearchMismatch(search_debug_op::eq, sv, v, bv_r_vv,
+                             0, bv_r_vv_control, bv_r_vv);
+        assert(eq); exit(1);
     }
     }
 
@@ -27930,62 +32358,44 @@ void CheckGTSearch(const SV& sv, typename SV::value_type v,
     bool eq = bv_res.equal(bv_control);
     if (!eq)
     {
-        cout << "1. result for v >=" << v << " :" << endl;
-        print_bv(cout, bv_res);
-        bv_res ^= bv_control;
-        cout << "diff=" << endl;
-        print_bv(cout, bv_res);
-        assert(eq);exit(1);
+        ReportSearchMismatch(search_debug_op::gt, sv, v, bv_res,
+                             0, bv_control, bv_res);
+        assert(eq); exit(1);
     }
     eq = bv_res.equal(bv_gt);
     if (!eq)
     {
-        cout << "2. result for v >=" << v << " :" << endl;
-        print_bv(std::cout, bv_gt);
-        bv_gt ^= bv_control;
-        cout << "diff=" << endl;
-        print_bv(std::cout, bv_gt);
-        assert(eq);exit(1);
+        ReportSearchMismatch(search_debug_op::gt, sv, v, bv_gt,
+                             0, bv_control, bv_gt);
+        assert(eq); exit(1);
     }
     eq = bv_ge.equal(bv_ge_control);
     if (!eq)
     {
-        cout << "3. result for v >=" << v << " :" << endl;
-        print_bv(std::cout, bv_ge);
-        bv_ge ^= bv_ge_control;
-        cout << "diff=" << endl;
-        print_bv(std::cout, bv_ge);
-        assert(eq);exit(1);
+        ReportSearchMismatch(search_debug_op::ge, sv, v, bv_ge,
+                             0, bv_ge_control, bv_ge);
+        assert(eq); exit(1);
     }
     eq = bv_lt.equal(bv_lt_control);
     if (!eq)
     {
-        cout << "4. result for v <" << v << " :" << endl;
-        print_bv(std::cout,bv_lt);
-        bv_lt ^= bv_lt_control;
-        cout << "diff=" << endl;
-        print_bv(std::cout,bv_lt);
-        assert(eq);exit(1);
+        ReportSearchMismatch(search_debug_op::lt, sv, v, bv_lt,
+                             0, bv_lt_control, bv_lt);
+        assert(eq); exit(1);
     }
     eq = bv_le.equal(bv_le_control);
     if (!eq)
     {
-        cout << "5. result for v <=" << v << " :" << endl;
-        print_bv(std::cout,bv_le);
-        bv_le ^= bv_le_control;
-        cout << "diff=" << endl;
-        print_bv(std::cout,bv_le);
-        assert(eq);exit(1);
+        ReportSearchMismatch(search_debug_op::le, sv, v, bv_le,
+                             0, bv_le_control, bv_le);
+        assert(eq); exit(1);
     }
     eq = bv_r_0v.equal(bv_r_0v_control);
     if (!eq)
     {
-        cout << "6. result for [0, v] " << v << " :" << endl;
-        print_bv(std::cout,bv_r_0v);
-        bv_r_0v ^= bv_r_0v_control;
-        cout << "diff=" << endl;
-        print_bv(std::cout,bv_r_0v);
-        assert(eq);exit(1);
+        ReportSearchMismatch(search_debug_op::range_0v, sv, v, bv_r_0v,
+                             0, bv_r_0v_control, bv_r_0v);
+        assert(eq); exit(1);
     }
 }
 
@@ -28029,17 +32439,93 @@ void TestSparseVectorScan()
         scanner.find_eq(sv, 25, bv_control);
         found = bv_control.count();
         assert(found == 2);
+        
+        // AND mask tests
+        {
+            bvect bv_mask {bm::id_max/2, bm::id_max-1};
+            scanner.set_and_mask(&bv_mask);
+            scanner.find_eq(sv, 25, bv_control);
+            found = bv_control.count();
+            assert(found == 2);
+        }
+        {
+            bvect bv_mask {bm::id_max/2};
+            scanner.set_and_mask(&bv_mask);
+            scanner.find_eq(sv, 25, bv_control);
+            found = bv_control.count();
+            assert(found == 1);
+            bv_mask.clear(false);
+            scanner.find_eq(sv, 25, bv_control);
+            found = bv_control.count();
+            assert(found == 0);
+        }
+        scanner.set_and_mask(0);
 
+        // find 0 BI tests
+        {
+            std::vector<unsigned> v_control;
+            {
+                auto bi = std::back_inserter(v_control);
+                scanner.find_eq(sv, 0, bi);
+            }
+            auto sz = v_control.size();
+            assert(sz == 20);
+            for (unsigned i = 0; i < 20; ++i)
+            {
+                assert(v_control[i] == i);
+            }
+            
+            // AND masks tests
+            
+            bvect bv_mask {bm::id_max/2, bm::id_max-1};
+            scanner.set_and_mask(&bv_mask);
+            {
+                v_control.resize(0);
+                auto bi = std::back_inserter(v_control);
+                scanner.find_eq(sv, 0, bi);
+            }
+            sz = v_control.size();
+            assert(sz == 0);
+            
+            bv_mask.set(0);
+            {
+                v_control.resize(0);
+                auto bi = std::back_inserter(v_control);
+                scanner.find_eq(sv, 0, bi);
+            }
+            sz = v_control.size();
+            assert(sz == 1);
+            assert(v_control[0] == 0);
+        }
+        scanner.set_and_mask(0);
+
+
+        
         {
         std::vector<unsigned> v_control;
         {
-        auto bi = std::back_inserter(v_control);
-        scanner.find_eq(sv, 25, bi);
+            auto bi = std::back_inserter(v_control);
+            scanner.find_eq(sv, 25, bi);
         }
         auto sz = v_control.size();
         assert(sz == 2);
         assert(v_control[0] == bm::id_max/2);
         assert(v_control[1] == bm::id_max-1);
+
+        // AND masks tests
+            {
+                v_control.resize(0);
+                bvect bv_mask {0, bm::id_max/2 };
+                scanner.set_and_mask(&bv_mask);
+                {
+                    auto bi = std::back_inserter(v_control);
+                    scanner.find_eq(sv, 25, bi);
+                }
+                sz = v_control.size();
+                assert(sz == 1);
+                assert(v_control[0] == bm::id_max/2);
+            }
+            scanner.set_and_mask(0);
         }
 
     }
@@ -28064,6 +32550,23 @@ void TestSparseVectorScan()
         iscanner.find_eq(sv, -25, bv_control);
         found = bv_control.count();
         assert(found == 2);
+        
+        // AND mast test
+        {
+            bvect bv_mask {0, bm::id_max/2 };
+            iscanner.set_and_mask(&bv_mask);
+            iscanner.find_eq(sv, -25, bv_control);
+            found = bv_control.count();
+            assert(found == 1);
+            bv_control.clear();
+            bv_mask.set(bm::id_max-1);
+            bv_mask.set(bm::id_max/2);
+            iscanner.find_eq(sv, -25, bv_control);
+            found = bv_control.count();
+            assert(found == 2);
+        }
+        iscanner.set_and_mask(0);
+
 
         {
         std::vector<unsigned> v_control;
@@ -28075,7 +32578,20 @@ void TestSparseVectorScan()
         assert(sz == 2);
         assert(v_control[0] == bm::id_max/2);
         assert(v_control[1] == bm::id_max-1);
+        v_control.resize(0);
+        // AND mask
+            {
+                bvect bv_mask {0, bm::id_max/2 };
+                iscanner.set_and_mask(&bv_mask);
+                auto bi = std::back_inserter(v_control);
+                iscanner.find_eq(sv, -25, bi);
+                
+                sz = v_control.size();
+                assert(sz == 1);
+                assert(v_control[0] == bm::id_max/2);
+            }
         }
+        
 
     }
 
@@ -28088,10 +32604,10 @@ void TestSparseVectorScan()
         sv.optimize();
 
         std::vector<unsigned> v_control;
-        {
-        auto bi = std::back_inserter(v_control);
-        scanner.find_eq(sv, 3, bi);
-        }
+            {
+            auto bi = std::back_inserter(v_control);
+            scanner.find_eq(sv, 3, bi);
+            }
         auto sz = v_control.size();
         assert(sz == 65536);
         unsigned idx(0);
@@ -28191,6 +32707,23 @@ void TestSparseVectorScan()
                     cerr << "4. Unique search discrepancy at value=" << j
                          << " found = " << pos << endl;
                     exit(1);
+                }
+                // AND mask
+                {
+                    bvect bv_mask;
+                    bv_mask.set(pos);
+                    scanner.set_and_mask(&bv_mask);
+
+                    bm::id_t pos2;
+                    found = scanner.find_eq(sv, j, pos2);
+                    if (!found)
+                    {
+                        cerr << "3.1 Unique search failure at value=" << j
+                             << endl;
+                        exit(1);
+                    }
+                    assert(pos == pos2);
+                    scanner.set_and_mask(0);
                 }
                 
                 rsc_scanner.find_eq(csv, j, bv_control2);
@@ -28357,6 +32890,20 @@ void TestSparseVectorScanGT()
 
         sv.push_back(0);
 
+        // AND mask test
+        {
+            bv_res.clear();
+            bvect bv_mask { 0, 1, sv.size()-1};
+            scanner.set_and_mask(&bv_mask);
+            scanner.find_gt_horizontal(sv, 0, bv_res);
+            
+            auto c = bv_res.count();
+            assert(c==2);
+            
+            scanner.set_and_mask(0);
+        }
+
+
         for (int pass = 0; pass < 2; ++pass)
         {
             scanner.find_gt_horizontal(sv, 0, bv_res);
@@ -28455,6 +33002,7 @@ void TestSparseVectorScanGT()
                 bool b = bv_res.equal(bv_control);
                 assert(b);
             }
+
             if ((j % 16) == 0)
                 CheckGTSearch(sv, j, scanner);
 
@@ -28489,6 +33037,19 @@ void TestSignedSparseVectorScanGT()
         sv.push_back(16);     // 4
         sv.push_back(INT_MAX);
         sv.push_back(0);      // 6
+        
+        // AND mask test
+        {
+            bvect bv_res;
+            bvect bv_mask { 0, 1, 6};
+            scanner.set_and_mask(&bv_mask);
+            scanner.find_gt_horizontal(sv, 0, bv_res);
+            
+            auto c = bv_res.count();
+            assert(c==2);
+            scanner.set_and_mask(0);
+        }
+
 
         for (int pass = 0; pass < 2; ++pass)
         {
@@ -28524,6 +33085,51 @@ void TestSignedSparseVectorScanGT()
         sv.push_back(-17);      // 10
         sv.push_back(0);
         sv.push_back(INT_MAX);  // 12
+        
+        
+        {
+            // AND mask test
+            {
+                bvect bv_res;
+                bvect bv_mask { 0, 1};
+                scanner.set_and_mask(&bv_mask);
+                scanner.find_gt_horizontal(sv, 0, bv_res);
+                
+                auto c = bv_res.count();
+                assert(c==2);
+                scanner.set_and_mask(0);
+            }
+            {
+                bvect bv_res;
+                bvect bv_mask { 0, 6, 7, 11, 12 };
+                scanner.set_and_mask(&bv_mask);
+                scanner.find_gt_horizontal(sv, -1, bv_res);
+
+                auto c = bv_res.count();
+                assert(c == 3);
+                assert(bv_res.test(0));
+                assert(!bv_res.test(6));
+                assert(!bv_res.test(7));
+                assert(bv_res.test(11));
+                assert(bv_res.test(12));
+                scanner.set_and_mask(0);
+            }
+            {
+                bvect bv_res;
+                bvect bv_mask { 0, 6, 7, 11, 12 };
+                scanner.set_and_mask(&bv_mask);
+                scanner.find_gt_horizontal(sv, -2, bv_res);
+
+                auto c = bv_res.count();
+                assert(c == 4);
+                assert(bv_res.test(0));
+                assert(bv_res.test(6));
+                assert(!bv_res.test(7));
+                assert(bv_res.test(11));
+                assert(bv_res.test(12));
+                scanner.set_and_mask(0);
+            }
+        }
 
         for (int pass = 0; pass < 2; ++pass)
         {
@@ -29400,7 +34006,7 @@ void TestCompressedSparseVectorScan()
 static
 void TestCompressedSparseVectorScanGT()
 {
-    cout << " --------------- Test rsc_sparse_vector<> TestSparseVectorScanGT()" << endl;
+    cout << " --------------- Test rsc_sparse_vector<> TestCompressedSparseVectorScanGT()" << endl;
 
     bm::sparse_vector_scanner<rsc_sparse_vector_u32> scanner_csv;
     bm::sparse_vector_scanner<sparse_vector_u32> scanner_sv;
@@ -29503,7 +34109,7 @@ void TestCompressedSparseVectorScanGT()
 
     }
 
-    cout << " --------------- Test rsc_sparse_vector<> TestSparseVectorScanGT() OK " << endl;
+    cout << " --------------- Test rsc_sparse_vector<> TestCompressedSparseVectorScanGT() OK " << endl;
 }
 
 
@@ -37313,6 +41919,7 @@ void DetailedCheckCompressedDecode(const CSV& csv)
     unsigned size1 = 100;
     for (unsigned i = 0; i < size1; )
     {
+        if (size == 0) break;
         CheckCompressedDecode(csv, i, size);
         if (!is_silent)
             if (i % 128 ==0)
@@ -37326,6 +41933,7 @@ void DetailedCheckCompressedDecode(const CSV& csv)
     unsigned size1 = 100000;
     for (unsigned i = 0; i < size1; )
     {
+        if (size1 == 0) break;
         CheckCompressedDecode(csv, i, size1);
         if (!is_silent)
             cout << "\r" << i << "/" << size1 << flush;
@@ -37339,6 +41947,7 @@ void DetailedCheckCompressedDecode(const CSV& csv)
     unsigned size1 = size;
     for (unsigned i = size-size/2; i < size1; )
     {
+        if (size1 == 0) break;
         CheckCompressedDecode(csv, i, size1);
         if (!is_silent)
             cout << "\r" << i << "/" << size1 << flush;
@@ -37349,6 +41958,7 @@ void DetailedCheckCompressedDecode(const CSV& csv)
 
     for (unsigned i = size-size/2; i < size; )
     {
+        if (size == 0) break;
         CheckCompressedDecode(csv, i, size);
         if (!is_silent)
             cout << "\r" << i << "/" << size << flush;
@@ -38505,14 +43115,14 @@ void TestCompressSparseVector()
         rsc_sparse_vector_u32 csv2;
         csv2.load_from(sv);
         DetailedCompareSparseVectors(csv2, sv);
-        csv1.sync();
-        DetailedCheckCompressedDecode(csv1);
+        csv2.sync();
+        DetailedCheckCompressedDecode(csv2);
 
         csv2.optimize(tb);
         csv2.sync();
 
         DetailedCompareSparseVectors(csv2, sv);
-        DetailedCheckCompressedDecode(csv1);
+        DetailedCheckCompressedDecode(csv2);
         cout << "ok" << endl;
 
         cout << "cmp 4...";
@@ -39779,6 +44389,13 @@ bool         is_c_coll = false;
 bool         is_ser = false;
 bool         is_allsvser = false;
 bool         is_sv_sort = false;
+bool         is_svf = false;
+
+static
+void ReportTestBlockDone(const char* name)
+{
+    cout << name << " DONE OK" << endl << endl;
+}
 
 static
 int parse_args(int argc, char *argv[])
@@ -39944,42 +44561,17 @@ int parse_args(int argc, char *argv[])
             is_silent = true;
             continue;
         }
+        if (arg == "-svf")
+        {
+            is_all = false;
+            is_svf = true;
+            continue;
+        }
 
     } // for i
     return 0;
 }
 
-
-inline
-void PrintStacks(unsigned max_cnt = 10)
-{
-(void)max_cnt;
-#ifdef MEM_DEBUG
-    #ifdef BM_STACK_COLL
-    unsigned cnt(0);
-    for (auto it = g_alloc_trace_map.begin();
-        it != g_alloc_trace_map.end() && cnt < max_cnt; ++it)
-    {
-        cout << "\n--------------------STACK_TRACE: " << cnt++ << endl;
-        cout << it->second << endl;
-    }
-    #endif
-#else
-    cout << "Stack tracing not enabled (use #define BM_STACK_COLL)" << endl;
-#endif
-}
-
-static
-bool CheckAllocLeaks(bool details = false, bool abort = true)
-{
-(void)details; (void)abort;
-#ifdef MEM_DEBUG
-    if (details)
-    {
-        cout << "[--------------  Allocation digest -------------------]" << endl;
-        cout << "Number of BLOCK allocations = " <<  dbg_block_allocator::na_ << endl;
-        cout << "Number of PTR allocations = " <<  dbg_ptr_allocator::na_ << endl << endl;
-    }
 
 
 
@@ -40617,6 +45209,1182 @@ void test_str_sv_des_fnc()
         sample_deserializer.deserialize_structure(new_vector, buf_ptr);
     }
 }
+
+typedef bm::sparse_vector_float<bm::sparse_vector<unsigned int, bvect>> sparseVecFloat;
+
+void SparseVecFloatConstIteratorTests()
+{
+    std::cout << "-------------------------SparseVecFloatConstIteratorTests()" << std::endl;
+    float toAdd[] = {1.0123f, 2.468f, 340000.56f};
+
+    sparseVecFloat testSVF;
+    testSVF.import(toAdd, 3);
+
+    auto floatEq = [](float a, float b) {
+        return std::fabs(a - b) < 0.001f;
+    };
+    
+    // --- construction ---
+    sparseVecFloat::const_iterator defaultit;
+    sparseVecFloat::const_iterator itFromSV(&testSVF);
+    sparseVecFloat::const_iterator itFromSVPos(&testSVF, 1);
+    sparseVecFloat::const_iterator itBegin = testSVF.begin();
+    sparseVecFloat::const_iterator itEnd   = testSVF.end();
+    sparseVecFloat::const_iterator itCopy(itBegin);
+    
+    // --- operator* and value() ---
+    assert(floatEq(*itBegin, toAdd[0]));
+    assert(floatEq(itBegin.value(), toAdd[0]));
+    assert(floatEq(*itFromSVPos, toAdd[1]));
+
+    // --- valid() ---
+    assert(itBegin.valid());
+    assert(!itEnd.valid());
+    
+    // --- invalidate() ---
+    sparseVecFloat::const_iterator itInvalid = testSVF.begin();
+    itInvalid.invalidate();
+    assert(!itInvalid.valid());
+
+    // --- pos() ---
+    assert(itBegin.pos() == 0);
+    assert(itFromSVPos.pos() == 1);
+
+    // --- operator== and operator!= ---
+    sparseVecFloat::const_iterator itA = testSVF.begin();
+    sparseVecFloat::const_iterator itB = testSVF.begin();
+    assert(itA == itB);
+    assert(!(itA != itB));
+    assert(itA != itEnd);
+    assert(!(itA == itEnd));
+
+    // --- operator< <= > >= ---
+    sparseVecFloat::const_iterator itFirst  = testSVF.begin();
+    sparseVecFloat::const_iterator itSecond(&testSVF, 1);
+    assert(itFirst  <  itSecond);
+    assert(itFirst  <= itSecond);
+    assert(itFirst  <= itFirst);
+    assert(itSecond >  itFirst);
+    assert(itSecond >= itFirst);
+    assert(itFirst  >= itFirst);
+
+    // --- prefix operator++ ---
+    sparseVecFloat::const_iterator itPre = testSVF.begin();
+    ++itPre;
+    assert(itPre.pos() == 1);
+    assert(floatEq(*itPre, toAdd[1]));
+    ++itPre;
+    assert(itPre.pos() == 2);
+    assert(floatEq(*itPre, toAdd[2]));
+
+    // --- postfix operator++ ---
+    sparseVecFloat::const_iterator itPost = testSVF.begin();
+    sparseVecFloat::const_iterator itPostOld = itPost++;
+    assert(itPostOld.pos() == 0);
+    assert(itPost.pos() == 1);
+    assert(floatEq(*itPostOld, toAdd[0]));
+    assert(floatEq(*itPost, toAdd[1]));
+
+    // --- advance() ---
+    sparseVecFloat::const_iterator itAdv = testSVF.begin();
+    assert(floatEq(itAdv.value(), toAdd[0]));
+    bool stillValid = itAdv.advance();
+    assert(stillValid);
+    assert(itAdv.pos() == 1);
+    assert(floatEq(itAdv.value(), toAdd[1]));
+    stillValid = itAdv.advance();
+    assert(stillValid);
+    assert(itAdv.pos() == 2);
+    assert(floatEq(itAdv.value(), toAdd[2]));
+    bool pastEnd = itAdv.advance();
+    assert(!pastEnd);
+    assert(!itAdv.valid());
+
+    // --- go_to() ---
+    sparseVecFloat::const_iterator itGoto = testSVF.begin();
+    itGoto.go_to(2);
+    assert(itGoto.pos() == 2);
+    assert(floatEq(itGoto.value(), toAdd[2]));
+    itGoto.go_to(0);
+    assert(itGoto.pos() == 0);
+    assert(floatEq(itGoto.value(), toAdd[0]));
+    itGoto.go_to(1);
+    assert(itGoto.pos() == 1);
+    assert(floatEq(itGoto.value(), toAdd[1]));
+
+    // --- is_null() ---
+    sparseVecFloat::const_iterator itNull = testSVF.begin();
+    assert(!itNull.is_null());
+
+    // --- full iteration ---
+    int idx = 0;
+    for (auto it = testSVF.begin(); it != testSVF.end(); ++it, ++idx)
+    {
+        assert(floatEq(*it, toAdd[idx]));
+    }
+    assert(idx == 3);
+}
+
+void SparseVecFloatImportTest()
+{
+    std::cout << "-------------------------SparseVecFloatImportTest()" << std::endl;
+    sparseVecFloat::size_type N = 128000;
+    float m = 0.5f;
+    sparseVecFloat testSVF;
+    std::vector<float> temp(N*2);
+
+    for(sparseVecFloat::size_type i = 0; i < N; i++)
+    {
+        temp[i] = ((float)i * 0.001f) * m;
+    }
+    for(sparseVecFloat::size_type i = N; i < N*2; i++)
+    {
+        temp[i] = -1.0f*((float)i * 0.001f) * m;
+    }
+    
+    testSVF.import(temp.data(), N);
+    
+    int errorCount = 0;
+    for(sparseVecFloat::size_type i = 0; i < N; i++)
+    {
+        float err = std::fabs(temp[i] - testSVF.get(i));
+        if (err > 0.0f) 
+        {
+            errorCount++;
+        }
+    }
+    
+    assert(errorCount == 0);
+    BM_DECLARE_TEMP_BLOCK(tb)
+    testSVF.optimize(tb);
+    
+    errorCount = 0;
+    for(sparseVecFloat::size_type i = 0; i < N; i++)
+    {
+        float err = std::fabs(temp[i] - testSVF.get(i));
+        if (err > 0.0f)
+        {
+            errorCount++;
+        }
+    }
+    
+    assert(errorCount == 0);
+}
+
+void SparseVecFloatGeneralTests()
+{
+    std::cout << "-------------------------SparseVecFloatGeneralTests()" << std::endl;
+    auto floatEq = [](float a, float b)
+    {
+        return std::fabs(a - b) < 0.001f;
+    };
+
+    float toAdd[] = {1.0123f, -2.468f, 340000.56f};
+
+    sparseVecFloat testSVF;
+    
+    assert(testSVF.empty());
+
+    testSVF.push_back(toAdd[0]);
+
+    assert(!testSVF.empty());
+    assert(testSVF.size() == 1);
+    assert(floatEq(testSVF.get(0), toAdd[0]));
+
+    testSVF.push_back(toAdd[1]);
+    testSVF.push_back(toAdd[2]);
+
+    assert(testSVF.size() == 3);
+    assert(floatEq(testSVF.get(0), toAdd[0]));
+    assert(floatEq(testSVF.get(1), toAdd[1]));
+    assert(floatEq(testSVF.get(2), toAdd[2]));
+
+    sparseVecFloat testSVF2;
+    testSVF2.import(toAdd, 3);
+    assert(testSVF  == testSVF2);
+    assert(!(testSVF != testSVF2));
+
+    float toAdd2[] = {9.0f, -8.0f, -7.0f};
+    sparseVecFloat testSVF3;
+    testSVF3.import(toAdd2, 3);
+    assert(testSVF  != testSVF3);
+    assert(!(testSVF == testSVF3));
+
+    sparseVecFloat testSVFAssigned;
+    testSVFAssigned = testSVF;
+    assert(testSVFAssigned == testSVF);
+    assert(floatEq(testSVFAssigned.get(0), toAdd[0]));
+    assert(floatEq(testSVFAssigned.get(1), toAdd[1]));
+    assert(floatEq(testSVFAssigned.get(2), toAdd[2]));
+    assert(testSVFAssigned.size() == testSVF.size());
+
+    testSVF.set(1, 8.258f);
+    assert(!floatEq(testSVF.get(1), toAdd[1]));
+    assert(floatEq(testSVF.get(1), 8.258f));
+
+    testSVF.set(100, 100.001f);
+    assert(testSVF.size() == 101);
+    assert(floatEq(testSVF.get(100), 100.001f));
+    assert(floatEq(testSVF.get(50), 0.0f));
+
+    sparseVecFloat svA;
+    sparseVecFloat svB;
+    float aVals[] = {1.0f, -2.0f, 3.0f};
+    float bVals[] = {-4.0f, -5.0f, 6.0f};
+    svA.import(aVals, 3);
+    svB.import(bVals, 3);
+
+    svA.swap(svB);
+
+    assert(floatEq(svA.get(0), bVals[0]));
+    assert(floatEq(svA.get(1), bVals[1]));
+    assert(floatEq(svA.get(2), bVals[2]));
+    assert(floatEq(svB.get(0), aVals[0]));
+    assert(floatEq(svB.get(1), aVals[1]));
+    assert(floatEq(svB.get(2), aVals[2]));
+
+    svA.swap(svB);
+    assert(floatEq(svA.get(0), aVals[0]));
+    assert(floatEq(svA.get(1), aVals[1]));
+    assert(floatEq(svA.get(2), aVals[2]));
+}
+
+void SparseVecFloatSerializeTest()
+{
+    std::cout << "-------------------------SparseVecFloatSerializeTest()" << std::endl;
+    auto floatEq = [](float a, float b)
+    {
+        return std::fabs(a - b) < 0.001f;
+    };
+
+    float toAdd[] = {1.0123f, -2.468f, 340000.56f};
+
+    sparseVecFloat testSVF;
+    testSVF.import(toAdd, 3);
+    BM_DECLARE_TEMP_BLOCK(tb)
+    testSVF.optimize(tb);
+
+    bm::sparse_vector_float_serial_layout<sparseVecFloat> testLayout;
+    
+    bm::sparse_vector_float_serialize(testSVF, testLayout);
+
+    const unsigned char* buf = testLayout.buf();
+    bm::sparse_vector_float_deserialize(testSVF, buf);
+    
+    assert(testSVF.size() == 3);
+    assert(floatEq(testSVF.get(0), toAdd[0]));
+    assert(floatEq(testSVF.get(1), toAdd[1]));
+    assert(floatEq(testSVF.get(2), toAdd[2]));
+
+    sparseVecFloat testSVF2;
+    sparseVecFloat::size_type N = 10000;
+    for (sparseVecFloat::size_type i = 0; i < N; i++)
+    {
+        float f = (float)i * 0.000123f;
+        testSVF2.push_back(f);
+    }
+
+    testSVF2.optimize(tb);
+    bm::sparse_vector_float_serial_layout<sparseVecFloat> testLayout2;
+    bm::sparse_vector_float_serialize(testSVF2, testLayout2);
+
+    buf = testLayout2.buf();
+    bm::sparse_vector_float_deserializer<sparseVecFloat> testDeserializer;
+    sparseVecFloat testSVF2_restored;
+    testDeserializer.deserialize_range(testSVF2_restored, buf, 300, 400, true);
+    
+    int errorCount = 0;
+    for (sparseVecFloat::size_type i = 300; i <= 400; i++)
+    {
+        float f = (float)i * 0.000123f;
+        if (!floatEq(testSVF2_restored.get(i), f))
+        {
+            errorCount++;
+        }
+    }
+    assert(errorCount == 0);
+
+    sparseVecFloat::bvector_type mask_bv;
+    sparseVecFloat::size_type maskIndices[] = {0, 1, 50, 100, 500, 999, 5000, 9999};
+    sparseVecFloat::size_type maskSize = sizeof(maskIndices) / sizeof(maskIndices[0]);
+    for (sparseVecFloat::size_type i = 0; i < maskSize; i++)
+        mask_bv.set(maskIndices[i]);
+    
+    sparseVecFloat testSVF2_masked;
+    testDeserializer.deserialize(testSVF2_masked, buf, mask_bv);
+
+    errorCount = 0;
+    for (sparseVecFloat::size_type i = 0; i < maskSize; i++)
+    {
+        sparseVecFloat::size_type idx   = maskIndices[i];
+        float f = (float)idx * 0.000123f;
+        if (!floatEq(testSVF2_masked.get(idx), f))
+            errorCount++;
+    }
+    assert(errorCount == 0);
+
+    assert(floatEq(testSVF2_masked.get(2),    0.0f));
+    assert(floatEq(testSVF2_masked.get(200),  0.0f));
+    assert(floatEq(testSVF2_masked.get(1000), 0.0f));
+}
+
+void SparseVecFloatRangeTests()
+{
+    std::cout << "-------------------------SparseVecFloatRangeTests()" << std::endl;
+    auto floatEq = [](float a, float b)
+    {
+        return std::fabs(a - b) < 0.001f;
+    };
+
+    float toAdd[] = {1.0123f, -2.468f, 340000.56f, -7008.0f, 0.900102f};
+
+    sparseVecFloat testSVF;
+    testSVF.import(toAdd, 5);
+    BM_DECLARE_TEMP_BLOCK(tb)
+    testSVF.optimize(tb);
+
+    assert(testSVF.size() == 5);
+    testSVF.clear();
+    assert(testSVF.size() == 0);
+
+    testSVF.import(toAdd, 5);
+    testSVF.clear_range(1, 3);
+    assert(testSVF.size() == 5);
+    assert(floatEq(testSVF.get(0), toAdd[0]));
+    assert(floatEq(testSVF.get(1), 0.0));
+    assert(floatEq(testSVF.get(2), 0.0));
+    assert(floatEq(testSVF.get(3), 0.0));
+    assert(floatEq(testSVF.get(4), toAdd[4]));
+
+    testSVF.clear();
+    testSVF.import(toAdd, 5);
+
+    sparseVecFloat testSVF2(testSVF);
+    assert(testSVF.equal(testSVF2));
+
+    testSVF2.set(1, 0.0);
+    assert(!testSVF.equal(testSVF2));
+
+    assert(testSVF.compare(1, 2.468f) == -1);
+    assert(testSVF.compare(1, -2.468f) == 0);
+    assert(testSVF.compare(1, -3.0f) == 1);
+
+    sparseVecFloat svf1;
+    sparseVecFloat svf2;
+    float toAdd1[] = {1.0123f, -2.468f, 0.0f, 0.0f, 0.0f, 1.5f};
+    float toAdd2[] = {0.0f, 0.0f, 0.0f, -7008.0f, 0.900102f, 2.5f};
+    svf1.import(toAdd1, 6);
+    svf2.import(toAdd2, 6);
+    svf1.optimize(tb);
+    svf2.optimize(tb);
+    
+    svf1.join(svf2);
+    assert(svf1.size() == 6);
+    assert(floatEq(svf1.get(0), toAdd[0]));
+    assert(floatEq(svf1.get(1), toAdd[1]));
+    assert(floatEq(svf1.get(2), 0.0f));
+    assert(floatEq(svf1.get(3), toAdd[3]));
+    assert(floatEq(svf1.get(4), toAdd[4]));
+    assert(svf1.get(5) != svf1.get(5));
+
+    svf1.clear();
+    svf2.clear();
+    svf1.import(toAdd1, 6);
+    svf2.import(toAdd2, 6);
+    svf1.optimize(tb);
+    svf2.optimize(tb);
+
+    svf1.merge(svf2);
+    assert(svf1.size() == 6);
+    assert(floatEq(svf1.get(0), toAdd[0]));
+    assert(floatEq(svf1.get(1), toAdd[1]));
+    assert(floatEq(svf1.get(2), 0.0f));
+    assert(floatEq(svf1.get(3), toAdd[3]));
+    assert(floatEq(svf1.get(4), toAdd[4]));
+    assert(svf1.get(5) != svf1.get(5));
+
+
+    svf1.clear();
+    svf2.clear();
+    svf1.import(toAdd1, 6);
+    svf2.import(toAdd2, 6);
+    svf1.optimize(tb);
+    svf2.optimize(tb);
+
+    svf1.copy_range(svf2, 2, 4);
+    assert(svf1.size() == 6);
+    assert(floatEq(svf1.get(0), 0.0f));
+    assert(floatEq(svf1.get(1), 0.0f));
+    assert(floatEq(svf1.get(2), 0.0f));
+    assert(floatEq(svf1.get(3), toAdd[3]));
+    assert(floatEq(svf1.get(4), toAdd[4]));
+    assert(floatEq(svf1.get(5), 0.0f));
+}
+
+void SparseVecFloatExtractionTests()
+{
+    std::cout << "-------------------------SparseVecFloatExtractionTests()" << std::endl;
+    auto floatEq = [](float a, float b)
+    {
+        return std::fabs(a - b) < 0.001f;
+    };
+
+    sparseVecFloat::size_type N = 128000;
+    float m = 0.5f;
+    sparseVecFloat testSVF;
+    std::vector<float> temp(N*2);
+
+    for (sparseVecFloat::size_type i = 0; i < N; i++)
+    {
+        temp[i] = ((float)i * 0.001f) * m;
+    }
+    for (sparseVecFloat::size_type i = N; i < N*2; i++)
+    {
+        temp[i] = -1*((float)i * 0.001f) * m;
+    }
+
+    testSVF.import(temp.data(), N*2);
+    testSVF.optimize();
+
+    std::vector<float> testExtract(N*2);
+    testSVF.decode(testExtract.data(), 0, N*2);
+
+    int errorCount = 0;
+    for (sparseVecFloat::size_type i = 0; i < N*2; i++)
+    {
+        if (!floatEq(testExtract[i], temp[i]))
+        {
+            errorCount++;
+        }
+    }
+    assert(errorCount == 0);
+
+    
+    std::vector<float> testExtractRange(48000);
+    testSVF.extract_range(testExtractRange.data(), 48000, 16000);
+
+    errorCount = 0;
+    for (sparseVecFloat::size_type i = 16000; i < 64000; i++)
+    {
+        if (!floatEq(testExtractRange[i-16000], temp[i]))
+        {
+            errorCount++;
+        }
+    }
+    assert(errorCount == 0);
+
+    bm::id_t gatherIndeces[1024];
+    for(sparseVecFloat::size_type i = 0; i < 1024; i++)
+    {
+        gatherIndeces[i] = static_cast<bm::id_t>(rand() % 128000);
+    }
+
+    std::vector<float> testGather(1024);
+    testSVF.gather(testGather.data(), gatherIndeces, 1024, bm::BM_UNKNOWN);
+
+    errorCount = 0;
+    for (sparseVecFloat::size_type i = 0; i < 1024; i++)
+    {
+        if (!floatEq(testGather[i], temp[gatherIndeces[i]]))
+        {
+            errorCount++;
+            std::cout << "Mismatch at sample " << i 
+                  << " (Index " << gatherIndeces[i] << "): "
+                  << temp[gatherIndeces[i]] << " vs " << testGather[i] 
+                  << std::endl;
+        }
+    }
+    assert(errorCount == 0);
+}
+
+void SparseVecFloatBackInsertTests()
+{
+    std::cout << "-------------------------SparseVecFloatBackInsertTests()" << std::endl;
+    auto floatEq = [](float a, float b)
+    {
+        return std::fabs(a - b) < 0.001f;
+    };
+
+    sparseVecFloat testSVF;
+
+    sparseVecFloat::back_insert_iterator testBI(&testSVF);
+
+    testBI.add(1.0023f);
+    assert(testSVF.size() == 1);
+    assert(floatEq(testSVF.get(0), 1.0023f));
+
+    testBI.add(400005.6f);
+    assert(testSVF.size() == 2);
+    assert(floatEq(testSVF.get(1), 400005.6f));
+
+    sparseVecFloat::back_insert_iterator testBI2(testBI);
+    testBI2=78.9f;
+    assert(testSVF.size() == 3);
+    assert(floatEq(testSVF.get(2), 78.9f));
+
+    sparseVecFloat::back_insert_iterator testBI3(std::move(testBI));
+    testBI3=12345.6789f;
+    assert(testSVF.size() == 4);
+    assert(floatEq(testSVF.get(3), 12345.6789f));
+
+}
+
+void SparseVecFloatStressTests(){
+    std::cout << "-------------------------SparseVecFloatStressTests()" << std::endl;
+    //Random data import and get test
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<float> dist(-1000000.0f, 1000000.0f);
+
+        sparseVecFloat::size_type N = 1000000;
+        std::vector<float> data(N);
+        for (sparseVecFloat::size_type i = 0; i < N; i++)
+            data[i] = dist(gen);
+
+        sparseVecFloat sv;
+        sv.import(data.data(), N);
+
+        BM_DECLARE_TEMP_BLOCK(tb)
+        sv.optimize(tb);
+
+        int errorCount = 0;
+        for (sparseVecFloat::size_type i = 0; i < N; i++)
+        {
+            float restored = sv.get(i);
+            if (std::fabs(restored - data[i]) > 0.001f)
+            {
+                errorCount++;
+            }
+        }
+        assert(errorCount == 0);
+        assert(sv.size() == N);
+    }
+
+    //Random data push back and iterator tests
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<float> dist(-500.0f, 500.0f);
+
+        sparseVecFloat::size_type N = 500000;
+        std::vector<float> data(N);
+        sparseVecFloat sv;
+        for (sparseVecFloat::size_type i = 0; i < N; i++)
+        {
+            data[i] = dist(gen);
+            sv.push_back(data[i]);
+        }
+
+        BM_DECLARE_TEMP_BLOCK(tb)
+        sv.optimize(tb);
+
+        // validate via iterator
+        sparseVecFloat::size_type idx = 0;
+        int errorCount = 0;
+        for (auto it = sv.begin(); it != sv.end(); ++it, ++idx)
+        {
+            if (std::fabs(*it - data[idx]) > 0.001f)
+                errorCount++;
+        }
+        assert(errorCount == 0);
+        assert(idx == N);
+    }
+
+    //Decaying Sinusoid Test
+    {
+        sparseVecFloat::size_type N = 2000000;
+        std::vector<float> data(N);
+        const double e = std::exp(1.0);
+        for (sparseVecFloat::size_type i = 0; i < N; i++)
+        {
+            float t = 0.001f * (float)i;
+            data[i] = 100.0f * (float)pow(e, -1.0 * t)
+                      * (cos(5.0f * t + 1.0f) + sin(5.0f * t + 1.0f));
+        }
+
+        sparseVecFloat sv;
+        sv.import(data.data(), N);
+        BM_DECLARE_TEMP_BLOCK(tb)
+        sv.optimize(tb);
+
+        int errorCount = 0;
+        for (sparseVecFloat::size_type i = 0; i < N; i++)
+        {
+            if (std::fabs(sv.get(i) - data[i]) > 0.001f)
+                errorCount++;
+        }
+        assert(errorCount == 0);
+        assert(sv.size() == N);
+    }
+
+}
+
+void SparseVecFloatSerialStressTests()
+{
+    std::cout << "-------------------------SparseVecFloatSerialStressTests()" << std::endl;
+    //Serializing then deserializing a large random data set
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<float> dist(-1000000.0f, 1000000.0f);
+
+        sparseVecFloat::size_type N = 1000000;
+        std::vector<float> data(N);
+        for (sparseVecFloat::size_type i = 0; i < N; i++)
+            data[i] = dist(gen);
+
+        sparseVecFloat sv;
+        sv.import(data.data(), N);
+        BM_DECLARE_TEMP_BLOCK(tb)
+        sv.optimize(tb);
+
+        bm::sparse_vector_float_serial_layout<sparseVecFloat> testLayout;
+        bm::sparse_vector_float_serialize(sv, testLayout);
+
+        // deserialize into a fresh vector
+        sparseVecFloat sv_restored;
+        const unsigned char* buf = testLayout.buf();
+        bm::sparse_vector_float_deserialize(sv_restored, buf);
+
+        // validate
+        assert(sv_restored.size() == N);
+        int errorCount = 0;
+        for (sparseVecFloat::size_type i = 0; i < N; i++)
+        {
+            if (std::fabs(sv_restored.get(i) - data[i]) > 0.001f)
+                errorCount++;
+        }
+        assert(errorCount == 0);
+    }
+
+    // Decaying Sinusoid Compression Test
+    {
+        sparseVecFloat::size_type N = 2000000;
+        std::vector<float> data(N);
+        const double e = std::exp(1.0);
+        for (sparseVecFloat::size_type i = 0; i < N; i++)
+        {
+            float t = 0.001f * (float)i;
+            data[i] = 100.0f * (float)pow(e, -1.0 * t)
+                      * (cos(5.0f * t + 1.0f) + sin(5.0f * t + 1.0f));
+        }
+
+        sparseVecFloat sv;
+        sv.import(data.data(), N);
+        BM_DECLARE_TEMP_BLOCK(tb)
+        sv.optimize(tb);
+
+        bm::sparse_vector_float_serial_layout<sparseVecFloat> testLayout;
+        bm::sparse_vector_float_serialize(sv, testLayout);
+
+        // deserialize into a fresh vector
+        sparseVecFloat sv_restored;
+        const unsigned char* buf = testLayout.buf();
+        bm::sparse_vector_float_deserialize(sv_restored, buf);
+
+        assert(sv_restored.size() == N);
+        int errorCount = 0;
+        for (sparseVecFloat::size_type i = 0; i < N; i++)
+        {
+            if (std::fabs(sv_restored.get(i) - data[i]) > 0.001f)
+                errorCount++;
+        }
+        assert(errorCount == 0);
+
+        // check that serialized size is smaller than raw size
+        size_t rawSize        = N * sizeof(float);
+        size_t serializedSize = testLayout.size();
+        assert(serializedSize < rawSize);
+    }
+}
+
+void SparseVecFloatTests()
+{
+    SparseVecFloatGeneralTests();
+    SparseVecFloatConstIteratorTests();
+    SparseVecFloatImportTest();
+    SparseVecFloatSerializeTest();
+    SparseVecFloatRangeTests();
+    SparseVecFloatExtractionTests();
+    SparseVecFloatBackInsertTests();
+    SparseVecFloatStressTests();
+    SparseVecFloatSerialStressTests();
+    std::cout << "Sparse Vector Float Tests Complete" << std::endl;
+}
+
+void in_range(sparseVecFloat sv, float from, float to, sparseVecFloat::bvector_type &bv_out)
+{
+    bm::sparse_vector_scanner<sparseVecFloat> scan;
+    scan.find_range_float(sv, from, to, bv_out);
+}
+
+void in_range_vect(std::vector<float> fv, float from, float to, sparseVecFloat::bvector_type &bv_out)
+{
+    if(from > to) std::swap(from, to);
+    for(sparseVecFloat::size_type i = 0; i < fv.size(); i++){
+        if(fv[i] >= from && fv[i] <= to)
+        {
+            bv_out.set(i);
+        }
+    }
+}
+
+void in_range_const(sparseVecFloat sv, float from, float to, sparseVecFloat::bvector_type &bv_out)
+{
+    sparseVecFloat::const_iterator ci = sv.begin();
+    if (from > to) std::swap(from, to);
+    for (; ci.valid(); ++ci)
+    {
+        if (auto v = ci.value(); (v >= from && v <= to))
+            bv_out.set(ci.pos());
+    }
+}
+
+void runSVFScannerTest(std::vector<float> temp, sparseVecFloat testSVF, float from, float to)
+{
+    sparseVecFloat::bvector_type bv_range;
+    sparseVecFloat::bvector_type bv_vector;
+    sparseVecFloat::bvector_type bv_const;
+
+    in_range(testSVF, from, to, bv_range);
+    in_range_vect(temp, from, to, bv_vector);
+    in_range_const(testSVF, from, to, bv_const);
+
+    bool range_eq_vector = (bv_range == bv_vector);
+    bool range_eq_const  = (bv_range == bv_const);
+
+    if (!range_eq_vector || !range_eq_const)
+    {
+        std::cout << "Test[" << std::fixed << std::setprecision(6) << from << ", " << to << "] MISMATCH\n";
+        if (!range_eq_vector)
+        {
+            sparseVecFloat::bvector_type diff;
+            diff = bv_range ^ bv_vector;   // XOR shows differing bits
+            std::cout << "  range vs vector differs at " << diff.count() << " positions\n";
+            // print first few differing positions
+            auto en = diff.first();
+            for (sparseVecFloat::size_type i = 0; i < 5 && en != diff.end(); ++i, ++en)
+                std::cout << "  position: " << *en << "\n";
+        }
+        if (!range_eq_const)
+        {
+            sparseVecFloat::bvector_type diff;
+            diff = bv_range ^ bv_const;
+            std::cout << "  range vs const differs at " << diff.count() << " positions\n";
+            auto en = diff.first();
+            for (sparseVecFloat::size_type i = 0; i < 5 && en != diff.end(); ++i, ++en)
+                std::cout << "  position: " << *en << "\n";
+        }
+        std::cout << std::endl << std::endl;
+        exit(1);
+    }
+}
+
+void SparseVecFloatScannerTests()
+{
+    BM_DECLARE_TEMP_BLOCK(tb)
+
+    sparseVecFloat::size_type N = 20000000;
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    float upper = 1000000.0f;
+    float lower = -1000000.0f;
+    std::uniform_real_distribution<float> dis(lower, upper);
+
+    unsigned int tests = 10000;
+    std::vector<float> from(tests);
+    std::vector<float> to(tests);
+    for (unsigned int i = 0; i < tests; i++)
+    {
+        from[i] = dis(gen);
+        to[i] = dis(gen);
+    }
+
+    std::vector<float> linData(N);
+
+    for(sparseVecFloat::size_type i = 0; i < N/2; i++)
+        linData[i] = -1.0f * (float)i * 0.00123f;
+    for(sparseVecFloat::size_type i = 0; i < N/2; i++)
+        linData[i+N/2] = (float)i * 0.00123f;
+
+    sparseVecFloat testSVF;
+    testSVF.import(linData.data(), N);
+    testSVF.optimize(tb);
+
+    {
+        std::cout << "-------------------------SVF Linear Values Scanner" << std::endl;
+        for(unsigned int i = 0; i < tests; i++){
+            runSVFScannerTest(linData, testSVF, from[i], to[i]);
+            float progress_pct = ((float)(i + 1) / (float)tests) * 100.0f;
+            if (!is_silent)
+                std::cout << "\r" << std::fixed << std::setprecision(1) << progress_pct << "% " << std::flush;
+        }
+    }
+
+    testSVF.clear();
+    std::vector<float> randData(N);
+    for (sparseVecFloat::size_type i = 0; i < N; ++i)
+    {
+        randData[i] = dis(gen);
+    }
+    testSVF.import(randData.data(), N);
+    testSVF.optimize(tb);
+
+    {
+        std::cout << "-------------------------SVF Random Values Scanner" << std::endl;
+        for(unsigned int i = 0; i < tests; i++){
+            runSVFScannerTest(randData, testSVF, from[i], to[i]);
+            float progress_pct = ((float)(i + 1) / (float)tests) * 100.0f;
+            if (!is_silent)
+                std::cout << "\r" << std::fixed << std::setprecision(1) << progress_pct << "% " << std::flush;
+        }
+    }
+
+    testSVF.clear();
+    std::vector<float> skewData(N);
+    for (sparseVecFloat::size_type i = 19000000; i < N; ++i)
+    {
+        skewData[i] = dis(gen);
+    }
+    testSVF.import(skewData.data(), N);
+    testSVF.optimize(tb);
+
+    {
+        std::cout << "-------------------------SVF Skewed Values Scanner" << std::endl;
+        for(unsigned int i = 0; i < tests; i++){
+            runSVFScannerTest(skewData, testSVF, from[i], to[i]);
+            float progress_pct = ((float)(i + 1) / (float)tests) * 100.0f;
+            if (!is_silent)
+                std::cout << "\r" << std::fixed << std::setprecision(1) << progress_pct << "% " << std::flush;
+        }
+    }
+
+    std::cout << "-------------------------SVF Scanner Testing OK" << std::endl;
+}
+
+typedef bm::sparse_vector_float<bm::rsc_sparse_vector<unsigned int, bm::sparse_vector<unsigned int, bvect>>> sparseVecFloatRSC;
+
+void in_rangeRSC(sparseVecFloatRSC sv, float from, float to, sparseVecFloatRSC::bvector_type &bv_out)
+{
+    bm::sparse_vector_scanner<sparseVecFloatRSC> scan;
+    scan.find_range_float(sv, from, to, bv_out);
+}
+
+void in_range_vectRSC(std::vector<float> fv, float from, float to, sparseVecFloatRSC::bvector_type &bv_out)
+{
+    if (from > to) std::swap(from, to);
+    for(sparseVecFloatRSC::size_type i = 0; i < fv.size(); i++){
+        if(fv[i] >= from && fv[i] <= to)
+        {
+            bv_out.set(i);
+        }
+    }
+}
+
+void in_range_constRSC(sparseVecFloatRSC sv, float from, float to, sparseVecFloatRSC::bvector_type &bv_out)
+{
+    if (from > to) std::swap(from, to);
+    sparseVecFloatRSC::const_iterator ci = sv.begin();
+    for (; ci.valid(); ++ci)
+    {
+        if (auto v = ci.value(); v >= from && v <= to)
+            bv_out.set(ci.pos());
+    }
+}
+
+void runSVFScannerTestRSC(std::vector<float> temp, sparseVecFloatRSC testSVF, float from, float to)
+{
+    sparseVecFloatRSC::bvector_type bv_range;
+    sparseVecFloatRSC::bvector_type bv_vector;
+    sparseVecFloatRSC::bvector_type bv_const;
+
+    in_rangeRSC(testSVF, from, to, bv_range);
+    in_range_vectRSC(temp, from, to, bv_vector);
+    in_range_constRSC(testSVF, from, to, bv_const);
+
+    bool range_eq_vector = (bv_range == bv_vector);
+    bool range_eq_const  = (bv_range == bv_const);
+    bool range_eq_const_vector  = (bv_vector == bv_const);
+
+    if (!range_eq_vector || !range_eq_const)
+    {
+        std::cout << "Test[" << std::fixed << std::setprecision(6) << from << ", " << to << "] MISMATCH\n";
+        if (!range_eq_vector)
+        {
+            sparseVecFloatRSC::bvector_type diff;
+            diff = bv_range ^ bv_vector;   // XOR shows differing bits
+            std::cout << "  range vs vector differs at " << diff.count() << " positions\n";
+            // print first few differing positions
+            auto en = diff.first();
+            for (sparseVecFloatRSC::size_type i = 0; i < 5 && en != diff.end(); ++i, ++en)
+            {
+                std::cout << "  position: " << *en << " - " << testSVF.get(*en) << "\n";
+            }
+        }
+        if (!range_eq_const)
+        {
+            sparseVecFloatRSC::bvector_type diff;
+            diff = bv_range ^ bv_const;
+            std::cout << "  range vs const differs at " << diff.count() << " positions\n";
+            auto en = diff.first();
+            for (sparseVecFloatRSC::size_type i = 0; i < 5 && en != diff.end(); ++i, ++en)
+                std::cout << "  position: " << *en << "\n";
+        }
+        if(!range_eq_const_vector)
+        {
+            sparseVecFloatRSC::bvector_type diff;
+            diff = bv_vector ^ bv_const;
+            std::cout << "  vector vs const differs at " << diff.count() << " positions\n";
+            auto en = diff.first();
+            for (sparseVecFloatRSC::size_type i = 0; i < 5 && en != diff.end(); ++i, ++en)
+                std::cout << "  position: " << *en << "\n";
+        }
+        std::cout << std::endl << std::endl;
+        exit(1);
+    }
+}
+
+void sparseVecFloatRSCScannerTests()
+{
+    BM_DECLARE_TEMP_BLOCK(tb)
+
+    sparseVecFloatRSC::size_type N = 20000000;
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    float upper = 1000000.0f;
+    float lower = -1000000.0f;
+    std::uniform_real_distribution<float> dis(lower, upper);
+    std::uniform_real_distribution<float> null_chance(0.0f, 1.0f);
+
+    unsigned int tests = 10000;
+    std::vector<float> from(tests);
+    std::vector<float> to(tests);
+    for (unsigned int i = 0; i < tests; i++)
+    {
+        from[i] = dis(gen);
+        to[i] = dis(gen);
+    }
+
+    std::vector<float> linData(N);
+
+    for (sparseVecFloatRSC::size_type i = 0; i < N/2; i++)
+    {
+        if (null_chance(gen) >= 0.35f)
+        {
+            linData[i] = -1.0f * (float)i * 0.00123f;
+        }
+        else
+        {
+            linData[i] = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
+    for(sparseVecFloatRSC::size_type i = 0; i < N/2; i++)
+    {
+        if (null_chance(gen) >= 0.35f)
+        {
+            linData[i+N/2] = (float)i * 0.00123f;
+        }
+        else
+        {
+            linData[i+N/2] = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
+
+    sparseVecFloatRSC testSVF;
+    testSVF.import(linData.data(), N);
+    testSVF.optimize(tb);
+
+    {
+        std::cout << "-------------------------SVF RCS Linear Values Scanner" << std::endl;
+        for(unsigned int i = 0; i < tests; i++){
+            runSVFScannerTestRSC(linData, testSVF, from[i], to[i]);
+            
+            float progress_pct = ((float)(i + 1) / (float)tests) * 100.0f;
+            if (!is_silent)
+                std::cout << "\r" << std::fixed << std::setprecision(1) << progress_pct << "% " << std::flush;
+        }
+    }
+
+    testSVF.clear();
+    std::vector<float> randData(N);
+    for (sparseVecFloatRSC::size_type i = 0; i < N; ++i)
+    {
+        if (null_chance(gen) >= 0.35f)
+        {
+            randData[i] = dis(gen);
+        }
+        else
+        {
+            randData[i] = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
+    testSVF.import(randData.data(), N);
+    testSVF.optimize(tb);
+
+    {
+        std::cout << "-------------------------SVF RCS Random Values Scanner" << std::endl;
+        for(unsigned int i = 0; i < tests; i++){
+            runSVFScannerTestRSC(randData, testSVF, from[i], to[i]);
+            float progress_pct = ((float)(i + 1) / (float)tests) * 100.0f;
+            if (!is_silent)
+                std::cout << "\r" << std::fixed << std::setprecision(1) << progress_pct << "% " << std::flush;
+        }
+    }
+
+    testSVF.clear();
+    std::vector<float> skewData(N);
+    for (sparseVecFloatRSC::size_type i = 0; i < 19000000; ++i)
+    {
+        skewData[i] = std::numeric_limits<float>::quiet_NaN();
+    }
+    for (sparseVecFloatRSC::size_type i = 19000000; i < N; ++i)
+    {
+        if (null_chance(gen) >= 0.35f)
+        {
+            skewData[i] = dis(gen);
+        }
+        else
+        {
+            skewData[i] = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
+    testSVF.import(skewData.data(), N);
+    testSVF.optimize(tb);
+
+    {
+        std::cout << "-------------------------SVF RCS Skewed Values Scanner" << std::endl;
+        for(unsigned int i = 0; i < tests; i++){
+            runSVFScannerTestRSC(skewData, testSVF, from[i], to[i]);
+            float progress_pct = ((float)(i + 1) / (float)tests) * 100.0f;
+            if (!is_silent)
+                std::cout << "\r" << std::fixed << std::setprecision(1) << progress_pct << "% " << std::flush;
+        }
+    }
+
+    std::cout << "-------------------------SVF RCS Scanner Testing OK" << std::endl;
+}
+
+
+void in_range_unbounded(sparseVecFloat sv, float from, float to, sparseVecFloat::bvector_type &bv_out)
+{
+    bm::sparse_vector_scanner<sparseVecFloat> scan;
+    scan.find_range_float_unbounded(sv, from, to, bv_out);
+}
+
+void in_range_vect_unbounded(std::vector<float> fv, float from, float to, sparseVecFloat::bvector_type &bv_out)
+{
+    if(from > to) std::swap(from, to);
+    for(sparseVecFloat::size_type i = 0; i < fv.size(); i++){
+        if(fv[i] > from && fv[i] < to)
+        {
+            bv_out.set(i);
+        }
+    }
+}
+
+void in_range_const_unbounded(sparseVecFloat sv, float from, float to, sparseVecFloat::bvector_type &bv_out)
+{
+    sparseVecFloat::const_iterator ci = sv.begin();
+    if (from > to) std::swap(from, to);
+    for (; ci.valid(); ++ci)
+    {
+        if (auto v = ci.value(); (v > from && v < to))
+            bv_out.set(ci.pos());
+    }
+}
+
+void runSVFScannerUnboundedTest(std::vector<float> temp, sparseVecFloat testSVF, float from, float to)
+{
+    sparseVecFloat::bvector_type bv_range;
+    sparseVecFloat::bvector_type bv_vector;
+    sparseVecFloat::bvector_type bv_const;
+
+    in_range_unbounded(testSVF, from, to, bv_range);
+    in_range_vect_unbounded(temp, from, to, bv_vector);
+    in_range_const_unbounded(testSVF, from, to, bv_const);
+
+    bool range_eq_vector = (bv_range == bv_vector);
+    bool range_eq_const  = (bv_range == bv_const);
+
+    if (!range_eq_vector || !range_eq_const)
+    {
+        std::cout << "Test[" << std::fixed << std::setprecision(6) << from << ", " << to << "] MISMATCH\n";
+        if (!range_eq_vector)
+        {
+            sparseVecFloat::bvector_type diff;
+            diff = bv_range ^ bv_vector;   // XOR shows differing bits
+            std::cout << "  range vs vector differs at " << diff.count() << " positions\n";
+            // print first few differing positions
+            auto en = diff.first();
+            for (sparseVecFloat::size_type i = 0; i < 5 && en != diff.end(); ++i, ++en)
+                std::cout << "  position: " << *en << "\n";
+        }
+        if (!range_eq_const)
+        {
+            sparseVecFloat::bvector_type diff;
+            diff = bv_range ^ bv_const;
+            std::cout << "  range vs const differs at " << diff.count() << " positions\n";
+            auto en = diff.first();
+            for (sparseVecFloat::size_type i = 0; i < 5 && en != diff.end(); ++i, ++en)
+                std::cout << "  position: " << *en << "\n";
+        }
+        std::cout << std::endl << std::endl;
+        exit(1);
+    }
+}
+
+void SparseVecFloatScannerUnboundedTests()
+{
+    BM_DECLARE_TEMP_BLOCK(tb)
+    
+    sparseVecFloat::size_type N = 20000000;
+    
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    
+    float upper = 12300.0f;
+    float lower = -12300.0f;
+    std::uniform_real_distribution<float> dis(lower, upper);
+    
+    unsigned int tests = 10000;
+    std::vector<float> from(tests);
+    std::vector<float> to(tests);
+    for (unsigned int i = 0; i < tests; i++)
+    {
+        from[i] = dis(gen);
+        to[i] = dis(gen);
+    }
+    
+    std::vector<float> linData(N);
+    
+    for(sparseVecFloat::size_type i = 0; i < N/2; i++)
+        linData[i] = -1.0f * (float)i * 0.00123f;
+    for(sparseVecFloat::size_type i = 0; i < N/2; i++)
+        linData[i+N/2] = (float)i * 0.00123f;
+    
+    sparseVecFloat testSVF;
+    testSVF.import(linData.data(), N);
+    testSVF.optimize(tb);
+    
+    {
+        std::cout << "-------------------------SVF Linear Values Unbounded Scanner" << std::endl;
+        for(unsigned int i = 0; i < tests; i++){
+            runSVFScannerUnboundedTest(linData, testSVF, from[i], to[i]);
+            float progress_pct = ((float)(i + 1) / (float)tests) * 100.0f;
+            if (!is_silent)
+                std::cout << "\r" << std::fixed << std::setprecision(1) << progress_pct << "% " << std::flush;
+        }
+    }
+    
+    std::cout << "-------------------------SVF Scanner Unbounded Testing OK" << std::endl;
+}
+
+
 
 
 // Test contributed by Andrea Asztalos
@@ -41652,6 +47420,11 @@ return 0;
     TestCapture();
     return 0;
 */
+    /*
+    ReplayGTSearchDebugDumpU32(36688, "/Users/anatoliykuznetsov/dev/BitMagic/tests/stress");
+    return 0;
+     */
+    
     if (is_all || is_low_level)
     {
 
@@ -41724,6 +47497,7 @@ return 0;
          TestArrMin0();
 
         //BitBlockTransposeTest();
+        ReportTestBlockDone("-ll");
     }
     
     if (is_all || is_support)
@@ -41775,6 +47549,8 @@ return 0;
 
         RSIndexTest();
          CheckAllocLeaks(false);
+
+        ReportTestBlockDone("-s");
     }
 
     if (is_all || is_bvbasic || is_bvb0 || is_bvb1)
@@ -41829,6 +47605,8 @@ return 0;
 
              KeepRangeTest();
              CheckAllocLeaks(false);
+
+             ReportTestBlockDone("-bvb0");
          }
 
         if (is_all || is_bvbasic || is_bvb1)
@@ -41888,8 +47666,12 @@ return 0;
 
             BVImportTest();
              CheckAllocLeaks(false);
+
+            ReportTestBlockDone("-bvb1");
          }
 
+        if (is_all || is_bvbasic)
+            ReportTestBlockDone("-bvb");
      }
 
 
@@ -41912,6 +47694,8 @@ return 0;
 
         RangeDeserializationTest();
          CheckAllocLeaks(false);
+
+        ReportTestBlockDone("-bvser");
     }
     
     if (is_all || is_bvshift)
@@ -41924,6 +47708,8 @@ return 0;
 
          BvectorEraseTest();
          CheckAllocLeaks(false);
+
+         ReportTestBlockDone("-bvs");
     }
 
 
@@ -41934,6 +47720,8 @@ return 0;
 
          TestRankCompress();
          CheckAllocLeaks(false);
+
+         ReportTestBlockDone("-rc");
     }
 
     if (is_bvops0)
@@ -41955,6 +47743,7 @@ return 0;
          CheckAllocLeaks(false);
 
         StressTest(300, -1, true); // random OPS stress
+        ReportTestBlockDone("-bvl0");
     }
 
     if (is_bvops1)
@@ -41970,6 +47759,8 @@ return 0;
 
         StressTest(150, 3, false); // AND
          CheckAllocLeaks(false);
+
+        ReportTestBlockDone("-bvl1");
     }
 
     if (is_bvops2)
@@ -41994,6 +47785,8 @@ return 0;
 
         KleeneLogicOrStressTest();
          CheckAllocLeaks(false);
+
+        ReportTestBlockDone("-bvl2");
     }
 
     if (is_all || is_bvops)
@@ -42036,6 +47829,7 @@ return 0;
 
         StressTest(300, -1, true); // random OPS stress test
 
+        ReportTestBlockDone("-bvl");
     }
 
     if (is_all || is_agg)
@@ -42053,6 +47847,8 @@ return 0;
          CheckAllocLeaks(false);
 
          StressTestAggregatorAND_SUB(100);
+
+         ReportTestBlockDone("-agg");
     }
 
     if (is_all || is_sv || is_sv0 || is_sv1)
@@ -42094,11 +47890,11 @@ return 0;
             TestSparseVectorTransform();
              CheckAllocLeaks(false);
 
+            ReportTestBlockDone("-sv0");
         }
 
         if (is_all || is_sv || is_sv1)
         {
-
             TestSparseVectorRange();
              CheckAllocLeaks(false);
 
@@ -42119,7 +47915,11 @@ return 0;
 
             TestSparseVector_Stress(3);
              CheckAllocLeaks(false);
+
+            ReportTestBlockDone("-sv1");
          }
+        if (is_all || is_sv)
+            ReportTestBlockDone("-sv");
     }
 
     if (is_sv_sort || is_sv)
@@ -42129,6 +47929,8 @@ return 0;
 
         TestSignedSparseSort();
          CheckAllocLeaks(false);
+
+        ReportTestBlockDone("-sort");
     }
 
     if (is_all || is_csv || is_csv0 || is_csv1)
@@ -42146,6 +47948,8 @@ return 0;
 
             TestCompressedSparseVectorAlgo();
              CheckAllocLeaks(false);
+
+            ReportTestBlockDone("-csv0");
         }
 
         if (is_all || is_csv || is_csv1)
@@ -42159,13 +47963,19 @@ return 0;
 
             TestCompressedSparseVectorScan();
              CheckAllocLeaks(false);
+
+            ReportTestBlockDone("-csv1");
         }
+        if (is_all || is_csv)
+            ReportTestBlockDone("-csv");
     }
 
     if (is_all || is_c_coll)
     {
          TestCompressedCollection();
          CheckAllocLeaks(false);
+
+         ReportTestBlockDone("-cc");
     }
     
     if (is_all || is_str_sv)
@@ -42197,6 +48007,8 @@ return 0;
 
          StressTestStrSparseVector();
          CheckAllocLeaks(false);
+
+         ReportTestBlockDone("-strsv");
     }
 
     if (is_ser || is_allsvser)
@@ -42216,6 +48028,7 @@ return 0;
             RangeDeserializationTest();
             CheckAllocLeaks(false);
 
+            ReportTestBlockDone("-ser");
         }
         TestSparseVector_XOR_Scanner();
         CheckAllocLeaks(false);
@@ -42232,6 +48045,25 @@ return 0;
         TestCompressSparseVectorSerial();
         CheckAllocLeaks(false);
 
+        if (is_allsvser)
+            ReportTestBlockDone("-allsvser");
+    }
+
+    if(is_all || is_svf){
+        
+        SparseVecFloatTests();
+        CheckAllocLeaks(false);
+
+        SparseVecFloatScannerTests();
+        CheckAllocLeaks(false);
+        
+        sparseVecFloatRSCScannerTests();
+        CheckAllocLeaks(false);
+        
+        SparseVecFloatScannerUnboundedTests();
+        CheckAllocLeaks(false);
+
+        ReportTestBlockDone("-svf");
     }
 
 

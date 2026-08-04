@@ -226,7 +226,7 @@ public:
 #ifndef BM_NO_STL
     throw std::logic_error("BM: shrink ALLOC size >= capacity");
 #else
-    BM_THROW(BM_ERR_BADALLOC););
+    BM_THROW(BM_ERR_BADALLOC);
 #endif
     }
 

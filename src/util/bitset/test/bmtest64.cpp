@@ -47,6 +47,9 @@ For more information please visit:  http://bitmagic.io
 #include <util/bitset/bmtimer.h>
 #include <util/bitset/bmdbg.h>
 
+#include <util/bitset/bmsparsevec_float.h>
+#include <util/bitset/bmsparsevec_compr.h>
+
 using namespace std;
 using namespace bm;
 
@@ -221,11 +224,1027 @@ void bvector64_Serialization()
     }
 }
 
+
+typedef bm::sparse_vector_float<bm::sparse_vector<unsigned int, bvect64>> sparseVecFloat;
+typedef bm::sparse_vector<unsigned int, bvect64> sparse_vec_u32;
+typedef bm::sparse_vector_float<bm::rsc_sparse_vector<unsigned int, sparse_vec_u32>> sparseVecFloatRSC;
+
+//Finds all values in range [from, to] in a given std::vector<float> and flipts the corresponding bits in bv_out
+inline
+void in_range_vect(const std::vector<float>& fv, float from, float to, sparseVecFloat::bvector_type &bv_out)
+{
+    if(from > to) std::swap(from, to);
+    for (sparseVecFloat::size_type i = 0; i < fv.size(); i++)
+    {
+        if (fv[i] >= from && fv[i] <= to)
+            bv_out.set(i);
+    } // for
+}
+
+//Finds all values in range [from, to] in a given sparse_vector_float using a const_iterator and flips the corresponding bits in bv_out
+inline
+void in_range_const(const sparseVecFloat& sv, float from, float to, sparseVecFloat::bvector_type& bv_out)
+{
+    sparseVecFloat::const_iterator ci = sv.begin();
+    if (from > to) std::swap(from, to);
+    for (; ci.valid(); ++ci)
+    {
+        if (auto v = ci.value(); (v >= from && v <= to))
+            bv_out.set(ci.pos());
+    }
+}
+
+void TestSVFScanner()
+{
+    BM_DECLARE_TEMP_BLOCK(tb)
+
+    typedef sparseVecFloat::bvector_type bvect_type;
+    typedef bvect_type::allocator_type::allocator_pool_type bvect_pool_type;
+    bvect_pool_type bv_pool;
+
+    sparseVecFloat::size_type N = 20000000;
+    std::random_device rd;
+    //std::mt19937 gen(rd());
+
+    float upper = 1000000.0f;
+    float lower = -1000000.0f;
+    std::uniform_real_distribution<float> dis(lower, upper);
+
+    std::vector<float> linData(N);
+
+    for(sparseVecFloat::size_type i = 0; i < N/2; i++)
+        linData[i] = -1.0f * (float)i * 0.00123f;
+    for(sparseVecFloat::size_type i = 0; i < N/2; i++)
+        linData[i+N/2] = (float)i * 0.00123f;
+
+    sparseVecFloat testSVF;
+    testSVF.import(linData.data(), N);
+    testSVF.optimize(tb);
+
+    unsigned int tests = 1000;
+
+    {
+        sparseVecFloat::bvector_type xorSV;
+        sparseVecFloat::bvector_type xorVect;
+        sparseVecFloat::bvector_type xorConst;
+
+        sparseVecFloat::bvector_type bv_range;
+        sparseVecFloat::bvector_type::mem_pool_guard bv_range_guard(bv_pool, bv_range);
+
+        std::vector<float> fromVect(tests);
+        std::vector<float> toVect(tests);
+        for (unsigned int i = 0; i < tests; i++)
+        {
+            fromVect[i] = dis(gen);
+            toVect[i] = dis(gen);
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF with Linear Data find values in range with scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloat> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+
+                scan.find_range_float(testSVF, from, to, bv_range);
+
+                xorSV ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "std::vector<float> with Linear Data find values in range", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+
+                in_range_vect(linData, from, to, bv_range);
+                xorVect ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF with Linear Data find values in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+
+                in_range_const(testSVF, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        bool range_eq_vector = (xorSV == xorVect);
+        bool range_eq_const  = (xorSV == xorConst);
+
+        if (!range_eq_vector || !range_eq_const)
+        {
+            cerr << "Linear: MISMATCH" << endl;
+            exit(1);
+        }
+    }
+
+    testSVF.clear();
+    std::vector<float> randData(N);
+
+    for (sparseVecFloat::size_type i = 0; i < N; ++i)
+    {
+        randData[i] = dis(gen);
+    }
+
+    testSVF.import(randData.data(), N);
+    testSVF.optimize(tb);
+
+    {
+        sparseVecFloat::bvector_type xorSV;
+        sparseVecFloat::bvector_type xorVect;
+        sparseVecFloat::bvector_type xorConst;
+
+        sparseVecFloat::bvector_type bv_range;
+        sparseVecFloat::bvector_type::mem_pool_guard bv_range_guard(bv_pool, bv_range);
+
+        std::vector<float> fromVect(tests);
+        std::vector<float> toVect(tests);
+        for (unsigned int i = 0; i < tests; i++)
+        {
+            fromVect[i] = dis(gen);
+            toVect[i] = dis(gen);
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF with Random Data find values in range with scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloat> scan;
+
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+
+                scan.find_range_float(testSVF, from, to, bv_range);
+                xorSV ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "std::vector<float> with Random Data find values in range", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+
+                in_range_vect(randData, from, to, bv_range);
+                xorVect ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF with Random Data find values in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+
+                in_range_const(testSVF, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        bool range_eq_vector = (xorSV == xorVect);
+        bool range_eq_const  = (xorSV == xorConst);
+
+        if (!range_eq_vector || !range_eq_const)
+        {
+            cerr << "Random: MISMATCH" << endl;
+            exit(1);
+        }
+    }
+
+    testSVF.clear();
+    std::vector<float> skewData(N);
+
+    for (sparseVecFloat::size_type i = 19000000; i < N; ++i)
+    {
+        skewData[i] = dis(gen);
+    }
+
+    testSVF.import(skewData.data(), N);
+    testSVF.optimize(tb);
+
+    {
+        sparseVecFloat::bvector_type xorSV;
+        sparseVecFloat::bvector_type xorVect;
+        sparseVecFloat::bvector_type xorConst;
+
+        sparseVecFloat::bvector_type bv_range;
+        sparseVecFloat::bvector_type::mem_pool_guard bv_range_guard(bv_pool, bv_range);
+
+        std::vector<float> fromVect(tests);
+        std::vector<float> toVect(tests);
+        for (unsigned int i = 0; i < tests; i++)
+        {
+            fromVect[i] = dis(gen);
+            toVect[i] = dis(gen);
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF with Skewed Data find values in range with scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloat> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+
+                scan.find_range_float(testSVF, from, to, bv_range);
+                xorSV ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "std::vector<float> with Skewed Data find values in range", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+
+                in_range_vect(skewData, from, to, bv_range);
+                xorVect ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF with Skewed Data find values in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+
+                in_range_const(testSVF, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        bool range_eq_vector = (xorSV == xorVect);
+        bool range_eq_const  = (xorSV == xorConst);
+
+        if (!range_eq_vector || !range_eq_const)
+        {
+            cerr << "Skewed: MISMATCH" << endl;
+            exit(1);
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------------------------
+
+
+//Finds all values in range [from, to] in a given std::vector<float> and flipts the corresponding bits in bv_out
+inline
+void in_range_vect_rsc(const std::vector<float>& fv, float from, float to, sparseVecFloatRSC::bvector_type &bv_out)
+{
+    if (from > to) std::swap(from, to);
+    for (sparseVecFloatRSC::size_type i = 0; i < fv.size(); i++)
+    {
+        if(fv[i] >= from && fv[i] <= to)
+            bv_out.set(i);
+    }
+}
+
+//Finds all values in range [from, to] in a given sparse_vector_float which uses a rsc sparse vector
+//using a const_iterator and flips the corresponding bits in bv_out
+inline
+void in_range_const_rsc(const sparseVecFloatRSC& sv, float from, float to, sparseVecFloatRSC::bvector_type &bv_out)
+{
+    if (from > to) std::swap(from, to);
+    sparseVecFloatRSC::const_iterator ci = sv.begin();
+    for (; ci.valid(); ++ci)
+    {
+        if (auto v = ci.value(); v >= from && v <= to)
+            bv_out.set(ci.pos());
+    }
+}
+
+// -------------------------------------------------------------------
+
+void TestSVFScannerRSC()
+{
+    BM_DECLARE_TEMP_BLOCK(tb)
+
+    typedef sparseVecFloatRSC::bvector_type bvect_type;
+    typedef bvect_type::allocator_type::allocator_pool_type bvect_pool_type;
+    bvect_pool_type bv_rsc_pool;
+
+    sparseVecFloatRSC::size_type N = 20000000;
+    std::random_device rd;
+
+    float upper = 1000000.0f;
+    float lower = -1000000.0f;
+    std::uniform_real_distribution<float> dis(lower, upper);
+    std::uniform_real_distribution<float> null_chance(0.0f, 1.0f);
+
+    std::vector<float> linData(N);
+
+    for(sparseVecFloatRSC::size_type i = 0; i < N/2; i++)
+    {
+        if (null_chance(gen) >= 0.35f)
+        {
+            linData[i] = -1.0f * (float)i * 0.00123f;
+        }
+        else
+        {
+            linData[i] = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
+    for(sparseVecFloatRSC::size_type i = 0; i < N/2; i++)
+    {
+        if (null_chance(gen) >= 0.35f)
+        {
+            linData[i+N/2] = (float)i * 0.00123f;
+        }
+        else
+        {
+            linData[i] = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
+
+    sparseVecFloatRSC testSVF;
+    testSVF.import(linData.data(), N);
+    testSVF.optimize(tb);
+    testSVF.sync(true, true);
+
+    unsigned int tests = 1000;
+
+    {
+        sparseVecFloatRSC::bvector_type xorRSC;
+        sparseVecFloatRSC::bvector_type xorVect;
+        sparseVecFloatRSC::bvector_type xorConst;
+
+        sparseVecFloatRSC::bvector_type bv_range;
+        sparseVecFloatRSC::bvector_type::mem_pool_guard bv_range_guard(bv_rsc_pool, bv_range);
+
+        std::vector<float> fromVect(tests);
+        std::vector<float> toVect(tests);
+        for (unsigned int i = 0; i < tests; i++)
+        {
+            fromVect[i] = dis(gen);
+            toVect[i] = dis(gen);
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF RSC with Linear Data find values in range with scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloatRSC> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+
+                scan.find_range_float(testSVF, from, to, bv_range);
+                xorRSC ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "std::vector<float> with Linear Data find values in range", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+
+                in_range_vect_rsc(linData, from, to, bv_range);
+                xorVect ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF RSC with Linear Data find values in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+
+                in_range_const_rsc(testSVF, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        bool range_eq_vector = (xorRSC == xorVect);
+        bool range_eq_const  = (xorRSC == xorConst);
+
+        if (!range_eq_vector)
+        {
+            cerr << "LinearRSC: MISMATCH Vect" << endl;
+        }
+        if (!range_eq_const)
+        {
+            cerr << "LinearRSC: MISMATCH Const" << endl;
+        }
+        if (!range_eq_vector || !range_eq_const)
+        {
+            exit(1);
+        }
+    }
+
+    testSVF.clear();
+    std::vector<float> randData(N);
+
+    for (sparseVecFloatRSC::size_type i = 0; i < N; ++i)
+    {
+        if (null_chance(gen) >= 0.35f)
+        {
+            randData[i] = dis(gen);
+        }
+        else
+        {
+            randData[i] = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
+
+    testSVF.import(randData.data(), N);
+    testSVF.optimize(tb);
+    testSVF.sync(true, true);
+
+    //Using a completely random dataset
+
+    {
+        sparseVecFloatRSC::bvector_type xorRSC;
+        sparseVecFloatRSC::bvector_type xorVect;
+        sparseVecFloatRSC::bvector_type xorConst;
+
+        sparseVecFloatRSC::bvector_type bv_range;
+        sparseVecFloatRSC::bvector_type::mem_pool_guard bv_range_guard(bv_rsc_pool, bv_range);
+
+        std::vector<float> fromVect(tests);
+        std::vector<float> toVect(tests);
+        for (unsigned int i = 0; i < tests; i++)
+        {
+            fromVect[i] = dis(gen);
+            toVect[i] = dis(gen);
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF RSC with Random Data find values in range with scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloatRSC> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+
+                scan.find_range_float(testSVF, from, to, bv_range);
+                xorRSC ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "std::vector<float> with Random Data find values in range", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+
+                in_range_vect_rsc(randData, from, to, bv_range);
+                xorVect ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF RSC with Random Data find values in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+
+                in_range_const_rsc(testSVF, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        bool range_eq_vector = (xorRSC == xorVect);
+        bool range_eq_const  = (xorRSC == xorConst);
+
+        if (!range_eq_vector)
+        {
+            cerr << "LinearRSC: MISMATCH Vect" << endl;
+        }
+        if (!range_eq_const)
+        {
+            cerr << "LinearRSC: MISMATCH Const" << endl;
+        }
+        if (!range_eq_vector || !range_eq_const)
+        {
+            exit(1);
+        }
+    }
+
+    testSVF.clear();
+    std::vector<float> skewData(N);
+    for (sparseVecFloatRSC::size_type i = 0; i < 19000000; ++i)
+    {
+        skewData[i] = std::numeric_limits<float>::quiet_NaN();
+    }
+    for (sparseVecFloatRSC::size_type i = 19000000; i < N; ++i)
+    {
+        if (null_chance(gen) >= 0.35f)
+        {
+            skewData[i] = dis(gen);
+        }
+        else
+        {
+            skewData[i] = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
+
+    testSVF.import(skewData.data(), N);
+    testSVF.optimize(tb);
+    testSVF.sync(true, true);
+
+    {
+        sparseVecFloatRSC::bvector_type xorRSC;
+        sparseVecFloatRSC::bvector_type xorVect;
+        sparseVecFloatRSC::bvector_type xorConst;
+
+        sparseVecFloatRSC::bvector_type bv_range;
+        sparseVecFloatRSC::bvector_type::mem_pool_guard bv_range_guard(bv_rsc_pool, bv_range);
+
+        std::vector<float> fromVect(tests);
+        std::vector<float> toVect(tests);
+        for (unsigned int i = 0; i < tests; i++)
+        {
+            fromVect[i] = dis(gen);
+            toVect[i] = dis(gen);
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF RSC with Skewed Data find values in range with scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloatRSC> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+
+                scan.find_range_float(testSVF, from, to, bv_range);
+                xorRSC ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "std::vector<float> with Skewed Data find values in range", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+
+                in_range_vect_rsc(skewData, from, to, bv_range);
+                xorVect ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF RSC with Skewed Data find values in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+
+                in_range_const_rsc(testSVF, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        bool range_eq_vector = (xorRSC == xorVect);
+        bool range_eq_const  = (xorRSC == xorConst);
+
+        if (!range_eq_vector)
+        {
+            cerr << "SkewedRSC: MISMATCH Vect" << endl;
+        }
+        if (!range_eq_const)
+        {
+            cerr << "SkewedRSC: MISMATCH Const" << endl;
+        }
+        if (!range_eq_vector || !range_eq_const)
+        {
+            exit(1);
+        }
+    }
+}
+
+void TestSVFComparison()
+{
+    BM_DECLARE_TEMP_BLOCK(tb)
+
+    typedef sparseVecFloat::bvector_type bvect_type;
+    typedef bvect_type::allocator_type::allocator_pool_type bvect_pool_type;
+    bvect_pool_type bv_pool;
+
+    typedef sparseVecFloatRSC::bvector_type bvect_rsc_type;
+    typedef bvect_rsc_type::allocator_type::allocator_pool_type bvect_rsc_pool_type;
+    bvect_rsc_pool_type bv_rsc_pool;
+    
+    sparseVecFloat::size_type N = 20000000;
+    std::random_device rd;
+
+    float upper = 15000.0f;
+    float lower = -15000.0f;
+    std::uniform_real_distribution<float> dis(lower, upper);
+    std::uniform_real_distribution<float> null_chance(0.0f, 1.0f);
+    
+    std::vector<float> linData(N);
+
+    for(sparseVecFloatRSC::size_type i = 0; i < N/2; i++)
+    {
+        if (null_chance(gen) >= 0.35f)
+        {
+            linData[i] = -1.0f * (float)i * 0.00123f;
+        }
+        else
+        {
+            linData[i] = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
+    for(sparseVecFloatRSC::size_type i = 0; i < N/2; i++)
+    {
+        if (null_chance(gen) >= 0.35f)
+        {
+            linData[i+N/2] = (float)i * 0.00123f;
+        }
+        else
+        {
+            linData[i] = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
+    unsigned int tests = 1000;
+    std::vector<float> fromVect(tests);
+    std::vector<float> toVect(tests);
+    for (unsigned int i = 0; i < tests; i++)
+    {
+        fromVect[i] = dis(gen);
+        toVect[i] = dis(gen);
+    }
+    
+    sparseVecFloat svf(bm::use_null);
+    svf.import(linData.data(), N);
+    {
+        sparseVecFloat::bvector_type xorSVF;
+        sparseVecFloat::bvector_type xorConst;
+        sparseVecFloat::bvector_type bv_range;
+        sparseVecFloat::bvector_type::mem_pool_guard bv_range_guard(bv_pool, bv_range);
+        
+        {
+            bm::chrono_taker<> tt(cout, "Unoptimized SVF with random data in range with Scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloat> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+                
+                scan.find_range_float(svf, from, to, bv_range);
+                xorSVF ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        {
+            bm::chrono_taker<> tt(cout, "Unoptimized SVF with random data in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+                
+                in_range_const(svf, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        if(xorSVF != xorConst){
+            cerr << "SVF Non-optimized Scanner and Const Iterator do not match" << endl;
+            exit(1);
+        }
+    }
+    
+    svf.optimize(tb);
+    
+    {
+        sparseVecFloat::bvector_type xorSVF;
+        sparseVecFloat::bvector_type xorConst;
+        sparseVecFloat::bvector_type bv_range;
+        sparseVecFloat::bvector_type::mem_pool_guard bv_range_guard(bv_pool, bv_range);
+        
+        {
+            bm::chrono_taker<> tt(cout, "Optimized SVF with random data in range with Scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloat> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+                
+                scan.find_range_float(svf, from, to, bv_range);
+                xorSVF ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        {
+            bm::chrono_taker<> tt(cout, "Optimized SVF with random data in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+                
+                in_range_const(svf, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        if(xorSVF != xorConst){
+            cerr << "SVF Optimized Scanner and Const Iterator do not match" << endl;
+            exit(1);
+        }
+    }
+    
+    svf.freeze();
+    {
+        sparseVecFloat::bvector_type xorSVF;
+        sparseVecFloat::bvector_type xorConst;
+        sparseVecFloat::bvector_type bv_range;
+        sparseVecFloat::bvector_type::mem_pool_guard bv_range_guard(bv_pool, bv_range);
+        {
+            bm::chrono_taker<> tt(cout, "Optimized and Frozen SVF with random data in range with Scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloat> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+                
+                scan.find_range_float(svf, from, to, bv_range);
+                xorSVF ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        {
+            bm::chrono_taker<> tt(cout, "Optimized and Frozen SVF with random data in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+                
+                in_range_const(svf, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        if(xorSVF != xorConst){
+            cerr << "SVF Optimized and Frozen Scanner and Const Iterator do not match" << endl;
+            exit(1);
+        }
+    }
+    svf.clear();
+    
+    sparseVecFloatRSC rscSVF;
+    rscSVF.import(linData.data(), N);
+    rscSVF.sync(true, true);
+    {
+        sparseVecFloatRSC::bvector_type xorRSC;
+        sparseVecFloatRSC::bvector_type xorConst;
+        sparseVecFloatRSC::bvector_type bv_range;
+        sparseVecFloatRSC::bvector_type::mem_pool_guard bv_range_guard(bv_rsc_pool, bv_range);
+        
+        {
+            bm::chrono_taker<> tt(cout, "Unoptimized RSC SVF with random data in range with Scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloatRSC> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+                
+                scan.find_range_float(rscSVF, from, to, bv_range);
+                xorRSC ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        {
+            bm::chrono_taker<> tt(cout, "Unoptimized RSC SVF with random data in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+                
+                in_range_const_rsc(rscSVF, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        if(xorRSC != xorConst){
+            cerr << "SVF RSC Non-Optimized Scanner and Const Iterator do not match" << endl;
+            exit(1);
+        }
+    }
+    
+    rscSVF.optimize();
+    rscSVF.sync(true, true);
+    
+    {
+        sparseVecFloatRSC::bvector_type xorRSC;
+        sparseVecFloatRSC::bvector_type xorConst;
+        sparseVecFloatRSC::bvector_type bv_range;
+        sparseVecFloatRSC::bvector_type::mem_pool_guard bv_range_guard(bv_rsc_pool, bv_range);
+        
+        {
+            bm::chrono_taker<> tt(cout, "Optimized RSC SVF with random data in range with Scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloatRSC> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+                
+                scan.find_range_float(rscSVF, from, to, bv_range);
+                xorRSC ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        {
+            bm::chrono_taker<> tt(cout, "Optimized RSC SVF with random data in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+                
+                in_range_const_rsc(rscSVF, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        if(xorRSC != xorConst){
+            cerr << "SVF RSC Optimized Scanner and Const Iterator do not match" << endl;
+            exit(1);
+        }
+    }
+    
+    rscSVF.freeze();
+    rscSVF.sync(true, true);
+    
+    {
+        sparseVecFloatRSC::bvector_type xorRSC;
+        sparseVecFloatRSC::bvector_type xorConst;
+        sparseVecFloatRSC::bvector_type bv_range;
+        sparseVecFloatRSC::bvector_type::mem_pool_guard bv_range_guard(bv_rsc_pool, bv_range);
+        
+        {
+            bm::chrono_taker<> tt(cout, "Optimized and Frozen RSC SVF with random data in range with Scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloatRSC> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+                
+                scan.find_range_float(rscSVF, from, to, bv_range);
+                xorRSC ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        {
+            bm::chrono_taker<> tt(cout, "Optimized and Frozen RSC SVF with random data in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                float from = fromVect[i];
+                float to   = toVect[i];
+                
+                in_range_const_rsc(rscSVF, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        if(xorRSC != xorConst){
+            cerr << "SVF RSC Optimized and Frozen Scanner and Const Iterator do not match" << endl;
+            exit(1);
+        }
+    }
+}
+
+void TestSVFScannerSpike()
+{
+    unsigned int N = 200000000;
+    
+    sparseVecFloat testSVF;
+    
+    float upper = 15.0f;
+    float lower = 5.0f;
+    std::uniform_real_distribution<float> flatDis(lower, upper);
+    
+    unsigned int u = 500000;
+    unsigned int l = 100000;
+    std::uniform_int_distribution<unsigned int> distDis(l, u);
+    unsigned int distance = distDis(gen);
+    unsigned int spikeDist = 1000;
+    
+    upper=1050.0f;
+    lower=950.0f;
+    std::uniform_real_distribution<float> spikeDis(lower, upper);
+    
+    sparseVecFloat::bvector_type correct;
+    std::vector<float> testVect;
+    
+    for (sparseVecFloat::size_type i = 0; i < N; ++i)
+    {
+        if (spikeDist > 0) {
+            float toAdd = spikeDis(gen);
+            testSVF.push_back(toAdd);
+            testVect.push_back(toAdd);
+            
+            spikeDist--;
+            
+            correct.set(i);
+            
+            if (spikeDist == 0) {
+                distance = distDis(gen);
+                testSVF.optimize();
+            }
+        }
+        else if (distance > 0) {
+            float toAdd = flatDis(gen);
+            testSVF.push_back(toAdd);
+            testVect.push_back(toAdd);
+            distance--;
+            
+            if (distance == 0) {
+                spikeDist = 1000;
+            }
+        }
+    }
+    testSVF.optimize();
+    
+    typedef sparseVecFloat::bvector_type bvect_type;
+    typedef bvect_type::allocator_type::allocator_pool_type bvect_pool_type;
+    bvect_pool_type bv_pool;
+
+    sparseVecFloat::bvector_type scanResult;
+    sparseVecFloat::bvector_type::mem_pool_guard scan_result_guard(bv_pool, scanResult);
+    bm::sparse_vector_scanner<sparseVecFloat> scan;
+    
+    unsigned int numTests = 1000;
+    
+    {
+        bm::chrono_taker<> tt(cout, "Scanner time to find spikes", numTests);
+        for(unsigned int i = 0; i < numTests; i++)
+        {
+            scan.find_gt_float(testSVF, 900.0f, scanResult);
+        }
+    }
+    
+    if(scanResult != correct)
+    {
+        std::cerr << "Incorrect vector" << std::endl;
+        exit(0);
+    }
+}
+
 int main(void)
 {
     bvector64_VerySparse_SetDestroyCycle();
     bvector64_VerySparse_RefAccessCycle();
     bvector64_Serialization();
+    
+    TestSVFScanner();
+    cout << endl;
+
+    TestSVFScannerRSC();
+    cout << endl;
+    
+    TestSVFComparison();
+    cout << endl;
+    
+    TestSVFScannerSpike();
+    cout << endl;
     
     std::cout << std::endl << "Performance:" << std::endl;
     bm::chrono_taker<>::print_duration_map(std::cout, timing_map, bm::chrono_taker<>::ct_all);

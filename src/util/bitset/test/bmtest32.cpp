@@ -58,6 +58,8 @@ For more information please visit:  http://bitmagic.io
 #include <util/bitset/bmtimer.h>
 
 #include <util/bitset/bmdbg.h>
+#include <util/bitset/bmsparsevec_float.h>
+#include <util/bitset/bmsparsevec_float_serial.h>
 
 #include <math.h>
 
@@ -550,8 +552,7 @@ void BitForEachTest()
     }
     assert(sum1 == sum4);
 
-    g_fl_cnt += value; // to fool some smart compilers like ICC using global
-
+    g_fl_cnt += float(value); // to fool some smart compilers like ICC using global
 
     delete [] test_arr;
 }
@@ -742,7 +743,7 @@ void WordSelectTest()
     std::vector<unsigned> vect_r4(test_size);
 
     {
-        bm::chrono_taker tt(cout, "select64 BMI1 lead-zero", 1);
+        bm::chrono_taker<> tt(cout, "select64 BMI1 lead-zero", 1);
         for (unsigned i = 0; i < vect_v.size(); ++i)
         {
             bm::id64_t w64 = vect_v[i];
@@ -1493,7 +1494,7 @@ void FindTest()
             }
         }
     }
-    g_fl_cnt += pos_sum; // to fool some smart compilers like ICC using global
+    g_fl_cnt += float(pos_sum); // to fool some smart compilers like ICC using global
 
     {
         bm::chrono_taker<std::ostream> tt(cout, "bvector<>::find()", REPEATS*100);
@@ -1748,7 +1749,7 @@ void EnumeratorTestGAP()
     }
     s << v << endl; // attempt to fool optimization
 
-    g_fl_cnt += cnt; // to fool some smart compilers like ICC using global
+    g_fl_cnt += float(cnt); // to fool some smart compilers like ICC using global
 
 
     delete bv;
@@ -1810,7 +1811,7 @@ void SerializationTest()
     }
     }
 
-    g_fl_cnt += id_size; // to fool some smart compilers like ICC using global
+    g_fl_cnt += float(id_size); // to fool some smart compilers like ICC using global
 
 
     delete bv;
@@ -2059,7 +2060,7 @@ void SubTest()
     generate_bvector(bv2, 40000000, false);
     
     {
-    bm::chrono_taker tt(cout, "AND-NOT bvector test", REPEATS*4);
+    bm::chrono_taker<> tt(cout, "AND-NOT bvector test", REPEATS*4);
     for (unsigned i = 0; i < REPEATS*4; ++i)
     {
         bvect bv_tmp(bv2);
@@ -2073,7 +2074,7 @@ void SubTest()
     }
     
     {
-    bm::chrono_taker tt(cout, "SUB-optimize (2 operand) bvector test", REPEATS*4);
+    bm::chrono_taker<> tt(cout, "SUB-optimize (2 operand) bvector test", REPEATS*4);
     for (unsigned i = 0; i < REPEATS*4; ++i)
     {
         bvt1 = bv1;
@@ -2083,7 +2084,7 @@ void SubTest()
     }
     
     {
-    bm::chrono_taker tt(cout, "SUB-optimize (3 operand) bvector test", REPEATS*4);
+    bm::chrono_taker<> tt(cout, "SUB-optimize (3 operand) bvector test", REPEATS*4);
     for (unsigned i = 0; i < REPEATS*4; ++i)
     {
         bvt2.bit_sub(bv1, bv2, bvect::opt_compress);
@@ -2093,7 +2094,7 @@ void SubTest()
     bv1.freeze();
     bv2.freeze();
     {
-    bm::chrono_taker tt(cout, "SUB-optimize (3 operand) bvector test (RO)", REPEATS*4);
+    bm::chrono_taker<> tt(cout, "SUB-optimize (3 operand) bvector test (RO)", REPEATS*4);
     for (unsigned i = 0; i < REPEATS*4; ++i)
     {
         bvt3.bit_sub(bv1, bv2, bvect::opt_compress);
@@ -2142,7 +2143,7 @@ void XorCountTest()
     if (!platform_test)
     {
     bvect bv_tmp;
-    bm::chrono_taker tt(cout, "XOR COUNT bvector test with TEMP vector", REPEATS*10);
+    bm::chrono_taker<> tt(cout, "XOR COUNT bvector test with TEMP vector", REPEATS*10);
     for (i = 0; i < REPEATS*4; ++i)
     {
         bv_tmp.clear();
@@ -2155,7 +2156,7 @@ void XorCountTest()
     if (!platform_test)
     {
     test_bitset*  bset_tmp = new test_bitset();
-    bm::chrono_taker tt(cout, "XOR COUNT bvector test with TEMP vector (STL)", REPEATS*10);
+    bm::chrono_taker<> tt(cout, "XOR COUNT bvector test with TEMP vector (STL)", REPEATS*10);
     for (i = 0; i < REPEATS*4; ++i)
     {
         bset_tmp->reset();
@@ -2167,7 +2168,7 @@ void XorCountTest()
 
 
     {
-    bm::chrono_taker tt(cout, "XOR COUNT bvector test", REPEATS*10);
+    bm::chrono_taker<> tt(cout, "XOR COUNT bvector test", REPEATS*10);
     for (i = 0; i < REPEATS*4; ++i)
     {
         count2 += bm::count_xor(*bv1, *bv2);
@@ -2197,7 +2198,7 @@ void XorCountTest()
     if (!platform_test)
     {
     bvect bv_tmp;
-    bm::chrono_taker tt(cout, "XOR COUNT bvector test with TEMP vector", REPEATS*10);
+    bm::chrono_taker<> tt(cout, "XOR COUNT bvector test with TEMP vector", REPEATS*10);
     for (i = 0; i < REPEATS*4; ++i)
     {
         bv_tmp.clear(false);
@@ -2208,7 +2209,7 @@ void XorCountTest()
     }
 
     {
-    bm::chrono_taker tt(cout, "XOR COUNT bvector(opt1) test", REPEATS*10);
+    bm::chrono_taker<> tt(cout, "XOR COUNT bvector(opt1) test", REPEATS*10);
     for (i = 0; i < REPEATS*4; ++i)
     {
         count2 += (unsigned)bm::count_xor(*bv1, *bv2);
@@ -2233,7 +2234,7 @@ void XorCountTest()
     if (!platform_test)
     {
     bvect bv_tmp;
-    bm::chrono_taker tt(cout, "XOR COUNT bvector test with TEMP vector", REPEATS*10);
+    bm::chrono_taker<> tt(cout, "XOR COUNT bvector test with TEMP vector", REPEATS*10);
     for (i = 0; i < REPEATS*4; ++i)
     {
         bv_tmp.clear(false);
@@ -2244,7 +2245,7 @@ void XorCountTest()
     }
 
     {
-    bm::chrono_taker tt(cout, "XOR COUNT bvector(opt2) test", REPEATS*10);
+    bm::chrono_taker<> tt(cout, "XOR COUNT bvector(opt2) test", REPEATS*10);
     for (i = 0; i < REPEATS*4; ++i)
     {
         count2 += (unsigned)bm::count_xor(*bv1, *bv2);
@@ -2261,7 +2262,7 @@ void XorCountTest()
     bv2->freeze();
 
     {
-    bm::chrono_taker tt(cout, "XOR COUNT bvector(opt2) test (RO)", REPEATS*10);
+    bm::chrono_taker<> tt(cout, "XOR COUNT bvector(opt2) test (RO)", REPEATS*10);
     for (i = 0; i < REPEATS*4; ++i)
     {
         count3 += (unsigned)bm::count_xor(*bv1, *bv2);
@@ -2298,7 +2299,7 @@ void AndCountTest()
     if (!platform_test)
     {
         bvect bv_tmp;
-        bm::chrono_taker tt(cout, "AND COUNT bvector test with TEMP vector", REPEATS * 10);
+        bm::chrono_taker<> tt(cout, "AND COUNT bvector test with TEMP vector", REPEATS * 10);
         for (i = 0; i < REPEATS * 4; ++i)
         {
             bv_tmp.clear(false);
@@ -2311,7 +2312,7 @@ void AndCountTest()
     if (!platform_test)
     {
         test_bitset*  bset_tmp = new test_bitset();
-        bm::chrono_taker tt(cout, "AND COUNT bvector test with TEMP vector (STL)", REPEATS * 10);
+        bm::chrono_taker<> tt(cout, "AND COUNT bvector test with TEMP vector (STL)", REPEATS * 10);
         for (i = 0; i < REPEATS * 4; ++i)
         {
             bset_tmp->reset();
@@ -2323,7 +2324,7 @@ void AndCountTest()
 
 
     {
-        bm::chrono_taker tt(cout, "AND COUNT bvector test", REPEATS * 10);
+        bm::chrono_taker<> tt(cout, "AND COUNT bvector test", REPEATS * 10);
         for (i = 0; i < REPEATS * 4; ++i)
         {
             count2 += bm::count_and(*bv1, *bv2);
@@ -2351,7 +2352,7 @@ void AndCountTest()
     if (!platform_test)
     {
         bvect bv_tmp;
-        bm::chrono_taker tt(cout, "AND COUNT bvector test with TEMP vector", REPEATS * 10);
+        bm::chrono_taker<> tt(cout, "AND COUNT bvector test with TEMP vector", REPEATS * 10);
         for (i = 0; i < REPEATS * 4; ++i)
         {
             bv_tmp.clear(false);
@@ -2362,7 +2363,7 @@ void AndCountTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "AND COUNT bvector test", REPEATS * 10);
+        bm::chrono_taker<> tt(cout, "AND COUNT bvector test", REPEATS * 10);
         for (i = 0; i < REPEATS * 4; ++i)
         {
             count2 += (unsigned)bm::count_and(*bv1, *bv2);
@@ -2387,7 +2388,7 @@ void AndCountTest()
     if (!platform_test)
     {
         bvect bv_tmp;
-        bm::chrono_taker tt(cout, "AND COUNT bvector test with TEMP vector", REPEATS * 10);
+        bm::chrono_taker<> tt(cout, "AND COUNT bvector test with TEMP vector", REPEATS * 10);
         for (i = 0; i < REPEATS * 4; ++i)
         {
             bv_tmp.clear(false);
@@ -2398,7 +2399,7 @@ void AndCountTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "AND COUNT bvector(opt) test", REPEATS * 10);
+        bm::chrono_taker<> tt(cout, "AND COUNT bvector(opt) test", REPEATS * 10);
         for (i = 0; i < REPEATS * 4; ++i)
         {
             count2 += (unsigned)bm::count_and(*bv1, *bv2);
@@ -2415,7 +2416,7 @@ void AndCountTest()
     bv2->freeze();
 
     {
-        bm::chrono_taker tt(cout, "AND COUNT bvector(opt) test (RO)", REPEATS * 10);
+        bm::chrono_taker<> tt(cout, "AND COUNT bvector(opt) test (RO)", REPEATS * 10);
         for (i = 0; i < REPEATS * 4; ++i)
         {
             count3 += (unsigned)bm::count_and(*bv1, *bv2);
@@ -2453,7 +2454,7 @@ void TI_MetricTest()
     double ti1=0, ti2=0, ti3=0;
     double di1=0, di2=0;
     {
-    bm::chrono_taker tt(cout, "Tversky Index bvector test vector", REPEATS);
+    bm::chrono_taker<> tt(cout, "Tversky Index bvector test vector", REPEATS);
     for (i = 0; i < REPEATS; ++i)
     {
         count1 = bm::count_and(*bv1, *bv2);
@@ -2470,7 +2471,7 @@ void TI_MetricTest()
     {
     test_bitset*  bset_tmp = new test_bitset();
         double test_dice = 0; (void) test_dice;
-    bm::chrono_taker tt(cout, "Dice bvector test with TEMP vector(STL)", REPEATS);
+    bm::chrono_taker<> tt(cout, "Dice bvector test with TEMP vector(STL)", REPEATS);
     for (i = 0; i < REPEATS; ++i)
     {
         bset_tmp->reset();
@@ -2495,7 +2496,7 @@ void TI_MetricTest()
     dmd[1].metric = bm::COUNT_SUB_AB;
     dmd[2].metric = bm::COUNT_SUB_BA;    
     
-    bm::chrono_taker tt(cout, "Tversky Index bvector test (pipeline)", REPEATS);
+    bm::chrono_taker<> tt(cout, "Tversky Index bvector test (pipeline)", REPEATS);
     for (i = 0; i < REPEATS; ++i)
     {
         bm::distance_operation(*bv1, *bv2, &dmd[0], (&dmd[0])+3);
@@ -2527,7 +2528,7 @@ void TI_MetricTest()
 
     
     {
-    bm::chrono_taker tt(cout, "Dice metric bvector test", REPEATS);
+    bm::chrono_taker<> tt(cout, "Dice metric bvector test", REPEATS);
     for (i = 0; i < REPEATS; ++i)
     {
         count1 = bm::count_and(*bv1, *bv2);
@@ -2544,7 +2545,7 @@ void TI_MetricTest()
         bvect bv2_ro(*bv2, bm::finalization::READONLY);
 
         {
-        bm::chrono_taker tt(cout, "Dice metric bvector test (RO)", REPEATS);
+        bm::chrono_taker<> tt(cout, "Dice metric bvector test (RO)", REPEATS);
         for (i = 0; i < REPEATS; ++i)
         {
             count1 = bm::count_and(bv1_ro, bv2_ro);
@@ -2572,7 +2573,7 @@ void TI_MetricTest()
     dmd[1].metric = bm::COUNT_SUB_AB;
     dmd[2].metric = bm::COUNT_SUB_BA;    
     
-    bm::chrono_taker tt(cout, "Tversky Index bvector test(pipeline)", REPEATS);
+    bm::chrono_taker<> tt(cout, "Tversky Index bvector test(pipeline)", REPEATS);
     for (i = 0; i < REPEATS; ++i)
     {
         bm::distance_operation(*bv1, *bv2, &dmd[0], (&dmd[0])+3);
@@ -2601,7 +2602,7 @@ void TI_MetricTest()
     bv1->optimize(tb);
 
     {
-    bm::chrono_taker tt(cout, "Tversky index bvector test", REPEATS);
+    bm::chrono_taker<> tt(cout, "Tversky index bvector test", REPEATS);
     for (i = 0; i < REPEATS; ++i)
     {
         count1 = bm::count_and(*bv1, *bv2);
@@ -2619,7 +2620,7 @@ void TI_MetricTest()
     dmd[1].metric = bm::COUNT_SUB_AB;
     dmd[2].metric = bm::COUNT_SUB_BA;    
     
-    bm::chrono_taker tt(cout, "Tversky Index bvector test (pipeline)", REPEATS);
+    bm::chrono_taker<> tt(cout, "Tversky Index bvector test (pipeline)", REPEATS);
     for (i = 0; i < REPEATS; ++i)
     {
         bm::distance_operation(*bv1, *bv2, &dmd[0], (&dmd[0])+3);
@@ -2647,7 +2648,7 @@ void TI_MetricTest()
     dmd[1].metric = bm::COUNT_SUB_AB;
     dmd[2].metric = bm::COUNT_SUB_BA;
 
-    bm::chrono_taker tt(cout, "Tversky Index bvector test (pipeline) (RO)", REPEATS);
+    bm::chrono_taker<> tt(cout, "Tversky Index bvector test (pipeline) (RO)", REPEATS);
     for (i = 0; i < REPEATS; ++i)
     {
         bm::distance_operation(*bv1, *bv2, &dmd[0], (&dmd[0])+3);
@@ -2783,14 +2784,14 @@ void BitBlockRotateTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "Bit-block left rotate 1", repeats);
+        bm::chrono_taker<> tt(cout, "Bit-block left rotate 1", repeats);
         for (i = 0; i < repeats; ++i)
         {
             bm::bit_block_rotate_left_1(blk0);
         }
     }
     {
-        bm::chrono_taker tt(cout, "Bit-block left rotate 1 unrolled", repeats);
+        bm::chrono_taker<> tt(cout, "Bit-block left rotate 1 unrolled", repeats);
         for (i = 0; i < repeats; ++i)
         {
             bm::bit_block_rotate_left_1_unr(blk1);
@@ -2823,7 +2824,7 @@ void BitBlockShiftTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "Bit-block shift-r(1)", repeats);
+        bm::chrono_taker<> tt(cout, "Bit-block shift-r(1)", repeats);
         {
             for (i = 0; i < repeats; ++i)
             {
@@ -2833,7 +2834,7 @@ void BitBlockShiftTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "Bit-block shift-r(1) unrolled", repeats);
+        bm::chrono_taker<> tt(cout, "Bit-block shift-r(1) unrolled", repeats);
         for (i = 0; i < repeats; ++i)
         {
             bm::bit_block_shift_r1_unr(blk1, &acc1, 0);
@@ -2856,7 +2857,7 @@ void BitBlockShiftTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "Bit-block shift-l(1)", repeats);
+        bm::chrono_taker<> tt(cout, "Bit-block shift-l(1)", repeats);
         for (i = 0; i < repeats; ++i)
         {
             bm::bit_block_shift_l1(blk0, &acc0, 0);
@@ -2864,7 +2865,7 @@ void BitBlockShiftTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "Bit-block shift-l(1) unrolled", repeats);
+        bm::chrono_taker<> tt(cout, "Bit-block shift-l(1) unrolled", repeats);
         for (i = 0; i < repeats; ++i)
         {
             bm::bit_block_shift_l1_unr(blk1, &acc1, 0);
@@ -2900,7 +2901,7 @@ void ptest()
     }
 
     {
-    bm::chrono_taker tt(cout, "Operation &= test", REPEATS * 10);
+    bm::chrono_taker<> tt(cout, "Operation &= test", REPEATS * 10);
         unsigned count = 0; (void)(count);
     for (unsigned i = 0; i < REPEATS*10; ++i)
     {
@@ -2914,7 +2915,7 @@ void ptest()
 
 
     {
-    bm::chrono_taker tt(cout, "Operation &= with enumerator test", REPEATS * 10);
+    bm::chrono_taker<> tt(cout, "Operation &= with enumerator test", REPEATS * 10);
     unsigned count = 0; (void) count;
     for (unsigned i = 0; i < REPEATS*10; ++i)
     {
@@ -3027,7 +3028,7 @@ void SparseVectorAccessTest()
     {
         svect sv2, sv3;
         {
-            bm::chrono_taker tt(cout, "sparse_vector random element assignment test", REPEATS / 10);
+            bm::chrono_taker<> tt(cout, "sparse_vector random element assignment test", REPEATS / 10);
             for (unsigned i = 0; i < REPEATS / 10; ++i)
             {
                 for (unsigned j = 256000; j < 19000000 / 2; ++j)
@@ -3038,7 +3039,7 @@ void SparseVectorAccessTest()
         }
 
         {
-            bm::chrono_taker tt(cout, "sparse_vector back_inserter test", REPEATS / 10);
+            bm::chrono_taker<> tt(cout, "sparse_vector back_inserter test", REPEATS / 10);
             for (unsigned i = 0; i < REPEATS / 10; ++i)
             {
                 {
@@ -3090,7 +3091,7 @@ void SparseVectorAccessTest()
 
     bm::id64_t sum1 = 0;
     {
-        bm::chrono_taker tt(cout, "sparse_vector random element access test", REPEATS/10 );
+        bm::chrono_taker<> tt(cout, "sparse_vector random element access test", REPEATS/10 );
         for (unsigned i = 0; i < REPEATS/10; ++i)
         {
             for (unsigned j = gather_from; j < gather_to; ++j)
@@ -3101,7 +3102,7 @@ void SparseVectorAccessTest()
     std::vector<unsigned> target_v;
     target_v.resize(idx.size());
     {
-        bm::chrono_taker tt(cout, "sparse_vectot<>::gather() UNSORTED ", REPEATS/5 );
+        bm::chrono_taker<> tt(cout, "sparse_vectot<>::gather() UNSORTED ", REPEATS/5 );
         for (unsigned i = 0; i < REPEATS/5; ++i)
         {
             sv1.gather(target_v.data(), idx.data(), unsigned(idx.size()), bm::BM_UNSORTED);
@@ -3121,7 +3122,7 @@ void SparseVectorAccessTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "sparse_vector<>::decode()", REPEATS / 5);
+        bm::chrono_taker<> tt(cout, "sparse_vector<>::decode()", REPEATS / 5);
         auto from = gather_from; (void) from;
         for (unsigned i = 0; i < REPEATS; ++i)
         {
@@ -3134,7 +3135,7 @@ void SparseVectorAccessTest()
 
     unsigned long long cnt1 = 0, cnt2 = 0;
     {
-        bm::chrono_taker tt(cout, "sparse_vector const_iterator test", REPEATS );
+        bm::chrono_taker<> tt(cout, "sparse_vector const_iterator test", REPEATS );
         for (unsigned i = 0; i < REPEATS; ++i)
         {
             auto it = sv1.begin();
@@ -3167,7 +3168,7 @@ void SparseVectorAccessTest()
     target_v.resize(idx.size());
 
     {
-        bm::chrono_taker tt(cout, "sparse_vectot<>::gather() UNSORTED (RO) ", REPEATS/5 );
+        bm::chrono_taker<> tt(cout, "sparse_vectot<>::gather() UNSORTED (RO) ", REPEATS/5 );
         for (unsigned i = 0; i < REPEATS/5; ++i)
         {
             sv1.gather(target_v.data(), idx.data(), unsigned(idx.size()), bm::BM_UNSORTED);
@@ -3175,7 +3176,7 @@ void SparseVectorAccessTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "sparse_vector<>::decode() (RO)", REPEATS / 5);
+        bm::chrono_taker<> tt(cout, "sparse_vector<>::decode() (RO)", REPEATS / 5);
         auto from = gather_from; (void)from;
         for (unsigned i = 0; i < REPEATS ; ++i)
         {
@@ -3185,7 +3186,7 @@ void SparseVectorAccessTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "sparse_vector const_iterator test (RO)", REPEATS );
+        bm::chrono_taker<> tt(cout, "sparse_vector const_iterator test (RO)", REPEATS );
         for (unsigned i = 0; i < REPEATS; ++i)
         {
             auto it = sv1.begin();
@@ -3201,7 +3202,7 @@ void SparseVectorAccessTest()
 
     assert(cnt1 == cnt2);
 
-    g_fl_cnt += cnt; // to fool some smart compilers like ICC using global
+    g_fl_cnt += float(cnt); // to fool some smart compilers like ICC using global
 }
 
 static
@@ -3217,7 +3218,7 @@ void SparseVectorSignedAccessTest()
     {
         sparse_vector_i32 sv2, sv3;
         {
-            bm::chrono_taker tt(cout, "sparse_vector<int> random element assignment test", REPEATS / 10);
+            bm::chrono_taker<> tt(cout, "sparse_vector<int> random element assignment test", REPEATS / 10);
             for (unsigned i = 0; i < REPEATS / 10; ++i)
             {
                 for (unsigned j = 256000; j < 19000000 / 2; ++j)
@@ -3228,7 +3229,7 @@ void SparseVectorSignedAccessTest()
         }
 
         {
-            bm::chrono_taker tt(cout, "sparse_vector<int> back_inserter test", REPEATS / 10);
+            bm::chrono_taker<> tt(cout, "sparse_vector<int> back_inserter test", REPEATS / 10);
             for (unsigned i = 0; i < REPEATS / 10; ++i)
             {
                 {
@@ -3279,7 +3280,7 @@ void SparseVectorSignedAccessTest()
 
     long long sum1 = 0;
     {
-        bm::chrono_taker tt(cout, "sparse_vector<int> random element access test", REPEATS/10 );
+        bm::chrono_taker<> tt(cout, "sparse_vector<int> random element access test", REPEATS/10 );
         for (unsigned i = 0; i < REPEATS/10; ++i)
         {
             for (unsigned j = gather_from; j < gather_to; ++j)
@@ -3290,7 +3291,7 @@ void SparseVectorSignedAccessTest()
     std::vector<int> target_v;
     target_v.resize(idx.size());
     {
-        bm::chrono_taker tt(cout, "sparse_vectot<int>::gather() UNSORTED ", REPEATS/5 );
+        bm::chrono_taker<> tt(cout, "sparse_vectot<int>::gather() UNSORTED ", REPEATS/5 );
         for (unsigned i = 0; i < REPEATS/10; ++i)
         {
             sv1.gather(target_v.data(), idx.data(), unsigned(idx.size()), bm::BM_UNSORTED);
@@ -3310,7 +3311,7 @@ void SparseVectorSignedAccessTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "sparse_vector<int>::decode()", REPEATS / 5);
+        bm::chrono_taker<> tt(cout, "sparse_vector<int>::decode()", REPEATS / 5);
         auto from = gather_from; (void) from;
         for (unsigned i = 0; i < REPEATS / 10; ++i)
         {
@@ -3323,7 +3324,7 @@ void SparseVectorSignedAccessTest()
 
 
     {
-        bm::chrono_taker tt(cout, "sparse_vector<int> const_iterator test", REPEATS );
+        bm::chrono_taker<> tt(cout, "sparse_vector<int> const_iterator test", REPEATS );
         for (unsigned i = 0; i < REPEATS/10; ++i)
         {
             auto it = sv1.begin();
@@ -3353,7 +3354,7 @@ void SparseVectorSignedAccessTest()
         }
     }
 
-    g_fl_cnt += cnt; // to fool some smart compilers like ICC using global
+    g_fl_cnt += float(cnt); // to fool some smart compilers like ICC using global
 
 }
 
@@ -3373,7 +3374,7 @@ void RSC_SparseVectorFillTest()
     rsc_sparse_vector_u32 csv2(bv);
 
     {
-        bm::chrono_taker tt(cout, "rsc_sparse_vector() set values", REPEATS*1);
+        bm::chrono_taker<> tt(cout, "rsc_sparse_vector() set values", REPEATS*1);
 
         bvect::enumerator en = bv.get_enumerator(mid);
         for (;en.valid(); ++en)
@@ -3392,7 +3393,7 @@ void RSC_SparseVectorFillTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "rsc_sparse_vector() set values (rs-index)", REPEATS*1);
+        bm::chrono_taker<> tt(cout, "rsc_sparse_vector() set values (rs-index)", REPEATS*1);
         csv2.sync();
 
         bvect::enumerator en = bv.get_enumerator(mid);
@@ -3438,7 +3439,7 @@ void RSC_SparseVectorRandomAccesTest()
     sv2.sync();
 
     {
-        bm::chrono_taker tt(cout, "rsc_sparse_vector<>::sync() (BIT)", REPEATS*10 );
+        bm::chrono_taker<> tt(cout, "rsc_sparse_vector<>::sync() (BIT)", REPEATS*10 );
         for (unsigned i = 0; i < REPEATS*10; ++i)
         {
             sv1.sync(true, true);
@@ -3474,7 +3475,7 @@ void RSC_SparseVectorRandomAccesTest()
     (void)sum1g_ro; (void) sum1d;
 
     {
-        bm::chrono_taker tt(cout, "rsc_sparse_vector<>::is_null()+get() (DENSE)", REPEATS*10 );
+        bm::chrono_taker<> tt(cout, "rsc_sparse_vector<>::is_null()+get() (DENSE)", REPEATS*10 );
         for (unsigned i = 0; i < test_idx.size(); ++i)
         {
             idx = test_idx[i];
@@ -3487,7 +3488,7 @@ void RSC_SparseVectorRandomAccesTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "rsc_sparse_vector<>::is_null()+get() (BIT)", REPEATS*10 );
+        bm::chrono_taker<> tt(cout, "rsc_sparse_vector<>::is_null()+get() (BIT)", REPEATS*10 );
         for (unsigned i = 0; i < test_idx.size(); ++i)
         {
             idx = test_idx[i];
@@ -3500,7 +3501,7 @@ void RSC_SparseVectorRandomAccesTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "rsc_sparse_vector<>::try_get_sync() (BIT)", REPEATS*10 );
+        bm::chrono_taker<> tt(cout, "rsc_sparse_vector<>::try_get_sync() (BIT)", REPEATS*10 );
         for (unsigned i = 0; i < test_idx.size(); ++i)
         {
             idx = test_idx[i];
@@ -3512,7 +3513,7 @@ void RSC_SparseVectorRandomAccesTest()
 
     {
         {
-        bm::chrono_taker tt(cout, "rsc_sparse_vector<>::gather() (BIT)", REPEATS*10 );
+        bm::chrono_taker<> tt(cout, "rsc_sparse_vector<>::gather() (BIT)", REPEATS*10 );
         unsigned sz = (unsigned)test_idx.size();
         sz = sv1.gather(test_arr.data(), test_idx.data(), idx_buf_vec.data(), sz, bm::BM_UNKNOWN);
         c_acc += sz; // to fool optimizer a bit
@@ -3549,7 +3550,7 @@ void RSC_SparseVectorRandomAccesTest()
     sv1.optimize(tb);
 
     {
-        bm::chrono_taker tt(cout, "rsc_sparse_vector<>::sync() (GAP)", REPEATS*10 );
+        bm::chrono_taker<> tt(cout, "rsc_sparse_vector<>::sync() (GAP)", REPEATS*10 );
         for (unsigned i = 0; i < REPEATS*10; ++i)
         {
             sv1.sync(true, true);
@@ -3557,7 +3558,7 @@ void RSC_SparseVectorRandomAccesTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "rsc_sparse_vector<>::is_null()+get() (GAP)", REPEATS*10 );
+        bm::chrono_taker<> tt(cout, "rsc_sparse_vector<>::is_null()+get() (GAP)", REPEATS*10 );
         for (unsigned i = 0; i < test_idx.size(); ++i)
         {
             idx = test_idx[i];
@@ -3570,7 +3571,7 @@ void RSC_SparseVectorRandomAccesTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "rsc_sparse_vector<>::try_get_sync() (GAP)", REPEATS*10 );
+        bm::chrono_taker<> tt(cout, "rsc_sparse_vector<>::try_get_sync() (GAP)", REPEATS*10 );
         for (unsigned i = 0; i < test_idx.size(); ++i)
         {
             idx = test_idx[i];
@@ -3580,7 +3581,7 @@ void RSC_SparseVectorRandomAccesTest()
         }
     }
     {
-        bm::chrono_taker tt(cout, "rsc_sparse_vector<>::try_get() (GAP)", REPEATS * 10);
+        bm::chrono_taker<> tt(cout, "rsc_sparse_vector<>::try_get() (GAP)", REPEATS * 10);
         for (unsigned i = 0; i < test_idx.size(); ++i)
         {
             idx = test_idx[i];
@@ -3593,7 +3594,7 @@ void RSC_SparseVectorRandomAccesTest()
     {
         sum1g = 0;
         {
-        bm::chrono_taker tt(cout, "rsc_sparse_vector<>::gather() (GAP)", REPEATS*10 );
+        bm::chrono_taker<> tt(cout, "rsc_sparse_vector<>::gather() (GAP)", REPEATS*10 );
         unsigned sz = (unsigned)test_idx.size();
         sz = sv1.gather(test_arr.data(), test_idx.data(), idx_buf_vec.data(), sz, bm::BM_UNKNOWN);
         c_acc += sz; // to fool optimizer
@@ -3620,7 +3621,7 @@ void RSC_SparseVectorRandomAccesTest()
     {
         sum1g_ro = 0;
         {
-        bm::chrono_taker tt(cout, "rsc_sparse_vector<>::gather() (GAP) (RO)", REPEATS*10 );
+        bm::chrono_taker<> tt(cout, "rsc_sparse_vector<>::gather() (GAP) (RO)", REPEATS*10 );
         unsigned sz = (unsigned)test_idx.size();
         sz = sv1.gather(test_arr.data(), test_idx.data(), idx_buf_vec.data(), sz, bm::BM_UNKNOWN);
         c_acc += sz; // to fool optimizer
@@ -3679,7 +3680,7 @@ void RSC_SparseVectorAccesTest()
         sv1.clear();
 
         {
-            bm::chrono_taker tt(cout, "rsc_sparse_vector()::decode() test (sparse)", REPEATS*10 );
+            bm::chrono_taker<> tt(cout, "rsc_sparse_vector()::decode() test (sparse)", REPEATS*10 );
             unsigned from = 0;
             for (unsigned i = 0; i < REPEATS*10; ++i)
             {
@@ -3691,7 +3692,7 @@ void RSC_SparseVectorAccesTest()
             } // for
         }
         {
-            bm::chrono_taker tt(cout, "rsc_sparse_vector()::decode_buf() test (sparse)", REPEATS*10 );
+            bm::chrono_taker<> tt(cout, "rsc_sparse_vector()::decode_buf() test (sparse)", REPEATS*10 );
             unsigned from = 0;
             for (unsigned i = 0; i < REPEATS*10; ++i)
             {
@@ -3724,7 +3725,7 @@ void RSC_SparseVectorAccesTest()
         sv1.clear();
 
         {
-            bm::chrono_taker tt(cout, "rsc_sparse_vector<>::decode() test (dense)", REPEATS*10 );
+            bm::chrono_taker<> tt(cout, "rsc_sparse_vector<>::decode() test (dense)", REPEATS*10 );
             unsigned from = 0;
             for (unsigned i = 0; i < REPEATS*10; ++i)
             {
@@ -3737,7 +3738,7 @@ void RSC_SparseVectorAccesTest()
             } // for
         }
         {
-            bm::chrono_taker tt(cout, "rsc_sparse_vector()::decode_buf() test (dense)", REPEATS*10 );
+            bm::chrono_taker<> tt(cout, "rsc_sparse_vector()::decode_buf() test (dense)", REPEATS*10 );
             unsigned from = 0;
             for (unsigned i = 0; i < REPEATS*10; ++i)
             {
@@ -3774,7 +3775,7 @@ void OptimizeTest()
     
     BM_DECLARE_TEMP_BLOCK(tb)
     {
-        bm::chrono_taker tt(cout, "bvector<>::optimize() ", 1);
+        bm::chrono_taker<> tt(cout, "bvector<>::optimize() ", 1);
         for (unsigned k = 0; k < bv_coll.size(); ++k)
         {
             bv_coll[k].optimize(tb);
@@ -3826,7 +3827,7 @@ void AggregatorTest()
     std::unique_ptr<bvect> bv_target2(new bvect);
 
     {
-    bm::chrono_taker tt(cout, "Horizontal aggregator OR ", REPEATS);
+    bm::chrono_taker<> tt(cout, "Horizontal aggregator OR ", REPEATS);
     for (unsigned i = 0; i < REPEATS; ++i)
     {
         agg.combine_or_horizontal(*bv_target1, bv_arr, unsigned(bv_coll.size()));
@@ -3834,7 +3835,7 @@ void AggregatorTest()
     }
 
     {
-    bm::chrono_taker tt(cout, "aggregator OR", REPEATS);
+    bm::chrono_taker<> tt(cout, "aggregator OR", REPEATS);
     for (unsigned i = 0; i < REPEATS; ++i)
     {
         agg.combine_or(*bv_target2, bv_arr, unsigned(bv_coll.size()));
@@ -3851,7 +3852,7 @@ void AggregatorTest()
 
     // ------------------------------------------------------------------
     {
-    bm::chrono_taker tt(cout, "Horizontal aggregator AND", REPEATS);
+    bm::chrono_taker<> tt(cout, "Horizontal aggregator AND", REPEATS);
     for (unsigned i = 0; i < REPEATS; ++i)
     {
         agg.combine_and_horizontal(*bv_target1, bv_arr, unsigned(bv_coll.size()));
@@ -3859,7 +3860,7 @@ void AggregatorTest()
     }
 
     {
-    bm::chrono_taker tt(cout, "aggregator AND", REPEATS);
+    bm::chrono_taker<> tt(cout, "aggregator AND", REPEATS);
     for (unsigned i = 0; i < REPEATS; ++i)
     {
         agg.combine_and(*bv_target2, bv_arr, unsigned(bv_coll.size()));
@@ -3875,7 +3876,7 @@ void AggregatorTest()
     }
 
     {
-    bm::chrono_taker tt(cout, "Horizontal aggregator AND-SUB", REPEATS);
+    bm::chrono_taker<> tt(cout, "Horizontal aggregator AND-SUB", REPEATS);
     for (unsigned i = 0; i < REPEATS; ++i)
     {
         agg.combine_and_sub_horizontal(*bv_target1,
@@ -3893,7 +3894,7 @@ void AggregatorTest()
     }
 
     {
-    bm::chrono_taker tt(cout, "aggregator AND-SUB", REPEATS);
+    bm::chrono_taker<> tt(cout, "aggregator AND-SUB", REPEATS);
     for (unsigned i = 0; i < REPEATS; ++i)
     {
         agg.combine_and_sub(*bv_target2,
@@ -3919,7 +3920,7 @@ void AggregatorTest()
 
 
     {
-    bm::chrono_taker tt(cout, "aggregator AND-SUB (RO)", REPEATS);
+    bm::chrono_taker<> tt(cout, "aggregator AND-SUB (RO)", REPEATS);
     for (unsigned i = 0; i < REPEATS; ++i)
     {
         agg.combine_and_sub(*bv_target2,
@@ -3952,7 +3953,7 @@ void BvectorShiftTest()
             return;
 
         {
-            bm::chrono_taker tt(cout, "bvector<>::shift_right() ", REPEATS);
+            bm::chrono_taker<> tt(cout, "bvector<>::shift_right() ", REPEATS);
             for (unsigned i = 0; i < REPEATS; ++i)
             {
                 for (unsigned k = 0; k < bv_coll.size(); ++k)
@@ -3971,7 +3972,7 @@ void BvectorShiftTest()
             return;
 
         {
-            bm::chrono_taker tt(cout, "bvector<>::shift_left() ", REPEATS);
+            bm::chrono_taker<> tt(cout, "bvector<>::shift_left() ", REPEATS);
             for (unsigned i = 0; i < REPEATS; ++i)
             {
                 for (unsigned k = 0; k < bv_coll.size(); ++k)
@@ -3996,7 +3997,7 @@ void BvectorShiftTest()
 
     {
         {
-            bm::chrono_taker tt(cout, "bvector<>::shift_right()+AND ", REPEATS);
+            bm::chrono_taker<> tt(cout, "bvector<>::shift_right()+AND ", REPEATS);
             for (unsigned i = 0; i < REPEATS; ++i)
             {
                 bvect bv(mask_bv);
@@ -4013,7 +4014,7 @@ void BvectorShiftTest()
         bm::aggregator<bvect> agg;
         
         {
-            bm::chrono_taker tt(cout, "aggregator::shift_right_and() ", REPEATS);
+            bm::chrono_taker<> tt(cout, "aggregator::shift_right_and() ", REPEATS);
             agg.add(&mask_bv);
             for (unsigned k = 0; k < bv_coll2.size(); ++k)
             {
@@ -4083,7 +4084,7 @@ void Set2SetTransformTest()
     bm::set2set_11_transform<svect> set2set;
     int cnt = 0;
     {
-        bm::chrono_taker tt(cout, "set2set_11_transform::run()", REPEATS/10);
+        bm::chrono_taker<> tt(cout, "set2set_11_transform::run()", REPEATS/10);
         for (unsigned i = 0; i < REPEATS/10; ++i)
         {
             bvect bv_out;
@@ -4097,7 +4098,7 @@ void Set2SetTransformTest()
 
     int cnt2 = 0;
     {
-        bm::chrono_taker tt(cout, "set2set_11_transform::run() (RO)", REPEATS/10);
+        bm::chrono_taker<> tt(cout, "set2set_11_transform::run() (RO)", REPEATS/10);
         for (unsigned i = 0; i < REPEATS/10; ++i)
         {
             bvect bv_out;
@@ -4122,7 +4123,7 @@ void Set2SetTransformTest()
         }
     }
     */
-    g_fl_cnt += cnt; // to fool some smart compilers like ICC using global
+    g_fl_cnt += float(cnt); // to fool some smart compilers like ICC using global
 
 }
 
@@ -4134,7 +4135,7 @@ void RangeCopyTest()
     generate_bvector(bv, vect_max);
 
     {
-        bm::chrono_taker tt(cout, "bvector<>::copy_range()", REPEATS * 25);
+        bm::chrono_taker<> tt(cout, "bvector<>::copy_range()", REPEATS * 25);
         for (unsigned i = 0; i < REPEATS * 25; ++i)
         {
             unsigned from = vect_max / 4;
@@ -4145,7 +4146,7 @@ void RangeCopyTest()
         } // for
     }
     {
-        bm::chrono_taker tt(cout, "bvector<>:: copy range constructor", REPEATS * 25);
+        bm::chrono_taker<> tt(cout, "bvector<>:: copy range constructor", REPEATS * 25);
         for (unsigned i = 0; i < REPEATS * 25; ++i)
         {
             unsigned from = vect_max / 4;
@@ -4156,7 +4157,7 @@ void RangeCopyTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "copy range with AND", REPEATS * 25);
+        bm::chrono_taker<> tt(cout, "copy range with AND", REPEATS * 25);
         for (unsigned i = 0; i < REPEATS * 25; ++i)
         {
             unsigned from = vect_max / 4;
@@ -4238,7 +4239,7 @@ void IntervalsTest()
     for (unsigned pass = 0; pass < 2; ++pass)
     {
         {
-            bm::chrono_taker tt(cout, msg3, REPEATS * 1);
+            bm::chrono_taker<> tt(cout, msg3, REPEATS * 1);
             bvect::size_type istart(0), ilen(0);
             for (istart = 0; istart < vect_max; )
             {
@@ -4265,7 +4266,7 @@ void IntervalsTest()
         }
 
         {
-            bm::chrono_taker tt(cout, msg, REPEATS * 1);
+            bm::chrono_taker<> tt(cout, msg, REPEATS * 1);
             bvect::size_type istart(0), ilen(0);
             for (istart = 0; istart < vect_max; )
             {
@@ -4292,7 +4293,7 @@ void IntervalsTest()
         }
 
         {
-            bm::chrono_taker tt(cout, msg4, REPEATS * 1);
+            bm::chrono_taker<> tt(cout, msg4, REPEATS * 1);
             bvect::size_type istart(0), ilen(0);
             for (istart = 0; istart < vect_max; )
             {
@@ -4328,7 +4329,7 @@ void IntervalsTest()
         }
 
         {
-            bm::chrono_taker tt(cout, msg5, REPEATS * 1);
+            bm::chrono_taker<> tt(cout, msg5, REPEATS * 1);
             bvect::size_type istart(0), ilen(0);
             for (istart = 0; istart < vect_max; )
             {
@@ -4362,7 +4363,7 @@ void IntervalsTest()
         }
 
         {
-            bm::chrono_taker tt(cout, msg2, REPEATS * 1);
+            bm::chrono_taker<> tt(cout, msg2, REPEATS * 1);
             bvect::size_type istart(0), ilen(0);
             for (istart = 0; istart < vect_max; )
             {
@@ -4390,7 +4391,7 @@ void IntervalsTest()
         }
 
         {
-            bm::chrono_taker tt(cout, msg6, REPEATS * 1);
+            bm::chrono_taker<> tt(cout, msg6, REPEATS * 1);
             bvect::size_type istart(0), ilen(0);
             for (istart = 0; istart < vect_max; )
             {
@@ -4412,7 +4413,7 @@ void IntervalsTest()
         }
 
         {
-            bm::chrono_taker tt(cout, msg7, REPEATS * 1);
+            bm::chrono_taker<> tt(cout, msg7, REPEATS * 1);
             bvect::size_type istart(0), ilen(0);
             for (istart = 0; istart < vect_max; )
             {
@@ -4435,7 +4436,7 @@ void IntervalsTest()
 
         bvect::size_type cnt_c = bv.count();
         {
-            bm::chrono_taker tt(cout, msg8, REPEATS * 10);
+            bm::chrono_taker<> tt(cout, msg8, REPEATS * 10);
    
             for (unsigned i = 0; i < REPEATS * 10; ++i)
             {
@@ -4459,7 +4460,7 @@ void IntervalsTest()
         }
         {
             bvect::size_type sum = 0;
-            bm::chrono_taker tt(cout, msg9, REPEATS/4);
+            bm::chrono_taker<> tt(cout, msg9, REPEATS/4);
 
             for (unsigned i = 0; i < REPEATS/4; ++i)
             {
@@ -4475,7 +4476,7 @@ void IntervalsTest()
                 assert(cnt == cnt_c);
             }
 
-            g_fl_cnt += sum; // to fool some smart compilers like ICC using global
+            g_fl_cnt += float(sum); // to fool some smart compilers like ICC using global
 
         }
 
@@ -4519,7 +4520,7 @@ void RankCompressionTest()
     bv_i2.build_rs_index(bc2.get());
 
     {
-        bm::chrono_taker tt(cout, "Rank compression test", REPEATS * 10);
+        bm::chrono_taker<> tt(cout, "Rank compression test", REPEATS * 10);
         for (unsigned i = 0; i < REPEATS * 10; ++i)
         {
             rc.compress(bv11, bv_i1, bv_s1);
@@ -4527,7 +4528,7 @@ void RankCompressionTest()
         } // for
     }
     {
-        bm::chrono_taker tt(cout, "Rank compression (by source) test", REPEATS * 10);
+        bm::chrono_taker<> tt(cout, "Rank compression (by source) test", REPEATS * 10);
         for (unsigned i = 0; i < REPEATS * 10; ++i)
         {
             rc.compress_by_source(bv21, bv_i1, *bc1, bv_s1);
@@ -4536,7 +4537,7 @@ void RankCompressionTest()
     }
     
     {
-        bm::chrono_taker tt(cout, "Rank decompression test", REPEATS * 10);
+        bm::chrono_taker<> tt(cout, "Rank decompression test", REPEATS * 10);
         for (unsigned i = 0; i < REPEATS * 10; ++i)
         {
             rc.decompress(bv11_s, bv_i1, bv11);
@@ -4704,11 +4705,12 @@ void generate_search_samples(VECT& search_vect,
     assert(src_vect.size() >= search_size);
     search_vect.reserve(search_size);
     size_t step = src_vect.size() / search_size;
-    for (size_t i = 0; i < search_size; i+= step)
+    for (size_t i = 0; i < src_vect.size(); i+= step)
     {
         auto v = src_vect[i];
         search_vect.push_back(v);
     } // for
+    assert(search_vect.size() >= search_size);
 }
 
 
@@ -4733,7 +4735,7 @@ void SparseVectorScannerCmpTest()
 
     // run GT validation
     {
-        bm::chrono_taker tt(cout, "GT validation", search_repeats);
+        bm::chrono_taker<> tt(cout, "GT validation", search_repeats);
         for (unsigned i = 0; i < search_repeats; ++i)
         {
             unsigned vs = search_vect[i];
@@ -4752,7 +4754,7 @@ void SparseVectorScannerCmpTest()
 
 
     {
-        bm::chrono_taker tt(cout, "std::vector<> GT scan ", search_repeats);
+        bm::chrono_taker<> tt(cout, "std::vector<> GT scan ", search_repeats);
         for (unsigned i = 0; i < search_repeats; ++i)
         {
             unsigned vs = search_vect[i];
@@ -4775,7 +4777,7 @@ void SparseVectorScannerCmpTest()
     {
         bvect bv_all;
         bv_all.set_range(0, sv2.size()-1);
-        bm::chrono_taker tt(cout, "GT validation (sorted)", search_repeats);
+        bm::chrono_taker<> tt(cout, "GT validation (sorted)", search_repeats);
         for (unsigned i = 0; i < search_repeats; ++i)
         {
             unsigned vs = search_vect[i];
@@ -4800,7 +4802,7 @@ void SparseVectorScannerCmpTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "std::vector<> GT scan (lower_bound) ", search_repeats);
+        bm::chrono_taker<> tt(cout, "std::vector<> GT scan (lower_bound) ", search_repeats);
         for (unsigned i = 0; i < search_repeats; ++i)
         {
             unsigned vs = search_vect[i];
@@ -4813,7 +4815,7 @@ void SparseVectorScannerCmpTest()
     vect.shrink_to_fit();
 
     {
-        bm::chrono_taker tt(cout, "horizontal sparse vector scanner find_GT()", search_repeats);
+        bm::chrono_taker<> tt(cout, "horizontal sparse vector scanner find_GT()", search_repeats);
         for (unsigned i = 0; i < search_repeats; ++i)
         {
             unsigned vs = search_vect[i];
@@ -4822,7 +4824,7 @@ void SparseVectorScannerCmpTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "horizontal sparse vector scanner find_GT() (sorted)", search_repeats);
+        bm::chrono_taker<> tt(cout, "horizontal sparse vector scanner find_GT() (sorted)", search_repeats);
         for (unsigned i = 0; i < search_repeats; ++i)
         {
             unsigned vs = search_vect[i];
@@ -4854,7 +4856,7 @@ void SparseVectorScannerSignedCmpTest()
 
     // run GT validation
     {
-        bm::chrono_taker tt(cout, "GT (signed)validation", search_repeats);
+        bm::chrono_taker<> tt(cout, "GT (signed)validation", search_repeats);
         for (unsigned i = 0; i < search_repeats; ++i)
         {
             auto vs = search_vect[i];
@@ -4873,7 +4875,7 @@ void SparseVectorScannerSignedCmpTest()
 
 
     {
-        bm::chrono_taker tt(cout, "std::vector<> GT (signed) scan ", search_repeats);
+        bm::chrono_taker<> tt(cout, "std::vector<> GT (signed) scan ", search_repeats);
         for (unsigned i = 0; i < search_repeats; ++i)
         {
             auto vs = search_vect[i];
@@ -4895,7 +4897,7 @@ void SparseVectorScannerSignedCmpTest()
     {
         bvect bv_all;
         bv_all.set_range(0, sv2.size()-1);
-        bm::chrono_taker tt(cout, "GT validation (signed)(sorted)", search_repeats);
+        bm::chrono_taker<> tt(cout, "GT validation (signed)(sorted)", search_repeats);
         for (unsigned i = 0; i < search_repeats; ++i)
         {
             auto vs = search_vect[i];
@@ -4920,7 +4922,7 @@ void SparseVectorScannerSignedCmpTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "std::vector<> GT (signed) scan (lower_bound) ", search_repeats);
+        bm::chrono_taker<> tt(cout, "std::vector<> GT (signed) scan (lower_bound) ", search_repeats);
         for (unsigned i = 0; i < search_repeats; ++i)
         {
             auto vs = search_vect[i];
@@ -4933,7 +4935,7 @@ void SparseVectorScannerSignedCmpTest()
     vect.shrink_to_fit();
 
     {
-        bm::chrono_taker tt(cout, "horizontal sparse vector scanner (signed) find_GT()", search_repeats);
+        bm::chrono_taker<> tt(cout, "horizontal sparse vector scanner (signed) find_GT()", search_repeats);
         for (unsigned i = 0; i < search_repeats; ++i)
         {
             auto vs = search_vect[i];
@@ -4942,7 +4944,7 @@ void SparseVectorScannerSignedCmpTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "horizontal sparse vector scanner find_GT()(signed) (sorted)", search_repeats);
+        bm::chrono_taker<> tt(cout, "horizontal sparse vector scanner find_GT()(signed) (sorted)", search_repeats);
         for (unsigned i = 0; i < search_repeats; ++i)
         {
             auto vs = search_vect[i];
@@ -4985,7 +4987,7 @@ void SparseVectorScannerTest()
 
     unsigned search_repeats = REPEATS;
     {
-        bm::chrono_taker tt(cout, "std::vector<> scan ", search_repeats);
+        bm::chrono_taker<> tt(cout, "std::vector<> scan ", search_repeats);
         for (unsigned i = 0; i < search_repeats; ++i)
         {
             unsigned vs = search_vect[i];
@@ -4996,7 +4998,7 @@ void SparseVectorScannerTest()
     vect.shrink_to_fit();
 
     {
-    bm::chrono_taker tt(cout, "horizontal sparse vector scanner find_eq()", search_repeats);
+    bm::chrono_taker<> tt(cout, "horizontal sparse vector scanner find_eq()", search_repeats);
     for (unsigned i = 0; i < search_repeats; ++i)
     {
         {
@@ -5009,7 +5011,7 @@ void SparseVectorScannerTest()
     }
     
     {
-    bm::chrono_taker tt(cout, "sparse vector scanner find_eq() ", search_repeats);
+    bm::chrono_taker<> tt(cout, "sparse vector scanner find_eq() ", search_repeats);
     {
         scanner.find_eq(sv, search_vect.begin(), search_vect.end(), bv_res3);
     } // for
@@ -5031,7 +5033,7 @@ void SparseVectorScannerTest()
 
     sv.freeze();
     {
-    bm::chrono_taker tt(cout, "sparse vector scanner find_eq() (RO)", search_repeats);
+    bm::chrono_taker<> tt(cout, "sparse vector scanner find_eq() (RO)", search_repeats);
     {
         scanner.find_eq(sv, search_vect.begin(), search_vect.end(), bv_res4);
     } // for
@@ -5110,7 +5112,7 @@ void SparseVectorPipelineScannerTest()
     bm::sparse_vector_scanner<str_svect_type> scanner;
 
     {
-        bm::chrono_taker tt(cout, "scanner::find_eq_str()", search_repeats);
+        bm::chrono_taker<> tt(cout, "scanner::find_eq_str()", search_repeats);
 
         for (bvect::size_type i = 0; i < test_runs; ++i)
         {
@@ -5123,7 +5125,7 @@ void SparseVectorPipelineScannerTest()
 
     bm::sparse_vector_scanner<str_svect_type>::pipeline<> pipe(str_sv);
     {
-        bm::chrono_taker tt(cout, "scanner::pipeline find_eq_str()", search_repeats);
+        bm::chrono_taker<> tt(cout, "scanner::pipeline find_eq_str()", search_repeats);
 
         for (bvect::size_type i = 0; i < test_runs; ++i)
         {
@@ -5136,7 +5138,7 @@ void SparseVectorPipelineScannerTest()
 
     bm::sparse_vector_scanner<str_svect_type>::pipeline<bm::agg_opt_only_counts> pipe2(str_sv);
     {
-        bm::chrono_taker tt(cout, "scanner::pipeline find_eq_str()-count()", search_repeats);
+        bm::chrono_taker<> tt(cout, "scanner::pipeline find_eq_str()-count()", search_repeats);
 
         for (bvect::size_type i = 0; i < test_runs; ++i)
         {
@@ -5174,7 +5176,7 @@ void SparseVectorPipelineScannerTest()
     typedef bm::agg_run_options<false, false> scanner_custom_opt;
     bm::sparse_vector_scanner<str_svect_type>::pipeline<scanner_custom_opt> pipe3(str_sv);
     {
-        bm::chrono_taker tt(cout, "scanner::pipeline find_eq_str()-OR", search_repeats);
+        bm::chrono_taker<> tt(cout, "scanner::pipeline find_eq_str()-OR", search_repeats);
         pipe3.set_or_target(&bv_or); // Assign OR aggregation target
 
         for (bvect::size_type i = 0; i < test_runs; ++i)
@@ -5198,7 +5200,7 @@ void SparseVectorPipelineScannerTest()
     typedef bm::agg_run_options<false, true> scanner_custom_opt4;
     bm::sparse_vector_scanner<str_svect_type>::pipeline<scanner_custom_opt4> pipe4(str_sv);
     {
-        bm::chrono_taker tt(cout, "scanner::pipeline find_eq_str()-count-OR", search_repeats);
+        bm::chrono_taker<> tt(cout, "scanner::pipeline find_eq_str()-count-OR", search_repeats);
         pipe4.set_or_target(&bv_or); // Assign OR aggregation target
 
         for (bvect::size_type i = 0; i < test_runs; ++i)
@@ -5223,7 +5225,7 @@ void SparseVectorPipelineScannerTest()
 
     bm::sparse_vector_scanner<str_svect_type>::pipeline<scanner_custom_opt4> pipe5(str_sv);
     {
-        bm::chrono_taker tt(cout, "scanner::pipeline find_eq_str()-count-OR (RO)", search_repeats);
+        bm::chrono_taker<> tt(cout, "scanner::pipeline find_eq_str()-count-OR (RO)", search_repeats);
         pipe5.set_or_target(&bv_or); // Assign OR aggregation target
 
         for (bvect::size_type i = 0; i < test_runs; ++i)
@@ -5293,7 +5295,7 @@ void SparseVectorSerializationTest()
 
     {
         {
-            bm::chrono_taker tt(cout, "bm::sparse_vector<> serialization XOR disabled ", 1);
+            bm::chrono_taker<> tt(cout, "bm::sparse_vector<> serialization XOR disabled ", 1);
 
             sv_serializer.set_xor_ref(false); // disable XOR compression
             sv_serializer.serialize(sv1, sv_lay);
@@ -5322,7 +5324,7 @@ void SparseVectorSerializationTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "bm::sparse_vector<> serialization XOR enabled ", 1);
+        bm::chrono_taker<> tt(cout, "bm::sparse_vector<> serialization XOR enabled ", 1);
         sv_serializer.set_xor_ref(true); // enable XOR compression
         sv_serializer.serialize(sv1, sv_lay);
     }
@@ -5383,7 +5385,7 @@ void SparseVectorRangeDeserializationTest()
     buf = sv_lay.buf();
     
     {
-        bm::chrono_taker tt(cout, "bm::sparse_vector<> Range Deserialization() - NO bookmarks ", 1);
+        bm::chrono_taker<> tt(cout, "bm::sparse_vector<> Range Deserialization() - NO bookmarks ", 1);
         for (unsigned i = 0; i < 15; ++i)
         {
             sv_deserial.deserialize(sv2, buf, 0, 65536 * 2);
@@ -5417,7 +5419,7 @@ void SparseVectorRangeDeserializationTest()
     buf = sv_lay.buf();
 
     {
-        bm::chrono_taker tt(cout, "bm::sparse_vector<> Range Deserialization() - WITH bookmarks ", 1);
+        bm::chrono_taker<> tt(cout, "bm::sparse_vector<> Range Deserialization() - WITH bookmarks ", 1);
         for (unsigned i = 0; i < 15; ++i)
         {
             sv_deserial.deserialize_range(sv2, buf, 0, 65536 * 2);
@@ -5466,7 +5468,7 @@ void StrSparseVectorTest()
     // -----------------------------------------------
 
     {
-       bm::chrono_taker tt(cout, "bm::str_sparse_vector<>::push_back() ", 1);
+       bm::chrono_taker<> tt(cout, "bm::str_sparse_vector<>::push_back() ", 1);
        for (auto str : str_coll)
        {
            str_sv.push_back(str);
@@ -5477,7 +5479,7 @@ void StrSparseVectorTest()
     {
        str_svect_type str_sv0;
        {
-           bm::chrono_taker tt(cout, "bm::str_sparse_vector<>::back_insert_iterator ", 1);
+           bm::chrono_taker<> tt(cout, "bm::str_sparse_vector<>::back_insert_iterator ", 1);
            str_svect_type::back_insert_iterator bi = str_sv0.get_back_inserter();
            for (auto str : str_coll)
            {
@@ -5494,7 +5496,7 @@ void StrSparseVectorTest()
 
        str_svect_type str_sv1;
        {
-           bm::chrono_taker tt(cout, "bm::str_sparse_vector<>::remap ", 1);
+           bm::chrono_taker<> tt(cout, "bm::str_sparse_vector<>::remap ", 1);
            str_sv1.remap_from(str_sv0);
        }
        str_sv1.optimize();
@@ -5521,7 +5523,7 @@ void StrSparseVectorTest()
     {
     string str;
 
-        bm::chrono_taker tt(cout, "bm::str_sparse_vector<> - random access ", 1);
+        bm::chrono_taker<> tt(cout, "bm::str_sparse_vector<> - random access ", 1);
         for (unsigned i = 0; i < str_sv.size(); ++i)
         {
             str_sv.get(i, str);
@@ -5535,7 +5537,7 @@ void StrSparseVectorTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "bm::str_sparse_vector<>::const_iterator ", 1);
+        bm::chrono_taker<> tt(cout, "bm::str_sparse_vector<>::const_iterator ", 1);
         str_svect_type::const_iterator it = str_sv.begin();
         str_svect_type::const_iterator it_end = str_sv.end();
 
@@ -5553,7 +5555,7 @@ void StrSparseVectorTest()
     }
 
     {
-        bm::chrono_taker tt(cout, "bm::str_sparse_vector<>::const_iterator (remap)", 1);
+        bm::chrono_taker<> tt(cout, "bm::str_sparse_vector<>::const_iterator (remap)", 1);
         str_svect_type::const_iterator it = str_sv.begin();
         str_svect_type::const_iterator it_end = str_sv.end();
 
@@ -5625,7 +5627,7 @@ void StrSparseVectorTest()
 #if 1
 
     {
-        bm::chrono_taker tt(cout, "std::lower_bound()", 1);
+        bm::chrono_taker<> tt(cout, "std::lower_bound()", 1);
 
         for (unsigned i = 0; i < unsigned(str_coll_test1.size()); ++i)
         {
@@ -5639,7 +5641,7 @@ void StrSparseVectorTest()
 
     {
     bm::sparse_vector_scanner<str_svect_type, 4> scanner_4;
-        bm::chrono_taker tt(cout, "bm::sparse_vector_scanner<>::bfind_eq_str() [no-bind] [4] (sort/remap/ro)", 1);
+        bm::chrono_taker<> tt(cout, "bm::sparse_vector_scanner<>::bfind_eq_str() [no-bind] [4] (sort/remap/ro)", 1);
         for (unsigned i = 0; i < unsigned(str_coll_test1.size()); ++i)
         {
             const string& s = str_coll_test1[i];
@@ -5661,7 +5663,7 @@ void StrSparseVectorTest()
     bm::sparse_vector_scanner<str_svect_type, 4> scanner_4;
     scanner_4.bind(str_sv_srt, true); // bind sorted vector
 
-        bm::chrono_taker tt(cout, "bm::sparse_vector_scanner<>::bfind_eq_str() [4] (sort/remap/ro)", 1);
+        bm::chrono_taker<> tt(cout, "bm::sparse_vector_scanner<>::bfind_eq_str() [4] (sort/remap/ro)", 1);
         for (unsigned i = 0; i < unsigned(str_coll_test1.size()); ++i)
         {
             const string& s = str_coll_test1[i];
@@ -5682,7 +5684,7 @@ void StrSparseVectorTest()
     bm::sparse_vector_scanner<str_svect_type, 8> scanner_8;
     scanner_8.bind(str_sv_srt, true); // bind sorted vector
 
-        bm::chrono_taker tt(cout, "bm::sparse_vector_scanner<>::bfind_eq_str() [8] (sort/remap/ro)", 1);
+        bm::chrono_taker<> tt(cout, "bm::sparse_vector_scanner<>::bfind_eq_str() [8] (sort/remap/ro)", 1);
         for (unsigned i = 0; i < unsigned(str_coll_test1.size()); ++i)
         {
             const string& s = str_coll_test1[i];
@@ -5701,7 +5703,7 @@ void StrSparseVectorTest()
     bm::sparse_vector_scanner<str_svect_type, 16> scanner_16;
     scanner_16.bind(str_sv_srt, true); // bind sorted vector
 
-        bm::chrono_taker tt(cout, "bm::sparse_vector_scanner<>::bfind_eq_str() [16] (sort/remap/ro)", 1);
+        bm::chrono_taker<> tt(cout, "bm::sparse_vector_scanner<>::bfind_eq_str() [16] (sort/remap/ro)", 1);
         for (unsigned i = 0; i < unsigned(str_coll_test1.size()); ++i)
         {
             const string& s = str_coll_test1[i];
@@ -5720,7 +5722,7 @@ void StrSparseVectorTest()
     bm::sparse_vector_scanner<str_svect_type, 32> scanner_32;
     scanner_32.bind(str_sv_srt, true); // bind sorted vector
 
-        bm::chrono_taker tt(cout, "bm::sparse_vector_scanner<>::bfind_eq_str() [32] (sort/remap/ro)", 1);
+        bm::chrono_taker<> tt(cout, "bm::sparse_vector_scanner<>::bfind_eq_str() [32] (sort/remap/ro)", 1);
         for (unsigned i = 0; i < unsigned(str_coll_test1.size()); ++i)
         {
             const string& s = str_coll_test1[i];
@@ -5739,7 +5741,7 @@ void StrSparseVectorTest()
     bm::sparse_vector_scanner<str_svect_type, 64> scanner_64;
     scanner_64.bind(str_sv_srt, true); // bind sorted vector
 
-        bm::chrono_taker tt(cout, "bm::sparse_vector_scanner<>::bfind_eq_str() [64] (sort/remap/ro)", 1);
+        bm::chrono_taker<> tt(cout, "bm::sparse_vector_scanner<>::bfind_eq_str() [64] (sort/remap/ro)", 1);
         for (unsigned i = 0; i < unsigned(str_coll_test1.size()); ++i)
         {
             const string& s = str_coll_test1[i];
@@ -5766,7 +5768,7 @@ void StrSparseVectorTest()
     bm::sparse_vector_scanner<str_svect_type, 16> scanner_16;
     scanner_16.bind(str_sv_srt, true); // bind sorted vector
 
-        bm::chrono_taker tt(cout, "bm::bm::sparse_vector_scanner<>::bfind_eq_str() [16] (sort/remap/ro) (not-found)", 1);
+        bm::chrono_taker<> tt(cout, "bm::bm::sparse_vector_scanner<>::bfind_eq_str() [16] (sort/remap/ro) (not-found)", 1);
 
         for (unsigned i = 0; i < unsigned(str_coll_test2.size()); ++i)
         {
@@ -5782,6 +5784,1179 @@ void StrSparseVectorTest()
 #endif
 
 }
+
+typedef bm::sparse_vector_float<bm::sparse_vector<unsigned int, bvect>> sparseVecFloat;
+typedef bm::sparse_vector<unsigned int, bvect> sparse_vec_u32;
+typedef bm::sparse_vector_float<bm::rsc_sparse_vector<unsigned int, sparse_vec_u32>> sparseVecFloatRSC;
+
+//Finds all values in range [from, to] in a given std::vector<float> and flipts the corresponding bits in bv_out
+inline
+void in_range_vect(const std::vector<float>& fv, float from, float to, sparseVecFloat::bvector_type &bv_out)
+{
+    if(from > to) std::swap(from, to);
+    for (sparseVecFloat::size_type i = 0; i < fv.size(); i++)
+    {
+        if (fv[i] >= from && fv[i] <= to)
+            bv_out.set(i);
+    } // for
+}
+
+//Finds all values in range [from, to] in a given sparse_vector_float using a const_iterator and flips the corresponding bits in bv_out
+inline
+void in_range_const(const sparseVecFloat& sv, float from, float to, sparseVecFloat::bvector_type& bv_out)
+{
+    sparseVecFloat::const_iterator ci = sv.begin();
+    if (from > to) std::swap(from, to);
+    for (; ci.valid(); ++ci)
+    {
+        if (auto v = ci.value(); (v >= from && v <= to))
+            bv_out.set(ci.pos());
+    }
+}
+
+void TestSVFScanner()
+{
+    BM_DECLARE_TEMP_BLOCK(tb)
+
+    typedef sparseVecFloat::bvector_type bvect_type;
+    typedef bvect_type::allocator_type::allocator_pool_type bvect_pool_type;
+    bvect_pool_type bv_pool;
+
+    sparseVecFloat::size_type N = 20000000;
+    std::random_device rd;
+    //std::mt19937 gen(rd());
+
+    float upper = 1000000.0f;
+    float lower = -1000000.0f;
+    std::uniform_real_distribution<float> dis(lower, upper);
+
+    std::vector<float> linData(N);
+
+    for(sparseVecFloat::size_type i = 0; i < N/2; i++)
+        linData[i] = -1.0f * (float)i * 0.00123f;
+    for(sparseVecFloat::size_type i = 0; i < N/2; i++)
+        linData[i+N/2] = (float)i * 0.00123f;
+
+    sparseVecFloat testSVF;
+    testSVF.import(linData.data(), N);
+    testSVF.optimize(tb);
+
+    unsigned int tests = 1000;
+
+    {
+        sparseVecFloat::bvector_type xorSV;
+        sparseVecFloat::bvector_type xorVect;
+        sparseVecFloat::bvector_type xorConst;
+
+        sparseVecFloat::bvector_type bv_range;
+        sparseVecFloat::bvector_type::mem_pool_guard bv_range_guard(bv_pool, bv_range);
+
+        std::vector<pair<float, float>> testRangesVector(tests);
+        for (unsigned int i = 0; i < tests; i++)
+        {
+            float f1 = dis(gen);
+            float f2 = dis(gen);
+            pair<float, float> toAdd(f1, f2);
+            testRangesVector[i] = toAdd;
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF with Linear Data find values in range with scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloat> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                scan.find_range_float(testSVF, from, to, bv_range);
+
+                if(i < 1)
+                    xorSV ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "std::vector<float> with Linear Data find values in range", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                in_range_vect(linData, from, to, bv_range);
+                if(i < 1)
+                    xorVect ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF with Linear Data find values in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                in_range_const(testSVF, from, to, bv_range);
+                if(i < 1)
+                    xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        bool range_eq_vector = (xorSV == xorVect);
+        bool range_eq_const  = (xorSV == xorConst);
+
+        if (!range_eq_vector || !range_eq_const)
+        {
+            cerr << "Linear: MISMATCH" << endl;
+            exit(1);
+        }
+    }
+
+    testSVF.clear();
+    std::vector<float> randData(N);
+
+    for (sparseVecFloat::size_type i = 0; i < N; ++i)
+    {
+        randData[i] = dis(gen);
+    }
+
+    testSVF.import(randData.data(), N);
+    testSVF.optimize(tb);
+
+    {
+        sparseVecFloat::bvector_type xorSV;
+        sparseVecFloat::bvector_type xorVect;
+        sparseVecFloat::bvector_type xorConst;
+
+        sparseVecFloat::bvector_type bv_range;
+        sparseVecFloat::bvector_type::mem_pool_guard bv_range_guard(bv_pool, bv_range);
+
+        std::vector<pair<float, float>> testRangesVector(tests);
+        for (unsigned int i = 0; i < tests; i++)
+        {
+            float f1 = dis(gen);
+            float f2 = dis(gen);
+            pair<float, float> toAdd(f1, f2);
+            testRangesVector[i] = toAdd;
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF with Random Data find values in range with scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloat> scan;
+
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                scan.find_range_float(testSVF, from, to, bv_range);
+                if(i < 1)
+                    xorSV ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "std::vector<float> with Random Data find values in range", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                in_range_vect(randData, from, to, bv_range);
+                if(i < 1)
+                    xorVect ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF with Random Data find values in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                in_range_const(testSVF, from, to, bv_range);
+                if(i < 1)
+                    xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        bool range_eq_vector = (xorSV == xorVect);
+        bool range_eq_const  = (xorSV == xorConst);
+
+        if (!range_eq_vector || !range_eq_const)
+        {
+            cerr << "Random: MISMATCH" << endl;
+            exit(1);
+        }
+    }
+
+    testSVF.clear();
+    std::vector<float> skewData(N);
+
+    for (sparseVecFloat::size_type i = 19000000; i < N; ++i)
+    {
+        skewData[i] = dis(gen);
+    }
+
+    testSVF.import(skewData.data(), N);
+    testSVF.optimize(tb);
+
+    {
+        sparseVecFloat::bvector_type xorSV;
+        sparseVecFloat::bvector_type xorVect;
+        sparseVecFloat::bvector_type xorConst;
+
+        sparseVecFloat::bvector_type bv_range;
+        sparseVecFloat::bvector_type::mem_pool_guard bv_range_guard(bv_pool, bv_range);
+
+        std::vector<pair<float, float>> testRangesVector(tests);
+        for (unsigned int i = 0; i < tests; i++)
+        {
+            float f1 = dis(gen);
+            float f2 = dis(gen);
+            pair<float, float> toAdd(f1, f2);
+            testRangesVector[i] = toAdd;
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF with Skewed Data find values in range with scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloat> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                scan.find_range_float(testSVF, from, to, bv_range);
+                if(i < 1)
+                    xorSV ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "std::vector<float> with Skewed Data find values in range", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                in_range_vect(skewData, from, to, bv_range);
+                if(i < 1)
+                    xorVect ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF with Skewed Data find values in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                in_range_const(testSVF, from, to, bv_range);
+                if(i < 1)
+                    xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        bool range_eq_vector = (xorSV == xorVect);
+        bool range_eq_const  = (xorSV == xorConst);
+
+        if (!range_eq_vector || !range_eq_const)
+        {
+            cerr << "Skewed: MISMATCH" << endl;
+            exit(1);
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------------------------
+
+
+//Finds all values in range [from, to] in a given std::vector<float> and flipts the corresponding bits in bv_out
+inline
+void in_range_vect_rsc(const std::vector<float>& fv, float from, float to, sparseVecFloatRSC::bvector_type &bv_out)
+{
+    if (from > to) std::swap(from, to);
+    for (sparseVecFloatRSC::size_type i = 0; i < fv.size(); i++)
+    {
+        if(fv[i] >= from && fv[i] <= to)
+            bv_out.set(i);
+    }
+}
+
+//Finds all values in range [from, to] in a given sparse_vector_float which uses a rsc sparse vector 
+//using a const_iterator and flips the corresponding bits in bv_out
+inline
+void in_range_const_rsc(const sparseVecFloatRSC& sv, float from, float to, sparseVecFloatRSC::bvector_type &bv_out)
+{
+    if (from > to) std::swap(from, to);
+    sparseVecFloatRSC::const_iterator ci = sv.begin();
+    for (; ci.valid(); ++ci)
+    {
+        if (auto v = ci.value(); v >= from && v <= to)
+            bv_out.set(ci.pos());
+    }
+}
+
+// -------------------------------------------------------------------
+
+void TestSVFScannerRSC()
+{
+    BM_DECLARE_TEMP_BLOCK(tb)
+
+    typedef sparseVecFloatRSC::bvector_type bvect_type;
+    typedef bvect_type::allocator_type::allocator_pool_type bvect_pool_type;
+    bvect_pool_type bv_rsc_pool;
+
+    sparseVecFloatRSC::size_type N = 20000000;
+    std::random_device rd;
+
+    float upper = 1000000.0f;
+    float lower = -1000000.0f;
+    std::uniform_real_distribution<float> dis(lower, upper);
+    std::uniform_real_distribution<float> null_chance(0.0f, 1.0f);
+
+    std::vector<float> linData(N);
+
+    for(sparseVecFloatRSC::size_type i = 0; i < N/2; i++)
+    {
+        if (null_chance(gen) >= 0.35f)
+        {
+            linData[i] = -1.0f * (float)i * 0.00123f;
+        }
+        else
+        {
+            linData[i] = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
+    for(sparseVecFloatRSC::size_type i = 0; i < N/2; i++)
+    {
+        if (null_chance(gen) >= 0.35f)
+        {
+            linData[i+N/2] = (float)i * 0.00123f;
+        }
+        else
+        {
+            linData[i+N/2] = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
+
+    sparseVecFloatRSC testSVF;
+    testSVF.import(linData.data(), N);
+    testSVF.optimize(tb);
+    testSVF.sync(true, true);
+
+    unsigned int tests = 1000;
+
+    {
+        sparseVecFloatRSC::bvector_type xorRSC;
+        sparseVecFloatRSC::bvector_type xorVect;
+        sparseVecFloatRSC::bvector_type xorConst;
+
+        sparseVecFloatRSC::bvector_type bv_range;
+        sparseVecFloatRSC::bvector_type::mem_pool_guard bv_range_guard(bv_rsc_pool, bv_range);
+
+        std::vector<pair<float, float>> testRangesVector(tests);
+        for (unsigned int i = 0; i < tests; i++)
+        {
+            float f1 = dis(gen);
+            float f2 = dis(gen);
+            pair<float, float> toAdd(f1, f2);
+            testRangesVector[i] = toAdd;
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF RSC with Linear Data find values in range with scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloatRSC> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                scan.find_range_float(testSVF, from, to, bv_range);
+                xorRSC ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "std::vector<float> with Linear Data find values in range", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                in_range_vect_rsc(linData, from, to, bv_range);
+                xorVect ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF RSC with Linear Data find values in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                in_range_const_rsc(testSVF, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        bool range_eq_vector = (xorRSC == xorVect);
+        bool range_eq_const  = (xorRSC == xorConst);
+
+        if (!range_eq_vector)
+        {
+            cerr << "LinearRSC: MISMATCH Vect" << endl;
+        }
+        if (!range_eq_const)
+        {
+            cerr << "LinearRSC: MISMATCH Const" << endl;
+        }
+        if (!range_eq_vector || !range_eq_const)
+        {
+            exit(1);
+        }
+    }
+
+    testSVF.clear();
+    std::vector<float> randData(N);
+
+    for (sparseVecFloatRSC::size_type i = 0; i < N; ++i)
+    {
+        if (null_chance(gen) >= 0.35f)
+        {
+            randData[i] = dis(gen);
+        }
+        else
+        {
+            randData[i] = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
+
+    testSVF.import(randData.data(), N);
+    testSVF.optimize(tb);
+    testSVF.sync(true, true);
+
+    //Using a completely random dataset
+
+    {
+        sparseVecFloatRSC::bvector_type xorRSC;
+        sparseVecFloatRSC::bvector_type xorVect;
+        sparseVecFloatRSC::bvector_type xorConst;
+
+        sparseVecFloatRSC::bvector_type bv_range;
+        sparseVecFloatRSC::bvector_type::mem_pool_guard bv_range_guard(bv_rsc_pool, bv_range);
+
+        std::vector<pair<float, float>> testRangesVector(tests);
+        for (unsigned int i = 0; i < tests; i++)
+        {
+            float f1 = dis(gen);
+            float f2 = dis(gen);
+            pair<float, float> toAdd(f1, f2);
+            testRangesVector[i] = toAdd;
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF RSC with Random Data find values in range with scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloatRSC> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                scan.find_range_float(testSVF, from, to, bv_range);
+                xorRSC ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "std::vector<float> with Random Data find values in range", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                in_range_vect_rsc(randData, from, to, bv_range);
+                xorVect ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF RSC with Random Data find values in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                in_range_const_rsc(testSVF, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        bool range_eq_vector = (xorRSC == xorVect);
+        bool range_eq_const  = (xorRSC == xorConst);
+
+        if (!range_eq_vector)
+        {
+            cerr << "RandomRSC: MISMATCH Vect" << endl;
+        }
+        if (!range_eq_const)
+        {
+            cerr << "RandomRSC: MISMATCH Const" << endl;
+        }
+        if (!range_eq_vector || !range_eq_const)
+        {
+            exit(1);
+        }
+    }
+
+    testSVF.clear();
+    std::vector<float> skewData(N);
+    for (sparseVecFloatRSC::size_type i = 0; i < 19000000; ++i)
+    {
+        skewData[i] = std::numeric_limits<float>::quiet_NaN();
+    }
+    for (sparseVecFloatRSC::size_type i = 19000000; i < N; ++i)
+    {
+        if (null_chance(gen) >= 0.35f)
+        {
+            skewData[i] = dis(gen);
+        }
+        else
+        {
+            skewData[i] = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
+
+    testSVF.import(skewData.data(), N);
+    testSVF.optimize(tb);
+    testSVF.sync(true, true);
+
+    {
+        sparseVecFloatRSC::bvector_type xorRSC;
+        sparseVecFloatRSC::bvector_type xorVect;
+        sparseVecFloatRSC::bvector_type xorConst;
+
+        sparseVecFloatRSC::bvector_type bv_range;
+        sparseVecFloatRSC::bvector_type::mem_pool_guard bv_range_guard(bv_rsc_pool, bv_range);
+
+        std::vector<pair<float, float>> testRangesVector(tests);
+        for (unsigned int i = 0; i < tests; i++)
+        {
+            float f1 = dis(gen);
+            float f2 = dis(gen);
+            pair<float, float> toAdd(f1, f2);
+            testRangesVector[i] = toAdd;
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF RSC with Skewed Data find values in range with scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloatRSC> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                scan.find_range_float(testSVF, from, to, bv_range);
+                xorRSC ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "std::vector<float> with Skewed Data find values in range", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                in_range_vect_rsc(skewData, from, to, bv_range);
+                xorVect ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF RSC with Skewed Data find values in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                in_range_const_rsc(testSVF, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+
+        bool range_eq_vector = (xorRSC == xorVect);
+        bool range_eq_const  = (xorRSC == xorConst);
+
+        if (!range_eq_vector)
+        {
+            cerr << "SkewedRSC: MISMATCH Vect" << endl;
+        }
+        if (!range_eq_const)
+        {
+            cerr << "SkewedRSC: MISMATCH Const" << endl;
+        }
+        if (!range_eq_vector || !range_eq_const)
+        {
+            exit(1);
+        }
+    }
+}
+
+void TestSVFComparison()
+{
+    BM_DECLARE_TEMP_BLOCK(tb)
+
+    typedef sparseVecFloat::bvector_type bvect_type;
+    typedef bvect_type::allocator_type::allocator_pool_type bvect_pool_type;
+    bvect_pool_type bv_pool;
+
+    typedef sparseVecFloatRSC::bvector_type bvect_rsc_type;
+    typedef bvect_rsc_type::allocator_type::allocator_pool_type bvect_rsc_pool_type;
+    bvect_rsc_pool_type bv_rsc_pool;
+    
+    sparseVecFloat::size_type N = 20000000;
+    std::random_device rd;
+
+    float upper = 15000.0f;
+    float lower = -15000.0f;
+    std::uniform_real_distribution<float> dis(lower, upper);
+    std::uniform_real_distribution<float> null_chance(0.0f, 1.0f);
+    
+    std::vector<float> linData(N);
+
+    for(sparseVecFloatRSC::size_type i = 0; i < N/2; i++)
+    {
+        if (null_chance(gen) >= 0.35f)
+        {
+            linData[i] = -1.0f * (float)i * 0.00123f;
+        }
+        else
+        {
+            linData[i] = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
+    for(sparseVecFloatRSC::size_type i = 0; i < N/2; i++)
+    {
+        if (null_chance(gen) >= 0.35f)
+        {
+            linData[i+N/2] = (float)i * 0.00123f;
+        }
+        else
+        {
+            linData[i+N/2] = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
+    unsigned int tests = 1000;
+    std::vector<pair<float, float>> testRangesVector(tests);
+    for (unsigned int i = 0; i < tests; i++)
+    {
+        float f1 = dis(gen);
+        float f2 = dis(gen);
+        pair<float, float> toAdd(f1, f2);
+        testRangesVector[i] = toAdd;
+    }
+    
+    sparseVecFloat svf(bm::use_null);
+    svf.import(linData.data(), N);
+    {
+        sparseVecFloat::bvector_type xorSVF;
+        sparseVecFloat::bvector_type xorConst;
+        sparseVecFloat::bvector_type bv_range;
+        sparseVecFloat::bvector_type::mem_pool_guard bv_range_guard(bv_pool, bv_range);
+        
+        {
+            bm::chrono_taker<> tt(cout, "Unoptimized SVF with linear data in range with Scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloat> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+                
+                scan.find_range_float(svf, from, to, bv_range);
+                xorSVF ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        {
+            bm::chrono_taker<> tt(cout, "Unoptimized SVF with linear data in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+                
+                in_range_const(svf, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        if(xorSVF != xorConst){
+            cerr << "SVF Non-optimized Scanner and Const Iterator do not match" << endl;
+            exit(1);
+        }
+    }
+    
+    svf.optimize(tb);
+    
+    {
+        sparseVecFloat::bvector_type xorSVF;
+        sparseVecFloat::bvector_type xorConst;
+        sparseVecFloat::bvector_type bv_range;
+        sparseVecFloat::bvector_type::mem_pool_guard bv_range_guard(bv_pool, bv_range);
+        
+        {
+            bm::chrono_taker<> tt(cout, "Optimized SVF with linear data in range with Scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloat> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+                
+                scan.find_range_float(svf, from, to, bv_range);
+                xorSVF ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        {
+            bm::chrono_taker<> tt(cout, "Optimized SVF with linear data in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+                
+                in_range_const(svf, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        if(xorSVF != xorConst){
+            cerr << "SVF Optimized Scanner and Const Iterator do not match" << endl;
+            exit(1);
+        }
+    }
+    
+    svf.freeze();
+    {
+        sparseVecFloat::bvector_type xorSVF;
+        sparseVecFloat::bvector_type xorConst;
+        sparseVecFloat::bvector_type bv_range;
+        sparseVecFloat::bvector_type::mem_pool_guard bv_range_guard(bv_pool, bv_range);
+        {
+            bm::chrono_taker<> tt(cout, "Optimized and Frozen SVF with linear data in range with Scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloat> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+                
+                scan.find_range_float(svf, from, to, bv_range);
+                xorSVF ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        {
+            bm::chrono_taker<> tt(cout, "Optimized and Frozen SVF with linear data in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+                
+                in_range_const(svf, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        if(xorSVF != xorConst){
+            cerr << "SVF Optimized and Frozen Scanner and Const Iterator do not match" << endl;
+            exit(1);
+        }
+    }
+    svf.clear();
+    
+    sparseVecFloatRSC rscSVF;
+    rscSVF.import(linData.data(), N);
+    rscSVF.sync(true, true);
+    {
+        sparseVecFloatRSC::bvector_type xorRSC;
+        sparseVecFloatRSC::bvector_type xorConst;
+        sparseVecFloatRSC::bvector_type bv_range;
+        sparseVecFloatRSC::bvector_type::mem_pool_guard bv_range_guard(bv_rsc_pool, bv_range);
+        
+        {
+            bm::chrono_taker<> tt(cout, "Unoptimized RSC SVF with linear data in range with Scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloatRSC> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+                
+                scan.find_range_float(rscSVF, from, to, bv_range);
+                xorRSC ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        {
+            bm::chrono_taker<> tt(cout, "Unoptimized RSC SVF with linear data in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+                
+                in_range_const_rsc(rscSVF, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        if(xorRSC != xorConst){
+            cerr << "SVF RSC Non-Optimized Scanner and Const Iterator do not match" << endl;
+            exit(1);
+        }
+    }
+    
+    rscSVF.optimize();
+    rscSVF.sync(true, true);
+    
+    {
+        sparseVecFloatRSC::bvector_type xorRSC;
+        sparseVecFloatRSC::bvector_type xorConst;
+        sparseVecFloatRSC::bvector_type bv_range;
+        sparseVecFloatRSC::bvector_type::mem_pool_guard bv_range_guard(bv_rsc_pool, bv_range);
+        
+        {
+            bm::chrono_taker<> tt(cout, "Optimized RSC SVF with linear data in range with Scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloatRSC> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+                
+                scan.find_range_float(rscSVF, from, to, bv_range);
+                xorRSC ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        {
+            bm::chrono_taker<> tt(cout, "Optimized RSC SVF with linear data in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+                
+                in_range_const_rsc(rscSVF, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        if(xorRSC != xorConst){
+            cerr << "SVF RSC Optimized Scanner and Const Iterator do not match" << endl;
+            exit(1);
+        }
+    }
+    
+    rscSVF.freeze();
+    rscSVF.sync(true, true);
+    
+    {
+        sparseVecFloatRSC::bvector_type xorRSC;
+        sparseVecFloatRSC::bvector_type xorConst;
+        sparseVecFloatRSC::bvector_type bv_range;
+        sparseVecFloatRSC::bvector_type::mem_pool_guard bv_range_guard(bv_rsc_pool, bv_range);
+        
+        {
+            bm::chrono_taker<> tt(cout, "Optimized and Frozen RSC SVF with linear data in range with Scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloatRSC> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+                
+                scan.find_range_float(rscSVF, from, to, bv_range);
+                xorRSC ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        {
+            bm::chrono_taker<> tt(cout, "Optimized and Frozen RSC SVF with linear data in range with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+                
+                in_range_const_rsc(rscSVF, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear(true);
+            }
+        }
+        
+        if(xorRSC != xorConst){
+            cerr << "SVF RSC Optimized and Frozen Scanner and Const Iterator do not match" << endl;
+            exit(1);
+        }
+    }
+}
+
+
+void TestSVFScannerSpike()
+{
+    unsigned int N = 200000000;
+    
+    sparseVecFloat testSVF;
+    
+    float upper = 15.0f;
+    float lower = 5.0f;
+    std::uniform_real_distribution<float> flatDis(lower, upper);
+    
+    unsigned int u = 500000;
+    unsigned int l = 100000;
+    std::uniform_int_distribution<unsigned int> distDis(l, u);
+    unsigned int distance = distDis(gen);
+    unsigned int spikeDist = 1000;
+    
+    upper=1050.0f;
+    lower=950.0f;
+    std::uniform_real_distribution<float> spikeDis(lower, upper);
+    
+    sparseVecFloat::bvector_type correct;
+    std::vector<float> testVect;
+    
+    for (sparseVecFloat::size_type i = 0; i < N; ++i)
+    {
+        if (spikeDist > 0) {
+            float toAdd = spikeDis(gen);
+            testSVF.push_back(toAdd);
+            testVect.push_back(toAdd);
+            
+            spikeDist--;
+            
+            correct.set(i);
+            
+            if (spikeDist == 0) {
+                distance = distDis(gen);
+                testSVF.optimize();
+            }
+        }
+        else if (distance > 0) {
+            float toAdd = flatDis(gen);
+            testSVF.push_back(toAdd);
+            testVect.push_back(toAdd);
+            distance--;
+            
+            if (distance == 0) {
+                spikeDist = 1000;
+            }
+        }
+    }
+    testSVF.optimize();
+    
+    typedef sparseVecFloat::bvector_type bvect_type;
+    typedef bvect_type::allocator_type::allocator_pool_type bvect_pool_type;
+    bvect_pool_type bv_pool;
+
+    sparseVecFloat::bvector_type scanResult;
+    sparseVecFloat::bvector_type::mem_pool_guard scan_result_guard(bv_pool, scanResult);
+    bm::sparse_vector_scanner<sparseVecFloat> scan;
+    
+    unsigned int numTests = 1000;
+    
+    {
+        bm::chrono_taker<> tt(cout, "Scanner time to find spikes", numTests);
+        for(unsigned int i = 0; i < numTests; i++)
+        {
+            scan.find_gt_float(testSVF, 900.0f, scanResult);
+        }
+    }
+    
+    if(scanResult != correct)
+    {
+        std::cerr << "Incorrect vector" << std::endl;
+        exit(0);
+    }
+}
+
+//Finds all values in range [from, to] in a given std::vector<float> and flipts the corresponding bits in bv_out
+inline
+void in_range_vect_unbounded(const std::vector<float>& fv, float from, float to, sparseVecFloat::bvector_type &bv_out)
+{
+    if(from > to) std::swap(from, to);
+    for (sparseVecFloat::size_type i = 0; i < fv.size(); i++)
+    {
+        if (fv[i] > from && fv[i] < to)
+            bv_out.set(i);
+    } // for
+}
+
+//Finds all values in range [from, to] in a given sparse_vector_float using a const_iterator and flips the corresponding bits in bv_out
+inline
+void in_range_const_unbounded(const sparseVecFloat& sv, float from, float to, sparseVecFloat::bvector_type& bv_out)
+{
+    sparseVecFloat::const_iterator ci = sv.begin();
+    if (from > to) std::swap(from, to);
+    for (; ci.valid(); ++ci)
+    {
+        if (auto v = ci.value(); (v > from && v < to))
+            bv_out.set(ci.pos());
+    }
+}
+
+void TestSVFScannerUnbounded()
+{
+    BM_DECLARE_TEMP_BLOCK(tb)
+
+    sparseVecFloat::size_type N = 20000000;
+    std::random_device rd;
+    //std::mt19937 gen(rd());
+
+    float upper = 12300.0f;
+    float lower = -12300.0f;
+    std::uniform_real_distribution<float> dis(lower, upper);
+
+    std::vector<float> linData(N);
+
+    for(sparseVecFloat::size_type i = 0; i < N/2; i++)
+        linData[i] = -1.0f * (float)i * 0.00123f;
+    for(sparseVecFloat::size_type i = 0; i < N/2; i++)
+        linData[i+N/2] = (float)i * 0.00123f;
+
+    sparseVecFloat testSVF;
+    testSVF.import(linData.data(), N);
+    testSVF.optimize(tb);
+
+    unsigned int tests = 1000;
+
+    {
+        sparseVecFloat::bvector_type xorSV;
+        sparseVecFloat::bvector_type xorVect;
+        sparseVecFloat::bvector_type xorConst;
+
+        sparseVecFloat::bvector_type bv_range;
+
+        std::vector<pair<float, float>> testRangesVector(tests);
+        for (unsigned int i = 0; i < tests; i++)
+        {
+            float f1 = dis(gen);
+            float f2 = dis(gen);
+            pair<float, float> toAdd(f1, f2);
+            testRangesVector[i] = toAdd;
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF with Linear Data find values in range unbounded with scanner", tests);
+            bm::sparse_vector_scanner<sparseVecFloat> scan;
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                scan.find_range_float_unbounded(testSVF, from, to, bv_range);
+
+                xorSV ^= bv_range;
+                bv_range.clear();
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "std::vector<float> with Linear Data find values in range unbounded", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                in_range_vect_unbounded(linData, from, to, bv_range);
+                xorVect ^= bv_range;
+                bv_range.clear();
+            }
+        }
+
+        {
+            bm::chrono_taker<> tt(cout, "SVF with Linear Data find values in range unbounded with Const Iterator", tests);
+            for (unsigned int i = 0; i < tests; i++)
+            {
+                pair<float, float> t = testRangesVector[i];
+                float from = t.first;
+                float to   = t.second;
+
+                in_range_const_unbounded(testSVF, from, to, bv_range);
+                xorConst ^= bv_range;
+                bv_range.clear();
+            }
+        }
+
+        bool range_eq_vector = (xorSV == xorVect);
+        bool range_eq_const  = (xorSV == xorConst);
+
+        if (!range_eq_vector || !range_eq_const)
+        {
+            cerr << "Linear: MISMATCH" << endl;
+            exit(1);
+        }
+    }
+}
+
+
 
 
 /// Random numbers test
@@ -5880,7 +7055,7 @@ void InterpolativeCodingTest()
         }
 
         {
-            bm::chrono_taker tt(cout, "bic_decode_u32_cm() ", 1);
+            bm::chrono_taker<> tt(cout, "bic_decode_u32_cm() ", 1);
 
             for (unsigned k = 0; k < code_repeats; ++k)
             {
@@ -5930,7 +7105,7 @@ void AS_test1()
     std::shuffle(tsample_v.begin(), tsample_v.end(), g);
 
         {
-        bm::chrono_taker tt(cout, "Test Compare", 1);
+        bm::chrono_taker<> tt(cout, "Test Compare", 1);
 
         for (unsigned i = 0; i < tsample_v.size(); i++)
         {
@@ -5948,7 +7123,7 @@ void AS_test1()
         bm::id64_t s1 = 0;
 
         {
-            bm::chrono_taker tt(cout, "Test AS-len", 1);
+            bm::chrono_taker<> tt(cout, "Test AS-len", 1);
             str_svect_type::size_type pos = 0;
             for (unsigned i = 0; i < 1000000; ++i) {
                 const std::pair<string, unsigned>& sp = tsample_v[i];
@@ -5960,7 +7135,7 @@ void AS_test1()
         }
 
         {
-            bm::chrono_taker tt(cout, "Test AS-z", 1);
+            bm::chrono_taker<> tt(cout, "Test AS-z", 1);
             str_svect_type::size_type pos = 0;
             for (unsigned i = 0; i < 1000000; ++i) {
                 const std::pair<string, unsigned>& sp = tsample_v[i];
@@ -5974,7 +7149,7 @@ void AS_test1()
 
 
         {
-        bm::chrono_taker tt(cout, "Test Plus-32", 1);
+        bm::chrono_taker<> tt(cout, "Test Plus-32", 1);
 
         for (unsigned i = 0; i < tsample_v.size(); i++)
         {
@@ -5993,7 +7168,7 @@ void AS_test1()
         bm::sparse_vector_scanner<str_svect_type, 64> scanner_64;
         scanner_64.bind(str_sv_srt1, true); // bind sorted vector
         {
-        bm::chrono_taker tt(cout, "Test Plus-64", 1);
+        bm::chrono_taker<> tt(cout, "Test Plus-64", 1);
 
         for (unsigned i = 0; i < tsample_v.size(); i++)
         {
@@ -6028,7 +7203,7 @@ void AS_test1()
         }
 
         {
-        bm::chrono_taker tt(cout, "Test Minus-32", 1);
+        bm::chrono_taker<> tt(cout, "Test Minus-32", 1);
 
         for (unsigned i = 0; i < tsample_v.size(); i++)
         {
@@ -6085,7 +7260,7 @@ void AS_test2()
         scanner_32.bind(str_sv_srt1, true); // bind sorted vector
 
         {
-        bm::chrono_taker tt(cout, "AS Test2 (scanner-32.bfind_eq_str()-len", 1);
+        bm::chrono_taker<> tt(cout, "AS Test2 (scanner-32.bfind_eq_str()-len", 1);
         for (unsigned k = 0; k < 10; ++k)
             for (unsigned i = 0; i < tsample_v.size(); i++) {
                 const std::pair<string, unsigned>& sp = tsample_v[i];
@@ -6099,7 +7274,7 @@ void AS_test2()
             }
         }
         {
-        bm::chrono_taker tt(cout, "AS Test2 (scanner-32.bfind_eq_str()-z", 1);
+        bm::chrono_taker<> tt(cout, "AS Test2 (scanner-32.bfind_eq_str()-z", 1);
         for (unsigned k = 0; k < 10; ++k)
             for (unsigned i = 0; i < tsample_v.size(); i++) {
                 const std::pair<string, unsigned>& sp = tsample_v[i];
@@ -6141,13 +7316,13 @@ void t2(const std::string& str, char delim, std::vector<std::string>& items)
 void test_ro()
 {
     {
-    bm::chrono_taker tt(cout, "DK T1 ", 1);
+    bm::chrono_taker<> tt(cout, "DK T1 ", 1);
     std::vector<std::string> items = t1("test", '\n');
     cout << items.size() << endl;
     }
 
     {
-    bm::chrono_taker tt(cout, "DK T2 ", 1);
+    bm::chrono_taker<> tt(cout, "DK T2 ", 1);
     std::vector<std::string> items;
     items.reserve(10240);
     t2("test", '\n', items);
@@ -6171,7 +7346,7 @@ int main(void)
 
 //    ptest();
 
-    bm::chrono_taker tt(cout, "TOTAL", 1);
+    bm::chrono_taker<> tt(cout, "TOTAL", 1);
     try
     {
         cout << endl;
@@ -6289,6 +7464,21 @@ int main(void)
         cout << endl;
 
         StrSparseVectorTest();
+        cout << endl;
+
+        TestSVFScanner();
+        cout << endl;
+
+        TestSVFScannerRSC();
+        cout << endl;
+        
+        TestSVFComparison();
+        cout << endl;
+        
+        TestSVFScannerSpike();
+        cout << endl;
+        
+        TestSVFScannerUnbounded();
         cout << endl;
 
         if (g_fl_cnt < 0 || c_acc) // ... to fool compiler optimizers not to exclude code
