@@ -360,7 +360,7 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistError(
 }
 
 
-IPSGS_Processor::EPSGS_Status CPSGS_AccessionVersionHistoryProcessor::GetStatus(void)
+IPSGS_Processor::EPSGS_Status CPSGS_AccessionVersionHistoryProcessor::GetStatus(void) const
 {
     auto    status = CPSGS_CassProcessorBase::GetStatus();
     if (status == IPSGS_Processor::ePSGS_InProgress)

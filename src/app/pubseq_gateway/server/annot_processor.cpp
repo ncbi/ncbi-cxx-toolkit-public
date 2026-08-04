@@ -819,7 +819,7 @@ void CPSGS_AnnotProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
 }
 
 
-IPSGS_Processor::EPSGS_Status CPSGS_AnnotProcessor::GetStatus(void)
+IPSGS_Processor::EPSGS_Status CPSGS_AnnotProcessor::GetStatus(void) const
 {
     auto    status = CPSGS_CassProcessorBase::GetStatus();
     if (status == IPSGS_Processor::ePSGS_InProgress)

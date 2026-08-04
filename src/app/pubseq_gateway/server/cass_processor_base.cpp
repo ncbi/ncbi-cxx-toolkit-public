@@ -155,7 +155,7 @@ void CPSGS_CassProcessorBase::UnlockWaitingProcessor(void)
 }
 
 
-IPSGS_Processor::EPSGS_Status CPSGS_CassProcessorBase::GetStatus(void)
+IPSGS_Processor::EPSGS_Status CPSGS_CassProcessorBase::GetStatus(void) const
 {
     if (m_Canceled)
         return IPSGS_Processor::ePSGS_Canceled;
@@ -815,5 +815,36 @@ void CPSGS_CassProcessorBase::ReportSecureSatUnauthorized(const string &  user_n
             ePSGS_SecureSatUnauthorized, eDiag_Error);
     UpdateOverallStatus(CRequestStatus::e401_Unauthorized);
     PSG_ERROR(err_msg);
+}
+
+
+IPSGS_Processor::TInternalState
+CPSGS_CassProcessorBase::GetInternalState() const
+{
+    TInternalState      values;
+
+    values.emplace_back("status", IPSGS_Processor::StatusToString(GetStatus()));
+    values.emplace_back("num_cass_fetches", to_string(m_FetchDetails.size()));
+    if (AreAllFinishedRead()) {
+        values.emplace_back("all_finished_read", "true");
+    } else {
+        values.emplace_back("all_finished_read", "false");
+    }
+    values.emplace_back("req_started_ago_mks",
+                        to_string(GetTimespanToNowMks(m_Request->GetStartTimestamp())));
+
+    return values;
+}
+
+
+IPSGS_Processor::TInternalState
+CPSGS_CassProcessorBase::GetSharedInternalState() const
+{
+    TInternalState      values;
+    auto *              app = CPubseqGatewayApp::GetInstance();
+
+    values.emplace_back("cass_active_statements",
+                        to_string(app->GetCassandraActiveStatements()));
+    return values;
 }
 

@@ -59,6 +59,10 @@ struct SPSGS_BlobId
     SPSGS_BlobId()
     {}
 
+    SPSGS_BlobId(string_view  blob_id) :
+        m_Id(blob_id)
+    {}
+
     SPSGS_BlobId(const string &  blob_id) :
         m_Id(blob_id)
     {}
@@ -70,7 +74,7 @@ struct SPSGS_BlobId
     SPSGS_BlobId &  operator=(const SPSGS_BlobId &) = default;
     SPSGS_BlobId &  operator=(SPSGS_BlobId &&) = default;
 
-    void SetId(const string &  blob_id)
+    void SetId(string_view  blob_id)
     {
         m_Id = blob_id;
     }

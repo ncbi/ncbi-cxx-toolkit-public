@@ -145,6 +145,8 @@ public:
     shared_ptr<CPSGMessages>  GetPublicCommentsMapping(void)
     { return m_CassSchemaProvider->GetMessages(); }
 
+    uint64_t GetCassandraActiveStatements(void) const;
+
     int OnBadURL(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnGet(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnGetBlob(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
@@ -278,7 +280,7 @@ private:
     struct SRequestParameter
     {
         bool            m_Found;
-        CTempString     m_Value;
+        string_view     m_Value;
 
         SRequestParameter() : m_Found(false)
         {}
@@ -287,7 +289,7 @@ private:
     void x_SendMessageAndCompletionChunks(
         shared_ptr<CPSGS_Reply>  reply,
         const psg_time_point_t &  now,
-        const string &  message,
+        string_view  message,
         CRequestStatus::ECode  status, int  code, EDiagSev  severity);
 
     bool x_ProcessCommonGetAndResolveParams(
@@ -318,25 +320,24 @@ private:
                             CRequestStatus::ECode  status,
                             size_t  bytes_sent);
 
-    SRequestParameter  x_GetParam(CHttpRequest &  req,
-                                  const string &  name) const;
+    SRequestParameter  x_GetParam(CHttpRequest &  req, string_view  name) const;
     bool  x_GetSendBlobIfSmallParameter(CHttpRequest &  req,
                                         shared_ptr<CPSGS_Reply>  reply,
                                         const psg_time_point_t &  now,
                                         int &  send_blob_if_small);
-    bool x_IsBoolParamValid(const string &  param_name,
-                            const CTempString &  param_value,
+    bool x_IsBoolParamValid(string_view  param_name,
+                            string_view  param_value,
                             string &  err_msg) const;
-    bool x_ConvertIntParameter(const string &  param_name,
-                               const CTempString &  param_value,
+    bool x_ConvertIntParameter(string_view  param_name,
+                               string_view  param_value,
                                int &  converted,
                                string &  err_msg) const;
-    bool x_ConvertIntParameter(const string &  param_name,
-                               const CTempString &  param_value,
+    bool x_ConvertIntParameter(string_view  param_name,
+                               string_view  param_value,
                                int64_t &  converted,
                                string &  err_msg) const;
-    bool x_ConvertDoubleParameter(const string &  param_name,
-                                  const CTempString &  param_value,
+    bool x_ConvertDoubleParameter(string_view  param_name,
+                                  string_view  param_value,
                                   double &  converted,
                                   string &  err_msg) const;
     bool x_GetUseCacheParameter(CHttpRequest &  req,
@@ -457,14 +458,14 @@ private:
 
     void x_InsufficientArguments(shared_ptr<CPSGS_Reply>  reply,
                                  const psg_time_point_t &  now,
-                                 const string &  err_msg);
+                                 string_view  err_msg);
     void x_MalformedArguments(shared_ptr<CPSGS_Reply>  reply,
                               const psg_time_point_t &  now,
-                              const string &  err_msg);
+                              string_view  err_msg);
     void x_Finish500(shared_ptr<CPSGS_Reply>  reply,
                      const psg_time_point_t &  now,
                      EPSGS_PubseqGatewayErrorCode  code,
-                     const string &  err_msg);
+                     string_view  err_msg);
     bool x_IsShuttingDown(shared_ptr<CPSGS_Reply>  reply,
                           const psg_time_point_t &  now);
     bool x_IsShuttingDownForZEndPoints(shared_ptr<CPSGS_Reply>  reply,
@@ -618,6 +619,8 @@ private:
     size_t                              m_AsyncLogDroppedRequestsOffset;
     size_t                              m_AsyncLogDroppedMessagesLastVal;
     size_t                              m_AsyncLogDroppedRequestsLastVal;
+
+    atomic<psg_time_point_t>            m_LastBacklogDataSaving;
 
 private:
     static CPubseqGatewayApp *          sm_PubseqApp;

@@ -207,7 +207,7 @@ CPSGS_ResolveProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
 }
 
 
-IPSGS_Processor::EPSGS_Status CPSGS_ResolveProcessor::GetStatus(void)
+IPSGS_Processor::EPSGS_Status CPSGS_ResolveProcessor::GetStatus(void) const
 {
     auto    status = CPSGS_CassProcessorBase::GetStatus();
     if (status == IPSGS_Processor::ePSGS_InProgress) {

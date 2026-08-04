@@ -64,9 +64,11 @@ public:
     void UnlockWaitingProcessor(void);
     void LoggingCallback(EDiagSev  severity, const string &  message);
     string SerializeAllFetches(void) const;
+    IPSGS_Processor::TInternalState GetInternalState() const override;
+    IPSGS_Processor::TInternalState GetSharedInternalState() const override;
 
 protected:
-    IPSGS_Processor::EPSGS_Status GetStatus(void) override;
+    IPSGS_Processor::EPSGS_Status GetStatus(void) const override;
     bool AreAllFinishedRead(void) const;
     bool IsMyNCBIFinished(void) const;
     void UpdateOverallStatus(CRequestStatus::ECode  status);

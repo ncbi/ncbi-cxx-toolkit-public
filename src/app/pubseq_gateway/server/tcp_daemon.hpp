@@ -104,6 +104,7 @@ public:
     void KillAll(void);
     void JoinWorkers(void);
     string GetConnectionsStatus(int64_t  self_connection_id);
+    string GetConnectionsInfoOnBacklog(void);
     void PopulateThrottlingData(SThrottlingData &  throttling_data);
     bool CloseThrottledConnection(unsigned int  worker_id, int64_t  conn_id);
 
@@ -177,6 +178,10 @@ struct CTcpWorker
                                  uint64_t  idle_timeout_ms);
     bool CloseThrottledConnection(int64_t  conn_id);
 
+    string GetConnectionsInfoOnBacklog(void);
+    unsigned int  GetId(void) const
+    { return m_id; }
+
     // Need to be public because the CHttpConnection may need to close a
     // hanging connection using libuv facilities. See
     // CHttpConnection::CloseThrottledConnection()
@@ -234,6 +239,9 @@ public:
 
     string GetConnectionsStatus(int64_t  self_connection_id)
     { return m_WorkersList->GetConnectionsStatus(self_connection_id); }
+
+    string GetConnectionsInfoOnBacklog(void)
+    { return m_WorkersList->GetConnectionsInfoOnBacklog(); }
 
     void PopulateThrottlingData(SThrottlingData &  throttling_data)
     { m_WorkersList->PopulateThrottlingData(throttling_data); }

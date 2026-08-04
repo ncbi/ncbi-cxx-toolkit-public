@@ -389,7 +389,7 @@ string GetCassStartupDataStateMessage(EPSGS_StartupDataState  state);
 static const size_t     kPSGToStringBufferSize = 64;
 long PSGToString(long  value, char *  buf);
 
-string SanitizeInputValue(const string &  input_val);
+string SanitizeInputValue(string_view  input_val);
 string GetSiteFromIP(const string &  ip_address);
 
 CRef<CRequestContext> CreateErrorRequestContext(const string &  client_ip,

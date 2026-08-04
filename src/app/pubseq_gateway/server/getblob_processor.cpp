@@ -361,7 +361,7 @@ void CPSGS_GetBlobProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
 }
 
 
-IPSGS_Processor::EPSGS_Status CPSGS_GetBlobProcessor::GetStatus(void)
+IPSGS_Processor::EPSGS_Status CPSGS_GetBlobProcessor::GetStatus(void) const
 {
     auto    status = CPSGS_CassProcessorBase::GetStatus();
     if (status == IPSGS_Processor::ePSGS_InProgress)

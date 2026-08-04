@@ -60,7 +60,7 @@ public:
                                              TProcessorPriority priority) const override;
     virtual void Process(void) override;
     virtual void Cancel(void) override;
-    virtual EPSGS_Status GetStatus(void) override;
+    virtual EPSGS_Status GetStatus(void) const override;
     virtual string GetName(void) const override;
     virtual string GetGroupName(void) const override;
 

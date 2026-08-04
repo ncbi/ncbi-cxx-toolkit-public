@@ -341,38 +341,45 @@ void CHttpConnection::ScheduleMaintain(void)
 }
 
 
-void CHttpConnection::x_RegisterPending(shared_ptr<CPSGS_Request>  request,
-                                        shared_ptr<CPSGS_Reply>  reply,
-                                        list<string>  processor_names)
+CHttpConnection::EPSGS_PostponeResultType
+CHttpConnection::x_RegisterPending(shared_ptr<CPSGS_Request>  request,
+                                   shared_ptr<CPSGS_Reply>  reply,
+                                   list<string>  processor_names)
 {
     if (m_RunningRequests.size() < m_HttpMaxRunning) {
         x_Start(request, reply, std::move(processor_names));
-    } else if (m_BacklogRequests.size() < m_HttpMaxBacklog) {
+        return ePSGS_Running;
+    }
+
+    if (m_BacklogRequests.size() < m_HttpMaxBacklog) {
         RegisterBackloggedRequest(request->GetRequestType());
         m_BacklogRequests.push_back(
                 SBacklogAttributes{request, reply,
                                    std::move(processor_names),
                                    psg_clock_t::now()});
         IncrementBackloggedCounter();
-    } else {
-        IncrementTooManyRequestsCounter();
-
-        CJsonNode   req_json = request->Serialize();
-        string      req_str = req_json.Repr(CJsonNode::fStandardJson);
-        SetRequestDroppedAlert("A request dropped because there are too many "
-                               "running and backlogged requests. Connection id: " +
-                               to_string(m_RunTimeProps.m_Id) +
-                               ". Request: " + req_str);
-
-        reply->SetContentType(ePSGS_PSGMime);
-        reply->PrepareReplyMessage("Too many pending requests",
-                                   CRequestStatus::e503_ServiceUnavailable,
-                                   ePSGS_TooManyRequests, eDiag_Error);
-        reply->PrepareReplyCompletion(CRequestStatus::e503_ServiceUnavailable,
-                                      psg_clock_t::now());
-        reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
-        reply->SetCompleted();
+        return ePSGS_Backlog;
     }
+
+    // Here: too many requests for that connection
+    IncrementTooManyRequestsCounter();
+
+    CJsonNode   req_json = request->Serialize();
+    string      req_str = req_json.Repr(CJsonNode::fStandardJson);
+    SetRequestDroppedAlert("A request dropped because there are too many "
+                           "running and backlogged requests. Connection id: " +
+                           to_string(m_RunTimeProps.m_Id) +
+                           ". Request: " + req_str);
+
+    reply->SetContentType(ePSGS_PSGMime);
+    reply->PrepareReplyMessage("Too many pending requests",
+                               CRequestStatus::e503_ServiceUnavailable,
+                               ePSGS_TooManyRequests, eDiag_Error);
+    reply->PrepareReplyCompletion(CRequestStatus::e503_ServiceUnavailable,
+                                  psg_clock_t::now());
+    reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
+    reply->SetCompleted();
+    return ePSGS_Dismissed;
 }
 
 
@@ -428,9 +435,10 @@ CHttpConnection::x_Start(shared_ptr<CPSGS_Request>  request,
 }
 
 
-void CHttpConnection::Postpone(shared_ptr<CPSGS_Request>  request,
-                               shared_ptr<CPSGS_Reply>  reply,
-                               list<string>  processor_names)
+CHttpConnection::EPSGS_PostponeResultType
+CHttpConnection::Postpone(shared_ptr<CPSGS_Request>  request,
+                          shared_ptr<CPSGS_Reply>  reply,
+                          list<string>  processor_names)
 {
     auto    http_reply = reply->GetHttpReply();
     switch (http_reply->GetState()) {
@@ -452,7 +460,7 @@ void CHttpConnection::Postpone(shared_ptr<CPSGS_Request>  request,
     }
 
     http_reply->SetPostponed();
-    x_RegisterPending(request, reply, std::move(processor_names));
+    return x_RegisterPending(request, reply, std::move(processor_names));
 }
 
 
@@ -719,5 +727,182 @@ void CHttpConnection::OnBeforeClosedConnection(void)
             m_HttpAcceptCtx.ssl_ctx = nullptr;
         }
     }
+}
+
+
+string CHttpConnection::GetInternalState(void)
+{
+    string      json;
+    string      shared_part;
+    string      running_part = x_GetRunningRequestsState(shared_part);
+
+    json.append("{\"conn_id\": ")
+        .append(to_string(m_RunTimeProps.m_Id))
+        .append(", \"backlog_reqs\": ")
+        .append(x_GetBacklogRequestsState())
+        .append(", \"running_reqs\": ")
+        .append(running_part)
+        .append(", \"shared_state\": ")
+        .append(shared_part);
+    json.push_back('}');
+    return json;
+}
+
+
+string CHttpConnection::x_GetBacklogRequestsState(void)
+{
+    string      json;
+    bool        need_comma = false;
+    json.push_back('[');
+
+    for (const auto &  item : m_BacklogRequests) {
+        if (need_comma) {
+            json.push_back(',');
+        } else {
+            need_comma = true;
+        }
+        json.append("{\"req_type\": \"")
+            .append(CPSGS_Request::TypeToString(item.m_Request->GetRequestType()));
+        json.push_back('"');
+
+        size_t  proc_index = 0;
+        string  proc_index_name;
+        for (const string &  preliminary_proc : item.m_PreliminaryDispatchedProcessors) {
+            json.append(", ");
+
+            ++proc_index;
+            proc_index_name = "proc" + to_string(proc_index);
+            json.append("\"")
+                .append(proc_index_name)
+                .append("\": \"")
+                .append(preliminary_proc);
+            json.push_back('"');
+        }
+
+        json.push_back('}');
+    }
+
+    json.push_back(']');
+    return json;
+}
+
+
+string CHttpConnection::x_GetRunningRequestsState(string &  shared_part)
+{
+    string                          json;
+    bool                            need_comma = false;
+    map<string, optional<string>>   shared_info =
+    {
+        {"CASSANDRA", nullopt},
+        {"CDD", nullopt},
+        {"SNP", nullopt},
+        {"WGS", nullopt}
+    };
+
+
+    json.push_back('[');
+    for (const auto &  running_req : m_RunningRequests) {
+        auto    http_reply = running_req.m_Reply->GetHttpReply();
+
+        if (need_comma) {
+            json.push_back(',');
+        } else {
+            need_comma = true;
+        }
+
+        json.append("{\"req_type\": \"")
+            .append(CPSGS_Request::TypeToString(running_req.m_Request->GetRequestType()));
+        json.push_back('"');
+
+
+        size_t  proc_index = 0;
+        string  proc_index_name;
+        for (auto req: http_reply->GetPendingReqs()) {
+            IPSGS_Processor *   proc = req->GetProcessor();
+
+            // Populate the shared information if it is a first time for a
+            // processor group
+            auto    group_it = shared_info.find(proc->GetGroupName());
+            if (group_it != shared_info.end()) {
+                if (!group_it->second.has_value()) {
+                    string      shared_value;
+                    bool        need_shared_comma = false;
+
+                    shared_value.push_back('[');
+                    for (const pair<string, string> &  shared_state_item : proc->GetSharedInternalState()) {
+                        if (need_shared_comma) {
+                            shared_value.push_back(',');
+                        } else {
+                            need_shared_comma = true;
+                        }
+
+                        shared_value.append("[\"")
+                                    .append(shared_state_item.first)
+                                    .append("\", \"")
+                                    .append(shared_state_item.second)
+                                    .append("\"]");
+                    }
+                    shared_value.push_back(']');
+                    group_it->second = shared_value;
+                }
+            }
+
+            json.append(", ");
+
+            ++proc_index;
+            proc_index_name = "proc" + to_string(proc_index);
+            json.append("\"")
+                .append(proc_index_name)
+                .append("\": \"")
+                .append(proc->GetName())
+                .append("\", \"")
+                .append(proc_index_name)
+                .append("_internal\": [");
+
+            bool        need_internal_comma = false;
+            for (const pair<string, string> &  internal_state_item : proc->GetInternalState()) {
+                if (need_internal_comma) {
+                    json.push_back(',');
+                } else {
+                    need_internal_comma = true;
+                }
+
+                json.append("[\"")
+                    .append(internal_state_item.first)
+                    .append("\", \"")
+                    .append(internal_state_item.second)
+                    .append("\"]");
+            }
+            json.push_back(']');
+        }
+        json.push_back('}');
+    }
+    json.push_back(']');
+
+
+    // The shared info was populated in a local map while iterating over all
+    // running processors. Let's store for the caller
+    need_comma = false;
+    shared_part.push_back('{');
+    for (const auto &  shared_item : shared_info) {
+        if (need_comma) {
+            shared_part.push_back(',');
+        } else {
+            need_comma = true;
+        }
+
+        shared_part.push_back('"');
+        shared_part.append(shared_item.first)
+                   .append("\": ");
+
+        if (shared_item.second.has_value()) {
+            shared_part.append(shared_item.second.value());
+        } else {
+            shared_part.append("[]");
+        }
+    }
+    shared_part.push_back('}');
+
+    return json;
 }
 

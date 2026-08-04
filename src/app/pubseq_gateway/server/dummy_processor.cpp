@@ -118,7 +118,7 @@ void CPSGS_DummyProcessor::Cancel(void)
 
 
 IPSGS_Processor::EPSGS_Status
-CPSGS_DummyProcessor::GetStatus(void)
+CPSGS_DummyProcessor::GetStatus(void) const
 {
     return m_Status;
 }

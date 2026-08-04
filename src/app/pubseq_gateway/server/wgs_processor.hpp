@@ -75,7 +75,7 @@ public:
 
     void Process(void) override;
     void Cancel(void) override;
-    EPSGS_Status GetStatus(void) override;
+    EPSGS_Status GetStatus(void) const override;
     string GetName(void) const override;
     string GetGroupName(void) const override;
 

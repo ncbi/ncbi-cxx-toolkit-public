@@ -1206,7 +1206,7 @@ void CPubseqGatewayApp::CheckCassMapping(void)
 void  CPubseqGatewayApp::x_SendMessageAndCompletionChunks(
         shared_ptr<CPSGS_Reply>  reply,
         const psg_time_point_t &  create_timestamp,
-        const string &  message,
+        string_view  message,
         CRequestStatus::ECode  status, int  code, EDiagSev  severity)
 {
     if (reply->IsFinished()) {
@@ -1320,6 +1320,17 @@ void CPubseqGatewayApp::x_FixIntrospectionBuildDate(void)
     m_HelpMessageHtml.replace(build_date_begin_pos,
                               build_date_end_pos - build_date_begin_pos,
                               PUBSEQ_GATEWAY_BUILD_DATE);
+}
+
+
+uint64_t CPubseqGatewayApp::GetCassandraActiveStatements(void) const
+{
+    if (m_CassConnection) {
+        return static_cast<uint64_t>(m_CassConnection->GetActiveStatements());
+    }
+
+    // No cassandra connection
+    return 0;
 }
 
 

@@ -148,7 +148,7 @@ void CPSGS_CassProcessorDispatcher::Cancel(void)
 
 
 IPSGS_Processor::EPSGS_Status
-CPSGS_CassProcessorDispatcher::GetStatus(void)
+CPSGS_CassProcessorDispatcher::GetStatus(void) const
 {
     return ePSGS_Error; // Not supposed to process any requests
 }

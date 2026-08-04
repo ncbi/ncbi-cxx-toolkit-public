@@ -159,6 +159,12 @@ string CHttpDaemon::GetConnectionsStatus(int64_t  self_connection_id)
 }
 
 
+string CHttpDaemon::GetConnectionsInfoOnBacklog(void)
+{
+    return m_TcpDaemon->GetConnectionsInfoOnBacklog();
+}
+
+
 void CHttpDaemon::PopulateThrottlingData(SThrottlingData &  throttling_data)
 {
     m_TcpDaemon->PopulateThrottlingData(throttling_data);

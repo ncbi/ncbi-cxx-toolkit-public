@@ -168,7 +168,7 @@ public:
     /// Tells the processor status (if it has finished or in progress)
     /// @return
     ///  the current processor status
-    virtual EPSGS_Status GetStatus(void) = 0;
+    virtual EPSGS_Status GetStatus(void) const = 0;
 
     /// Tells the processor name (used in logging and tracing)
     /// @return

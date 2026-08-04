@@ -731,7 +731,7 @@ void CPSGS_CDDProcessor::Cancel()
 }
 
 
-IPSGS_Processor::EPSGS_Status CPSGS_CDDProcessor::GetStatus()
+IPSGS_Processor::EPSGS_Status CPSGS_CDDProcessor::GetStatus() const
 {
     return m_Status;
 }

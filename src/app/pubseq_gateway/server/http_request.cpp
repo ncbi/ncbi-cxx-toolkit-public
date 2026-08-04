@@ -229,19 +229,18 @@ void CHttpRequest::ParseParams(void)
 }
 
 
-bool CHttpRequest::GetParam(const char *  name, size_t  len,
+bool CHttpRequest::GetParam(string_view  name,
                             const char **  value, size_t *  value_len)
 {
     if (!m_ParamParsed)
         ParseParams();
 
-    string_view     target{name, len};
     for (size_t i = 0; i < m_ParamCount; ++i) {
         string_view     param_name{m_Params[i].m_Name,
                                    m_Params[i].m_NameLen};
         // string_view implements an optimized comparison while creating a
         // wrapper cost virtually zero
-        if (target == param_name) {
+        if (name == param_name) {
             *value = m_Params[i].m_Val;
             if (value_len)
                 *value_len = m_Params[i].m_ValLen;
@@ -257,7 +256,7 @@ bool CHttpRequest::GetParam(const char *  name, size_t  len,
 }
 
 
-bool CHttpRequest::GetMultipleValuesParam(const char *  name, size_t  len,
+bool CHttpRequest::GetMultipleValuesParam(string_view  name,
                                           vector<string> &  values)
 {
     if (!m_ParamParsed)
@@ -265,8 +264,11 @@ bool CHttpRequest::GetMultipleValuesParam(const char *  name, size_t  len,
 
     bool        found = false;
     for (size_t i = 0; i < m_ParamCount; ++i) {
-        if (m_Params[i].m_NameLen == len &&
-            memcmp(m_Params[i].m_Name, name, len) == 0) {
+        // string_view implements an optimized comparison while creating a
+        // wrapper cost virtually zero
+        string_view     param_name{m_Params[i].m_Name,
+                                   m_Params[i].m_NameLen};
+        if (name == param_name) {
             values.push_back(string(m_Params[i].m_Val,
                                     m_Params[i].m_ValLen));
             found = true;
@@ -276,8 +278,8 @@ bool CHttpRequest::GetMultipleValuesParam(const char *  name, size_t  len,
 }
 
 
-static string   kPeerSocketPort = "peer_socket_port";
-static string   kPeerSocketIP = "peer_socket_ip";
+const string   kPeerSocketPort = "peer_socket_port";
+const string   kPeerSocketIP = "peer_socket_ip";
 CDiagContext_Extra &  CHttpRequest::PrintParams(CDiagContext_Extra &  extra,
                                                 bool need_peer_ip)
 {
@@ -345,7 +347,7 @@ string CHttpRequest::GetHeaderValue(const string &  name)
 }
 
 
-static string       kWebCubbyUser = "WebCubbyUser";
+const string        kWebCubbyUser = "WebCubbyUser";
 optional<string> CHttpRequest::GetWebCubbyUser(void)
 {
     return x_GetCookieValue(kWebCubbyUser);
@@ -353,7 +355,7 @@ optional<string> CHttpRequest::GetWebCubbyUser(void)
 
 
 
-static string       kAdminAuthToken = "AdminAuthToken";
+const string        kAdminAuthToken = "AdminAuthToken";
 optional<string> CHttpRequest::GetAdminAuthToken(void)
 {
     return x_GetCookieValue(kAdminAuthToken);
@@ -361,7 +363,7 @@ optional<string> CHttpRequest::GetAdminAuthToken(void)
 
 
 
-static string       kCookie = "cookie";
+const string        kCookie = "cookie";
 static size_t       kCookieSize = kCookie.size();
 optional<string> CHttpRequest::x_GetCookieValue(const string &  cookie_name)
 {

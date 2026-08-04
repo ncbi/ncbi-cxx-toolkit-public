@@ -611,7 +611,7 @@ string CPSGS_IPGResolveProcessor::x_GetNotFoundMessage(void)
 }
 
 
-IPSGS_Processor::EPSGS_Status CPSGS_IPGResolveProcessor::GetStatus(void)
+IPSGS_Processor::EPSGS_Status CPSGS_IPGResolveProcessor::GetStatus(void) const
 {
     auto    status = CPSGS_CassProcessorBase::GetStatus();
     if (status == IPSGS_Processor::ePSGS_InProgress)

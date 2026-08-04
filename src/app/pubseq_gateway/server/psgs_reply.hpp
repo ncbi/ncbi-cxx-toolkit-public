@@ -325,7 +325,7 @@ public:
                               const string &  public_comment,
                               int64_t  id2_chunk,
                               const string &  id2_info);
-    void PrepareReplyMessage(const string &  msg,
+    void PrepareReplyMessage(string_view  msg,
                              CRequestStatus::ECode  status, int  err_code,
                              EDiagSev  severity,
                              bool  need_update_last_activity=true);

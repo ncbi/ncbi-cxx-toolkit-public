@@ -1137,7 +1137,7 @@ void CPSGS_Reply::PrepareBlobCompletion(CCassBlobFetch *  fetch_details,
 }
 
 
-void CPSGS_Reply::PrepareReplyMessage(const string &         msg,
+void CPSGS_Reply::PrepareReplyMessage(string_view            msg,
                                       CRequestStatus::ECode  status,
                                       int                    err_code,
                                       EDiagSev               severity,

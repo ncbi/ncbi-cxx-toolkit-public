@@ -90,6 +90,9 @@ struct SPubseqGatewaySettings
     double                              m_ProcessorThrottleByIpPercent;
     optional<bool>                      m_ThpEnable;
 
+    bool                                m_BacklogDataEnable;
+    size_t                              m_BacklogDataMinDelayMs;
+
     // [STATISTICS]
     unsigned long                       m_SmallBlobSize;
     unsigned long                       m_MinStatValue;

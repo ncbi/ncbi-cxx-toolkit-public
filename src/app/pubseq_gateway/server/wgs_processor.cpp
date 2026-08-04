@@ -1024,7 +1024,7 @@ void CPSGS_WGSProcessor::Cancel()
 }
 
 
-IPSGS_Processor::EPSGS_Status CPSGS_WGSProcessor::GetStatus()
+IPSGS_Processor::EPSGS_Status CPSGS_WGSProcessor::GetStatus() const
 {
     return m_Status;
 }

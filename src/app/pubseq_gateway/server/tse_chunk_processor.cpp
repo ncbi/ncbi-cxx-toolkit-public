@@ -1181,7 +1181,7 @@ CPSGS_TSEChunkProcessor::x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id)
 }
 
 
-IPSGS_Processor::EPSGS_Status CPSGS_TSEChunkProcessor::GetStatus(void)
+IPSGS_Processor::EPSGS_Status CPSGS_TSEChunkProcessor::GetStatus(void) const
 {
     auto    status = CPSGS_CassProcessorBase::GetStatus();
     if (status == IPSGS_Processor::ePSGS_InProgress)

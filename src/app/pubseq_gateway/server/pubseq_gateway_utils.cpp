@@ -172,122 +172,54 @@ SBioseqResolution::AdjustName(shared_ptr<CPSGS_Request>  request,
 }
 
 
-static string   s_ProtocolPrefix = "\n\nPSG-Reply-Chunk: ";
-
-// Names
-static string   s_ItemId = "item_id=";
-static string   s_ItemType = "item_type=";
-static string   s_ChunkType = "chunk_type=";
-static string   s_Size = "size=";
-static string   s_BlobChunk = "blob_chunk=";
-static string   s_NChunks = "n_chunks=";
-static string   s_Status = "status=";
-static string   s_Code = "code=";
-static string   s_Severity = "severity=";
-static string   s_BlobId = "blob_id=";
-static string   s_Fmt = "fmt=";
-static string   s_NA = "na=";
-static string   s_Reason = "reason=";
-static string   s_TimeUntilResend = "time_until_resend=";
-static string   s_SentSecondsAgo = "sent_seconds_ago=";
-static string   s_NChunksOne = "n_chunks=1";
-static string   s_ProcessorId = "processor_id=";
-static string   s_Id2Chunk = "id2_chunk=";
-static string   s_Id2Info = "id2_info=";
-static string   s_LastModified = "last_modified=";
-static string   s_Progress = "progress=";
-static string   s_ExecTime = "exec_time=";
-static string   s_AssocId = "assoc_id=";
-static string   s_DataType = "data_type=";
-
 // Fixed values
-static string   s_ReplyData = "reply_data";
-static string   s_BioseqInfo = "bioseq_info";
-static string   s_BlobProp = "blob_prop";
-static string   s_Data = "data";
-static string   s_DataAndMeta = "data_and_meta";
-static string   s_MessageAndMeta = "message_and_meta";
-static string   s_Reply = "reply";
-static string   s_Blob = "blob";
-static string   s_Meta = "meta";
-static string   s_Message = "message";
-static string   s_Protobuf = "protobuf";
-static string   s_Json = "json";
-static string   s_BioseqNA = "bioseq_na";
-static string   s_NAStatus = "na_status";
-static string   s_AccVerHistory = "acc_ver_history";
-static string   s_IPGInfo = "ipg_info";
-static string   s_Excluded = "excluded";
-static string   s_InProgress = "inprogress";
-static string   s_Sent = "sent";
-static string   s_Processor = "processor";
-static string   s_PublicComment = "public_comment";
-static string   s_BioseqMatch = "bioseq_match";
-
+constexpr string_view   s_Excluded = "excluded";
+constexpr string_view   s_InProgress = "inprogress";
+constexpr string_view   s_Sent = "sent";
 
 // Combinations
-static string   s_AndSize = "&" + s_Size;
-static string   s_AndStatus = "&" + s_Status;
-static string   s_AndCode = "&" + s_Code;
-static string   s_AndSeverity = "&" + s_Severity;
-static string   s_AndNChunks = "&" + s_NChunks;
-static string   s_AndBlobId = "&" + s_BlobId;
-static string   s_AndBlobChunk = "&" + s_BlobChunk;
-static string   s_AndNChunksOne = "&" + s_NChunksOne;
-static string   s_AndReason = "&" + s_Reason;
-static string   s_AndTimeUntilResend = "&" + s_TimeUntilResend;
-static string   s_AndSentSecondsAgo = "&" + s_SentSecondsAgo;
-static string   s_AndNA = "&" + s_NA;
-static string   s_BioseqInfoItem = s_ItemType + s_BioseqInfo;
-static string   s_AndBioseqInfoItem = "&" + s_BioseqInfoItem;
-static string   s_BlobPropItem = s_ItemType + s_BlobProp;
-static string   s_AndBlobPropItem = "&" + s_BlobPropItem;
-static string   s_BioseqNAItem = s_ItemType + s_BioseqNA;
-static string   s_AndBioseqNAItem = "&" + s_BioseqNAItem;
-static string   s_NAStatusItem = s_ItemType + s_NAStatus;
-static string   s_AndNAStatusItem = "&" + s_NAStatusItem;
-static string   s_AccVerHistoryItem = s_ItemType + s_AccVerHistory;
-static string   s_IPGInfoItem = s_ItemType + s_IPGInfo;
-static string   s_AndAccVerHistoryItem = "&" + s_AccVerHistoryItem;
-static string   s_AndIPGInfoItem = "&" + s_IPGInfoItem;
-static string   s_BlobItem = s_ItemType + s_Blob;
-static string   s_AndBlobItem = "&" + s_BlobItem;
-static string   s_ReplyItem = s_ItemType + s_Reply;
-static string   s_AndReplyItem = "&" + s_ReplyItem;
-static string   s_ProcessorItem = s_ItemType + s_Processor;
-static string   s_PublicCommentItem = s_ItemType + s_PublicComment;
-static string   s_AndProcessorItem = "&" + s_ProcessorItem;
-static string   s_AndPublicCommentItem = "&" + s_PublicCommentItem;
-static string   s_AndProcessorId = "&" + s_ProcessorId;
-static string   s_AndId2Chunk = "&" + s_Id2Chunk;
-static string   s_AndId2Info = "&" + s_Id2Info;
-static string   s_AndLastModified = "&" + s_LastModified;
-static string   s_AndProgress = "&" + s_Progress;
-static string   s_ReplyDataItem = s_ItemType + s_ReplyData;
-static string   s_AndReplyDataItem = "&" + s_ReplyDataItem;
+constexpr string_view   s_AndSize = "&size=";
+constexpr string_view   s_AndStatus = "&status=";
+constexpr string_view   s_AndCode = "&code=";
+constexpr string_view   s_AndSeverity = "&severity=";
+constexpr string_view   s_AndNChunks = "&n_chunks=";
+constexpr string_view   s_AndBlobId = "&blob_id=";
+constexpr string_view   s_AndBlobChunk = "&blob_chunk=";
+constexpr string_view   s_AndNChunksOne = "&n_chunks=1";
+constexpr string_view   s_AndReason = "&reason=";
+constexpr string_view   s_AndTimeUntilResend = "&time_until_resend=";
+constexpr string_view   s_AndSentSecondsAgo = "&sent_seconds_ago=";
+constexpr string_view   s_AndNA = "&na=";
+constexpr string_view   s_AndBioseqInfoItem = "&item_type=bioseq_info";
+constexpr string_view   s_AndBlobPropItem = "&item_type=blob_prop";
+constexpr string_view   s_AndBioseqNAItem = "&item_type=bioseq_na";
+constexpr string_view   s_AndNAStatusItem = "&item_type=na_status";
+constexpr string_view   s_AndAccVerHistoryItem = "&item_type=acc_ver_history";
+constexpr string_view   s_AndIPGInfoItem = "&item_type=ipg_info";
+constexpr string_view   s_AndBlobItem = "&item_type=blob";
+constexpr string_view   s_AndReplyItem = "&item_type=reply";
+constexpr string_view   s_AndProcessorItem = "&item_type=processor";
+constexpr string_view   s_AndPublicCommentItem = "&item_type=public_comment";
+constexpr string_view   s_AndProcessorId = "&processor_id=";
+constexpr string_view   s_AndId2Chunk = "&id2_chunk=";
+constexpr string_view   s_AndId2Info = "&id2_info=";
+constexpr string_view   s_AndLastModified = "&last_modified=";
+constexpr string_view   s_AndProgress = "&progress=";
+constexpr string_view   s_AndReplyDataItem = "&item_type=reply_data";
 
-static string   s_DataChunk = s_ChunkType + s_Data;
-static string   s_DataAndMetaChunk = s_ChunkType + s_DataAndMeta;
-static string   s_AndDataChunk = "&" + s_DataChunk;
-static string   s_AndDataAndMetaChunk = "&" + s_DataAndMetaChunk;
-static string   s_MessageAndMetaChunk = s_ChunkType + s_MessageAndMeta;
-static string   s_AndMessageAndMetaChunk = "&" + s_MessageAndMetaChunk;
-static string   s_MetaChunk = s_ChunkType + s_Meta;
-static string   s_AndMetaChunk = "&" + s_MetaChunk;
-static string   s_MessageChunk = s_ChunkType + s_Message;
-static string   s_AndMessageChunk = "&" + s_MessageChunk;
-static string   s_FmtJson = s_Fmt + s_Json;
-static string   s_AndFmtJson = "&" + s_FmtJson;
-static string   s_FmtProtobuf = s_Fmt + s_Protobuf;
-static string   s_AndFmtProtobuf = "&" + s_FmtProtobuf;
-static string   s_AndExecTime = "&" + s_ExecTime;
-static string   s_AndDataTypeBioseqMatch = "&" + s_DataType + s_BioseqMatch;
-static string   s_AndAssocId = "&" + s_AssocId;
+constexpr string_view   s_AndDataChunk = "&chunk_type=data";
+constexpr string_view   s_AndDataAndMetaChunk = "&chunk_type=data_and_meta";
+constexpr string_view   s_AndMessageAndMetaChunk = "&chunk_type=message_and_meta";
+constexpr string_view   s_AndMetaChunk = "&chunk_type=meta";
+constexpr string_view   s_AndMessageChunk = "&chunk_type=message";
+constexpr string_view   s_AndFmtJson = "&fmt=json";
+constexpr string_view   s_AndFmtProtobuf = "&fmt=protobuf";
+constexpr string_view   s_AndExecTime = "&exec_time=";
+constexpr string_view   s_AndDataTypeBioseqMatch = "&data_type=bioseq_match";
+constexpr string_view   s_AndAssocId = "&assoc_id=";
 
-static string   s_ReplyBegin = s_ProtocolPrefix + s_ItemId;
-static string   s_ReplyCompletionFixedPart = s_ReplyBegin + "0&" +
-                                             s_ReplyItem + "&" +
-                                             s_MetaChunk + "&" + s_NChunks;
+constexpr string_view   s_ReplyBegin = "\n\nPSG-Reply-Chunk: item_id=";
+constexpr string_view   s_ReplyCompletionFixedPart = "\n\nPSG-Reply-Chunk: item_id=0&item_type=reply&chunk_type=meta&n_chunks=";
 
 
 static string SeverityToLowerString(EDiagSev  severity)
@@ -298,7 +230,7 @@ static string SeverityToLowerString(EDiagSev  severity)
 }
 
 
-static string SkipReasonToString(EPSGS_BlobSkipReason  skip_reason)
+static string_view SkipReasonToString(EPSGS_BlobSkipReason  skip_reason)
 {
     switch (skip_reason) {
         case ePSGS_BlobExcluded:
@@ -312,9 +244,7 @@ static string SkipReasonToString(EPSGS_BlobSkipReason  skip_reason)
 }
 
 
-static string s_AndBioseqInfoItemAndDataChunkAndSize = s_AndBioseqInfoItem +
-                                                       s_AndDataChunk +
-                                                       s_AndSize;
+constexpr string_view s_AndBioseqInfoItemAndDataChunkAndSize = "&item_type=bioseq_info&chunk_type=data&size=";
 string  GetBioseqInfoHeader(size_t  item_id,
                             const string &  processor_id,
                             size_t  bioseq_info_size,
@@ -418,9 +348,7 @@ string  GetBioseqCompletionHeader(size_t  item_id,
 
 
 
-static string s_AndBioseqInfoItemAndDataAndMetaChunkAndSize = s_AndBioseqInfoItem +
-                                                              s_AndDataAndMetaChunk +
-                                                              s_AndSize;
+constexpr string_view s_AndBioseqInfoItemAndDataAndMetaChunkAndSize = "&item_type=bioseq_info&chunk_type=data_and_meta&size=";
 string GetBioseqInfoHeaderAndCompletion(size_t  item_id,
                                         const string &  processor_id,
                                         size_t  bioseq_info_size,
@@ -1477,7 +1405,7 @@ long PSGToString(long  signed_value, char *  buf)
 // It is used to sanitize string values which are received from a user and are
 // going to be sent out. This to prevent vulnerabilities like XSS when an input
 // value is intentionally malformed as a fragment of a script or so.
-string SanitizeInputValue(const string &  input_val)
+string SanitizeInputValue(string_view  input_val)
 {
     return NStr::HtmlEncode(input_val);
 }

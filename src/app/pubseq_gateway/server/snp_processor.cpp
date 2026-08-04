@@ -918,7 +918,7 @@ void CPSGS_SNPProcessor::Cancel()
 }
 
 
-IPSGS_Processor::EPSGS_Status CPSGS_SNPProcessor::GetStatus()
+IPSGS_Processor::EPSGS_Status CPSGS_SNPProcessor::GetStatus() const
 {
     return m_Status;
 }

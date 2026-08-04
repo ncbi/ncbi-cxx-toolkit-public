@@ -230,6 +230,31 @@ void CTcpWorkersList::JoinWorkers(void)
 }
 
 
+string CTcpWorkersList::GetConnectionsInfoOnBacklog(void)
+{
+    string      json;
+    bool        need_comma = false;
+
+    json.push_back('[');
+
+    for (auto &  it : m_Workers) {
+        if (need_comma) {
+            json.push_back(',');
+        } else {
+            need_comma = true;
+        }
+        json.append("{\"worker_id\": ")
+            .append(to_string(it->GetId()))
+            .append(", \"conns\": ")
+            .append(it->GetConnectionsInfoOnBacklog());
+        json.push_back('}');
+    }
+
+    json.push_back(']');
+    return json;
+}
+
+
 string CTcpWorkersList::GetConnectionsStatus(int64_t  self_connection_id)
 {
     string      json;
@@ -943,6 +968,36 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
 
     m_protocol.OnNewConnection(reinterpret_cast<uv_stream_t*>(tcp),
                                http_conn, s_OnClientClosed);
+}
+
+
+string CTcpWorker::GetConnectionsInfoOnBacklog(void)
+{
+    string      json;
+    bool        need_comma = false;
+
+    json.push_back('[');
+
+    std::lock_guard<std::mutex> lock(m_ConnListLock);
+    for (auto &  it: m_ConnectedList) {
+        if (need_comma) {
+            json.push_back(',');
+        } else {
+            need_comma = true;
+        }
+        SConnectionRunTimeProperties    props = get<1>(it).GetProperties();
+
+        json.append("{\"conn_id\": ")
+            .append(to_string(props.m_Id))
+            .append(", \"num_running\": ")
+            .append(to_string(props.m_NumRunningRequests))
+            .append(", \"num_backlog\": ")
+            .append(to_string(props.m_NumBackloggedRequests));
+        json.push_back('}');
+    }
+
+    json.push_back(']');
+    return json;
 }
 
 

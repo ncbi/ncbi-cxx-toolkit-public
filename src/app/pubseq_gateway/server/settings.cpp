@@ -99,6 +99,9 @@ const double            kDefaultThrottlingDataValidSec = 1.0;
 const double            kDefaultProcessorThrottleThresholdPercent = 80.0;
 const double            kDefaultProcessorThrottleByIpPercent = 25.0;
 
+const bool              kDefaultBacklogDataEnable = false;
+const size_t            kDefaultBacklogDataMinDelayMs = 1000;
+
 const unsigned long     kDefaultSendBlobIfSmall = 10 * 1024;
 const unsigned long     kDefaultSmallBlobSize = 16;
 const bool              kDefaultLog = true;
@@ -193,6 +196,8 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_ThrottlingDataValidSec(kDefaultThrottlingDataValidSec),
     m_ProcessorThrottleThresholdPercent(kDefaultProcessorThrottleThresholdPercent),
     m_ProcessorThrottleByIpPercent(kDefaultProcessorThrottleByIpPercent),
+    m_BacklogDataEnable(kDefaultBacklogDataEnable),
+    m_BacklogDataMinDelayMs(kDefaultBacklogDataMinDelayMs),
     m_SmallBlobSize(kDefaultSmallBlobSize),
     m_MinStatValue(kMinStatValue),
     m_MaxStatValue(kMaxStatValue),
@@ -424,6 +429,11 @@ void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registr
     if (registry.HasEntry(kServerSection, "thp_enable")) {
         m_ThpEnable = registry.GetBool(kServerSection, "thp_enable", true);
     }
+
+    m_BacklogDataEnable = registry.GetBool(kServerSection, "backlog_data_enable",
+                                           kDefaultBacklogDataEnable);
+    m_BacklogDataMinDelayMs = registry.GetInt(kServerSection, "backlog_data_min_delay_ms",
+                                              kDefaultBacklogDataMinDelayMs);
 }
 
 
@@ -1243,6 +1253,17 @@ void SPubseqGatewaySettings::x_ValidateServerSection(void)
             "The request timeout must be > 0. Resetting to " +
             to_string(kDefaultRequestTimeoutSec));
         m_RequestTimeoutSec = kDefaultRequestTimeoutSec;
+    }
+
+    if (m_BacklogDataEnable) {
+        if (m_BacklogDataMinDelayMs < 0) {
+            m_Errors.push_back(
+                "Invalid [" + kServerSection + "]/backlog_data_min_delay_ms value (" +
+                to_string(m_BacklogDataMinDelayMs) + "). "
+                "The delay must be > 0. Resetting to " +
+                to_string(kDefaultBacklogDataMinDelayMs));
+            m_BacklogDataMinDelayMs = kDefaultBacklogDataMinDelayMs;
+        }
     }
 }
 

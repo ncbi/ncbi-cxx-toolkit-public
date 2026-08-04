@@ -85,6 +85,7 @@ public:
     size_t GetBelowSoftLimitConnCount(void) const;
     void MigrateConnectionFromAboveLimitToBelowLimit(void);
     string GetConnectionsStatus(int64_t  self_connection_id);
+    string GetConnectionsInfoOnBacklog(void);
     void PopulateThrottlingData(SThrottlingData &  throttling_data);
     bool CloseThrottledConnection(unsigned int  worker_id, int64_t  conn_id);
 

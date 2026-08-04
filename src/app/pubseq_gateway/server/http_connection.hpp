@@ -151,11 +151,21 @@ public:
         p->OnBeforeClosedConnection();
     }
 
-    // void PeekAsync(bool  chk_data_ready);
     void ResetForReuse(void);
-    void Postpone(shared_ptr<CPSGS_Request>  request,
-                  shared_ptr<CPSGS_Reply>  reply,
-                  list<string>  processor_names);
+
+    enum EPSGS_PostponeResultType {
+        ePSGS_Running,      // The request is put to the running list
+        ePSGS_Backlog,      // The request is put to the backlog list
+        ePSGS_Dismissed     // The request is dismissed because there are too many requests
+    };
+    EPSGS_PostponeResultType Postpone(shared_ptr<CPSGS_Request>  request,
+                                      shared_ptr<CPSGS_Reply>  reply,
+                                      list<string>  processor_names);
+
+    // Provides a string with an internal detailed information
+    // The string format is json
+    string GetInternalState(void);
+
     void ScheduleMaintain(void);
     void DoScheduledMaintain(void);
     void OnTimer(void);
@@ -278,15 +288,18 @@ private:
     void x_UnregisterRunning(running_list_iterator_t &  it);
     void x_UnregisterBacklog(backlog_list_iterator_t &  it);
 
-    void x_RegisterPending(shared_ptr<CPSGS_Request>  request,
-                           shared_ptr<CPSGS_Reply>  reply,
-                           list<string>  processor_names);
+    EPSGS_PostponeResultType  x_RegisterPending(shared_ptr<CPSGS_Request>  request,
+                                                shared_ptr<CPSGS_Reply>  reply,
+                                                list<string>  processor_names);
     void x_Start(shared_ptr<CPSGS_Request>  request,
                  shared_ptr<CPSGS_Reply>  reply,
                  list<string>  processor_names);
 
     void x_MaintainFinished(void);
     void x_MaintainBacklog(void);
+
+    string x_GetBacklogRequestsState(void);
+    string x_GetRunningRequestsState(string &  shared_part);
 };
 
 #endif

@@ -51,18 +51,17 @@ extern SShutdownData    g_ShutdownData;
 USING_NCBI_SCOPE;
 
 
-static string  kTSELastModifiedParam = "tse_last_modified";
-static string  kSeqIdsParam = "seq_ids";
-static string  kClientIdParam = "client_id";
-static string  kTimeoutParam = "timeout";
-static string  kDataSizeParam = "return_data_size";
-static string  kLogParam = "log";
-static string  kUsernameParam = "username";
-static string  kAlertParam = "alert";
-static string  kResetParam = "reset";
-static string  kMostRecentTimeParam = "most_recent_time";
-static string  kMostAncientTimeParam = "most_ancient_time";
-static string  kHistogramNamesParam = "histogram_names";
+constexpr string_view  kSeqIdsParam = "seq_ids";
+constexpr string_view  kClientIdParam = "client_id";
+constexpr string_view  kTimeoutParam = "timeout";
+constexpr string_view  kDataSizeParam = "return_data_size";
+constexpr string_view  kLogParam = "log";
+constexpr string_view  kUsernameParam = "username";
+constexpr string_view  kAlertParam = "alert";
+constexpr string_view  kResetParam = "reset";
+constexpr string_view  kMostRecentTimeParam = "most_recent_time";
+constexpr string_view  kMostAncientTimeParam = "most_ancient_time";
+constexpr string_view  kHistogramNamesParam = "histogram_names";
 static string  kNA = "n/a";
 
 static string  kBadUrlMessage = "Unknown request, the provided URL "
@@ -147,7 +146,7 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  http_req,
                                reply->GetBytesSent());
         } catch (...) {
             x_Finish500(reply, now, ePSGS_BadURL,
-                        "Unknown exception when handling no path URL event");
+                        "Unknown exception when handling no path URL event"sv);
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                                CRequestStatus::e500_InternalServerError,
                                reply->GetBytesSent());
@@ -184,7 +183,7 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  http_req,
             m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
         } catch (...) {
             x_Finish500(reply, now, ePSGS_BadURL,
-                        "Unknown exception when handling a bad URL event");
+                        "Unknown exception when handling a bad URL event"sv);
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -334,7 +333,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  http_req,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_UnknownError,
-                    "Unknown exception when handling a get request");
+                    "Unknown exception when handling a get request"sv);
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
                            CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
@@ -465,7 +464,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  http_req,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_UnknownError,
-                    "Unknown exception when handling a getblob request");
+                    "Unknown exception when handling a getblob request"sv);
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
                            CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
@@ -590,7 +589,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  http_req,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_UnknownError,
-                    "Unknown exception when handling a resolve request");
+                    "Unknown exception when handling a resolve request"sv);
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
                            CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
@@ -700,7 +699,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  http_req,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_UnknownError,
-                    "Unknown exception when handling a get_tse_chunk request");
+                    "Unknown exception when handling a get_tse_chunk request"sv);
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_TSEChunkRequest,
                            CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
@@ -781,7 +780,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  http_req,
             x_MalformedArguments(
                     reply, now,
                     "Invalid 'fmt' parameter value. The 'get_na' "
-                    "request supports 'json' and 'native' values");
+                    "request supports 'json' and 'native' values"sv);
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -809,8 +808,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  http_req,
 
         if (seq_id.empty() && seq_ids.empty()) {
             x_MalformedArguments(reply, now,
-                                 "Neither 'seq_id' nor '" + kSeqIdsParam +
-                                 "' are found in the request");
+                                 "Neither 'seq_id' nor 'seq_ids' are found in the request"sv);
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -917,7 +915,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  http_req,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_UnknownError,
-                    "Unknown exception when handling a get_na request");
+                    "Unknown exception when handling a get_na request"sv);
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
                            CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
@@ -1012,7 +1010,7 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  http_req,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_UnknownError,
-                    "Unknown exception when handling an accession_version_history request");
+                    "Unknown exception when handling an accession_version_history request"sv);
         x_PrintRequestStop(context,
                            CPSGS_Request::ePSGS_AccessionVersionHistoryRequest,
                            CRequestStatus::e500_InternalServerError,
@@ -1101,7 +1099,7 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  http_req,
                 x_InsufficientArguments(reply, now,
                                         "If a 'nucleotide' parameter is provided "
                                         "then a 'protein' parameter"
-                                        " must be provided as well");
+                                        " must be provided as well"sv);
                 x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
                                    CRequestStatus::e400_BadRequest,
                                    reply->GetBytesSent());
@@ -1113,7 +1111,7 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  http_req,
         if (ipg == -1 && !protein.has_value()) {
             x_InsufficientArguments(reply, now,
                                     "At least one of the 'protein' and 'ipg' "
-                                    "parameters must be provided");
+                                    "parameters must be provided"sv);
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -1174,7 +1172,7 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  http_req,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_UnknownError,
-                    "Unknown exception when handling an IPG resolve request");
+                    "Unknown exception when handling an IPG resolve request"sv);
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
                            CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
@@ -1266,7 +1264,7 @@ int CPubseqGatewayApp::OnConfig(CHttpRequest &  http_req,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_ConfigError,
-                    "Unknown exception when handling a config request");
+                    "Unknown exception when handling a config request"sv);
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
@@ -1497,7 +1495,7 @@ int CPubseqGatewayApp::OnInfo(CHttpRequest &  http_req,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_InfoError,
-                    "Unknown exception when handling an info request");
+                    "Unknown exception when handling an info request"sv);
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
@@ -1528,16 +1526,9 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  http_req,
 
         CJsonNode                       status(CJsonNode::NewObjectNode());
 
-        if (m_CassConnection) {
-            m_Counters->AppendValueNode(
-                status, CPSGSCounters::ePSGS_CassandraActiveStatements,
-                static_cast<uint64_t>(m_CassConnection->GetActiveStatements()));
-        } else {
-            // No cassandra connection
-            m_Counters->AppendValueNode(
-                status, CPSGSCounters::ePSGS_CassandraActiveStatements,
-                static_cast<uint64_t>(0));
-        }
+        m_Counters->AppendValueNode(
+            status, CPSGSCounters::ePSGS_CassandraActiveStatements,
+            GetCassandraActiveStatements());
         m_Counters->AppendValueNode(
             status, CPSGSCounters::ePSGS_NumberOfConnections,
             static_cast<uint64_t>(m_HttpDaemon->NumOfConnections()));
@@ -1602,7 +1593,7 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  http_req,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_StatusError,
-                    "Unknown exception when handling a status request");
+                    "Unknown exception when handling a status request"sv);
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
@@ -1736,7 +1727,7 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  http_req,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_ShutdownError,
-                    "Unknown exception when handling a shutdown request");
+                    "Unknown exception when handling a shutdown request"sv);
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
@@ -1783,7 +1774,7 @@ int CPubseqGatewayApp::OnGetAlerts(CHttpRequest &  http_req,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_GetAlertsError,
-                    "Unknown exception when handling a get alerts request");
+                    "Unknown exception when handling a get alerts request"sv);
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
@@ -1829,8 +1820,7 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  http_req,
 
         SRequestParameter   alert_param = x_GetParam(http_req, kAlertParam);
         if (!alert_param.m_Found) {
-            x_InsufficientArguments(reply, now, "Missing the '" + kAlertParam +
-                                                "' parameter");
+            x_InsufficientArguments(reply, now, "Missing the 'alert' parameter"sv);
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -1839,8 +1829,7 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  http_req,
 
         SRequestParameter   username_param = x_GetParam(http_req, kUsernameParam);
         if (!username_param.m_Found) {
-            x_InsufficientArguments(reply, now, "Missing the '" + kUsernameParam +
-                                                "' parameter");
+            x_InsufficientArguments(reply, now, "Missing the 'username' parameter"sv);
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -1890,7 +1879,7 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  http_req,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_AckAlertError,
-                    "Unknown exception when handling an acknowledge alert request");
+                    "Unknown exception when handling an acknowledge alert request"sv);
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
@@ -1998,12 +1987,12 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  http_req,
             try {
                 most_ancient_time = NStr::StringToInt8(most_ancient_time_param.m_Value);
                 if (most_ancient_time < 0)
-                    err_msg = "Invalid " + kMostAncientTimeParam +
-                              " value (" + SanitizeInputValue(most_ancient_time_param.m_Value) +
+                    err_msg = "Invalid most_ancient_time value (" +
+                              SanitizeInputValue(most_ancient_time_param.m_Value) +
                               "). It must be >= 0.";
             } catch (...) {
-                err_msg = "Invalid " + kMostAncientTimeParam +
-                          " value (" + SanitizeInputValue(most_ancient_time_param.m_Value) +
+                err_msg = "Invalid most_ancient_time value (" +
+                          SanitizeInputValue(most_ancient_time_param.m_Value) +
                           "). It must be an integer >= 0.";
             }
 
@@ -2060,7 +2049,7 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  http_req,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_StatisticsError,
-                    "Unknown exception when handling a statistics request");
+                    "Unknown exception when handling a statistics request"sv);
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
@@ -2106,7 +2095,7 @@ int CPubseqGatewayApp::OnDispatcherStatus(CHttpRequest &  http_req,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_DispatcherStatusError,
-                    "Unknown exception when handling a dispatcher_status request");
+                    "Unknown exception when handling a dispatcher_status request"sv);
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
@@ -2215,7 +2204,7 @@ int CPubseqGatewayApp::OnConnectionsStatus(CHttpRequest &  http_req,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_ConnectionsStatusError,
-                    "Unknown exception when handling a connections_status request");
+                    "Unknown exception when handling a connections_status request"sv);
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
@@ -2394,7 +2383,7 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  http_req,
                                reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_TestIOError,
-                    "Unknown exception when handling a test io request");
+                    "Unknown exception when handling a test io request"sv);
         if (need_log)
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                                CRequestStatus::e500_InternalServerError,
@@ -2473,7 +2462,7 @@ int CPubseqGatewayApp::OnGetSatMapping(CHttpRequest &  http_req,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_GetSatMappingError,
-                    "Unknown exception when handling a get sat mapping request");
+                    "Unknown exception when handling a get sat mapping request"sv);
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
@@ -2641,7 +2630,41 @@ bool CPubseqGatewayApp::x_DispatchRequest(CRef<CRequestContext> &  context,
     reply->SetRequestId(request->GetRequestId());
 
     auto    http_conn = reply->GetHttpReply()->GetHttpConnection();
-    http_conn->Postpone(request, reply, std::move(processor_names));
+
+    CHttpConnection::EPSGS_PostponeResultType   postpone_result =
+            http_conn->Postpone(request, reply,
+                                std::move(processor_names));
+
+    if (postpone_result == CHttpConnection::ePSGS_Backlog) {
+        // Backlog event => maybe need to log data
+        if (m_Settings.m_BacklogDataEnable) {
+            // Collection is switched on. The 'now' time is very close to the
+            // request saved time. So use it to check that saving of the info
+            // does not happened too often
+            size_t      last_data_ago_ms = chrono::duration_cast<chrono::milliseconds>(
+                                            request->GetStartTimestamp() - m_LastBacklogDataSaving.load()).count();
+            if (last_data_ago_ms > m_Settings.m_BacklogDataMinDelayMs) {
+                // Last saving of the backlog data was longer ago than the
+                // setting. So let's collect the data
+
+                m_LastBacklogDataSaving = request->GetStartTimestamp();
+
+                // The data consists of two parts:
+                // - this particular connection where the event has happened. A
+                //   detailed information should be collected
+                // - other connections. Only brief information is collected.
+                string  json;
+
+                json.append("{\"self_conn\": ")
+                    .append(http_conn->GetInternalState())
+                    .append(", \"other_conns\": ")
+                    .append(m_HttpDaemon->GetConnectionsInfoOnBacklog());
+                json.push_back('}');
+
+                GetDiagContext().Extra().Print("state_on_backlog_event", json);
+            }
+        }
+    }
     return true;
 }
 
