@@ -257,7 +257,6 @@ string LoadEntry(ParserPtr pp, Indexblk* ibp)
                 i++;
             if (i > q + 2 && i < q + 7 && i < buf.size() && buf[i] == ';') {
                 string_view s   = string_view(buf).substr(q, i + 1 - q);
-                IndexblkPtr ibp = pp->entrylist[pp->curindx];
                 FtaErrPost(SEV_REJECT, ERR_FORMAT_NonAsciiChar,
                            "Non-ASCII Unicode characters are not allowed: \"{}\". Entry skipped: \"{}|{}\".",
                            s, ibp->locusname, ibp->acnum);
