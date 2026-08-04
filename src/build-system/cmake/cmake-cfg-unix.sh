@@ -186,7 +186,7 @@ for arg in ${script_args}
 do
   if test "$dest" = "CMAKE_GENERATOR"; then
     case "$arg" in 
-       --*)
+       --*|-D*)
          dest=""
          ;;
       *) 
