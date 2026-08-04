@@ -1424,12 +1424,10 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
 
     if (qval_str.empty() && feat.IsSetComment() && rna_ref.GetType() == CRNA_ref::eType_rRNA) {
         const string& comment = feat.GetComment();
-        if (comment.size() < 20) {
-            if (NStr::EndsWith(comment, "S ribosomal RNA", NStr::eNocase) ||
-                NStr::EndsWith(comment, "S rRNA", NStr::eNocase)) {
-                qval_str = comment;
-                feat.ResetComment();
-            }
+        if (NStr::EndsWith(comment, "S ribosomal RNA", NStr::eNocase) ||
+            NStr::EndsWith(comment, "S rRNA", NStr::eNocase)) {
+            qval_str = comment;
+            feat.ResetComment();
         }
     }
 
