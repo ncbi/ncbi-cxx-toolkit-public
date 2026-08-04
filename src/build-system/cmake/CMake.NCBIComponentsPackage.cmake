@@ -37,28 +37,26 @@ endforeach()
 #############################################################################
 #############################################################################
 
-if(NOT COMMAND conan_define_targets)
-    NCBI_define_Pkgcomponent(NAME OpenSSL PACKAGE openssl FIND OpenSSL)
-endif()
+NCBI_define_Pkgcomponent(NAME OpenSSL PACKAGE OpenSSL)
 
 #############################################################################
 # NCBICRYPT
-NCBI_define_Pkgcomponent(NAME NCBICRYPT PACKAGE ncbicrypt FIND ncbicrypt)
+NCBI_define_Pkgcomponent(NAME NCBICRYPT PACKAGE ncbicrypt)
 
 #############################################################################
 # BACKWARD, UNWIND
-NCBI_define_Pkgcomponent(NAME BACKWARD PACKAGE backward-cpp REQUIRES libdwarf FIND Backward)
+NCBI_define_Pkgcomponent(NAME BACKWARD PACKAGE Backward)
 list(REMOVE_ITEM NCBI_ALL_COMPONENTS BACKWARD)
 if(NCBI_COMPONENT_BACKWARD_FOUND)
     set(HAVE_LIBBACKWARD_CPP YES)
     set(HAVE_BACKWARD_HPP YES)
 endif()
-NCBI_define_Pkgcomponent(NAME UNWIND PACKAGE libunwind REQUIRES xz_utils;zlib FIND libunwind)
+NCBI_define_Pkgcomponent(NAME UNWIND PACKAGE libunwind)
 #list(REMOVE_ITEM NCBI_ALL_COMPONENTS UNWIND)
 
 ##############################################################################
 # CURL
-NCBI_define_Pkgcomponent(NAME CURL PACKAGE CURL FIND CURL)
+NCBI_define_Pkgcomponent(NAME CURL PACKAGE CURL)
 
 #############################################################################
 # Iconv
@@ -68,7 +66,7 @@ if(DEFINED CONAN_LIBICONV_ROOT)
     set(NCBI_REQUIRE_Iconv_FOUND YES)
 else()
     if(NOT TARGET Iconv::Iconv)
-        NCBI_define_Pkgcomponent(NAME Iconv PACKAGE LIBICONV FIND Iconv)
+        NCBI_define_Pkgcomponent(NAME Iconv PACKAGE Iconv)
     endif()
     if(TARGET Iconv::Iconv)
         set(ICONV_LIBS Iconv::Iconv)
@@ -79,7 +77,7 @@ endif()
 
 #############################################################################
 # LMDB
-NCBI_define_Pkgcomponent(NAME LMDB PACKAGE lmdb FIND lmdb)
+NCBI_define_Pkgcomponent(NAME LMDB PACKAGE lmdb)
 if(NOT NCBI_COMPONENT_LMDB_FOUND)
     set(NCBI_COMPONENT_LMDB_FOUND ${NCBI_COMPONENT_LocalLMDB_FOUND})
     set(NCBI_COMPONENT_LMDB_INCLUDE ${NCBI_COMPONENT_LocalLMDB_INCLUDE})
@@ -89,8 +87,8 @@ endif()
 
 #############################################################################
 # PCRE
-NCBI_define_Pkgcomponent(NAME PCRE PACKAGE pcre REQUIRES bzip2;zlib FIND PCRE)
-NCBI_define_Pkgcomponent(NAME PCRE2 PACKAGE pcre2 REQUIRES bzip2;zlib FIND PCRE2)
+NCBI_define_Pkgcomponent(NAME PCRE PACKAGE PCRE)
+NCBI_define_Pkgcomponent(NAME PCRE2 PACKAGE PCRE2)
 if(NOT NCBI_COMPONENT_PCRE_FOUND AND NOT NCBI_COMPONENT_PCRE2_FOUND)
     if(EXISTS ${NCBITK_INC_ROOT}/util/regexp/pcre.h)
         set(NCBI_COMPONENT_PCRE_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
@@ -107,7 +105,7 @@ endif()
 
 #############################################################################
 # Z
-NCBI_define_Pkgcomponent(NAME Z PACKAGE zlib FIND ZLIB)
+NCBI_define_Pkgcomponent(NAME Z PACKAGE ZLIB)
 if(NOT NCBI_COMPONENT_Z_FOUND)
     set(NCBI_COMPONENT_Z_FOUND ${NCBI_COMPONENT_LocalZ_FOUND})
     set(NCBI_COMPONENT_Z_INCLUDE ${NCBI_COMPONENT_LocalZ_INCLUDE})
@@ -117,7 +115,7 @@ endif()
 
 #############################################################################
 # BZ2
-NCBI_define_Pkgcomponent(NAME BZ2 PACKAGE bzip2 FIND BZip2)
+NCBI_define_Pkgcomponent(NAME BZ2 PACKAGE BZip2)
 if(NOT NCBI_COMPONENT_BZ2_FOUND)
     set(NCBI_COMPONENT_BZ2_FOUND ${NCBI_COMPONENT_LocalBZ2_FOUND})
     set(NCBI_COMPONENT_BZ2_INCLUDE ${NCBI_COMPONENT_LocalBZ2_INCLUDE})
@@ -127,11 +125,11 @@ endif()
 
 #############################################################################
 # LZO
-NCBI_define_Pkgcomponent(NAME LZO PACKAGE lzo FIND lzo)
+NCBI_define_Pkgcomponent(NAME LZO PACKAGE lzo)
 
 #############################################################################
 # ZSTD
-NCBI_define_Pkgcomponent(NAME ZSTD PACKAGE zstd FIND zstd)
+NCBI_define_Pkgcomponent(NAME ZSTD PACKAGE zstd)
 if(NCBI_COMPONENT_ZSTD_FOUND AND
     (DEFINED NCBI_COMPONENT_ZSTD_VERSION AND "${NCBI_COMPONENT_ZSTD_VERSION}" VERSION_LESS "1.4"))
     message("ZSTD: Version requirement not met (required at least v1.4)")
@@ -148,31 +146,31 @@ endif()
 
 #############################################################################
 # JPEG
-NCBI_define_Pkgcomponent(NAME JPEG PACKAGE libjpeg FIND JPEG)
+NCBI_define_Pkgcomponent(NAME JPEG PACKAGE JPEG)
 
 #############################################################################
 # PNG
-NCBI_define_Pkgcomponent(NAME PNG PACKAGE libpng REQUIRES zlib FIND PNG)
+NCBI_define_Pkgcomponent(NAME PNG PACKAGE PNG)
 
 #############################################################################
 # GIF
-NCBI_define_Pkgcomponent(NAME GIF PACKAGE giflib FIND GIF)
+NCBI_define_Pkgcomponent(NAME GIF PACKAGE GIF)
 
 #############################################################################
 # TIFF
-NCBI_define_Pkgcomponent(NAME TIFF PACKAGE libtiff REQUIRES zlib;libdeflate;xz_utils;libjpeg;jbig;zstd;libwebp FIND TIFF)
+NCBI_define_Pkgcomponent(NAME TIFF PACKAGE TIFF)
 
 #############################################################################
 # FASTCGI
-NCBI_define_Pkgcomponent(NAME FASTCGI PACKAGE ncbi-fastcgi FIND ncbi-fastcgi)
+NCBI_define_Pkgcomponent(NAME FASTCGI PACKAGE ncbi-fastcgi)
 
 #############################################################################
 # FASTCGIPP
-NCBI_define_Pkgcomponent(NAME FASTCGIPP PACKAGE ncbi-fastcgipp FIND ncbi-fastcgipp)
+NCBI_define_Pkgcomponent(NAME FASTCGIPP PACKAGE ncbi-fastcgipp)
 
 #############################################################################
 # SQLITE3
-NCBI_define_Pkgcomponent(NAME SQLITE3 PACKAGE sqlite3 FIND SQLite3)
+NCBI_define_Pkgcomponent(NAME SQLITE3 PACKAGE SQLite3)
 if(NCBI_COMPONENT_SQLITE3_FOUND)
 #    check_symbol_exists(sqlite3_unlock_notify ${NCBI_COMPONENT_SQLITE3_INCLUDE}/sqlite3.h HAVE_SQLITE3_UNLOCK_NOTIFY)
 #    check_include_file(sqlite3async.h HAVE_SQLITE3ASYNC_H -I${NCBI_COMPONENT_SQLITE3_INCLUDE})
@@ -182,7 +180,7 @@ endif()
 
 #############################################################################
 # BerkeleyDB
-NCBI_define_Pkgcomponent(NAME BerkeleyDB PACKAGE libdb FIND libdb)
+NCBI_define_Pkgcomponent(NAME BerkeleyDB PACKAGE libdb)
 if(NCBI_COMPONENT_BerkeleyDB_FOUND)
     set(HAVE_BERKELEY_DB 1)
     set(HAVE_BDB         1)
@@ -191,7 +189,7 @@ endif()
 
 #############################################################################
 # XML
-NCBI_define_Pkgcomponent(NAME XML PACKAGE libxml2 REQUIRES zlib;libiconv FIND LibXml2)
+NCBI_define_Pkgcomponent(NAME XML PACKAGE libxml2)
 if (NCBI_COMPONENT_XML_FOUND)
     if(CMAKE_COMPILER_IS_GNUCC)
         set(NCBI_COMPONENT_XML_LIBS -Wl,--no-as-needed ${NCBI_COMPONENT_XML_LIBS})
@@ -200,7 +198,7 @@ endif()
 
 #############################################################################
 # XSLT
-NCBI_define_Pkgcomponent(NAME XSLT PACKAGE libxslt REQUIRES libxml2;zlib;libiconv FIND LibXslt)
+NCBI_define_Pkgcomponent(NAME XSLT PACKAGE LibXslt)
 if(NOT NCBI_XSLTPROCTOOL)
     if(EXISTS "${NCBI_XSLTPROCTOOL}")
         set(NCBI_REQUIRE_XSLTPROCTOOL_FOUND YES)
@@ -212,7 +210,7 @@ endif()
 
 #############################################################################
 # EXSLT
-NCBI_define_Pkgcomponent(NAME EXSLT PACKAGE libxslt REQUIRES libxml2;zlib;libiconv FIND LibXslt)
+NCBI_define_Pkgcomponent(NAME EXSLT PACKAGE LibXslt)
 if(NCBI_COMPONENT_EXSLT_FOUND AND TARGET LibXslt::LibExslt)
     set(NCBI_COMPONENT_EXSLT_LIBS LibXslt::LibExslt ${NCBI_COMPONENT_EXSLT_LIBS})
     NCBI_map_imported_config(EXSLT ${NCBI_COMPONENT_EXSLT_LIBS})
@@ -220,18 +218,18 @@ endif()
 
 #############################################################################
 # UV
-NCBI_define_Pkgcomponent(NAME UV PACKAGE libuv FIND libuv)
+NCBI_define_Pkgcomponent(NAME UV PACKAGE libuv)
 
 #############################################################################
 # NGHTTP2
-NCBI_define_Pkgcomponent(NAME NGHTTP2 PACKAGE libnghttp2 REQUIRES zlib FIND libnghttp2)
+NCBI_define_Pkgcomponent(NAME NGHTTP2 PACKAGE libnghttp2)
 
 ##############################################################################
 # GRPC/PROTOBUF
 if(NOT APPLE)
     NCBI_util_disable_find_use_path()
 endif()
-NCBI_define_Pkgcomponent(NAME PROTOBUF PACKAGE protobuf REQUIRES zlib FIND Protobuf)
+NCBI_define_Pkgcomponent(NAME PROTOBUF PACKAGE Protobuf)
 if(NOT NCBI_PROTOC_APP)
     if(TARGET protobuf::protoc)
         foreach( _type IN ITEMS "" "_RELEASE" "_DEBUG")
@@ -246,7 +244,7 @@ if(NCBI_TRACE_COMPONENT_PROTOBUF OR NCBI_TRACE_ALLCOMPONENTS)
     message("NCBI_PROTOC_APP = ${NCBI_PROTOC_APP}")
 endif()
 
-NCBI_define_Pkgcomponent(NAME GRPC PACKAGE grpc REQUIRES abseil;c-ares;openssl;protobuf;re2;zlib FIND gRPC)
+NCBI_define_Pkgcomponent(NAME GRPC PACKAGE gRPC)
 if(NOT NCBI_GRPC_PLUGIN)
     if(TARGET gRPC::grpc_cpp_plugin)
         foreach( _type IN ITEMS "" "_RELEASE" "_DEBUG")
@@ -266,47 +264,42 @@ endif()
 
 #############################################################################
 # CASSANDRA
-NCBI_define_Pkgcomponent(NAME CASSANDRA PACKAGE cassandra-cpp-driver REQUIRES http_parser;libuv;minizip;openssl;rapidjson;zlib FIND cassandra-cpp-driver)
+NCBI_define_Pkgcomponent(NAME CASSANDRA PACKAGE cassandra-cpp-driver)
 
 #############################################################################
 # MySQL
-if(NCBI_PTBCFG_PACKAGED)
-    NCBI_define_Pkgcomponent(NAME MySQL PACKAGE libmysqlclient REQUIRES lz4;openssl;zlib;zstd FIND MySQL)
-else()
-    NCBI_define_Pkgcomponent(NAME MySQL PACKAGE libmysqlclient REQUIRES lz4;openssl;zlib;zstd FIND libmysqlclient)
-endif()
+NCBI_define_Pkgcomponent(NAME MySQL PACKAGE libmysqlclient)
 
 #############################################################################
 # VDB
-NCBI_define_Pkgcomponent(NAME VDB PACKAGE ncbi-vdb FIND ncbi-vdb)
+NCBI_define_Pkgcomponent(NAME VDB PACKAGE ncbi-vdb)
 if(NCBI_COMPONENT_VDB_FOUND)
     set(HAVE_NCBI_VDB 1)
 endif()
 
 #############################################################################
 # JAEGER
-NCBI_define_Pkgcomponent(NAME JAEGER PACKAGE jaegertracing FIND jaegertracing)
+NCBI_define_Pkgcomponent(NAME JAEGER PACKAGE jaegertracing)
 
 #############################################################################
 # OPENTELEMETRY
-NCBI_define_Pkgcomponent(NAME OPENTELEMETRY PACKAGE opentelemetry-cpp
-  FIND opentelemetry-cpp)
+NCBI_define_Pkgcomponent(NAME OPENTELEMETRY PACKAGE opentelemetry-cpp)
 
 #############################################################################
 # AWS_SDK
-NCBI_define_Pkgcomponent(NAME AWS_SDK PACKAGE AWSSDK FIND AWSSDK)
+NCBI_define_Pkgcomponent(NAME AWS_SDK PACKAGE AWSSDK)
 
 #############################################################################
 # wxWidgets
-NCBI_define_Pkgcomponent(NAME wxWidgets PACKAGE wxWidgets FIND wxWidgets)
+NCBI_define_Pkgcomponent(NAME wxWidgets PACKAGE wxWidgets)
 
 #############################################################################
 # IPS4O
-NCBI_define_Pkgcomponent(NAME IPS4O PACKAGE ips4o FIND ips4o)
+NCBI_define_Pkgcomponent(NAME IPS4O PACKAGE ips4o)
 if(NCBI_COMPONENT_IPS4O_FOUND)
     set(HAVE_IPS4O_HPP TRUE)
 endif()
 
 #############################################################################
 # ARROW
-NCBI_define_Pkgcomponent(NAME ARROW PACKAGE Arrow FIND Arrow)
+NCBI_define_Pkgcomponent(NAME ARROW PACKAGE Arrow)
