@@ -370,7 +370,7 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
                 q = StringChr(q, '(');
                 if (! q)
                     break;
-                char* s = q + 1;
+                const char* s = q + 1;
                 if (StringEquN(s, "acronym:", 8) ||
                     StringEquN(s, "synonym:", 8))
                     s += 8;
@@ -381,12 +381,12 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
                 if (*s == ' ')
                     while (*s == ' ')
                         s++;
-                if (StringEquNI(s, name->c_str(), len) && s[len] == ')') {
-                    char* t = nullptr;
-                    for (t = s + len + 1; *t == ' ';)
-                        t++;
-                    if (*t != '\0')
-                        fta_StringCpy(q, t);
+                if (StringEquNI(s, *name) && s[len] == ')') {
+                    s += len + 1;
+                    while (*s == ' ')
+                        s++;
+                    if (*s != '\0')
+                        fta_StringCpy(q, s);
                     else {
                         if (q > p)
                             q--;
