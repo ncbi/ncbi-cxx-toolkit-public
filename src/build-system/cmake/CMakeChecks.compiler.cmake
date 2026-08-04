@@ -497,7 +497,9 @@ elseif (XCODE)
     set(CMAKE_SHARED_LINKER_FLAGS_RELEASE${NCBI_BUILD_TYPE_SUFFIX} ${CMAKE_SHARED_LINKER_FLAGS_RELEASE})
 
     NCBI_add_debug_definitions()
-    if("${HOST_CPU}" MATCHES "x86")
+    if(DEFINED NCBI_COMPILER_FLAGS_SSE)
+        add_compile_options(${NCBI_COMPILER_FLAGS_SSE})
+    elseif("${HOST_CPU}" MATCHES "amd64|x86")
         add_compile_options("-msse4.2")
     endif()
 
