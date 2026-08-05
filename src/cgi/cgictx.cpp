@@ -637,6 +637,19 @@ NCBI_PARAM_DEF_EX(bool, CGI, CORS_Enable, false,
                   eParam_NoThread, CGI_CORS_ENABLE);
 typedef NCBI_PARAM_TYPE(CGI, CORS_Enable) TCORS_Enable;
 
+// By default CGI returns status 403/Denied if Origin is present but not listed
+// in allowed origins. In some cases this may be too strict since browsers
+// already prevent unauthorized reading of cross-site data; the only purpose of
+// protection in CGI is to avoid modifying data on server by requests from
+// unauthorized sites.
+// This switch allows to turn server-side protection off and leave all CORS
+// processing to the browser, which should block cross-origin requests by
+// default.
+NCBI_PARAM_DECL(bool, CGI, CORS_DenyUnlistedOrigin);
+NCBI_PARAM_DEF_EX(bool, CGI, CORS_DenyUnlistedOrigin, true,
+    eParam_NoThread, CGI_CORS_DENY_UNLISTED_ORIGIN);
+typedef NCBI_PARAM_TYPE(CGI, CORS_DenyUnlistedOrigin) TCORS_DenyUnlistedOrigin;
+
 // Access-Control-Allow-Headers
 NCBI_PARAM_DECL(string, CGI, CORS_Allow_Headers);
 NCBI_PARAM_DEF_EX(string, CGI, CORS_Allow_Headers, "",
@@ -731,8 +744,10 @@ typedef list<string> TStringList;
 //   set 'origin' argument to '*' and return true.
 static bool s_IsAllowedOrigin(const string& origin)
 {
-    if ( origin.empty() ) {
+    if ( origin.empty() || origin == "null") {
         // Origin header is not set - this is not a CORS request.
+        // Origin equal to "null" - special case like file/data/blob scheme, cross-domain redirect,
+        // sandboxed iframe - none should be trusted.
         return false;
     }
     const string& allowed = TCORS_AllowOrigin::GetDefault();
@@ -744,13 +759,31 @@ static bool s_IsAllowedOrigin(const string& origin)
         return true;
     }
 
+    CUrl origin_url(origin);
     TStringList origins;
     NStr::Split(allowed, ", ", origins,
         NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     ITERATE(TStringList, it, origins) {
-        if (NStr::EndsWith(origin, *it, NStr::eCase)) {
-            return true;
+        string url = *it;
+        if (url == "null") continue; // "null" should not be in the list of allowed origins
+        if (url.find_first_of("/:?") == NPOS) {
+            // CUrl parses string without scheme as path-only, not host-only.
+            url = "//" + url;
         }
+        CUrl allowed_url(url);
+        // Make sure origin is a subdomain of allowed origin.
+        if (!NStr::EndsWith(origin_url.GetHost(), allowed_url.GetHost(), NStr::eCase)) {
+            continue;
+        }
+        size_t dlen = origin_url.GetHost().size() - allowed_url.GetHost().size();
+        if (dlen > 0 && origin_url.GetHost()[dlen - 1] != '.') {
+            continue;
+        }
+        if ((allowed_url.GetScheme().empty() || allowed_url.GetScheme() != origin_url.GetScheme()) ||
+            (allowed_url.GetPort().empty() || allowed_url.GetPort() != origin_url.GetPort())) {
+            ERR_POST_ONCE(Warning << "Partial match between origin '" << origin << "' and allowed origin '" << *it << "'");
+        }
+        return true;
     }
     return false;
 }
@@ -870,11 +903,17 @@ bool CCgiContext::ProcessCORSRequest(const CCgiRequest& request,
     }
 
     if ( !s_IsAllowedOrigin(origin) ) {
-        // CORS with invalid origin -- terminate request.
-        response.DisableTrackingCookie();
-        response.SetStatus(CRequestStatus::e403_Forbidden);
-        response.WriteHeader();
-        return true;
+        if (TCORS_DenyUnlistedOrigin::GetDefault()) {
+            // CORS with invalid origin -- terminate request.
+            response.DisableTrackingCookie();
+            response.SetStatus(CRequestStatus::e403_Forbidden);
+            response.WriteHeader();
+            return true;
+        }
+        else {
+            // Skip CORS headers and let the browser decide how to handle the request.
+            return false;
+        }
     }
 
     _ASSERT(!origin.empty());
