@@ -297,8 +297,9 @@ export NCBI_APPLOG_SITE=testcxx
 # Export some global vars
 export top_srcdir="\$root_dir"
 
-# Add current, build and scripts directories to PATH
-export PATH="\${root_dir}/scripts/common/impl:\${root_dir}/scripts/common/check:.:\${build_dir}:\${PATH}"
+# Add additional necessary directories to PATH: current, build, scripts,
+# utility and \$HOME/bin
+export PATH="\${script_dir}/common/impl:\$NCBI/bin/_production/CPPCORE:\$HOME/bin:.:\${build_dir}:\${bin_dir}:\${PATH}"
 
 # Define time-guard script to run tests from other scripts
 export CHECK_EXEC="\${root_dir}/scripts/common/check/check_exec_test.sh"
