@@ -130,8 +130,8 @@ x_script_name=`echo "$x_out" | sed -e 's%^.*/%%'`
 signature=""
 if test -n "$NCBI_AUTOMATED_BUILD"; then
    if test $x_compiler = "XCODE"; then
-      ncbiconf="$x_build_dir/$x_libdll/inc/$x_cfg/common/config/ncbiconf_xcode_site.h"
-      signature=`grep "\"XCODE.*\"" $ncbiconf | sed 's/.*\"\(XCODE.*\)\".*/\1/'`
+      buildver="$x_build_dir/$x_libdll/inc/$x_cfg/common/ncbi_build_ver.h"
+      signature=`grep "\"XCODE.*\"" $buildver | sed 's/.*\"\(XCODE.*\)\".*/\1/'`
    else
       case "$COMPILER" in
          msvc7  ) signature="MSVC_710"  ;;
