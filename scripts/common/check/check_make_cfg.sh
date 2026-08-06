@@ -299,7 +299,7 @@ export top_srcdir="\$root_dir"
 
 # Add additional necessary directories to PATH: current, build, scripts,
 # utility and \$HOME/bin
-export PATH="\${script_dir}/common/impl:\$NCBI/bin/_production/CPPCORE:\$HOME/bin:.:\${build_dir}:\${bin_dir}:\${PATH}"
+export PATH="\${root_dir}/scripts/common/impl:\$NCBI/bin/_production/CPPCORE:\$HOME/bin:.:\${build_dir}:\${bin_dir}:\${PATH}"
 
 # Define time-guard script to run tests from other scripts
 export CHECK_EXEC="\${root_dir}/scripts/common/check/check_exec_test.sh"
