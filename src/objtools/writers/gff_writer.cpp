@@ -54,15 +54,14 @@
 #include <objtools/writers/genbank_id_resolve.hpp>
 
 #include <corelib/ncbi_safe_static.hpp>
-#include <util/compile_time.hpp> 
+#include <util/compile_time.hpp>
 
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-static auto s_GffIdFormatter = [](const CSeq_id& id)
-{
+static auto s_GffIdFormatter = [](const CSeq_id& id) {
     const auto label_type = id.IsGeneral() ? 
         CSeq_id::eFasta : 
         CSeq_id::eContent;
@@ -72,49 +71,76 @@ static auto s_GffIdFormatter = [](const CSeq_id& id)
     return label;
 };
 
+static list<string> s_GetQualVals(const CMappedFeat& mf, const string& qual_name)
+{
+    list<string> result;
+    for (const auto& qual : mf.GetQual()) {
+        if (qual->IsSetQual() && qual->GetQual() == qual_name) {
+            if (qual->IsSetVal() && (! qual->GetVal().empty())) {
+                result.push_back(qual->GetVal());
+            }
+        }
+    }
+    return result;
+}
+
+
+static void s_SetAttributes(const string& name, const list<string>& vals, CGffFeatureRecord& record)
+{
+    if (vals.empty()) {
+        return;
+    }
+    auto it = vals.begin();
+    record.SetAttribute(name, *it); // SetAttribute() clears any existing value. 
+    while (it != vals.end()) {      // There *shouldn't* be an existing value, but can't guarantee that in this legacy code.
+        record.AddAttribute(name, *it);
+        ++it;
+    }
+}
+
+
 //  ----------------------------------------------------------------------------
 CGff2Writer::CGff2Writer(
-    CScope& scope,
+    CScope&       scope,
     CNcbiOstream& ostr,
-    unsigned int uFlags ) :
-//  ----------------------------------------------------------------------------
-    CWriterBase( ostr, uFlags ),
+    unsigned int  uFlags) :
+    //  ----------------------------------------------------------------------------
+    CWriterBase(ostr, uFlags),
     m_bHeaderWritten(false)
 {
-    m_pScope.Reset( &scope );
+    m_pScope.Reset(&scope);
     mpIdResolve->SetFormatter() = s_GffIdFormatter;
 };
 
 //  ----------------------------------------------------------------------------
 CGff2Writer::CGff2Writer(
     CNcbiOstream& ostr,
-    unsigned int uFlags ) :
-//  ----------------------------------------------------------------------------
-    CWriterBase( ostr, uFlags ),
+    unsigned int  uFlags) :
+    //  ----------------------------------------------------------------------------
+    CWriterBase(ostr, uFlags),
     m_bHeaderWritten(false)
 {
-    m_pScope.Reset( new CScope( *CObjectManager::GetInstance() ) );
+    m_pScope.Reset(new CScope(*CObjectManager::GetInstance()));
     m_pScope->AddDefaults();
     mpIdResolve->SetFormatter() = s_GffIdFormatter;
 };
 
 //  ----------------------------------------------------------------------------
 CGff2Writer::~CGff2Writer()
-//  ----------------------------------------------------------------------------
-{
-};
+    //  ----------------------------------------------------------------------------
+    {};
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::WriteAnnot(
     const CSeq_annot& annot,
-    const string& strAssemblyName,
-    const string& strAssemblyAccession )
+    const string&     strAssemblyName,
+    const string&     strAssemblyAccession)
 //  ----------------------------------------------------------------------------
 {
-    if ( ! x_WriteAssemblyInfo( strAssemblyName, strAssemblyAccession ) ) {
+    if (! x_WriteAssemblyInfo(strAssemblyName, strAssemblyAccession)) {
         return false;
     }
-    if ( ! x_WriteAnnot( annot ) ) {
+    if (! x_WriteAnnot(annot)) {
         return false;
     }
     return true;
@@ -122,26 +148,26 @@ bool CGff2Writer::WriteAnnot(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::x_WriteAnnot(
-    const CSeq_annot& annot )
+    const CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
-    CSeq_annot_Handle sah = m_pScope->AddSeq_annot( annot );
-    bool bWrite = x_WriteSeqAnnotHandle( sah );
-    m_pScope->RemoveSeq_annot( sah );
+    CSeq_annot_Handle sah    = m_pScope->AddSeq_annot(annot);
+    bool              bWrite = x_WriteSeqAnnotHandle(sah);
+    m_pScope->RemoveSeq_annot(sah);
     return bWrite;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::WriteSeqEntryHandle(
     CSeq_entry_Handle seh,
-    const string& strAssemblyName,
-    const string& strAssemblyAccession )
+    const string&     strAssemblyName,
+    const string&     strAssemblyAccession)
 //  ----------------------------------------------------------------------------
 {
-    if ( ! x_WriteAssemblyInfo( strAssemblyName, strAssemblyAccession ) ) {
+    if (! x_WriteAssemblyInfo(strAssemblyName, strAssemblyAccession)) {
         return false;
     }
-    if ( ! x_WriteSeqEntryHandle( seh ) ) {
+    if (! x_WriteSeqEntryHandle(seh)) {
         return false;
     }
     return true;
@@ -149,26 +175,26 @@ bool CGff2Writer::WriteSeqEntryHandle(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::x_WriteSeqEntryHandle(
-    CSeq_entry_Handle seh )
+    CSeq_entry_Handle seh)
 //  ----------------------------------------------------------------------------
 {
-    bool isNucProtSet = (seh.IsSet()  &&  seh.GetSet().IsSetClass()  &&
-        seh.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot);
+    bool isNucProtSet = (seh.IsSet() && seh.GetSet().IsSetClass() &&
+                         seh.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot);
     if (isNucProtSet) {
         for (CBioseq_CI bci(seh); bci; ++bci) {
-            if (!x_WriteBioseqHandle(*bci)) {
+            if (! x_WriteBioseqHandle(*bci)) {
                 return false;
             }
         }
         return true;
     }
 
-    bool isGenbankSet = (seh.IsSet()  &&  seh.GetSet().IsSetClass()  &&
-        seh.GetSet().GetClass() == CBioseq_set::eClass_genbank);
+    bool isGenbankSet = (seh.IsSet() && seh.GetSet().IsSetClass() &&
+                         seh.GetSet().GetClass() == CBioseq_set::eClass_genbank);
     if (isGenbankSet) {
         for (CSeq_entry_CI seci(seh); seci; ++seci) {
 
-            if (!x_WriteSeqEntryHandle(*seci)) {
+            if (! x_WriteSeqEntryHandle(*seci)) {
                 return false;
             }
         }
@@ -195,7 +221,7 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
     }
 
     for (CSeq_entry_CI eci(seh); eci; ++eci) {
-        if (!x_WriteSeqEntryHandle(*eci)) {
+        if (! x_WriteSeqEntryHandle(*eci)) {
             return false;
         }
     }
@@ -205,14 +231,14 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::WriteBioseqHandle(
     CBioseq_Handle bsh,
-    const string& strAssemblyName,
-    const string& strAssemblyAccession )
+    const string&  strAssemblyName,
+    const string&  strAssemblyAccession)
 //  ----------------------------------------------------------------------------
 {
-    if ( ! x_WriteAssemblyInfo( strAssemblyName, strAssemblyAccession ) ) {
+    if (! x_WriteAssemblyInfo(strAssemblyName, strAssemblyAccession)) {
         return false;
     }
-    if ( ! x_WriteBioseqHandle( bsh ) ) {
+    if (! x_WriteBioseqHandle(bsh)) {
         return false;
     }
     return true;
@@ -220,12 +246,12 @@ bool CGff2Writer::WriteBioseqHandle(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::x_WriteBioseqHandle(
-    CBioseq_Handle bsh )
+    CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
-    SAnnotSelector sel = SetAnnotSelector();
-    const auto& display_range = GetRange();
-    CFeat_CI feat_iter(bsh, display_range, sel);
+    SAnnotSelector     sel           = SetAnnotSelector();
+    const auto&        display_range = GetRange();
+    CFeat_CI           feat_iter(bsh, display_range, sel);
     CGffFeatureContext fc(feat_iter, bsh);
 
     while (feat_iter) {
@@ -239,7 +265,7 @@ bool CGff2Writer::x_WriteBioseqHandle(
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xWriteAllChildren(
     CGffFeatureContext& fc,
-    const CMappedFeat& mf)
+    const CMappedFeat&  mf)
 //  ----------------------------------------------------------------------------
 {
     feature::CFeatTree& featTree = fc.FeatTree();
@@ -247,8 +273,8 @@ bool CGff2Writer::xWriteAllChildren(
     featTree.GetChildrenTo(mf, vChildren);
     for (auto cit = vChildren.begin(); cit != vChildren.end(); ++cit) {
         CMappedFeat mChild = *cit;
-        if (!xWriteFeature(fc, mChild)) {
-            //error - but should have been handled elsewhere
+        if (! xWriteFeature(fc, mChild)) {
+            // error - but should have been handled elsewhere
             continue;
         }
         xWriteAllChildren(fc, mChild);
@@ -259,14 +285,14 @@ bool CGff2Writer::xWriteAllChildren(
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::WriteSeqAnnotHandle(
     CSeq_annot_Handle sah,
-    const string& strAssemblyName,
-    const string& strAssemblyAccession )
+    const string&     strAssemblyName,
+    const string&     strAssemblyAccession)
 //  ----------------------------------------------------------------------------
 {
-    if ( ! x_WriteAssemblyInfo( strAssemblyName, strAssemblyAccession ) ) {
+    if (! x_WriteAssemblyInfo(strAssemblyName, strAssemblyAccession)) {
         return false;
     }
-    if ( ! x_WriteSeqAnnotHandle( sah ) ) {
+    if (! x_WriteSeqAnnotHandle(sah)) {
         return false;
     }
     return true;
@@ -274,26 +300,26 @@ bool CGff2Writer::WriteSeqAnnotHandle(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::x_WriteSeqAnnotHandle(
-    CSeq_annot_Handle sah )
+    CSeq_annot_Handle sah)
 //  ----------------------------------------------------------------------------
 {
     CConstRef<CSeq_annot> pAnnot = sah.GetCompleteSeq_annot();
 
-    if ( pAnnot->IsAlign() ) {
-        for ( CAlign_CI it( sah ); it; ++it ) {
-            if ( ! x_WriteAlign( *it ) ) {
+    if (pAnnot->IsAlign()) {
+        for (CAlign_CI it(sah); it; ++it) {
+            if (! x_WriteAlign(*it)) {
                 return false;
             }
         }
         return true;
     }
 
-    SAnnotSelector sel = SetAnnotSelector();
-    CFeat_CI feat_iter(sah, sel);
+    SAnnotSelector     sel = SetAnnotSelector();
+    CFeat_CI           feat_iter(sah, sel);
     CGffFeatureContext fc(feat_iter, CBioseq_Handle(), sah);
 
     for (/*0*/; feat_iter; ++feat_iter) {
-        if (!xWriteFeature(fc,*feat_iter)) {
+        if (! xWriteFeature(fc, *feat_iter)) {
             return false;
         }
     }
@@ -303,7 +329,7 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xWriteFeature(
     CGffFeatureContext& context,
-    const CMappedFeat& mf )
+    const CMappedFeat&  mf)
 //  ----------------------------------------------------------------------------
 {
     return false;
@@ -314,7 +340,7 @@ bool CGff2Writer::xWriteFeature(
     CFeat_CI feat_it)
 //  ----------------------------------------------------------------------------
 {
-    if (!feat_it) {
+    if (! feat_it) {
         return false;
     }
     CGffFeatureContext fc(feat_it, CBioseq_Handle(), feat_it->GetAnnot());
@@ -324,14 +350,14 @@ bool CGff2Writer::xWriteFeature(
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::WriteAlign(
     const CSeq_align& align,
-    const string& strAssName,
-    const string& strAssAcc )
+    const string&     strAssName,
+    const string&     strAssAcc)
 //  ----------------------------------------------------------------------------
 {
-    if ( ! x_WriteAssemblyInfo( strAssName, strAssAcc ) ) {
+    if (! x_WriteAssemblyInfo(strAssName, strAssAcc)) {
         return false;
     }
-    if ( ! x_WriteAlign( align ) ) {
+    if (! x_WriteAlign(align)) {
         return false;
     }
     return true;
@@ -349,7 +375,7 @@ bool CGff2Writer::x_WriteAlign(
 bool CGff2Writer::WriteHeader()
 //  ----------------------------------------------------------------------------
 {
-    if (!m_bHeaderWritten) {
+    if (! m_bHeaderWritten) {
         m_Os << "##gff-version 2" << '\n';
         m_bHeaderWritten = true;
     }
@@ -359,13 +385,13 @@ bool CGff2Writer::WriteHeader()
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::x_WriteAssemblyInfo(
     const string& strName,
-    const string& strAccession )
+    const string& strAccession)
 //  ----------------------------------------------------------------------------
 {
-    if ( !strName.empty() ) {
+    if (! strName.empty()) {
         m_Os << "##assembly name=" << strName << '\n';
     }
-    if ( !strAccession.empty() ) {
+    if (! strAccession.empty()) {
         m_Os << "##assembly accession=" << strAccession << '\n';
     }
     return true;
@@ -373,43 +399,43 @@ bool CGff2Writer::x_WriteAssemblyInfo(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeature(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord&  record,
     CGffFeatureContext& fc,
-    const CMappedFeat& mf )
-    //  ----------------------------------------------------------------------------
+    const CMappedFeat&  mf)
+//  ----------------------------------------------------------------------------
 {
     return xAssignFeatureBasic(record, fc, mf);
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureBasic(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord&  record,
     CGffFeatureContext& fc,
-    const CMappedFeat& mf )
-    //  ----------------------------------------------------------------------------
+    const CMappedFeat&  mf)
+//  ----------------------------------------------------------------------------
 {
-    if (!xAssignFeatureType(record, fc, mf)) {
+    if (! xAssignFeatureType(record, fc, mf)) {
         return false;
     }
-    if (!xAssignFeatureSeqId(record, fc, mf)) {
+    if (! xAssignFeatureSeqId(record, fc, mf)) {
         return false;
     }
-    if (!xAssignFeatureMethod(record, fc, mf)) {
+    if (! xAssignFeatureMethod(record, fc, mf)) {
         return false;
     }
-    if (!xAssignFeatureEndpoints(record, fc, mf)) {
+    if (! xAssignFeatureEndpoints(record, fc, mf)) {
         return false;
     }
-    if (!xAssignFeatureScore(record, fc, mf)) {
+    if (! xAssignFeatureScore(record, fc, mf)) {
         return false;
     }
-    if (!xAssignFeatureStrand(record, fc, mf)) {
+    if (! xAssignFeatureStrand(record, fc, mf)) {
         return false;
     }
-    if (!xAssignFeaturePhase(record, fc, mf)) {
+    if (! xAssignFeaturePhase(record, fc, mf)) {
         return false;
     }
-    if (!xAssignFeatureAttributes(record, fc, mf)) {
+    if (! xAssignFeatureAttributes(record, fc, mf)) {
         return false;
     }
     return true;
@@ -417,13 +443,13 @@ bool CGff2Writer::xAssignFeatureBasic(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureSeqId(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord&  record,
     CGffFeatureContext& fc,
-    const CMappedFeat& mf )
-    //  ----------------------------------------------------------------------------
+    const CMappedFeat&  mf)
+//  ----------------------------------------------------------------------------
 {
     string bestId;
-    if (!GetBestId(mf, bestId)) {
+    if (! GetBestId(mf, bestId)) {
         bestId = ".";
     }
     record.SetSeqId(bestId);
@@ -432,21 +458,21 @@ bool CGff2Writer::xAssignFeatureSeqId(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureScore(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord&  record,
     CGffFeatureContext& fc,
-    const CMappedFeat& mf )
-    //  ----------------------------------------------------------------------------
+    const CMappedFeat&  mf)
+//  ----------------------------------------------------------------------------
 {
-    if ( !mf.IsSetQual() ) {
+    if (! mf.IsSetQual()) {
         return true;
     }
-    const vector< CRef< CGb_qual > >& quals = mf.GetQual();
-    vector< CRef< CGb_qual > >::const_iterator it = quals.begin();
-    for ( ; it != quals.end(); ++it ) {
-        if ( !(*it)->CanGetQual() || !(*it)->CanGetVal() ) {
+    const vector<CRef<CGb_qual>>&          quals = mf.GetQual();
+    vector<CRef<CGb_qual>>::const_iterator it    = quals.begin();
+    for (; it != quals.end(); ++it) {
+        if (! (*it)->CanGetQual() || ! (*it)->CanGetVal()) {
             continue;
         }
-        if ( (*it)->GetQual() == "gff_score" ) {
+        if ((*it)->GetQual() == "gff_score") {
             record.SetScore((*it)->GetVal());
             return true;
         }
@@ -457,20 +483,20 @@ bool CGff2Writer::xAssignFeatureScore(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeaturePhase(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord&  record,
     CGffFeatureContext& fc,
-    const CMappedFeat& mf )
-    //  ----------------------------------------------------------------------------
+    const CMappedFeat&  mf)
+//  ----------------------------------------------------------------------------
 {
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureType(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord&  record,
     CGffFeatureContext& fc,
-    const CMappedFeat& mf )
-    //  ----------------------------------------------------------------------------
+    const CMappedFeat&  mf)
+//  ----------------------------------------------------------------------------
 {
     record.SetType(".");
     return true;
@@ -478,10 +504,10 @@ bool CGff2Writer::xAssignFeatureType(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureStrand(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord&  record,
     CGffFeatureContext& fc,
-    const CMappedFeat& mf )
-    //  ----------------------------------------------------------------------------
+    const CMappedFeat&  mf)
+//  ----------------------------------------------------------------------------
 {
     const auto& location = mf.GetLocation();
     record.SetStrand(
@@ -493,8 +519,8 @@ bool CGff2Writer::xAssignFeatureStrand(
 bool CGff2Writer::xAssignFeatureMethod(
     CGffFeatureRecord& record,
     CGffFeatureContext&,
-    const CMappedFeat& mf )
-    //  ----------------------------------------------------------------------------
+    const CMappedFeat& mf)
+//  ----------------------------------------------------------------------------
 {
     record.SetMethod(".");
     return true;
@@ -502,18 +528,19 @@ bool CGff2Writer::xAssignFeatureMethod(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureEndpoints(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord&  record,
     CGffFeatureContext& fc,
-    const CMappedFeat& mf )
-    //  ----------------------------------------------------------------------------
+    const CMappedFeat&  mf)
+//  ----------------------------------------------------------------------------
 {
     unsigned int start(0);
     unsigned int stop(0);
-    auto strand = mf.GetLocation().GetStrand();
+    auto         strand = mf.GetLocation().GetStrand();
 
     if (CWriteUtil::IsTransspliced(mf)) {
-       if (!CWriteUtil::GetTranssplicedEndpoints(mf.GetLocation(),
-                start, stop)) {
+        if (! CWriteUtil::GetTranssplicedEndpoints(mf.GetLocation(),
+                                                   start,
+                                                   stop)) {
             return false;
         }
         CGffBaseRecord& baseRecord = record;
@@ -521,19 +548,19 @@ bool CGff2Writer::xAssignFeatureEndpoints(
         return true;
     }
     start = mf.GetLocation().GetStart(eExtreme_Positional);
-    stop = mf.GetLocation().GetStop(eExtreme_Positional);
+    stop  = mf.GetLocation().GetStop(eExtreme_Positional);
     record.SetEndpoints(start, stop, strand);
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureAttributes(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord&  record,
     CGffFeatureContext& fc,
-    const CMappedFeat& mf )
+    const CMappedFeat&  mf)
 //  ----------------------------------------------------------------------------
 {
-    if (!xAssignFeatureAttributesFormatIndependent(record, fc, mf)) {
+    if (! xAssignFeatureAttributesFormatIndependent(record, fc, mf)) {
         return false;
     }
     return xAssignFeatureAttributesFormatSpecific(record, fc, mf);
@@ -541,44 +568,54 @@ bool CGff2Writer::xAssignFeatureAttributes(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureAttributesFormatIndependent(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord&  record,
     CGffFeatureContext& fc,
-    const CMappedFeat& mf )
+    const CMappedFeat&  mf)
 //  ----------------------------------------------------------------------------
 {
     record.SetGbKeyFrom(mf);
-    return(
-        xAssignFeatureAttributesQualifiers(record, fc, mf)  &&
-        xAssignFeatureAttributeDbxref(record, fc, mf)  &&
-        xAssignFeatureAttributeNote(record, fc, mf)  &&
-        xAssignFeatureAttributeException(record, fc, mf)  &&
-        xAssignFeatureAttributeExperiment(record, fc, mf)  &&
-        xAssignFeatureAttributeProduct(record, fc, mf)  &&
-        xAssignFeatureAttributesGene(record, fc, mf)  &&
-        xAssignFeatureAttributeOldLocusTag(record, fc, mf)  &&
-        xAssignFeatureAttributeGeneBiotype(record, fc, mf)  &&
-        xAssignFeatureAttributeMapLoc(record, fc, mf)  &&
-        //xAssignFeatureAttributeRibosomalSlippage(record, fc, mf)  &&
-        xAssignFeatureAttributePseudoGene(record, fc, mf)  &&
-        xAssignFeatureAttributeFunction(record, fc, mf)  &&
-        xAssignFeatureAttributesGoMarkup(record, fc, mf)  &&
-        xAssignFeatureAttributeProteinId(record, fc, mf)  &&
-        xAssignFeatureAttributeTranslationTable(record, fc, mf)  &&
-        xAssignFeatureAttributeCodeBreak(record, fc, mf)  &&
-        xAssignFeatureAttributeModelEvidence(record, fc, mf)  &&
-        xAssignFeatureAttributeRptFamily(record, fc, mf)  &&
-        xAssignFeatureAttributeIsOrdered(record, fc, mf)  &&
-        xAssignFeatureAttributeEcNumbers(record, fc, mf)  &&
-        xAssignFeatureAttributeExonNumber(record, fc, mf)  &&
-        xAssignFeatureAttributePartial(record, fc, mf)  &&
+    return (
+        xAssignFeatureAttributesQualifiers(record, fc, mf) &&
+        xAssignFeatureAttributeDbxref(record, fc, mf) &&
+        xAssignFeatureAttributeNote(record, fc, mf) &&
+        xAssignFeatureAttributeException(record, fc, mf) &&
+        xAssignFeatureAttributeExperiment(record, fc, mf) &&
+        xAssignFeatureAttributeProduct(record, fc, mf) &&
+        xAssignFeatureAttributesGene(record, fc, mf) &&
+        xAssignFeatureAttributeOldLocusTag(record, fc, mf) &&
+        xAssignFeatureAttributeGeneBiotype(record, fc, mf) &&
+        xAssignFeatureAttributeMapLoc(record, fc, mf) &&
+        // xAssignFeatureAttributeRibosomalSlippage(record, fc, mf)  &&
+        xAssignFeatureAttributePseudoGene(record, fc, mf) &&
+        xAssignFeatureAttributeFunction(record, fc, mf) &&
+        xAssignFeatureAttributesGoMarkup(record, fc, mf) &&
+        xAssignFeatureAttributeProteinId(record, fc, mf) &&
+        xAssignFeatureAttributeTranslationTable(record, fc, mf) &&
+        xAssignFeatureAttributeCodeBreak(record, fc, mf) &&
+        xAssignFeatureAttributeModelEvidence(record, fc, mf) &&
+        xAssignFeatureAttributeRptFamily(record, fc, mf) &&
+        xAssignFeatureAttributeIsOrdered(record, fc, mf) &&
+        xAssignFeatureAttributeEcNumbers(record, fc, mf) &&
+        xAssignFeatureAttributeExonNumber(record, fc, mf) &&
+        xAssignFeatureAttributePartial(record, fc, mf) &&
         xAssignFeatureAttributePseudo(record, fc, mf));
+}
+
+bool CGff2Writer::HandledInBaseClass(const string& qual_name) const
+{
+    // RW-2722: there is some subtlety in how protein_id is handled
+    // omit it for now.
+    MAKE_CONST_SET(handled_in_base_class, ct::tagStrNocase, {
+        "function", "go_component", "pseudogene" });
+
+    return (handled_in_base_class.find(qual_name) != handled_in_base_class.end());
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureAttributesFormatSpecific(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord&  record,
     CGffFeatureContext& fc,
-    const CMappedFeat& mf )
+    const CMappedFeat&  mf)
 //  ----------------------------------------------------------------------------
 {
     return true;
@@ -588,17 +625,16 @@ bool CGff2Writer::xAssignFeatureAttributesFormatSpecific(
 static string s_GetDbxrefFromProduct(const CMappedFeat& mf)
 {
     string dbxref;
-    if (!mf.IsSetProduct()) {
+    if (! mf.IsSetProduct()) {
         return dbxref;
     }
 
     auto idh = sequence::GetId(mf.GetProductId(), mf.GetScope(), sequence::eGetId_ForceAcc);
     if (idh) {
         idh.GetSeqId()->GetLabel(&dbxref, CSeq_id::eContent);
-        if (NPOS != dbxref.find('_')) { //nucleotide
+        if (NPOS != dbxref.find('_')) { // nucleotide
             dbxref = string("GenBank:") + dbxref;
-        }
-        else { //protein
+        } else {                        // protein
             dbxref = string("NCBI_GP:") + dbxref;
         }
         return dbxref;
@@ -617,10 +653,10 @@ static string s_GetDbxrefFromProduct(const CMappedFeat& mf)
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureAttributeDbxref(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord&  record,
     CGffFeatureContext& fc,
-    const string& label,
-    const CMappedFeat& mf )
+    const string&       label,
+    const CMappedFeat&  mf)
 //  ----------------------------------------------------------------------------
 {
     if (mf.IsSetDbxref()) {
@@ -633,42 +669,21 @@ bool CGff2Writer::xAssignFeatureAttributeDbxref(
     }
 
     switch (mf.GetData().Which()) {
-        default: {
-            CMappedFeat parent;
-            try {
-                parent = fc.FeatTree().GetParent( mf );
-            }
-            catch(...) {
-            }
-            if (parent) { 
-                if (parent.IsSetData()  &&  parent.GetData().IsGene()) {
-                    const auto& geneRef = mf.GetGeneXref();
-                    if (geneRef  &&  geneRef->IsSuppressed()) {
-                        return true;
-                    }
-                }
-                if (parent.IsSetDbxref()) {
-                    for (const auto& pDbxref : parent.GetDbxref()) {
-                        string dbxref;
-                        if (CWriteUtil::GetDbTag(*pDbxref, dbxref)) {
-                            record.AddAttribute(label, dbxref);
-                        }
-                    }
-                }
-            }
-            return true;
+    default: {
+        CMappedFeat parent;
+        try {
+            parent = fc.FeatTree().GetParent(mf);
+        } catch (...) {
         }
-
-        case CSeq_feat::TData::e_Rna:
-        case CSeq_feat::TData::e_Cdregion: {
-            auto dbxref = s_GetDbxrefFromProduct(mf);
-            if (!dbxref.empty()) {
-                record.AddAttribute(label, dbxref);
+        if (parent) {
+            if (parent.IsSetData() && parent.GetData().IsGene()) {
+                const auto& geneRef = mf.GetGeneXref();
+                if (geneRef && geneRef->IsSuppressed()) {
+                    return true;
+                }
             }
-            auto gene_feat = fc.FeatTree().GetParent(mf, CSeqFeatData::e_Gene);
-            if (gene_feat && gene_feat.IsSetDbxref() && 
-                gene_feat.IsSetData() && !gene_feat.GetData().GetGene().IsSuppressed()) {
-                for (const auto& pDbxref : gene_feat.GetDbxref() ) {
+            if (parent.IsSetDbxref()) {
+                for (const auto& pDbxref : parent.GetDbxref()) {
                     string dbxref;
                     if (CWriteUtil::GetDbTag(*pDbxref, dbxref)) {
                         record.AddAttribute(label, dbxref);
@@ -676,7 +691,26 @@ bool CGff2Writer::xAssignFeatureAttributeDbxref(
                 }
             }
         }
-        break;
+        return true;
+    }
+
+    case CSeq_feat::TData::e_Rna:
+    case CSeq_feat::TData::e_Cdregion: {
+        auto dbxref = s_GetDbxrefFromProduct(mf);
+        if (! dbxref.empty()) {
+            record.AddAttribute(label, dbxref);
+        }
+        auto gene_feat = fc.FeatTree().GetParent(mf, CSeqFeatData::e_Gene);
+        if (gene_feat && gene_feat.IsSetDbxref() &&
+            gene_feat.IsSetData() && ! gene_feat.GetData().GetGene().IsSuppressed()) {
+            for (const auto& pDbxref : gene_feat.GetDbxref()) {
+                string dbxref;
+                if (CWriteUtil::GetDbTag(*pDbxref, dbxref)) {
+                    record.AddAttribute(label, dbxref);
+                }
+            }
+        }
+    } break;
     }
     return true;
 }
@@ -684,12 +718,12 @@ bool CGff2Writer::xAssignFeatureAttributeDbxref(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureAttributePseudo(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord&  record,
     CGffFeatureContext& fc,
-    const CMappedFeat& mf )
-    //  ----------------------------------------------------------------------------
+    const CMappedFeat&  mf)
+//  ----------------------------------------------------------------------------
 {
-    if (mf.IsSetPseudo()  &&  mf.GetPseudo()) {
+    if (mf.IsSetPseudo() && mf.GetPseudo()) {
         record.SetAttribute("pseudo", "true");
         fc.AssignShouldInheritPseudo(true);
         return true;
@@ -703,27 +737,27 @@ bool CGff2Writer::xAssignFeatureAttributePseudo(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureAttributePartial(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord&  record,
     CGffFeatureContext& fc,
-    const CMappedFeat& mf )
+    const CMappedFeat&  mf)
 //  ----------------------------------------------------------------------------
 {
-    if (mf.IsMapped()  &&  mf.IsSetPartial()  &&  mf.GetPartial()) {
+    if (mf.IsMapped() && mf.IsSetPartial() && mf.GetPartial()) {
         record.SetAttribute("partial", "true");
         return true;
     }
 
-    if (!mf.IsMapped()  &&  mf.GetSeq_feat()->IsSetPartial()  &&
-            mf.GetSeq_feat()->GetPartial()) {
+    if (! mf.IsMapped() && mf.GetSeq_feat()->IsSetPartial() &&
+        mf.GetSeq_feat()->GetPartial()) {
         record.SetAttribute("partial", "true");
         return true;
     }
 
     const CRange<TSeqPos>& display_range = GetRange();
-    const CRange<TSeqPos>& feat_range = mf.GetLocation().GetTotalRange();
+    const CRange<TSeqPos>& feat_range    = mf.GetLocation().GetTotalRange();
     if (display_range.IntersectionWith(feat_range).NotEmpty() &&
-            (display_range.GetFrom() > feat_range.GetFrom() ||
-                display_range.GetTo() < feat_range.GetTo())) {
+        (display_range.GetFrom() > feat_range.GetFrom() ||
+         display_range.GetTo() < feat_range.GetTo())) {
         record.SetAttribute("partial", "true");
         return true;
     }
@@ -734,20 +768,20 @@ bool CGff2Writer::xAssignFeatureAttributePartial(
 bool CGff2Writer::xAssignFeatureAttributeTranslationTable(
     CGffFeatureRecord& record,
     CGffFeatureContext&,
-    const CMappedFeat& mf )
+    const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
-    if (!mf.IsSetData()  ||  !mf.GetData().IsCdregion()) {
+    if (! mf.IsSetData() || ! mf.GetData().IsCdregion()) {
 
         return true;
     }
     const CSeqFeatData::TCdregion& cds = mf.GetData().GetCdregion();
-    if (!cds.IsSetCode()) {
+    if (! cds.IsSetCode()) {
         return true;
     }
     int id = cds.GetCode().GetId();
-    if (id != 1  &&  id != 255) {//former gff3 version
-    //if (true) {//former gtf version
+    if (id != 1 && id != 255) { // former gff3 version
+        // if (true) {//former gtf version
         record.SetAttribute("transl_table", NStr::IntToString(id));
         return true;
     }
@@ -756,9 +790,9 @@ bool CGff2Writer::xAssignFeatureAttributeTranslationTable(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureAttributeRibosomalSlippage(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord&  record,
     CGffFeatureContext& fc,
-    const CMappedFeat& mf )
+    const CMappedFeat&  mf)
 //  ----------------------------------------------------------------------------
 {
     auto featSubtype = mf.GetFeatSubtype();
@@ -775,9 +809,9 @@ bool CGff2Writer::xAssignFeatureAttributeRibosomalSlippage(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureAttributeProteinId(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord&  record,
     CGffFeatureContext& fc,
-    const CMappedFeat& mf )
+    const CMappedFeat&  mf)
 //  ----------------------------------------------------------------------------
 {
     auto featSubtype = mf.GetFeatSubtype();
@@ -785,11 +819,11 @@ bool CGff2Writer::xAssignFeatureAttributeProteinId(
         return true;
     }
 
-    auto protein_id = mf.GetNamedQual("protein_id");
-    if (!protein_id.empty()) {
-        record.AddAttribute("protein_id", protein_id);
+    if (auto protein_ids = s_GetQualVals(mf, "protein_id"); ! protein_ids.empty()) {
+        s_SetAttributes("protein_id", protein_ids, record);
         return true;
     }
+
     if (mf.IsSetProduct()) {
         string product;
         if (GetBestId(mf.GetProductId(), mf.GetScope(), product)) {
@@ -807,7 +841,7 @@ bool CGff2Writer::xAssignFeatureAttributeProteinId(
 bool CGff2Writer::xAssignFeatureAttributeProduct(
     CGffFeatureRecord& record,
     CGffFeatureContext&,
-    const CMappedFeat& mf )
+    const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
 
@@ -818,7 +852,7 @@ bool CGff2Writer::xAssignFeatureAttributeProduct(
         // Product name comes from a prot-ref which stored in the seqfeat's
         // xrefs:
         const CProt_ref* pProtRef = mf.GetProtXref();
-        if ( pProtRef && pProtRef->IsSetName() ) {
+        if (pProtRef && pProtRef->IsSetName()) {
             const list<string>& names = pProtRef->GetName();
             record.SetAttribute("product", names.front());
             return true;
@@ -835,11 +869,9 @@ bool CGff2Writer::xAssignFeatureAttributeProduct(
                     SAnnotSelector sel(CSeqFeatData::eSubtype_prot);
                     sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
                     CFeat_CI it(bsh, sel);
-                    if (it  &&  it->IsSetData()
-                            &&  it->GetData().GetProt().IsSetName()
-                            &&  !it->GetData().GetProt().GetName().empty()) {
+                    if (it && it->IsSetData() && it->GetData().GetProt().IsSetName() && ! it->GetData().GetProt().GetName().empty()) {
                         record.SetAttribute("product",
-                            it->GetData().GetProt().GetName().front());
+                                            it->GetData().GetProt().GetName().front());
                         return true;
                     }
                 }
@@ -858,15 +890,13 @@ bool CGff2Writer::xAssignFeatureAttributeProduct(
         const CRNA_ref& rna = mf.GetData().GetRna();
 
         if (subtype == CSeqFeatData::eSubtype_tRNA) {
-            if (rna.IsSetExt()  &&  rna.GetExt().IsTRNA()) {
+            if (rna.IsSetExt() && rna.GetExt().IsTRNA()) {
 
                 const CRange<TSeqPos>& display_range = GetRange();
-                CRef<CTrna_ext> trimmed_trna;
-                if (!display_range.IsWhole())
+                CRef<CTrna_ext>        trimmed_trna;
+                if (! display_range.IsWhole())
                     trimmed_trna = sequence::CFeatTrim::Apply(rna.GetExt().GetTRNA(), display_range);
-                const CTrna_ext& trna = display_range.IsWhole() ?
-                    rna.GetExt().GetTRNA() :
-                    *trimmed_trna;
+                const CTrna_ext& trna = display_range.IsWhole() ? rna.GetExt().GetTRNA() : *trimmed_trna;
 
                 string anticodon;
                 if (CWriteUtil::GetTrnaAntiCodon(trna, anticodon)) {
@@ -884,13 +914,13 @@ bool CGff2Writer::xAssignFeatureAttributeProduct(
             }
         }
 
-        if (rna.IsSetExt()  &&  rna.GetExt().IsName()) {
+        if (rna.IsSetExt() && rna.GetExt().IsName()) {
             record.SetAttribute("product", rna.GetExt().GetName());
             return true;
         }
 
-        if (rna.IsSetExt()  &&  rna.GetExt().IsGen()  &&
-                rna.GetExt().GetGen().IsSetProduct() ) {
+        if (rna.IsSetExt() && rna.GetExt().IsGen() &&
+            rna.GetExt().GetGen().IsSetProduct()) {
             record.SetAttribute("product", rna.GetExt().GetGen().GetProduct());
             return true;
         }
@@ -899,10 +929,11 @@ bool CGff2Writer::xAssignFeatureAttributeProduct(
     // finally, look for gb_qual
     if (mf.IsSetQual()) {
         const CSeq_feat::TQual& quals = mf.GetQual();
-        for ( CSeq_feat::TQual::const_iterator cit = quals.begin();
-                cit != quals.end(); ++cit) {
-            if ((*cit)->IsSetQual()  &&  (*cit)->IsSetVal()  &&
-                    (*cit)->GetQual() == "product") {
+        for (CSeq_feat::TQual::const_iterator cit = quals.begin();
+             cit != quals.end();
+             ++cit) {
+            if ((*cit)->IsSetQual() && (*cit)->IsSetVal() &&
+                (*cit)->GetQual() == "product") {
                 record.SetAttribute("product", (*cit)->GetVal());
                 return true;
             }
@@ -915,23 +946,23 @@ bool CGff2Writer::xAssignFeatureAttributeProduct(
 bool CGff2Writer::xAssignFeatureAttributeCodeBreak(
     CGffFeatureRecord& record,
     CGffFeatureContext&,
-    const CMappedFeat& mf )
+    const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
-    if (!mf.IsSetData()  ||  !mf.GetData().IsCdregion()) {
+    if (! mf.IsSetData() || ! mf.GetData().IsCdregion()) {
         return true;
     }
     const CSeqFeatData::TCdregion& cds = mf.GetData().GetCdregion();
-    if (!cds.IsSetCode_break()) {
+    if (! cds.IsSetCode_break()) {
         return true;
     }
 
-    const list<CRef<CCode_break> >& code_breaks = cds.GetCode_break();
+    const list<CRef<CCode_break>>& code_breaks = cds.GetCode_break();
 
     const CRange<TSeqPos>& display_range = GetRange();
-    if (!display_range.IsWhole()) { // Trim the code breaks before writing
+    if (! display_range.IsWhole()) { // Trim the code breaks before writing
         for (CRef<CCode_break> code_break : code_breaks) {
-            string cbString;
+            string            cbString;
             CRef<CCode_break> trimmed_cb = sequence::CFeatTrim::Apply(*code_break, display_range);
             if (trimmed_cb.NotEmpty() &&
                 CWriteUtil::GetCodeBreak(*trimmed_cb, cbString)) {
@@ -941,7 +972,7 @@ bool CGff2Writer::xAssignFeatureAttributeCodeBreak(
         return true;
     }
 
-    list<CRef<CCode_break> >::const_iterator it = code_breaks.begin();
+    list<CRef<CCode_break>>::const_iterator it = code_breaks.begin();
     for (; it != code_breaks.end(); ++it) {
         string cbString;
         if (CWriteUtil::GetCodeBreak(**it, cbString)) {
@@ -955,7 +986,7 @@ bool CGff2Writer::xAssignFeatureAttributeCodeBreak(
 const CGene_ref&
 sGetClosestGeneRef(
     CGffFeatureContext& fc,
-    const CMappedFeat& mf)
+    const CMappedFeat&  mf)
 //  ----------------------------------------------------------------------------
 {
     static CSafeStatic<CGene_ref> noRef;
@@ -964,7 +995,7 @@ sGetClosestGeneRef(
     }
     // do not use xref gene ref directly !!!
     CMappedFeat gene = fc.FindBestGeneParent(mf);
-    if (gene  &&  gene.IsSetData()  &&  gene.GetData().IsGene()) {
+    if (gene && gene.IsSetData() && gene.GetData().IsGene()) {
         return gene.GetData().GetGene();
     }
     return noRef.Get();
@@ -972,9 +1003,9 @@ sGetClosestGeneRef(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureAttributesGene(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord&  record,
     CGffFeatureContext& fc,
-    const CMappedFeat& mf )
+    const CMappedFeat&  mf)
 //  ----------------------------------------------------------------------------
 {
     const auto& geneRef = sGetClosestGeneRef(fc, mf);
@@ -990,14 +1021,13 @@ bool CGff2Writer::xAssignFeatureAttributesGene(
         }
         if (geneRef.IsSetSyn()) {
             const auto& syns = geneRef.GetSyn();
-            auto it = syns.begin();
+            auto        it   = syns.begin();
             while (it != syns.end()) {
                 record.AddAttribute("gene_synonym", *(it++));
             }
         }
     }
     return true;
-
 }
 
 //  ----------------------------------------------------------------------------
@@ -1007,28 +1037,29 @@ bool CGff2Writer::xAssignFeatureAttributeOldLocusTag(
     const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
-    if (!mf.GetData().IsGene()) {
+    if (! mf.GetData().IsGene()) {
         return true;
     }
-    if (!mf.IsSetQual()) {
+    if (! mf.IsSetQual()) {
         return true;
     }
-    string old_locus_tags;
-    vector<CRef<CGb_qual> > quals = mf.GetQual();
-    for (vector<CRef<CGb_qual> >::const_iterator it = quals.begin();
-            it != quals.end(); ++it) {
+    string                 old_locus_tags;
+    vector<CRef<CGb_qual>> quals = mf.GetQual();
+    for (vector<CRef<CGb_qual>>::const_iterator it = quals.begin();
+         it != quals.end();
+         ++it) {
         if ((**it).IsSetQual() && (**it).IsSetVal()) {
             string qual = (**it).GetQual();
             if (qual != "old_locus_tag") {
                 continue;
             }
-            if (!old_locus_tags.empty()) {
+            if (! old_locus_tags.empty()) {
                 old_locus_tags += ",";
             }
             old_locus_tags += (**it).GetVal();
         }
     }
-    if (!old_locus_tags.empty()) {
+    if (! old_locus_tags.empty()) {
         record.SetAttribute("old_locus_tag", old_locus_tags);
     }
     return true;
@@ -1036,22 +1067,22 @@ bool CGff2Writer::xAssignFeatureAttributeOldLocusTag(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureAttributeGeneBiotype(
-    CGffFeatureRecord& record,
+    CGffFeatureRecord&  record,
     CGffFeatureContext& fc,
-    const CMappedFeat& mf)
+    const CMappedFeat&  mf)
 //  ----------------------------------------------------------------------------
 {
     // if a biosource is present then only compute if also is genomic record
     // if a biosource is not present then always compute
-    if (!mf.GetData().IsGene()) {
+    if (! mf.GetData().IsGene()) {
         return true;
     }
-    if (fc.HasSequenceBioSource()  &&  !fc.IsSequenceGenomicRecord()) {
+    if (fc.HasSequenceBioSource() && ! fc.IsSequenceGenomicRecord()) {
         return true;
     }
 
     string biotype;
-    if (!feature::GetFeatureGeneBiotypeFaster(fc.FeatTree(), mf, biotype)) {
+    if (! feature::GetFeatureGeneBiotypeFaster(fc.FeatTree(), mf, biotype)) {
         return true;
     }
     record.SetAttribute("gene_biotype", biotype);
@@ -1063,14 +1094,14 @@ bool CGff2Writer::xAssignFeatureAttributeGeneBiotype(
 bool CGff2Writer::xAssignFeatureAttributeMapLoc(
     CGffFeatureRecord& record,
     CGffFeatureContext&,
-    const CMappedFeat& mf )
+    const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
-    if (!mf.GetData().IsGene()) {
+    if (! mf.GetData().IsGene()) {
         return true;
     }
     const CGene_ref& gene_ref = mf.GetData().GetGene();
-    if (!gene_ref.IsSetMaploc()) {
+    if (! gene_ref.IsSetMaploc()) {
         return true;
     }
     record.SetAttribute("map", gene_ref.GetMaploc());
@@ -1082,7 +1113,7 @@ bool CGff2Writer::xAssignFeatureAttributeMapLoc(
 bool CGff2Writer::xAssignFeatureAttributeException(
     CGffFeatureRecord& record,
     CGffFeatureContext&,
-    const CMappedFeat& mf )
+    const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
     if (mf.IsSetExcept_text()) {
@@ -1101,17 +1132,17 @@ bool CGff2Writer::xAssignFeatureAttributeException(
 bool CGff2Writer::xAssignFeatureAttributeExperiment(
     CGffFeatureRecord& record,
     CGffFeatureContext&,
-    const CMappedFeat& mf )
+    const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
     vector<string> experiments;
-    const auto& quals = mf.GetQual();
-    for (const auto& qual: quals) {
+    const auto&    quals = mf.GetQual();
+    for (const auto& qual : quals) {
         if (qual->GetQual() == "experiment") {
-           experiments.push_back(qual->GetVal());
+            experiments.push_back(qual->GetVal());
         }
     }
-    if (!experiments.empty()) {
+    if (! experiments.empty()) {
         record.SetAttributes("experiment", experiments);
     }
     return true;
@@ -1125,10 +1156,10 @@ bool CGff2Writer::xAssignFeatureAttributeModelEvidence(
 //  ----------------------------------------------------------------------------
 {
     string modelEvidence;
-    if (!CWriteUtil::GetStringForModelEvidence(mf, modelEvidence)) {
+    if (! CWriteUtil::GetStringForModelEvidence(mf, modelEvidence)) {
         return true;
     }
-    if (!modelEvidence.empty()) {
+    if (! modelEvidence.empty()) {
         record.SetAttribute("model_evidence", modelEvidence);
     }
     return true;
@@ -1143,51 +1174,58 @@ bool CGff2Writer::xAssignFeatureAttributeRptFamily(
 {
     CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
     switch (s) {
-        default:
+    default:
+        return true;
+    case CSeqFeatData::eSubtype_oriT:
+    case CSeqFeatData::eSubtype_repeat_region: {
+        const CSeq_feat::TQual& quals = mf.GetQual();
+        if (quals.empty()) {
             return true;
-        case CSeqFeatData::eSubtype_oriT:
-        case CSeqFeatData::eSubtype_repeat_region: {
-            const CSeq_feat::TQual& quals = mf.GetQual();
-            if (quals.empty()) {
+        }
+        for (CSeq_feat::TQual::const_iterator cit = quals.begin();
+             cit != quals.end();
+             ++cit) {
+            if ((*cit)->GetQual() == "rpt_family") {
+                record.SetAttribute("rpt_family", (*cit)->GetVal());
                 return true;
             }
-            for (CSeq_feat::TQual::const_iterator cit = quals.begin();
-                cit != quals.end(); ++cit) {
-                if ((*cit)->GetQual() == "rpt_family") {
-                    record.SetAttribute("rpt_family", (*cit)->GetVal());
-                    return true;
-                }
-            }
         }
+    }
     }
     return true;
 }
 
-//  ----------------------------------------------------------------------------
-bool CGff2Writer::xAssignFeatureAttributePseudoGene(
-    CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
+static bool s_SetPseudoGeneAttributes(const CMappedFeat& mf, CGffFeatureRecord& record)
 {
-    string pseudoGene = mf.GetNamedQual("pseudogene");
-    if (!pseudoGene.empty()) {
-        record.SetAttribute("pseudogene", pseudoGene);
+    if (auto pseudoGenes = s_GetQualVals(mf, "pseudogene"); ! pseudoGenes.empty()) {
+        s_SetAttributes("pseudogene", pseudoGenes, record);
         return true;
     }
-    if (!CSeqFeatData::IsLegalQualifier(
+    return false;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeatureAttributePseudoGene(
+    CGffFeatureRecord&  record,
+    CGffFeatureContext& fc,
+    const CMappedFeat&  mf)
+//  ----------------------------------------------------------------------------
+{
+    if (s_SetPseudoGeneAttributes(mf, record)) {
+        return true;
+    }
+
+    if (! CSeqFeatData::IsLegalQualifier(
             mf.GetFeatSubtype(), CSeqFeatData::eQual_pseudogene)) {
         return true;
     }
+
     CMappedFeat gene = fc.FindBestGeneParent(mf);
-    if (!gene) {
+    if (gene && s_SetPseudoGeneAttributes(gene, record)) {
         return true;
     }
-    pseudoGene = gene.GetNamedQual("pseudogene");
-    if (!pseudoGene.empty()) {
-        record.SetAttribute("pseudogene", pseudoGene);
-        return true;
-    }
+
     return true;
 }
 
@@ -1195,7 +1233,7 @@ bool CGff2Writer::xAssignFeatureAttributePseudoGene(
 bool CGff2Writer::xAssignFeatureAttributeIsOrdered(
     CGffFeatureRecord& record,
     CGffFeatureContext&,
-    const CMappedFeat& mf )
+    const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
     if (CWriteUtil::IsLocationOrdered(mf.GetLocation())) {
@@ -1208,21 +1246,22 @@ bool CGff2Writer::xAssignFeatureAttributeIsOrdered(
 bool CGff2Writer::xAssignFeatureAttributeFunction(
     CGffFeatureRecord& record,
     CGffFeatureContext&,
-    const CMappedFeat& mf )
+    const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
-    const string& function = mf.GetNamedQual("function");
-    if (!function.empty()) {
-        record.SetAttribute("function", function);
+    if (auto function = s_GetQualVals(mf, "function"); ! function.empty()) {
+        s_SetAttributes("function", function, record);
         return true;
     }
+
     if (CSeqFeatData::e_Prot != mf.GetFeatType()) {
         return true;
     }
     const CProt_ref& prot = mf.GetData().GetProt();
-    if (prot.CanGetActivity()  &&  !prot.GetActivity().empty()) {
-        record.SetAttribute("function", prot.GetActivity().front());
-        return true;
+    if (prot.IsSetActivity()) {
+        for (auto activity : prot.GetActivity()) {
+            record.AddAttribute("function", activity);
+        }
     }
     return true;
 }
@@ -1231,33 +1270,32 @@ bool CGff2Writer::xAssignFeatureAttributeFunction(
 bool CGff2Writer::xAssignFeatureAttributesGoMarkup(
     CGffFeatureRecord& record,
     CGffFeatureContext&,
-    const CMappedFeat& mf )
+    const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
-    const string& go_component = mf.GetNamedQual("go_component");
-    if (!go_component.empty()) {
-        record.SetAttribute("go_component", go_component);
+    if (auto go_components = s_GetQualVals(mf, "go_component"); ! go_components.empty()) {
+        s_SetAttributes("go_component", go_components, record);
         return true;
     }
-    if (!mf.IsSetExt()) {
+
+    if (! mf.IsSetExt()) {
         return true;
     }
 
     const auto& ext = mf.GetExt();
-    if (!ext.IsSetType()  ||  !ext.GetType().IsStr()) {
+    if (! ext.IsSetType() || ! ext.GetType().IsStr()) {
         return true;
     }
     if (ext.GetType().GetStr() == "GeneOntology") {
         list<string> goIds;
-        const auto& goFields = ext.GetData();
-        for (const auto& goField: goFields) {
-            if (!goField->IsSetLabel()  ||  !goField->GetLabel().IsStr()) {
+        const auto&  goFields = ext.GetData();
+        for (const auto& goField : goFields) {
+            if (! goField->IsSetLabel() || ! goField->GetLabel().IsStr()) {
                 continue;
             }
             const auto& goLabel = goField->GetLabel().GetStr();
-            if (goLabel == "Component"  &&  goField->IsSetData()
-                    &&  goField->GetData().IsFields()) {
-                const auto& fields = goField->GetData().GetFields();
+            if (goLabel == "Component" && goField->IsSetData() && goField->GetData().IsFields()) {
+                const auto&    fields = goField->GetData().GetFields();
                 vector<string> goStrings;
                 if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings)) {
                     record.SetAttributes("go_component", goStrings);
@@ -1265,9 +1303,8 @@ bool CGff2Writer::xAssignFeatureAttributesGoMarkup(
                 CWriteUtil::GetListOfGoIds(fields, goIds);
                 continue;
             }
-            if (goLabel == "Process"  &&  goField->IsSetData()
-                    &&  goField->GetData().IsFields()) {
-                const auto& fields = goField->GetData().GetFields();
+            if (goLabel == "Process" && goField->IsSetData() && goField->GetData().IsFields()) {
+                const auto&    fields = goField->GetData().GetFields();
                 vector<string> goStrings;
                 if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings)) {
                     record.SetAttributes("go_process", goStrings);
@@ -1275,9 +1312,8 @@ bool CGff2Writer::xAssignFeatureAttributesGoMarkup(
                 CWriteUtil::GetListOfGoIds(fields, goIds);
                 continue;
             }
-            if (goLabel == "Function"  &&  goField->IsSetData()
-                    &&  goField->GetData().IsFields()) {
-                const auto& fields = goField->GetData().GetFields();
+            if (goLabel == "Function" && goField->IsSetData() && goField->GetData().IsFields()) {
+                const auto&    fields = goField->GetData().GetFields();
                 vector<string> goStrings;
                 if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings)) {
                     record.SetAttributes("go_function", goStrings);
@@ -1286,30 +1322,29 @@ bool CGff2Writer::xAssignFeatureAttributesGoMarkup(
                 continue;
             }
         }
-        if (!goIds.empty()) {
+        if (! goIds.empty()) {
             record.SetAttributes("Ontology_term", vector<string>(goIds.begin(), goIds.end()));
         }
     } else if (ext.GetType().GetStr() == "CombinedFeatureUserObjects") {
-        const CUser_object::TData & ext_data = ext.GetData();
+        const CUser_object::TData& ext_data = ext.GetData();
         ITERATE (CSeq_feat::TExt::TData, it, ext_data) {
-            const CUser_field & field = **it;
-            if( ! field.IsSetLabel() || ! field.IsSetData()  ) {
+            const CUser_field& field = **it;
+            if (! field.IsSetLabel() || ! field.IsSetData()) {
                 continue;
             }
-            const CUser_field::TLabel & field_label = field.GetLabel();
-            const CUser_field::TData & field_data = field.GetData();
+            const CUser_field::TLabel& field_label = field.GetLabel();
+            const CUser_field::TData&  field_data  = field.GetData();
             if (field_label.IsStr() && field_label.GetStr() == "GeneOntology") {
                 if (field_data.IsFields()) {
                     list<string> goIds;
-                    const auto& goFields = field.GetData().GetFields();
-                    for (const auto& goField: goFields) {
-                        if (!goField->IsSetLabel()  ||  !goField->GetLabel().IsStr()) {
+                    const auto&  goFields = field.GetData().GetFields();
+                    for (const auto& goField : goFields) {
+                        if (! goField->IsSetLabel() || ! goField->GetLabel().IsStr()) {
                             continue;
                         }
                         const auto& goLabel = goField->GetLabel().GetStr();
-                        if (goLabel == "Component"  &&  goField->IsSetData()
-                                &&  goField->GetData().IsFields()) {
-                            const auto& fields = goField->GetData().GetFields();
+                        if (goLabel == "Component" && goField->IsSetData() && goField->GetData().IsFields()) {
+                            const auto&    fields = goField->GetData().GetFields();
                             vector<string> goStrings;
                             if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings, true)) {
                                 record.SetAttributes("go_component", goStrings);
@@ -1317,9 +1352,8 @@ bool CGff2Writer::xAssignFeatureAttributesGoMarkup(
                             CWriteUtil::GetListOfGoIds(fields, goIds, true);
                             continue;
                         }
-                        if (goLabel == "Process"  &&  goField->IsSetData()
-                                &&  goField->GetData().IsFields()) {
-                            const auto& fields = goField->GetData().GetFields();
+                        if (goLabel == "Process" && goField->IsSetData() && goField->GetData().IsFields()) {
+                            const auto&    fields = goField->GetData().GetFields();
                             vector<string> goStrings;
                             if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings, true)) {
                                 record.SetAttributes("go_process", goStrings);
@@ -1327,9 +1361,8 @@ bool CGff2Writer::xAssignFeatureAttributesGoMarkup(
                             CWriteUtil::GetListOfGoIds(fields, goIds, true);
                             continue;
                         }
-                        if (goLabel == "Function"  &&  goField->IsSetData()
-                                &&  goField->GetData().IsFields()) {
-                            const auto& fields = goField->GetData().GetFields();
+                        if (goLabel == "Function" && goField->IsSetData() && goField->GetData().IsFields()) {
+                            const auto&    fields = goField->GetData().GetFields();
                             vector<string> goStrings;
                             if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings, true)) {
                                 record.SetAttributes("go_function", goStrings);
@@ -1338,7 +1371,7 @@ bool CGff2Writer::xAssignFeatureAttributesGoMarkup(
                             continue;
                         }
                     }
-                    if (!goIds.empty()) {
+                    if (! goIds.empty()) {
                         record.SetAttributes("Ontology_term", vector<string>(goIds.begin(), goIds.end()));
                     }
                 }
@@ -1353,7 +1386,7 @@ bool CGff2Writer::xAssignFeatureAttributesGoMarkup(
 bool CGff2Writer::xAssignFeatureAttributeEcNumbers(
     CGffFeatureRecord& record,
     CGffFeatureContext&,
-    const CMappedFeat& mf )
+    const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
     if (CSeqFeatData::e_Prot != mf.GetFeatType()) {
@@ -1362,7 +1395,7 @@ bool CGff2Writer::xAssignFeatureAttributeEcNumbers(
     const CProt_ref& prot = mf.GetData().GetProt();
     if (prot.CanGetEc()) {
         const list<string> ec = prot.GetEc();
-        if (!ec.empty()) {
+        if (! ec.empty()) {
             record.SetAttributes(
                 "ec_number", vector<string>(ec.begin(), ec.end()));
         }
@@ -1375,18 +1408,18 @@ bool CGff2Writer::xAssignFeatureAttributeEcNumbers(
 bool CGff2Writer::xAssignFeatureAttributeExonNumber(
     CGffFeatureRecord& record,
     CGffFeatureContext&,
-    const CMappedFeat& mf )
+    const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
-    if (!mf.IsSetQual()) {
+    if (! mf.IsSetQual()) {
         return true;
     }
     const CSeq_feat::TQual& quals = mf.GetQual();
-    for ( CSeq_feat::TQual::const_iterator cit = quals.begin();
-        cit != quals.end();
-        ++cit ) {
+    for (CSeq_feat::TQual::const_iterator cit = quals.begin();
+         cit != quals.end();
+         ++cit) {
         const CGb_qual& qual = **cit;
-        if (qual.IsSetQual()  &&  qual.GetQual() == "number") {
+        if (qual.IsSetQual() && qual.GetQual() == "number") {
             record.SetAttribute("exon_number", qual.GetVal());
             return true;
         }
@@ -1405,8 +1438,8 @@ bool CGff2Writer::IsTranscriptType(
         CSeqFeatData::eSubtype_C_region,
         CSeqFeatData::eSubtype_D_segment,
         CSeqFeatData::eSubtype_J_segment,
-        CSeqFeatData::eSubtype_V_segment   
-    });
+        CSeqFeatData::eSubtype_V_segment });
+
     return acceptableTranscriptTypes.find(mf.GetFeatSubtype()) !=
            acceptableTranscriptTypes.end();
 }
@@ -1414,11 +1447,11 @@ bool CGff2Writer::IsTranscriptType(
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::HasAccaptableTranscriptParent(
     CGffFeatureContext& context,
-    const CMappedFeat& mf)
+    const CMappedFeat&  mf)
 //  ----------------------------------------------------------------------------
 {
     CMappedFeat parent = context.FeatTree().GetParent(mf);
-    if (!parent) {
+    if (! parent) {
         return false;
     }
     return IsTranscriptType(parent);
@@ -1427,10 +1460,10 @@ bool CGff2Writer::HasAccaptableTranscriptParent(
 //  ----------------------------------------------------------------------------
 CMappedFeat CGff2Writer::xGenerateMissingTranscript(
     CGffFeatureContext& context,
-    const CMappedFeat& mf )
+    const CMappedFeat&  mf)
 //  ----------------------------------------------------------------------------
 {
-    if (!xGeneratingMissingTranscripts()) {
+    if (! xGeneratingMissingTranscripts()) {
         return CMappedFeat();
     }
     if (HasAccaptableTranscriptParent(context, mf)) {
@@ -1446,15 +1479,15 @@ CMappedFeat CGff2Writer::xGenerateMissingTranscript(
     pMissingTranscript->ResetPartial();
 
     // rw-1921
-    if (mf.IsSetExcept()  &&  mf.GetExcept()) {
+    if (mf.IsSetExcept() && mf.GetExcept()) {
         pMissingTranscript->SetExcept(true);
         if (mf.IsSetExcept_text()) {
             pMissingTranscript->SetExcept_text(mf.GetExcept_text());
         }
     }
-    CScope& scope = mf.GetScope();
-    CSeq_annot_Handle sah = mf.GetAnnot();
-    CSeq_annot_EditHandle saeh = sah.GetEditHandle();
+    CScope&               scope = mf.GetScope();
+    CSeq_annot_Handle     sah   = mf.GetAnnot();
+    CSeq_annot_EditHandle saeh  = sah.GetEditHandle();
     saeh.AddFeat(*pMissingTranscript);
     CMappedFeat tf = scope.GetObjectHandle(*pMissingTranscript);
     context.FeatTree().AddFeature(tf);
@@ -1471,19 +1504,19 @@ bool CGff2Writer::xIntervalsNeedPartNumbers(
         return false;
     }
 
-    const auto& front = *sublocs.front();
-    auto frontStrand = CWriteUtil::GetEffectiveStrand(front);
-    auto lastStart = front.GetFrom();
+    const auto& front       = *sublocs.front();
+    auto        frontStrand = CWriteUtil::GetEffectiveStrand(front);
+    auto        lastStart   = front.GetFrom();
     for (auto itComp = sublocs.begin()++; itComp != sublocs.end(); itComp++) {
         const auto& comp = **itComp;
         if (frontStrand != CWriteUtil::GetEffectiveStrand(comp)) {
             return true;
         }
         auto compStart = comp.GetFrom();
-        if (frontStrand == eNa_strand_plus  &&  lastStart > compStart) {
+        if (frontStrand == eNa_strand_plus && lastStart > compStart) {
             return true;
         }
-        if (frontStrand == eNa_strand_minus  &&  lastStart < compStart) {
+        if (frontStrand == eNa_strand_minus && lastStart < compStart) {
             return true;
         }
         lastStart = compStart;

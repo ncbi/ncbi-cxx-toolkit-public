@@ -455,7 +455,7 @@ bool CGtfWriter::xAssignFeaturesCds(
     if (cdsFeat.GetData().GetCdregion().IsSetFrame()) {
         phase = max(cdsFeat.GetData().GetCdregion().GetFrame()-1, 0);
     }
-    
+
     unsigned int partNum = 1;
     for (auto pInterval : sublocs) {
         const CSeq_interval& intv = *pInterval;
@@ -780,26 +780,31 @@ bool CGtfWriter::xAssignFeatureAttributesQualifiers(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    const vector<string> specialCases = {
+    MAKE_CONST_SET(specialCases, ct::tagStrCase, {
         "ID",
         "Parent",
         "gff_type",
         "transcript_id",
         "gene_id",
-    };
+    });
 
     CGtfRecord& record = dynamic_cast<CGtfRecord&>(rec);
-    auto quals = mf.GetQual();
-    for (auto qual: quals) {
-        if (!qual->IsSetQual()  ||  !qual->IsSetVal()) {
+    auto        quals  = mf.GetQual();
+    for (auto qual : quals) {
+        if (! qual->IsSetQual() || ! qual->IsSetVal()) {
             continue;
         }
-        auto specialCase = std::find(
-            specialCases.begin(), specialCases.end(), qual->GetQual());
-        if (specialCase != specialCases.end()) {
+
+        const auto& qualName = qual->GetQual();
+
+        if (HandledInBaseClass(qualName)) {
             continue;
         }
-        record.AddAttribute(qual->GetQual(), qual->GetVal());
+
+        if (specialCases.find(qualName) != specialCases.end()) {
+            continue;
+        }
+        record.AddAttribute(qualName, qual->GetVal());
     }
     return true;
 }
@@ -1051,7 +1056,7 @@ bool CGtfWriter::xAssignFeatureAttributeGeneId(
         mGeneMap[mf] = geneId;
         record.SetGeneId(geneId);
         return true;
-    } 
+    }
 
     auto cit = mUsedGeneIds.find(geneId);
     if (mUsedGeneIds.end() == cit) {
