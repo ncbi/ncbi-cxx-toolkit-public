@@ -1276,10 +1276,17 @@ CPSGS_AsyncResolveBase::x_OnSeqIdAsyncResolutionFinished(
             msg += m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve);
         }
 
-        m_ErrorCB(m_ResolveErrors.GetCombinedErrorCode(m_CacheAmbiguityMessage,
-                                                       m_CassAmbiguityMessage),
-                  ePSGS_UnresolvedSeqId,
-                  eDiag_Error, msg, ePSGS_SkipLogging);
+        CRequestStatus::ECode   combined_error_code =
+                    m_ResolveErrors.GetCombinedErrorCode(m_CacheAmbiguityMessage,
+                                                         m_CassAmbiguityMessage);
+
+        EDiagSev    severity = eDiag_Error;
+        if (combined_error_code == CRequestStatus::e300_MultipleChoices) {
+            // It should be a warning, not error
+            severity = eDiag_Warning;
+        }
+        m_ErrorCB(combined_error_code, ePSGS_UnresolvedSeqId,
+                  severity, msg, ePSGS_SkipLogging);
     }
 }
 
