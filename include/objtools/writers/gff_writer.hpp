@@ -384,6 +384,8 @@ protected:
         return (m_uFlags & fGenerateMissingTranscripts);
     }
 
+    bool HandledInBaseClass(const string& qual_name) const;
+
     static bool IsTranscriptType(
         const CMappedFeat&);
     static bool HasAccaptableTranscriptParent(

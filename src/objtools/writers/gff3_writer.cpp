@@ -121,7 +121,7 @@ sGetWrapInfo(
     }
 
 
-    // if we can't get a strand or they aren't all the same strand then don't 
+    // if we can't get a strand or they aren't all the same strand then don't
     // touch it (second best is better than wrong):
     const auto& front = *subInts.front();
     if (!front.CanGetStrand()) {
@@ -1484,7 +1484,7 @@ bool CGff3Writer::x_WriteFeatureContext(
         sx_CollectProductIds(fc, product_ids);
         // bulk load protein sequences
         auto bhs = m_pScope->GetBioseqHandlesFromTSE(product_ids, fc.BioseqHandle());
-        
+
         // select local proteins and create seq map to load features
         CRef<CSeq_loc> all_prot_loc(new CSeq_loc); // collected combined location
         for ( auto& bh : bhs ) {
@@ -1497,7 +1497,7 @@ bool CGff3Writer::x_WriteFeatureContext(
         }
         if ( !empty(pre_load_prots) ) {
             if ( sx_NeedCDDAnnots(m_Selector.get()) ) {
-                // bulk load cdd annots 
+                // bulk load cdd annots
                 pre_load_cdd_annots = m_pScope->GetCDDAnnots(pre_load_prots);
             }
             // bulk load other features
@@ -2271,22 +2271,27 @@ bool CGff3Writer::xAssignFeatureAttributesQualifiers(
 {
     //FIX_ME
     CGff3FeatureRecord& record = dynamic_cast<CGff3FeatureRecord&>(rec);
-    
+
     MAKE_CONST_SET(gff3_attributes, ct::tagStrNocase, {
        "ID", "Name", "Alias", "Parent", "Target", "Gap", "Derives_from",
        "Note", "Dbxref", "Ontology_term", "Is_circular"
     });
 
     const CSeq_feat::TQual& quals = mf.GetQual();
-    for (const auto& qual: quals) {
-        if (!qual->IsSetQual()  ||  !qual->IsSetVal()) {
+    for (const auto& qual : quals) {
+        if (! qual->IsSetQual() || ! qual->IsSetVal()) {
             continue;
         }
+
         string key = qual->GetQual();
-        const string& value = qual->GetVal();
+
+        if (HandledInBaseClass(key)) {
+            continue;
+        }
         if (key == "SO_type") { // RW-469
             continue;
         }
+        const string& value = qual->GetVal();
         if (key == "ID") {
             record.SetRecordId(value);
             continue;
@@ -2300,12 +2305,7 @@ bool CGff3Writer::xAssignFeatureAttributesQualifiers(
             NStr::ToLower(key);
         }
 
-        //CSeqFeatData::EQualifier equal = CSeqFeatData::GetQualifierType(key);
-        //for now, retain all random junk:
-        //if (!CSeqFeatData::IsLegalQualifier(subtype, equal)) {
-        //    continue;
-        //}
-        record.SetAttribute(key, value);
+        record.AddAttribute(key, value);
     }
     return true;
 }
@@ -3135,7 +3135,7 @@ bool CGff3Writer::xAssignFeatureAttributeParentVDJsegmentCregion(
     const CMappedFeat& mf)
 //  ============================================================================
 {
-    MAKE_CONST_SET(parent_types, CSeqFeatData::ESubtype, 
+    MAKE_CONST_SET(parent_types, CSeqFeatData::ESubtype,
     {
         CSeqFeatData::eSubtype_C_region,
         CSeqFeatData::eSubtype_D_segment,
