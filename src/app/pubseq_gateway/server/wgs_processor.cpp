@@ -183,6 +183,8 @@ CPSGS_WGSProcessor::CPSGS_WGSProcessor(
     m_Request = request;
     m_Reply = reply;
     m_Priority = priority;
+    m_State = "created";
+    m_StateT = m_Start;
 }
 
 
@@ -256,6 +258,7 @@ void CPSGS_WGSProcessor::Process()
         return;
     }
 
+    x_SetState("processing");
     try {
         auto req_type = GetRequest()->GetRequestType();
         switch (req_type) {
@@ -322,6 +325,9 @@ void CPSGS_WGSProcessor::x_ProcessResolveRequest(void)
         SendTrace(kWGSProcessorName +
                   " processor is resolving seq-id " + m_SeqId->AsFastaString());
     }
+    x_SetState("task_pending");
+    m_ReqType = "resolve";
+    sm_QueuedTasks++;
     m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::ResolveSeqId));
     m_ThreadPool->AddTask(m_PoolTask);
 }
@@ -331,8 +337,12 @@ void CPSGS_WGSProcessor::ResolveSeqId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    x_SetState("task_waiting");
+    sm_QueuedTasks--;
+    sm_RunningTasks++;
     x_WaitForOtherProcessors();
     if ( !m_Canceled ) {
+        x_SetState("task_running");
         try {
             m_WGSData = m_Client->ResolveSeqId(*m_SeqId);
             if ( GetRequest()->NeedTrace() ) {
@@ -346,6 +356,8 @@ void CPSGS_WGSProcessor::ResolveSeqId(void)
             m_WGSData.reset();
         }
     }
+    x_SetState("task_done");
+    sm_RunningTasks--;
     PostponeInvoke(s_OnResolvedSeqId, this);
 }
 
@@ -358,6 +370,7 @@ void CPSGS_WGSProcessor::OnResolvedSeqId(void)
     if ( x_IsCanceled() ) {
         return;
     }
+    x_SetState("sending_result");
     if ( s_SimulateError() ) {
         m_WGSDataError = "simulated WGS processor error";
         m_WGSData.reset();
@@ -423,6 +436,9 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySeqIdRequest(void)
             SendTrace(kWGSProcessorName +
                       " processor is getting info for seq-id " + m_SeqId->AsFastaString());
         }
+        x_SetState("task_pending");
+        m_ReqType = "resolve";
+        sm_QueuedTasks++;
         m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::ResolveSeqId));
         m_ThreadPool->AddTask(m_PoolTask);
     }
@@ -433,6 +449,9 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySeqIdRequest(void)
         }
         m_ExcludedBlobs = get_request.m_ExcludeBlobs;
         m_ResendTimeoutMks = get_request.m_ResendTimeoutMks;
+        x_SetState("task_pending");
+        m_ReqType = "blob_by_seq_id";
+        sm_QueuedTasks++;
         m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::GetBlobBySeqId));
         m_ThreadPool->AddTask(m_PoolTask);
     }
@@ -443,8 +462,12 @@ void CPSGS_WGSProcessor::GetBlobBySeqId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    x_SetState("task_waiting");
+    sm_QueuedTasks--;
+    sm_RunningTasks++;
     x_WaitForOtherProcessors();
     if ( !m_Canceled ) {
+        x_SetState("task_running");
         try {
             CWGSClient::SWGSSeqInfo seq;
             m_WGSData = m_Client->GetSeqInfoBySeqId(*m_SeqId, seq, m_ExcludedBlobs);
@@ -464,6 +487,8 @@ void CPSGS_WGSProcessor::GetBlobBySeqId(void)
             m_WGSData.reset();
         }
     }
+    x_SetState("task_done");
+    sm_RunningTasks--;
     PostponeInvoke(s_OnGotBlobBySeqId, this);
 }
 
@@ -476,6 +501,7 @@ void CPSGS_WGSProcessor::OnGotBlobBySeqId(void)
     if ( x_IsCanceled() ) {
         return;
     }
+    x_SetState("sending_result");
     if ( s_SimulateError() ) {
         m_WGSDataError = "simulated WGS processor error";
         m_WGSData.reset();
@@ -530,6 +556,9 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySatSatKeyRequest(void)
     if ( GetRequest()->NeedTrace() ) {
         SendTrace(kWGSProcessorName + " processor is fetching blob " + m_PSGBlobId);
     }
+    x_SetState("task_pending");
+    m_ReqType = "blob_by_sat_satkey";
+    sm_QueuedTasks++;
     m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::GetBlobByBlobId));
     m_ThreadPool->AddTask(m_PoolTask);
 }
@@ -540,6 +569,9 @@ void CPSGS_WGSProcessor::GetBlobByBlobId(void)
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
     // No need to wait for Cassandra since we should have checked that blob id belongs to WGS processor.
+    x_SetState("task_running");
+    sm_QueuedTasks--;
+    sm_RunningTasks++;
     if ( !m_Canceled ) {
         try {
             m_WGSData = m_Client->GetBlobByBlobId(m_PSGBlobId);
@@ -552,6 +584,8 @@ void CPSGS_WGSProcessor::GetBlobByBlobId(void)
             m_WGSData.reset();
         }
     }
+    x_SetState("task_done");
+    sm_RunningTasks--;
     PostponeInvoke(s_OnGotBlobByBlobId, this);
 }
 
@@ -564,6 +598,7 @@ void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
     if ( x_IsCanceled() ) {
         return;
     }
+    x_SetState("sending_result");
     if ( s_SimulateError() ) {
         m_WGSDataError = "simulated WGS processor error";
         m_WGSData.reset();
@@ -615,6 +650,9 @@ void CPSGS_WGSProcessor::x_ProcessTSEChunkRequest(void)
         SendTrace(kWGSProcessorName +
                   " processor is fetching chunk " + m_Id2Info + "." + NStr::NumericToString(m_ChunkId));
     }
+    x_SetState("task_pending");
+    m_ReqType = "chunk";
+    sm_QueuedTasks++;
     m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::GetChunk));
     m_ThreadPool->AddTask(m_PoolTask);
 }
@@ -625,6 +663,9 @@ void CPSGS_WGSProcessor::GetChunk(void)
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
     // No need to wait for Cassandra since we should have checked that chunk id belongs to WGS processor.
+    x_SetState("task_running");
+    sm_QueuedTasks--;
+    sm_RunningTasks++;
     if ( !m_Canceled ) {
         try {
             m_WGSData = m_Client->GetChunk(m_Id2Info, m_ChunkId);
@@ -638,6 +679,8 @@ void CPSGS_WGSProcessor::GetChunk(void)
             m_WGSData.reset();
         }
     }
+    x_SetState("task_done");
+    sm_RunningTasks--;
     PostponeInvoke(s_OnGotChunk, this);
 }
 
@@ -650,6 +693,7 @@ void CPSGS_WGSProcessor::OnGotChunk(void)
     if ( x_IsCanceled() ) {
         return;
     }
+    x_SetState("sending_result");
     if ( s_SimulateError() ) {
         m_WGSDataError = "simulated WGS processor error";
         m_WGSData.reset();
@@ -1052,6 +1096,7 @@ bool CPSGS_WGSProcessor::x_SignalStartProcessing()
 void CPSGS_WGSProcessor::x_Finish(EPSGS_Status status)
 {
     _ASSERT(status != ePSGS_InProgress);
+    x_SetState("finished");
     if (m_AddedToExcludedCache) {
         // The blob was added to the cache but never completed and needs to be removed.
         x_RemoveFromExcludedCache();
@@ -1152,6 +1197,46 @@ void CPSGS_WGSProcessor::x_SetExcludedCacheCompleted(void)
     auto* app = CPubseqGatewayApp::GetInstance();
     app->GetExcludeBlobCache()->SetCompleted(m_ClientId, SExcludeBlobId(m_WGSData->m_BlobId), true);
     m_AddedToExcludedCache = false;
+}
+
+
+unsigned int CPSGS_WGSProcessor::sm_MaxThreads = 64;
+unsigned int CPSGS_WGSProcessor::sm_QueueSize = kMax_UInt;
+atomic<unsigned int> CPSGS_WGSProcessor::sm_QueuedTasks(0);
+atomic<unsigned int> CPSGS_WGSProcessor::sm_RunningTasks(0);
+
+
+void CPSGS_WGSProcessor::x_SetState(const string& state)
+{
+    m_StateT = psg_clock_t::now();
+    m_State = state;
+}
+
+CPSGS_WGSProcessor::TInternalState CPSGS_WGSProcessor::GetInternalState() const
+{
+    TInternalState values;
+
+    values.emplace_back("state", m_State);
+    if ( !m_ReqType.empty() ) {
+        values.emplace_back("get", m_ReqType);
+    }
+    values.emplace_back("req_started_ago_mks", to_string(GetTimespanToNowMks(m_Start)));
+    values.emplace_back("state_set_ago_mks", to_string(GetTimespanToNowMks(m_StateT)));
+
+    return values;
+}
+
+
+CPSGS_WGSProcessor::TInternalState CPSGS_WGSProcessor::GetSharedInternalState() const
+{
+    TInternalState values;
+
+    values.emplace_back("max_threads", to_string(sm_MaxThreads));
+    values.emplace_back("max_queue", to_string(sm_QueueSize));
+    values.emplace_back("running_tasks", to_string(sm_RunningTasks.load()));
+    values.emplace_back("pending_tasks", to_string(sm_QueuedTasks.load()));
+
+    return values;
 }
 
 

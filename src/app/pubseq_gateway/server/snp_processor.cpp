@@ -196,6 +196,8 @@ CPSGS_SNPProcessor::CPSGS_SNPProcessor(
 {
     m_Request = request;
     m_Reply = reply;
+    m_State = "created";
+    m_StateT = m_Start;
     if ( request->GetRequestType() == CPSGS_Request::ePSGS_AnnotationRequest ) {
         m_ProcessNAs = m_Client->WhatNACanProcess(request->GetRequest<SPSGS_AnnotRequest>(), priority);
     }
@@ -356,6 +358,7 @@ void CPSGS_SNPProcessor::Process()
         return;
     }
     
+    x_SetState("processing");
     try {
         auto req_type = GetRequest()->GetRequestType();
         switch (req_type) {
@@ -448,6 +451,7 @@ void CPSGS_SNPProcessor::x_ProcessAnnotationRequest(void)
                           " processor is resolving the requested seq-id");
             }
             m_PreResolving = true;
+            x_SetState("pre_resolving");
             ResolveInputSeqId();
             return;
         }
@@ -458,6 +462,9 @@ void CPSGS_SNPProcessor::x_ProcessAnnotationRequest(void)
             return;
         }
     }
+    x_SetState("task_pending");
+    m_ReqType = "annot";
+    sm_QueuedTasks++;
     m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_SNPProcessor::GetAnnotation));
     m_ThreadPool->AddTask(m_PoolTask);
 }
@@ -467,6 +474,9 @@ void CPSGS_SNPProcessor::GetAnnotation(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    x_SetState("task_running");
+    sm_QueuedTasks--;
+    sm_RunningTasks++;
     for ( auto& name : m_ProcessNAs ) {
         if (m_Canceled) {
             break;
@@ -489,6 +499,8 @@ void CPSGS_SNPProcessor::GetAnnotation(void)
             m_SNPData.push_back(data);
         }
     }
+    x_SetState("task_done");
+    sm_RunningTasks--;
     // Even if canceled, execute OnGotAnnotation to properly finish processing.
     PostponeInvoke(s_OnGotAnnotation, this);
 }
@@ -502,6 +514,7 @@ void CPSGS_SNPProcessor::OnGotAnnotation(void)
     if (x_IsCanceled()) {
         return;
     }
+    x_SetState("sending_result");
     if ( s_SimulateError() ) {
         m_SNPDataError = "simulated SNP processor error";
         m_SNPData.clear();
@@ -577,6 +590,9 @@ void CPSGS_SNPProcessor::x_ProcessBlobBySatSatKeyRequest(void)
 {
     SPSGS_BlobBySatSatKeyRequest& blob_request = GetRequest()->GetRequest<SPSGS_BlobBySatSatKeyRequest>();
     m_PSGBlobId = blob_request.m_BlobId.GetId();
+    x_SetState("task_pending");
+    m_ReqType = "blob_by_sat_satkey";
+    sm_QueuedTasks++;
     m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_SNPProcessor::GetBlobByBlobId));
     m_ThreadPool->AddTask(m_PoolTask);
 }
@@ -586,6 +602,9 @@ void CPSGS_SNPProcessor::GetBlobByBlobId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    x_SetState("task_running");
+    sm_QueuedTasks--;
+    sm_RunningTasks++;
     if (!m_Canceled) {
         try {
             if ( GetRequest()->NeedTrace() ) {
@@ -602,6 +621,8 @@ void CPSGS_SNPProcessor::GetBlobByBlobId(void)
             m_SNPData.clear();
         }
     }
+    x_SetState("task_done");
+    sm_RunningTasks--;
     PostponeInvoke(s_OnGotBlobByBlobId, this);
 }
 
@@ -614,6 +635,7 @@ void CPSGS_SNPProcessor::OnGotBlobByBlobId(void)
     if (x_IsCanceled()) {
         return;
     }
+    x_SetState("sending_result");
     if ( s_SimulateError() ) {
         m_SNPDataError = "simulated SNP processor error";
         m_SNPData.clear();
@@ -659,6 +681,9 @@ void CPSGS_SNPProcessor::x_ProcessTSEChunkRequest(void)
     SPSGS_TSEChunkRequest& chunk_request = GetRequest()->GetRequest<SPSGS_TSEChunkRequest>();
     m_Id2Info = chunk_request.m_Id2Info;
     m_ChunkId = chunk_request.m_Id2Chunk;
+    x_SetState("task_pending");
+    m_ReqType = "chunk";
+    sm_QueuedTasks++;
     m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_SNPProcessor::GetChunk));
     m_ThreadPool->AddTask(m_PoolTask);
 }
@@ -668,6 +693,9 @@ void CPSGS_SNPProcessor::GetChunk(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    x_SetState("task_running");
+    sm_QueuedTasks--;
+    sm_RunningTasks++;
     if (!m_Canceled) {
         try {
             if ( GetRequest()->NeedTrace() ) {
@@ -681,6 +709,8 @@ void CPSGS_SNPProcessor::GetChunk(void)
             m_SNPData.clear();
         }
     }
+    x_SetState("task_done");
+    sm_RunningTasks--;
     PostponeInvoke(s_OnGotChunk, this);
 }
 
@@ -693,6 +723,7 @@ void CPSGS_SNPProcessor::OnGotChunk(void)
     if (x_IsCanceled()) {
         return;
     }
+    x_SetState("sending_result");
     if ( s_SimulateError() ) {
         m_SNPDataError = "simulated SNP processor error";
         m_SNPData.clear();
@@ -951,6 +982,7 @@ bool CPSGS_SNPProcessor::x_SignalStartProcessing()
 void CPSGS_SNPProcessor::x_Finish(EPSGS_Status status)
 {
     _ASSERT(status != ePSGS_InProgress);
+    x_SetState("finished");
     m_Status = status;
     SignalFinishProcessing();
 }
@@ -985,6 +1017,9 @@ void CPSGS_SNPProcessor::x_OnSeqIdResolveFinished(SBioseqResolution&& bioseq_res
             }
             m_SeqIds.push_back(CSeq_id_Handle::GetHandle(id));
         }
+        x_SetState("task_pending");
+        m_ReqType = "annot";
+        sm_QueuedTasks++;
         m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_SNPProcessor::GetAnnotation));
         m_ThreadPool->AddTask(m_PoolTask);
     }
@@ -1048,6 +1083,46 @@ void CPSGS_SNPProcessor::ProcessEvent(void)
             }
         }
     }
+}
+
+
+unsigned int CPSGS_SNPProcessor::sm_MaxThreads = 64;
+unsigned int CPSGS_SNPProcessor::sm_QueueSize = kMax_UInt;
+atomic<unsigned int> CPSGS_SNPProcessor::sm_QueuedTasks(0);
+atomic<unsigned int> CPSGS_SNPProcessor::sm_RunningTasks(0);
+
+
+void CPSGS_SNPProcessor::x_SetState(const string& state)
+{
+    m_StateT = psg_clock_t::now();
+    m_State = state;
+}
+
+CPSGS_SNPProcessor::TInternalState CPSGS_SNPProcessor::GetInternalState() const
+{
+    TInternalState values;
+
+    values.emplace_back("state", m_State);
+    if ( !m_ReqType.empty() ) {
+        values.emplace_back("get", m_ReqType);
+    }
+    values.emplace_back("req_started_ago_mks", to_string(GetTimespanToNowMks(m_Start)));
+    values.emplace_back("state_set_ago_mks", to_string(GetTimespanToNowMks(m_StateT)));
+
+    return values;
+}
+
+
+CPSGS_SNPProcessor::TInternalState CPSGS_SNPProcessor::GetSharedInternalState() const
+{
+    TInternalState values;
+
+    values.emplace_back("max_threads", to_string(sm_MaxThreads));
+    values.emplace_back("max_queue", to_string(sm_QueueSize));
+    values.emplace_back("running_tasks", to_string(sm_RunningTasks.load()));
+    values.emplace_back("pending_tasks", to_string(sm_QueuedTasks.load()));
+
+    return values;
 }
 
 

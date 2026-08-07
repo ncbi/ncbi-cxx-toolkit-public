@@ -86,6 +86,9 @@ public:
     void GetBlobByBlobId(void);
     void OnGotBlobByBlobId(void);
 
+    TInternalState GetInternalState() const override;
+    TInternalState GetSharedInternalState() const override;
+
 private:
     CPSGS_CDDProcessor(shared_ptr<objects::CCDDClientPool> client_pool,
                        shared_ptr<ncbi::CThreadPool> thread_pool,
@@ -129,6 +132,18 @@ private:
     string m_Error;
     shared_ptr<ncbi::CThreadPool> m_ThreadPool;
     CRef<CPSGS_ThreadPoolTask<CPSGS_CDDProcessor>> m_PoolTask;
+
+    // Processor state
+    void x_SetState(const string& state);
+
+    static unsigned int sm_MaxThreads;
+    static unsigned int sm_QueueSize;
+    static atomic<unsigned int> sm_QueuedTasks;
+    static atomic<unsigned int> sm_RunningTasks;
+
+    string m_State;
+    string m_ReqType;
+    psg_time_point_t m_StateT;
 };
 
 

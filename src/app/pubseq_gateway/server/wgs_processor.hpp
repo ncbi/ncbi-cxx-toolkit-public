@@ -91,6 +91,9 @@ public:
     void GetChunk(void);
     void OnGotChunk(void);
 
+    TInternalState GetInternalState() const override;
+    TInternalState GetSharedInternalState() const override;
+
 public:
     static string GetPSGId2Info(const CID2_Blob_Id& tse_id,
                                 CWGSClient::TID2SplitVersion split_version);
@@ -184,6 +187,18 @@ private:
     EOutputFormat m_OutputFormat;
     shared_ptr<ncbi::CThreadPool> m_ThreadPool;
     CRef<CPSGS_ThreadPoolTask<CPSGS_WGSProcessor>> m_PoolTask;
+
+    // Processor state
+    void x_SetState(const string& state);
+
+    static unsigned int sm_MaxThreads;
+    static unsigned int sm_QueueSize;
+    static atomic<unsigned int> sm_QueuedTasks;
+    static atomic<unsigned int> sm_RunningTasks;
+
+    string m_State;
+    string m_ReqType;
+    psg_time_point_t m_StateT;
 };
 
 

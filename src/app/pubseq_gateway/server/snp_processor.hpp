@@ -94,6 +94,9 @@ public:
     // Seq-id pre-resolving
     void ProcessEvent(void) override;
 
+    TInternalState GetInternalState() const override;
+    TInternalState GetSharedInternalState() const override;
+
 private:
     CPSGS_SNPProcessor(const CPSGS_SNPProcessor& parent,
                        shared_ptr<CPSGS_Request> request,
@@ -164,6 +167,18 @@ private:
     string m_SNPDataError;
     bool m_PreResolving;
     objects::CSeq_id::ESNPScaleLimit m_ScaleLimit;
+
+    // Processor state
+    void x_SetState(const string& state);
+
+    static unsigned int sm_MaxThreads;
+    static unsigned int sm_QueueSize;
+    static atomic<unsigned int> sm_QueuedTasks;
+    static atomic<unsigned int> sm_RunningTasks;
+
+    string m_State;
+    string m_ReqType;
+    psg_time_point_t m_StateT;
 };
 
 

@@ -127,6 +127,8 @@ CPSGS_CDDProcessor::CPSGS_CDDProcessor(
     m_Request = request;
     m_Reply = reply;
     m_Priority = priority;
+    m_State = "created";
+    m_StateT = m_Start;
 }
 
 CPSGS_CDDProcessor::~CPSGS_CDDProcessor(void)
@@ -309,6 +311,7 @@ void CPSGS_CDDProcessor::Process()
         return;
     }
 
+    x_SetState("processing");
     try {
         auto req_type = GetRequest()->GetRequestType();
         switch (req_type) {
@@ -362,11 +365,17 @@ void CPSGS_CDDProcessor::x_ProcessResolveRequest(void)
     if (annot_request.m_TSEOption == SPSGS_BlobRequestBase::EPSGS_TSEOption::ePSGS_SmartTSE ||
         annot_request.m_TSEOption == SPSGS_BlobRequestBase::EPSGS_TSEOption::ePSGS_WholeTSE ||
         annot_request.m_TSEOption == SPSGS_BlobRequestBase::EPSGS_TSEOption::ePSGS_OrigTSE) {
+        x_SetState("task_pending");
+        m_ReqType = "blob_by_seq_id";
+        sm_QueuedTasks++;
         // Send whole TSE.
         m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_CDDProcessor::GetBlobBySeqId));
         m_ThreadPool->AddTask(m_PoolTask);
     }
     else {
+        x_SetState("task_pending");
+        m_ReqType = "blob_id";
+        sm_QueuedTasks++;
         // Send annot info only.
         m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_CDDProcessor::GetBlobId));
         m_ThreadPool->AddTask(m_PoolTask);
@@ -389,6 +398,9 @@ void CPSGS_CDDProcessor::x_ProcessGetBlobRequest(void)
         x_Finish(ePSGS_NotFound);
         return;
     }
+    x_SetState("task_pending");
+    m_ReqType = "blob_by_blob_id";
+    sm_QueuedTasks++;
     m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_CDDProcessor::GetBlobByBlobId));
     m_ThreadPool->AddTask(m_PoolTask);
 }
@@ -398,6 +410,9 @@ void CPSGS_CDDProcessor::GetBlobId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    x_SetState("task_running");
+    sm_QueuedTasks--;
+    sm_RunningTasks++;
     for (auto id : m_SeqIds) {
         if (m_Canceled) break;
         try {
@@ -418,6 +433,8 @@ void CPSGS_CDDProcessor::GetBlobId(void)
             m_CDDBlob.data.Reset();
         }
     }
+    x_SetState("task_done");
+    sm_RunningTasks--;
     PostponeInvoke(s_OnGotBlobId, this);
 }
 
@@ -426,6 +443,9 @@ void CPSGS_CDDProcessor::GetBlobBySeqId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    x_SetState("task_running");
+    sm_QueuedTasks--;
+    sm_RunningTasks++;
     for (auto id : m_SeqIds) {
         if (m_Canceled) break;
         try {
@@ -446,6 +466,8 @@ void CPSGS_CDDProcessor::GetBlobBySeqId(void)
             m_CDDBlob.data.Reset();
         }
     }
+    x_SetState("task_done");
+    sm_RunningTasks--;
     PostponeInvoke(s_OnGotBlobBySeqId, this);
 }
 
@@ -454,6 +476,9 @@ void CPSGS_CDDProcessor::GetBlobByBlobId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    x_SetState("task_running");
+    sm_QueuedTasks--;
+    sm_RunningTasks++;
     if (!m_Canceled) {
         try {
             if ( GetRequest()->NeedTrace() ) {
@@ -472,6 +497,8 @@ void CPSGS_CDDProcessor::GetBlobByBlobId(void)
             m_CDDBlob.data.Reset();
         }
     }
+    x_SetState("task_done");
+    sm_RunningTasks--;
     PostponeInvoke(s_OnGotBlobByBlobId, this);
 }
 
@@ -484,6 +511,7 @@ void CPSGS_CDDProcessor::OnGotBlobId(void)
     if ( x_IsCanceled() ) {
         return;
     }
+    x_SetState("sending_result");
     if ( s_SimulateError() ) {
         m_Error = "simulated CDD processor error";
         m_CDDBlob.info.Reset();
@@ -530,6 +558,7 @@ void CPSGS_CDDProcessor::OnGotBlobBySeqId(void)
     if ( x_IsCanceled() ) {
         return;
     }
+    x_SetState("sending_result");
     if ( s_SimulateError() ) {
         m_Error = "simulated CDD processor error";
         m_CDDBlob.info.Reset();
@@ -577,6 +606,7 @@ void CPSGS_CDDProcessor::OnGotBlobByBlobId(void)
     if ( x_IsCanceled() ) {
         return;
     }
+    x_SetState("sending_result");
     if ( s_SimulateError() ) {
         m_Error = "simulated CDD processor error";
         m_CDDBlob.info.Reset();
@@ -827,8 +857,49 @@ bool CPSGS_CDDProcessor::x_NameIncluded(const vector<string>& names) const
 void CPSGS_CDDProcessor::x_Finish(EPSGS_Status status)
 {
     _ASSERT(status != ePSGS_InProgress);
+    x_SetState("finished");
     m_Status = status;
     SignalFinishProcessing();
+}
+
+
+unsigned int CPSGS_CDDProcessor::sm_MaxThreads = 64;
+unsigned int CPSGS_CDDProcessor::sm_QueueSize = kMax_UInt;
+atomic<unsigned int> CPSGS_CDDProcessor::sm_QueuedTasks(0);
+atomic<unsigned int> CPSGS_CDDProcessor::sm_RunningTasks(0);
+
+
+void CPSGS_CDDProcessor::x_SetState(const string& state)
+{
+    m_StateT = psg_clock_t::now();
+    m_State = state;
+}
+
+CPSGS_CDDProcessor::TInternalState CPSGS_CDDProcessor::GetInternalState() const
+{
+    TInternalState values;
+
+    values.emplace_back("state", m_State);
+    if ( !m_ReqType.empty() ) {
+        values.emplace_back("get", m_ReqType);
+    }
+    values.emplace_back("req_started_ago_mks", to_string(GetTimespanToNowMks(m_Start)));
+    values.emplace_back("state_set_ago_mks", to_string(GetTimespanToNowMks(m_StateT)));
+
+    return values;
+}
+
+
+CPSGS_CDDProcessor::TInternalState CPSGS_CDDProcessor::GetSharedInternalState() const
+{
+    TInternalState values;
+
+    values.emplace_back("max_threads", to_string(sm_MaxThreads));
+    values.emplace_back("max_queue", to_string(sm_QueueSize));
+    values.emplace_back("running_tasks", to_string(sm_RunningTasks.load()));
+    values.emplace_back("pending_tasks", to_string(sm_QueuedTasks.load()));
+
+    return values;
 }
 
 
