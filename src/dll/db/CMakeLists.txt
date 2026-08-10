@@ -1,3 +1,3 @@
 # $Id$
 
-NCBI_add_subdirectory(bdb)
+NCBI_add_subdirectory(bdb sqlite)

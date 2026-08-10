@@ -504,6 +504,14 @@
 #  define NCBI_GBSEQ_EXPORT NCBI_DLL_IMPORT
 #endif
 
+/* Export specifier for library gencoll_client
+ */
+#ifdef NCBI_GENCOLL_CLIENT_EXPORTS
+#  define NCBI_GENCOLL_CLIENT_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_GENCOLL_CLIENT_EXPORT NCBI_DLL_IMPORT
+#endif
+
 /* Export specifier for library general
  */
 #ifdef NCBI_GENERAL_EXPORTS
@@ -823,6 +831,14 @@
 #  define NCBI_SEQ_EXPORT NCBI_DLL_EXPORT
 #else
 #  define NCBI_SEQ_EXPORT NCBI_DLL_IMPORT
+#endif
+
+/* Export specifier for library sqlitewrapp
+ */
+#ifdef NCBI_SQLITEWRAPP_EXPORTS
+#  define NCBI_SQLITEWRAPP_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_SQLITEWRAPP_EXPORT NCBI_DLL_IMPORT
 #endif
 
 /* Export specifier for library struct_dp

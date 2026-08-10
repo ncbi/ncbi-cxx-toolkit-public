@@ -1,6 +1,7 @@
 # $Id$
 
 NCBI_add_subdirectory(
+    ncbi_gencoll_client
     ncbi_general 
     ncbi_misc 
     ncbi_mmdb 

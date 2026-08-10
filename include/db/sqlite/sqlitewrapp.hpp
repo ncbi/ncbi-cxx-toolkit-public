@@ -60,7 +60,7 @@ class CSQLITE_Blob;
 
 /// Utility class for some global-purpose functions tuning SQLite as a whole
 /// as opposed to tuning connection-by-connection.
-class CSQLITE_Global
+class NCBI_SQLITEWRAPP_EXPORT CSQLITE_Global
 {
 public:
     /// Install non-default cache for all SQLite databases. Can be useful
@@ -120,7 +120,7 @@ private:
 
 /// Object factory creating sqlite3* handles.
 /// For internal use in CSQLITE_Connection's internal pool.
-class CSQLITE_HandleFactory
+class NCBI_SQLITEWRAPP_EXPORT CSQLITE_HandleFactory
 {
 public:
     CSQLITE_HandleFactory(CSQLITE_Connection* conn);
@@ -138,7 +138,7 @@ private:
 
 
 /// Connection to SQLite database.
-class CSQLITE_Connection
+class NCBI_SQLITEWRAPP_EXPORT CSQLITE_Connection
 {
 public:
     /// Flags controlling specifics of database connection operation.
@@ -357,7 +357,7 @@ private:
 
 
 /// SQL statement executing on SQLite database
-class CSQLITE_Statement
+class NCBI_SQLITEWRAPP_EXPORT CSQLITE_Statement
 {
 public:
     /// Create and prepare statement for given database connection.
@@ -512,7 +512,7 @@ private:
 /// Object binds to some statement and ensures that by the end of the scope
 /// statement will be reseted and all database locks will be released. Besides
 /// that object acts as smart pointer to the statement.
-class CSQLITE_StatementLock
+class NCBI_SQLITEWRAPP_EXPORT CSQLITE_StatementLock
 {
 public:
     /// Bind activity control to the given statement
@@ -546,7 +546,7 @@ struct SSQLITE_BlobClose;
 /// or update statements), can read and write blob incrementally.
 /// Class assumes that from the moment of its creation till deletion nobody
 /// else writes to the blob and/or changes its size.
-class CSQLITE_Blob
+class NCBI_SQLITEWRAPP_EXPORT CSQLITE_Blob
 {
 public:
     /// Create object reading and writing blob
@@ -664,7 +664,7 @@ private:
 
 
 /// Exception thrown from all SQLite-related objects and functions
-class CSQLITE_Exception : public CException
+class NCBI_SQLITEWRAPP_EXPORT CSQLITE_Exception : public CException
 {
 public:
     enum EErrCode {

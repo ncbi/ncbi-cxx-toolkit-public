@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = ncbi_gencoll_client
+
+HOSTED_LIBS = gencoll_client
+
+DEPENDENCIES = ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_sqlitewrapp
+
+CPPFLAGS = -DNCBI_GENCOLL_CLIENT_EXPORTS
+

@@ -1,0 +1,11 @@
+# $Id$
+
+DLL = ncbi_sqlitewrapp
+
+HOSTED_LIBS = sqlitewrapp
+
+DEPENDENCIES = ncbi_core
+
+CPPFLAGS = -DNCBI_SQLITEWRAPP_EXPORTS
+
+WATCHERS = ucko

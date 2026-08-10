@@ -1,5 +1,5 @@
 [-]
-# _export        = NCBI_GCClient_EXPORT
+_export        = NCBI_GENCOLL_CLIENT_EXPORT
 clients        = genomic_collections_cli
 
 [genomic_collections_cli]

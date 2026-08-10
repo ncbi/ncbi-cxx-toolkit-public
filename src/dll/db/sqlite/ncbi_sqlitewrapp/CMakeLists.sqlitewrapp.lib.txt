@@ -1,0 +1,6 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_sqlitewrapp SHARED)
+  NCBI_hosts_projects(db/sqlite/sqlitewrapp)
+  NCBI_add_definitions(NCBI_SQLITEWRAPP_EXPORTS)
+NCBI_end_lib()

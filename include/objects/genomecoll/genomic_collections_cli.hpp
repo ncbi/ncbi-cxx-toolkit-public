@@ -57,7 +57,7 @@ class CGCClient_AssemblySequenceInfo;
 class CGCClient_EquivalentAssemblies;
 
 
-class CGCServiceException : public CException
+class NCBI_GENCOLL_CLIENT_EXPORT CGCServiceException : public CException
 {
 public:
     CGCServiceException(const CDiagCompileInfo& diag, const objects::CGCClient_Error& srv_error);
@@ -70,7 +70,8 @@ public:
 };
 
 /////////////////////////////////////////////////////////////////////////////
-class CGenomicCollectionsService : public CGenomicCollectionsService_Base
+class NCBI_GENCOLL_CLIENT_EXPORT CGenomicCollectionsService
+    : public CGenomicCollectionsService_Base
 {
 public:
     // add the 'automatic' cache parameter, for the calling application

@@ -1,0 +1,6 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_gencoll_client SHARED)
+  NCBI_hosts_projects(objects/genomecoll/gencoll_client)
+  NCBI_add_definitions(NCBI_GENCOLL_CLIENT_EXPORTS)
+NCBI_end_lib()
