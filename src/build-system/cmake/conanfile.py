@@ -24,7 +24,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         "FASTCGI":    ["ncbi-fastcgi"],
         "FASTCGIPP":  ["ncbi-fastcgipp"],
         "GIF":        ["giflib"],
-        "GRPC":       ["grpc", "protobuf", "abseil"],
+        "GRPC":       ["grpc", "protobuf", "abseil", "c-ares"],
         "Iconv":      ["libiconv"],
         "IPS4O":      ["ips4o"],
         "JPEG":       ["libjpeg"],
@@ -39,7 +39,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         "PNG":        ["libpng"],
         "PROTOBUF":   ["protobuf"],
         "SQLITE3":    ["sqlite3"],
-        "TIFF":       ["libtiff"],
+        "TIFF":       ["libtiff", "xz_utils"],
         "UNWIND":     ["libunwind"],
         "UV":         ["libuv"],
         "VDB":        ["ncbi-vdb"],
@@ -77,6 +77,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
             self._default_requires("backward-cpp/1.6")
         self._default_requires("boost/[>=1.82.0 <=1.88.0]")
         self._default_requires("bzip2/1.0.8")
+        self._default_requires("c-ares/[>=1.19.1 <=1.34.5]")
         if self.settings.os == "Linux":
             self._default_requires("cassandra-cpp-driver/[>=2.15.3 <=2.17.1.1]")
         self._default_requires("giflib/[>=5.2.1 <=5.2.2]")
@@ -92,8 +93,8 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self._default_requires("libtiff/[>=4.3.0 <=4.7.1]")
         if self.settings.os == "Linux":
             self._default_requires("libunwind/[>=1.6.2 <=1.8.3]")
-        self._default_requires("libuv/[>=1.45.0 <=1.49.2]")
-        self._default_requires("libxml2/[>=2.11.4 <3]")
+        self._default_requires("libuv/[>=1.45.0 <=1.46.0]")
+        self._default_requires("libxml2/[>=2.11.4 <=2.15.0]")
         self._default_requires("libxslt/[>=1.1.34 <=1.1.42]")
         self._default_requires("lmdb/[>=0.9.29 <=0.9.32]")
         self._default_requires("lzo/2.10")
@@ -104,7 +105,8 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self._default_requires("protobuf/[>=3.21.12 <=6.30.1]")
         self._default_requires("sqlite3/[>=3.40.0 <=3.50.4]")
         self._optional_requires("wxwidgets/3.3.2")
-        self._default_requires("zlib/[>=1.2.11 <2]")
+        self._default_requires("xz_utils/5.4.5")
+        self._default_requires("zlib/[>=1.2.11 <=1.3.1]")
         self._default_requires("zstd/[>=1.5.2 <=1.5.5]")
 
         self._internal_requires("ncbicrypt/[~1]@cxx")
