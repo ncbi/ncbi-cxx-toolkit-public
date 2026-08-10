@@ -5,7 +5,8 @@ DLL = gui_objects
 HOSTED_LIBS    = gui_objects
 
 DEPENDENCIES   = gui_config gui_utils \
-                 ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext
+                 ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext \
+                 ncbi_gencoll_client ncbi_sqlitewrapp
 
 CPPFLAGS = -DNCBI_GUIOBJECTS_EXPORTS
 
