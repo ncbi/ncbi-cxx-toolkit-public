@@ -418,9 +418,9 @@ MAKE_CONST_MAP(sc_UrlMap, CDbtag::EDbtagType, string,
     { CDbtag::eDbtagType_Osa1, "http://rice.plantbiology.msu.edu/cgi-bin/gbrowse/rice/?name=" }, // https "page can't be displayed" tested 7/13/2016
     { CDbtag::eDbtagType_PBR, "https://www.poxvirus.org/query.asp?web_id=" },
     { CDbtag::eDbtagType_PDB, "https://www.rcsb.org/structure/" },
-    { CDbtag::eDbtagType_PFAM, "https://pfam.xfam.org/family/" },
+    { CDbtag::eDbtagType_PFAM, "https://www.ebi.ac.uk/interpro/entry/pfam/" },
     { CDbtag::eDbtagType_PGN, "http://pgn.cornell.edu/cgi-bin/search/seq_search_result.pl?identifier=" }, // http page states info no longer avail at this website, includes links to look for a new location tested 7/13/2016
-    { CDbtag::eDbtagType_Phytozome, "https://phytozome.jgi.doe.gov/pz/portal.html#!results?search=0&crown=1&star=1&method=0&searchText=" },
+    { CDbtag::eDbtagType_Phytozome, "https://phytozome-next.jgi.doe.gov/pz/portal.html#!results?search=0&crown=1&star=1&method=0&searchText=" },
     { CDbtag::eDbtagType_PomBase, "http://www.pombase.org/spombe/result/" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_RAP_DB, "http://rapdb.dna.affrc.go.jp/cgi-bin/gbrowse_details/latest?name=" }, // https appears available, domain appears to exist but http "page not found" with note about release of a major update tested 7/13/2016
     { CDbtag::eDbtagType_RATMAP, "https://ratmap.gen.gu.se/ShowSingleLocus.htm?accno=" },
