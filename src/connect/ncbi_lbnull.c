@@ -57,11 +57,11 @@
 
 #define REG_CONN_LBNULL_DOMAIN                           "LBNULL_DOMAIN"
 
+#define REG_CONN_LBNULL_AS_IS                            "LBNULL_AS_IS"
+
 #define REG_CONN_LBNULL_VHOST                            "LBNULL_VHOST"
 
 #define REG_CONN_LBNULL_PORT                             "LBNULL_PORT"
-
-#define REG_CONN_LBNULL_ASIS                             "LBNULL_ASIS"
 
 /* Service-specific only: */
 #define REG_CONN_LBNULL_PATH    DEF_CONN_REG_SECTION "_" "LBNULL_PATH"
@@ -92,6 +92,7 @@ struct SLBNULL_Data {
     SSERV_Info*    info;     /* Resolved info avail*/
     unsigned short port;     /* Default port#      */
     const char*    path;     /* Path elem for HTTP */
+    const char*    args;     /* Args elem for HTTP */
     size_t         hostlen;  /* strlen(host)       */
     const char     host[1];  /* Host to resolve    */
 };
@@ -120,7 +121,8 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
         size_t len = data->vhost ? data->hostlen : 0;
         assert(data->port  &&  data->path);
         assert(!data->vhost  ||  (0 < len  &&  len <= CONN_HOST_LEN));
-        info = SERV_CreateHttpInfoEx(type, ipv4, 0/*port,later*/, data->path, 0/*args*/,
+        info = SERV_CreateHttpInfoEx(type, ipv4, 0/*port,later*/,
+                                     data->path, data->args,
                                      len ? len + 7/*:port#\0*/ : 0);
         if (info  &&  len) {
             char* vhost = (char*) info + SERV_SizeOfInfo(info);
@@ -262,11 +264,11 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     TSERV_TypeOnly type, types;
     size_t len, pfxlen, domlen;
     struct SLBNULL_Data* data;
+    char *domain, *args = 0;
     int/*bool*/ vhost = 0;
     const char* path = 0;
     unsigned long port;
     const char* str;
-    char* domain;
 
     assert(iter  &&  !iter->data  &&  !iter->op  &&  !iter->external);
     assert(!iter->ismask  &&  *iter->name  &&  !strpbrk(iter->name, "/.?*["));
@@ -324,7 +326,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
                                      temp, sizeof(temp), 0));
         if (!(str = ConnNetInfo_GetValueService(iter->name, REG_CONN_LBNULL_PATH,
                                                 buf, sizeof(buf), "/"))
-            ||  !*str  ||  strpbrk(str, "?#")) {
+            ||  !*str  ||  (args = strpbrk(str, "?#")) == str) {
             CORE_LOGF_X(89, eLOG_Error,
                         ("[%s]  %s URL path%s%s%s for LBNULL", iter->name,
                          !str ? "Cannot obtain" : "Invalid",
@@ -338,8 +340,22 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
                                str));
             goto out;
         }
-        CORE_TRACEF(("[%s]  LBNULL using path \"%s\"%s", iter->name,
-                     path, vhost ? " and VHost" : ""));
+        if (args) {
+            args = (char*)(path + (size_t)(args - str));
+            if (*args == '?'  &&  args[1]  &&  args[1] != '#') {
+                char* frag = strchr(++args, '#');
+                if (frag)
+                    *frag = '\0';
+                args[-1] = '\0';
+                assert(*args);
+            } else {
+                *args = '\0';
+                args = 0;
+            }
+        }
+        assert(!args  ||  (*args  &&  !strchr(args, '#')));
+        CORE_TRACEF(("[%s]  LBNULL using path \"%s%s%s\"%s", iter->name,
+                     path, &"?"[!args], args ? args : "", vhost ? " and VHost" : ""));
     }
 
     port = 0;
@@ -384,7 +400,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     } else
         pfxlen = 0;  /* non-legacy P2 decorated name, prefix already in place */
     if (exact  ||  ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
-                                       (iter->name, REG_CONN_LBNULL_ASIS,
+                                       (iter->name, REG_CONN_LBNULL_AS_IS,
                                         temp, sizeof(temp), 0))) {
         memcpy(buf + pfxlen, iter->name, len);
     } else
@@ -444,6 +460,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     data->type  =                  type;
     data->port  = (unsigned short) port;
     data->path  =                  path;
+    data->args  =                  args;
 
     iter->data  = data;
 
