@@ -353,6 +353,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
                 args = 0;
             }
         }
+        assert(path  &&  *path);
         assert(!args  ||  (*args  &&  !strchr(args, '#')));
         CORE_TRACEF(("[%s]  LBNULL using path \"%s%s%s\"%s", iter->name,
                      path, &"?"[!args], args ? args : "", vhost ? " and VHost" : ""));
