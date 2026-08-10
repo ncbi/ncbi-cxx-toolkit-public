@@ -51,20 +51,18 @@ extern SShutdownData    g_ShutdownData;
 USING_NCBI_SCOPE;
 
 
-constexpr string_view  kSeqIdsParam = "seq_ids";
-constexpr string_view  kClientIdParam = "client_id";
-constexpr string_view  kTimeoutParam = "timeout";
-constexpr string_view  kDataSizeParam = "return_data_size";
-constexpr string_view  kLogParam = "log";
-constexpr string_view  kUsernameParam = "username";
-constexpr string_view  kAlertParam = "alert";
-constexpr string_view  kResetParam = "reset";
-constexpr string_view  kMostRecentTimeParam = "most_recent_time";
-constexpr string_view  kMostAncientTimeParam = "most_ancient_time";
-constexpr string_view  kHistogramNamesParam = "histogram_names";
-static string  kNA = "n/a";
-
-static string  kBadUrlMessage = "Unknown request, the provided URL "
+constexpr string_view   kSeqIdsParam = "seq_ids";
+constexpr string_view   kClientIdParam = "client_id";
+constexpr string_view   kTimeoutParam = "timeout";
+constexpr string_view   kDataSizeParam = "return_data_size";
+constexpr string_view   kLogParam = "log";
+constexpr string_view   kUsernameParam = "username";
+constexpr string_view   kAlertParam = "alert";
+constexpr string_view   kResetParam = "reset";
+constexpr string_view   kMostRecentTimeParam = "most_recent_time";
+constexpr string_view   kMostAncientTimeParam = "most_ancient_time";
+constexpr string_view   kHistogramNamesParam = "histogram_names";
+const string            kBadUrlMessage = "Unknown request, the provided URL "
                                 "is not recognized: ";
 
 
@@ -1182,9 +1180,6 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  http_req,
 }
 
 
-static string   kConfigurationFilePath = "ConfigurationFilePath";
-static string   kConfiguration = "Configuration";
-
 string CPubseqGatewayApp::x_PrepareConfigJson(void)
 {
     CNcbiOstrstream             conf;
@@ -1193,7 +1188,7 @@ string CPubseqGatewayApp::x_PrepareConfigJson(void)
     GetConfig().Write(conf);
 
     CJsonNode   conf_info(CJsonNode::NewObjectNode());
-    conf_info.SetString(kConfigurationFilePath, GetConfigPath());
+    conf_info.SetString("ConfigurationFilePath", GetConfigPath());
 
     // Need to hide the [ADMIN]/auth_token
     string          conf_file_content = string(converter);
@@ -1223,7 +1218,7 @@ string CPubseqGatewayApp::x_PrepareConfigJson(void)
         }
     }
 
-    conf_info.SetString(kConfiguration, conf_file_content);
+    conf_info.SetString("Configuration", conf_file_content);
     return conf_info.Repr(CJsonNode::fStandardJson);
 }
 
@@ -1273,36 +1268,40 @@ int CPubseqGatewayApp::OnConfig(CHttpRequest &  http_req,
 }
 
 
-static string   kPID = "PID";
-static string   kExecutablePath = "ExecutablePath";
-static string   kCommandLineArguments = "CommandLineArguments";
-static string   kStartupDataState = "StartupDataState";
-static string   kRealTime = "RealTime";
-static string   kUserTime = "UserTime";
-static string   kSystemTime = "SystemTime";
-static string   kPhysicalMemory = "PhysicalMemory";
-static string   kMemoryUsedTotal = "MemoryUsedTotal";
-static string   kMemoryUsedTotalPeak = "MemoryUsedTotalPeak";
-static string   kMemoryUsedResident = "MemoryUsedResident";
-static string   kMemoryUsedResidentPeak = "MemoryUsedResidentPeak";
-static string   kMemoryUsedShared = "MemoryUsedShared";
-static string   kMemoryUsedData = "MemoryUsedData";
-static string   kMemoryUsedStack = "MemoryUsedStack";
-static string   kMemoryUsedText = "MemoryUsedText";
-static string   kMemoryUsedLib = "MemoryUsedLib";
-static string   kMemoryUsedSwap = "MemoryUsedSwap";
-static string   kProcFDSoftLimit = "ProcFDSoftLimit";
-static string   kProcFDHardLimit = "ProcFDHardLimit";
-static string   kProcFDUsed = "ProcFDUsed";
-static string   kCPUCount = "CPUCount";
-static string   kProcThreadCount = "ProcThreadCount";
-static string   kVersion = "Version";
-static string   kBuildDate = "BuildDate";
-static string   kStartedAt = "StartedAt";
-static string   kExcludeBlobCacheUserCount = "ExcludeBlobCacheUserCount";
-static string   kConcurrentPrefix = "ConcurrentProcCount_";
-static string   kIPThrottlingThresholdPrefix = "ProcessorIPThrottlingThreshold_";
-static string   kIPThrottlingLimitPrefix = "ProcessorIPThrottlingLimit_";
+const string    kConcurrentPrefix = "ConcurrentProcCount_";
+const string    kIPThrottlingThresholdPrefix = "ProcessorIPThrottlingThreshold_";
+const string    kIPThrottlingLimitPrefix = "ProcessorIPThrottlingLimit_";
+
+
+void SetValueConditionally(CJsonNode &  node, bool  available,
+                           string_view  name, size_t  value)
+{
+    if (available && value > 0) {
+        node.SetInteger(string(name), value);
+    } else {
+        node.SetString(string(name), "n/a");
+    }
+}
+
+void SetValueConditionally(CJsonNode &  node, bool  available,
+                           string_view  name, double  value)
+{
+    if (available && value > 0) {
+        node.SetDouble(string(name), value);
+    } else {
+        node.SetString(string(name), "n/a");
+    }
+}
+
+void SetValueConditionally(CJsonNode &  node, string_view  name, int  value)
+{
+    if (value >= 0) {
+        node.SetInteger(string(name), value);
+    } else {
+        node.SetString(string(name), "n/a");
+    }
+}
+
 
 int CPubseqGatewayApp::OnInfo(CHttpRequest &  http_req,
                               shared_ptr<CPSGS_Reply>  reply)
@@ -1327,10 +1326,10 @@ int CPubseqGatewayApp::OnInfo(CHttpRequest &  http_req,
         CJsonNode   info(CJsonNode::NewObjectNode());
         auto        app = CPubseqGatewayApp::GetInstance();
 
-        info.SetInteger(kPID, CDiagContext::GetPID());
-        info.SetString(kExecutablePath, GetProgramExecutablePath());
-        info.SetString(kCommandLineArguments, x_GetCmdLineArguments());
-        info.SetString(kStartupDataState,
+        info.SetInteger("PID", CDiagContext::GetPID());
+        info.SetString("ExecutablePath", GetProgramExecutablePath());
+        info.SetString("CommandLineArguments", x_GetCmdLineArguments());
+        info.SetString("StartupDataState",
                        GetCassStartupDataStateMessage(app->GetStartupDataState()));
 
 
@@ -1340,86 +1339,39 @@ int CPubseqGatewayApp::OnInfo(CHttpRequest &  http_req,
         bool        process_time_result = CCurrentProcess::GetTimes(&real_time,
                                                                     &user_time,
                                                                     &system_time);
-        if (process_time_result) {
-            info.SetDouble(kRealTime, real_time);
-            info.SetDouble(kUserTime, user_time);
-            info.SetDouble(kSystemTime, system_time);
-        } else {
-            info.SetString(kRealTime, kNA);
-            info.SetString(kUserTime, kNA);
-            info.SetString(kSystemTime, kNA);
-        }
+        SetValueConditionally(info, process_time_result,
+                              "RealTime"sv, real_time);
+        SetValueConditionally(info, process_time_result,
+                              "UserTime"sv, user_time);
+        SetValueConditionally(info, process_time_result,
+                              "SystemTime"sv, system_time);
 
         Uint8       physical_memory = CSystemInfo::GetTotalPhysicalMemorySize();
-        if (physical_memory > 0)
-            info.SetInteger(kPhysicalMemory, physical_memory);
-        else
-            info.SetString(kPhysicalMemory, kNA);
+        SetValueConditionally(info, true,
+                              "PhysicalMemory"sv, physical_memory);
 
         CProcessBase::SMemoryUsage      mem_usage;
         bool                            mem_used_result = CCurrentProcess::GetMemoryUsage(mem_usage);
-        if (mem_used_result) {
-            if (mem_usage.total > 0)
-                info.SetInteger(kMemoryUsedTotal, mem_usage.total);
-            else
-                info.SetString(kMemoryUsedTotal, kNA);
-
-            if (mem_usage.total_peak > 0)
-                info.SetInteger(kMemoryUsedTotalPeak, mem_usage.total_peak);
-            else
-                info.SetString(kMemoryUsedTotalPeak, kNA);
-
-            if (mem_usage.resident > 0)
-                info.SetInteger(kMemoryUsedResident, mem_usage.resident);
-            else
-                info.SetString(kMemoryUsedResident, kNA);
-
-            if (mem_usage.resident_peak > 0)
-                info.SetInteger(kMemoryUsedResidentPeak, mem_usage.resident_peak);
-            else
-                info.SetString(kMemoryUsedResidentPeak, kNA);
-
-            if (mem_usage.shared > 0)
-                info.SetInteger(kMemoryUsedShared, mem_usage.shared);
-            else
-                info.SetString(kMemoryUsedShared, kNA);
-
-            if (mem_usage.data > 0)
-                info.SetInteger(kMemoryUsedData, mem_usage.data);
-            else
-                info.SetString(kMemoryUsedData, kNA);
-
-            if (mem_usage.stack > 0)
-                info.SetInteger(kMemoryUsedStack, mem_usage.stack);
-            else
-                info.SetString(kMemoryUsedStack, kNA);
-
-            if (mem_usage.text > 0)
-                info.SetInteger(kMemoryUsedText, mem_usage.text);
-            else
-                info.SetString(kMemoryUsedText, kNA);
-
-            if (mem_usage.lib > 0)
-                info.SetInteger(kMemoryUsedLib, mem_usage.lib);
-            else
-                info.SetString(kMemoryUsedLib, kNA);
-
-            if (mem_usage.swap > 0)
-                info.SetInteger(kMemoryUsedSwap, mem_usage.swap);
-            else
-                info.SetString(kMemoryUsedSwap, kNA);
-        } else {
-            info.SetString(kMemoryUsedTotal, kNA);
-            info.SetString(kMemoryUsedTotalPeak, kNA);
-            info.SetString(kMemoryUsedResident, kNA);
-            info.SetString(kMemoryUsedResidentPeak, kNA);
-            info.SetString(kMemoryUsedShared, kNA);
-            info.SetString(kMemoryUsedData, kNA);
-            info.SetString(kMemoryUsedStack, kNA);
-            info.SetString(kMemoryUsedText, kNA);
-            info.SetString(kMemoryUsedLib, kNA);
-            info.SetString(kMemoryUsedSwap, kNA);
-        }
+        SetValueConditionally(info, mem_used_result,
+                              "MemoryUsedTotal"sv, mem_usage.total);
+        SetValueConditionally(info, mem_used_result,
+                              "MemoryUsedTotalPeak"sv, mem_usage.total_peak);
+        SetValueConditionally(info, mem_used_result,
+                              "MemoryUsedResident"sv, mem_usage.resident);
+        SetValueConditionally(info, mem_used_result,
+                              "MemoryUsedResidentPeak"sv, mem_usage.resident_peak);
+        SetValueConditionally(info, mem_used_result,
+                              "MemoryUsedShared"sv, mem_usage.shared);
+        SetValueConditionally(info, mem_used_result,
+                              "MemoryUsedData"sv, mem_usage.data);
+        SetValueConditionally(info, mem_used_result,
+                              "MemoryUsedStack"sv, mem_usage.stack);
+        SetValueConditionally(info, mem_used_result,
+                              "MemoryUsedText"sv, mem_usage.text);
+        SetValueConditionally(info, mem_used_result,
+                              "MemoryUsedLib"sv, mem_usage.lib);
+        SetValueConditionally(info, mem_used_result,
+                              "MemoryUsedSwap"sv, mem_usage.swap);
 
         int         proc_fd_soft_limit;
         int         proc_fd_hard_limit;
@@ -1427,35 +1379,20 @@ int CPubseqGatewayApp::OnInfo(CHttpRequest &  http_req,
                 CCurrentProcess::GetFileDescriptorsCount(&proc_fd_soft_limit,
                                                          &proc_fd_hard_limit);
 
-        if (proc_fd_soft_limit >= 0)
-            info.SetInteger(kProcFDSoftLimit, proc_fd_soft_limit);
-        else
-            info.SetString(kProcFDSoftLimit, kNA);
+        SetValueConditionally(info, "ProcFDSoftLimit"sv, proc_fd_soft_limit);
+        SetValueConditionally(info, "ProcFDHardLimit"sv, proc_fd_hard_limit);
+        SetValueConditionally(info, "ProcFDUsed"sv, proc_fd_used);
 
-        if (proc_fd_hard_limit >= 0)
-            info.SetInteger(kProcFDHardLimit, proc_fd_hard_limit);
-        else
-            info.SetString(kProcFDHardLimit, kNA);
-
-        if (proc_fd_used >= 0)
-            info.SetInteger(kProcFDUsed, proc_fd_used);
-        else
-            info.SetString(kProcFDUsed, kNA);
-
-        info.SetInteger(kCPUCount, CSystemInfo::GetCpuCount());
+        info.SetInteger("CPUCount", CSystemInfo::GetCpuCount());
 
         int         proc_thread_count = CCurrentProcess::GetThreadCount();
-        if (proc_thread_count >= 1)
-            info.SetInteger(kProcThreadCount, proc_thread_count);
-        else
-            info.SetString(kProcThreadCount, kNA);
+        SetValueConditionally(info, "ProcThreadCount"sv, proc_thread_count);
 
+        info.SetString("Version", PUBSEQ_GATEWAY_VERSION);
+        info.SetString("BuildDate", PUBSEQ_GATEWAY_BUILD_DATE);
+        info.SetString("StartedAt", m_StartTime.AsString());
 
-        info.SetString(kVersion, PUBSEQ_GATEWAY_VERSION);
-        info.SetString(kBuildDate, PUBSEQ_GATEWAY_BUILD_DATE);
-        info.SetString(kStartedAt, m_StartTime.AsString());
-
-        info.SetInteger(kExcludeBlobCacheUserCount,
+        info.SetInteger("ExcludeBlobCacheUserCount",
                         app->GetExcludeBlobCache()->Size());
 
         map<string, size_t>     concurrent_procs =
@@ -1570,7 +1507,7 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  http_req,
                 status, CPSGSCounters::ePSGS_GracefulShutdownExpiredInSec, sec);
         } else {
             m_Counters->AppendValueNode(
-                status, CPSGSCounters::ePSGS_GracefulShutdownExpiredInSec, kNA);
+                status, CPSGSCounters::ePSGS_GracefulShutdownExpiredInSec, "n/a");
         }
 
         m_Counters->PopulateDictionary(status);
@@ -1602,8 +1539,8 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  http_req,
 }
 
 
-static string   s_Shutdown = "Shutdown request accepted";
-static size_t   s_ShutdownSize = s_Shutdown.size();
+const string    s_Shutdown = "Shutdown request accepted";
+const size_t    s_ShutdownSize = s_Shutdown.size();
 
 int CPubseqGatewayApp::OnShutdown(CHttpRequest &  http_req,
                                   shared_ptr<CPSGS_Reply>  reply)
@@ -2472,7 +2409,7 @@ int CPubseqGatewayApp::OnGetSatMapping(CHttpRequest &  http_req,
 }
 
 
-static string  kShuttingDownMsg = "The server is in process of shutting down";
+const string    kShuttingDownMsg = "The server is in process of shutting down";
 
 bool CPubseqGatewayApp::x_IsShuttingDown(shared_ptr<CPSGS_Reply>  reply,
                                          const psg_time_point_t &  create_timestamp)

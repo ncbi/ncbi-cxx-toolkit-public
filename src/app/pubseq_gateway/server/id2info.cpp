@@ -137,11 +137,11 @@ string CPSGS_SatInfoChunksVerFlavorId2Info::Serialize(void) const
 
 
 
-static string   kSeparator = "~~";
-static string   kPrefix = "psg";
-static string   kTseId = "tse_id-";
-static string   kTseLastModified = "tse_last_modified-";
-static string   kTseSplitVersion = "tse_split_version-";
+const string   kPrefix = "psg";
+constexpr string_view   kSeparator = "~~";
+constexpr string_view   kTseId = "tse_id-";
+constexpr string_view   kTseLastModified = "tse_last_modified-";
+constexpr string_view   kTseSplitVersion = "tse_split_version-";
 
 CPSGS_IdModifiedVerFlavorId2Info::CPSGS_IdModifiedVerFlavorId2Info(
                                                     const string &  id2_info) :
