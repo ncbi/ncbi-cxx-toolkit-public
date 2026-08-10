@@ -388,7 +388,8 @@ extern NCBI_XCONNECT_EXPORT char*       SERV_WriteInfo
 /* Read full server info (including type) from string "str" (e.g. composed by
  * SERV_WriteInfo).  Result can be later freed by 'free()'.  If host is not
  * provided in the server specification, info->host is set to 0;  if port is
- * missing, a type-specific default value is used.
+ * missing, a type-specific default value is used.  For NCBID or HTTP* servers,
+ * the fragment spec (#..., if any) does not get stored in the returned info.
  */
 extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_ReadInfo
 (const char* info_str
