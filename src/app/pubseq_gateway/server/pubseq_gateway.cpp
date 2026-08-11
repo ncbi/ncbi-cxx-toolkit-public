@@ -791,7 +791,7 @@ int CPubseqGatewayApp::Run(void)
     }
 
     try {
-        size_t      callback_queue_size = m_CassConnection->GetQueueSizeIo();
+        size_t      callback_queue_size = m_CassConnectionFactory->GetQueueSizeIo();
 
         m_HttpDaemon->Run([this](CTcpDaemon &  tcp_daemon)
                 {
