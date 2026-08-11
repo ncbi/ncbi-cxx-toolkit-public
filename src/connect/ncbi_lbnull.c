@@ -49,10 +49,9 @@
 
 /* Additional LBNULL settings */
 
-/* Global only: */
-#define REG_CONN_LBNULL_DEBUG   DEF_CONN_REG_SECTION "_" "LBNULL_DEBUG"
-
 /* Regular: */
+#define REG_CONN_LBNULL_DEBUG                            "LBNULL_DEBUG"
+
 #define REG_CONN_LBNULL_PREFIX                           "LBNULL_PREFIX"
 
 #define REG_CONN_LBNULL_DOMAIN                           "LBNULL_DOMAIN"
@@ -89,8 +88,8 @@ struct SLBNULL_Data {
     unsigned       reset:1;
     unsigned       vhost:1;  /* If to add vhost    */
     TSERV_TypeOnly type;     /* Target server type */
-    SSERV_Info*    info;     /* Resolved info avail*/
     unsigned short port;     /* Default port#      */
+    SSERV_Info*    info;     /* Resolved info avail*/
     const char*    path;     /* Path elem for HTTP */
     const char*    args;     /* Args elem for HTTP */
     size_t         hostlen;  /* strlen(host)       */
@@ -461,8 +460,8 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     data->hostlen = len;
 
     data->debug = ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
-                                      (0, REG_CONN_LBNULL_DEBUG,
-                                       temp, sizeof(temp), 0));
+                                      (iter->name, REG_CONN_LBNULL_DEBUG,
+                                       temp, sizeof(temp), 0)) ? 1 : 0;
     data->vhost =                  vhost ? 1 : 0;
     data->type  =                  type;
     data->port  = (unsigned short) port;
