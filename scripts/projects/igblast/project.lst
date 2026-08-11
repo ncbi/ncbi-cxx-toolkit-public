@@ -1,4 +1,5 @@
 corelib$
+corelib/boost_patches
 db$
 db/sqlite
 serial$
