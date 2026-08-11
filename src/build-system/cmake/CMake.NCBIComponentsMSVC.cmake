@@ -512,7 +512,7 @@ set(NCBI_COMPONENT_LAPACK_FOUND NO)
 
 #############################################################################
 # Sybase
-NCBI_define_VScomponent(NAME Sybase PACKAGE Sybase LIB libsybct libsybblk libsybcs)
+NCBI_define_VScomponent(NAME Sybase PACKAGE Sybase LIB libsybct64 libsybblk64 libsybcs64)
 if (NCBI_COMPONENT_Sybase_FOUND)
     set(SYBASE_PATH ${NCBI_ThirdParty_Sybase}/Sybase)
     set(SYBASE_LCL_PATH "${NCBI_ThirdParty_SybaseLocalPath}")
