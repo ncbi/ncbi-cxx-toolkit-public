@@ -1986,6 +1986,8 @@ const CSerialObject& obj,
 const CSeq_entry *ctx)
 {
     bool is_viral = false;
+    bool has_strain = false;
+    bool has_isolate = false;
     string lineage;
     string genus;
     string isolate;
@@ -2015,8 +2017,6 @@ const CSeq_entry *ctx)
         }
     }
     if (orgname.IsSetMod()) {
-        bool has_strain = false;
-        bool has_isolate = false;
         vector<string> vouchers;
 
         /*
@@ -2203,28 +2203,34 @@ const CSeq_entry *ctx)
     if (is_viral) {
         return;
     }
-    if (strain.length() < 1) {
-        return;
+    if (has_strain && strain.length() > 0) {
+        if (NStr::EqualNocase(strain, species) && species.length() > 0) {
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
+                "Orgmod.strain should not be species '" + species + "'",
+                obj, ctx);
+        }
+        if (NStr::EqualNocase(strain, sub_species) && sub_species.length() > 0) {
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
+                "Orgmod.strain should not be subspecies '" + sub_species + "'",
+                obj, ctx);
+        }
+        if (NStr::EqualNocase(strain, serovar) && serovar.length() > 0) {
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
+                "Orgmod.strain should not be serovar '" + serovar + "'",
+                obj, ctx);
+        }
+        if (NStr::FindNoCase(strain, genus + " " + species) != string::npos && genus.length() > 0 && species.length() > 0) {
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
+                "Orgmod.strain should not contain '" + genus + " " + species + "'",
+                obj, ctx);
+        }
     }
-    if (NStr::EqualNocase(strain, species) && species.length() > 0) {
-        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
-            "Orgmod.strain should not be species '" + species + "'",
-            obj, ctx);
-    }
-    if (NStr::EqualNocase(strain, sub_species) && sub_species.length() > 0) {
-        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
-            "Orgmod.strain should not be subspecies '" + sub_species + "'",
-            obj, ctx);
-    }
-    if (NStr::EqualNocase(strain, serovar) && serovar.length() > 0) {
-        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
-            "Orgmod.strain should not be serovar '" + serovar + "'",
-            obj, ctx);
-    }
-    if (NStr::FindNoCase(strain, genus + " " + species) != string::npos && genus.length() > 0 && species.length() > 0) {
-        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
-            "Orgmod.strain should not contain '" + genus + " " + species + "'",
-            obj, ctx);
+    if (has_isolate && isolate.length() > 0) {
+        if (NStr::FindNoCase(isolate, genus + " " + species) != string::npos && genus.length() > 0 && species.length() > 0) {
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
+                "Orgmod.isolate should not contain '" + genus + " " + species + "'",
+                obj, ctx);
+        }
     }
 }
 
@@ -3155,7 +3161,7 @@ static bool s_init_NewTaxVal(bool use_new_strain_validation)
         return false;
     }
 
-	// RW-2240 default is now true, no need for environment variable in future
+    // RW-2240 default is now true, no need for environment variable in future
     return true;
 }
 
