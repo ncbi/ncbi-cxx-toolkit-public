@@ -23,10 +23,10 @@
 --
 -- ===========================================================================
 --
--- Authors:  NCBI Structure Group
+-- Authors:  NCBI PubChem Group
 --
 -- File Description:
---      ASN.1 definitions for PubChem small molecule database
+--      ASN.1 definitions for the PubChem small molecule database
 --
 -- ===========================================================================
 
@@ -55,7 +55,11 @@ PC-Substance ::= SEQUENCE {
     xref           SEQUENCE OF PC-XRefData    OPTIONAL, -- X-Ref/LinkOut Data provided by Depositor
 
     -- Structure Description
-    compound       PC-Compounds               OPTIONAL  -- Original Deposited Structure Information
+    compound       PC-Compounds               OPTIONAL, -- Original Deposited Structure Information
+
+    -- UTF8 variants, added at the end of the structure for backwards compatibility (MUST all be OPTIONAL)
+    synonyms-utf8  SEQUENCE OF UTF8String     OPTIONAL,
+    comment-utf8   SEQUENCE OF UTF8String     OPTIONAL
 }
 
 
