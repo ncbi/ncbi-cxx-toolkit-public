@@ -264,10 +264,10 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     TSERV_TypeOnly type, types;
     size_t len, pfxlen, domlen;
     struct SLBNULL_Data* data;
-    char *domain, *args = 0;
-    int/*bool*/ vhost = 0;
     const char* path = 0;
+    char *args, *domain;
     unsigned long port;
+    int/*bool*/ vhost;
     const char* str;
 
     assert(iter  &&  !iter->data  &&  !iter->op  &&  !iter->external);
@@ -334,6 +334,17 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
             goto out;
         }
         assert(str == buf);
+        if (args) {
+            if (*args == '?'  &&  args[1]  &&  args[1] != '#') {
+                char* frag = strchr(++args, '#');
+                if (frag)
+                    *frag = '\0';
+                assert(*args);
+            } else {
+                *args = '\0';
+                args = 0;
+            }
+        }
         if (!(path = strdup(str))) {
             CORE_LOGF_ERRNO_X(90, eLOG_Error, errno,
                               ("[%s]  Cannot store path \"%s\" for LBNULL", iter->name,
@@ -342,21 +353,16 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
         }
         if (args) {
             args = (char*)(path + (size_t)(args - str));
-            if (*args == '?'  &&  args[1]  &&  args[1] != '#') {
-                char* frag = strchr(++args, '#');
-                if (frag)
-                    *frag = '\0';
-                args[-1] = '\0';
-                assert(*args);
-            } else {
-                *args = '\0';
-                args = 0;
-            }
+            assert(args[-1] == '?');
+            args[-1] = '\0';
         }
         assert(path  &&  *path);
         assert(!args  ||  (*args  &&  !strchr(args, '#')));
         CORE_TRACEF(("[%s]  LBNULL using path \"%s%s%s\"%s", iter->name,
                      path, &"?"[!args], args ? args : "", vhost ? " and VHost" : ""));
+    } else {
+        vhost = 0;
+        args  = 0;
     }
 
     port = 0;
