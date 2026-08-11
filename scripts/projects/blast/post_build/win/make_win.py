@@ -54,6 +54,7 @@ def main():
     apps = [ "blastn.exe", 
              "blastp.exe",
              "blastx.exe",
+             "blast-usage-report.exe",
              "tblastx.exe",
              "tblastn.exe",
              "rpsblast.exe",

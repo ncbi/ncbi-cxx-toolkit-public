@@ -24,6 +24,7 @@ APP: makembindex segmasker dustmasker windowmasker deltablast
 APP: makeblastdb blastdbcmd blastdb_aliastool convert2blastmask blastdbcheck
 APP: makeprofiledb blast_formatter makeclusterdb clusterdbcmd
 APP: blastn_vdb tblastn_vdb blast_formatter_vdb blast_vdb_cmd 
+APP: blast-usage-report
 
 COPY: $srcdir/src/app/blast/legacy_blast.pl $installdir/bin
 COPY: $srcdir/src/app/blast/update_blastdb.pl $installdir/bin
