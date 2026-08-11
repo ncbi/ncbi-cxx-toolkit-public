@@ -73,6 +73,8 @@ public:
     void SetServiceName(string const& service);
     void SetDataNamespace(string const& data_namespace);
 
+    unsigned int GetQueueSizeIo() const;
+
     static shared_ptr<CCassConnectionFactory> s_Create()
     {
         return make_shared<CCassConnectionFactory>();

@@ -280,6 +280,10 @@ string CCassConnectionFactory::GetPassword() const
     return m_CassPassword;
 }
 
+unsigned int CCassConnectionFactory::GetQueueSizeIo() const
+{
+    return m_QueueSizeIo == 0 ? CCassConnection::kCassDefaultQueueSizeIo : m_QueueSizeIo;
+}
 
 shared_ptr<CCassConnection> CCassConnectionFactory::CreateInstance()
 {

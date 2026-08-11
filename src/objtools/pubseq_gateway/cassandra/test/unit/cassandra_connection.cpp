@@ -362,6 +362,7 @@ TEST_F(CCassConnectionTest, GetTokenRanges)
 
 TEST_F(CCassConnectionTest, SetQueueSizeIo)
 {
+    EXPECT_EQ(8000, sm_Env.Get().factory->GetQueueSizeIo()) << "Queue size io should be 8000 (";
     auto connection = sm_Env.Get().factory->CreateInstance();
     EXPECT_EQ(8000, connection->GetQueueSizeIo()) << "Queue size io should be 8000 in configuration file";
     connection->SetQueueSizeIo(1);
