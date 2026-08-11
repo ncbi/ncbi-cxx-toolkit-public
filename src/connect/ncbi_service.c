@@ -683,6 +683,7 @@ struct SINTERNAL_Data {
     unsigned       reset:1;
     unsigned       reverse_dns:1;
     TSERV_TypeOnly type;
+    unsigned short port;
     SSERV_Info*    info;
     SConnNetInfo   net_info;
 };
@@ -691,7 +692,7 @@ struct SINTERNAL_Data {
 static int/*bool*/ x_InternalResolve(const char* name, struct SINTERNAL_Data* data)
 {
     SConnNetInfo*  net_info = &data->net_info;
-    unsigned short port = net_info->port;
+    unsigned short port = data->port;
     TNCBI_IPv6Addr ipv6;
     unsigned int   ipv4;
     SSERV_Info*    info;
@@ -931,23 +932,24 @@ static struct SINTERNAL_Data* s_InternalMapper(const char** svc,
     if (!net_info->port) {
         switch (net_info->scheme) {
         case eURL_Https:
-            net_info->port = CONN_PORT_HTTPS;
+            data->port = CONN_PORT_HTTPS;
             break;
         case eURL_Http:
-            net_info->port = CONN_PORT_HTTP;
+            data->port = CONN_PORT_HTTP;
             break;
         default:
             break;            
         }
-    }
+    } else
+        data->port = net_info->port;
     data->type = fSERV_Http;
     if (!net_info->scheme/*==eURL_Unspec*/) {
         TSERV_TypeOnly type = SERV_GetImplicitServerTypeInternalEx(*svc, (ESERV_Type) fSERV_Any);
-        if (!(type & fSERV_Http)  &&  (net_info->port  ||  (types & fSERV_Dns))) {
+        if (!(type & fSERV_Http)  &&  (data->port  ||  (types & fSERV_Dns))) {
             int/*bool*/ bare = !net_info->path[0]  &&  strncmp(url, "//", 2) != 0;
             if (( bare  &&  x_NonHttpOkay(types))  ||
                 (!bare  && (x_HttpNotOkay(types)   ||  type)  &&  x_IsEmptyPath(net_info->path))) {
-                TSERV_TypeOnly x_type = (types & fSERV_Dns) | (net_info->port ? fSERV_Standalone : 0);
+                TSERV_TypeOnly x_type = (types & fSERV_Dns) | (data->port ? fSERV_Standalone : 0);
                 assert(x_type);
                 if (type)
                     type &= x_type;
