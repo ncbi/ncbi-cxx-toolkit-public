@@ -660,7 +660,7 @@ CPSGS_ResolveBase::x_OnSeqIdResolveError(
                         int  code,
                         EDiagSev  severity,
                         const string &  message,
-                        EPSGS_LoggingFlag  loging_flag)
+                        EPSGS_LoggingFlag  logging_flag)
 {
     auto    app = CPubseqGatewayApp::GetInstance();
     bool    valid = true;
@@ -685,7 +685,7 @@ CPSGS_ResolveBase::x_OnSeqIdResolveError(
                                   start_timestamp);
     }
 
-    m_FinalErrorCB(status, code, severity, message, loging_flag);
+    m_FinalErrorCB(status, code, severity, message, logging_flag);
 }
 
 

@@ -480,6 +480,11 @@ CPSGS_CassProcessorBase::CountError(CCassFetch *  fetch_details,
         if (status_update_flag == ePSGS_NeedStatusUpdate) {
             UpdateOverallStatus(status);
         }
+    } else {
+        if (status == CRequestStatus::e300_MultipleChoices &&
+               status_update_flag == ePSGS_NeedStatusUpdate) {
+            UpdateOverallStatus(status);
+        }
     }
 
     return status;
