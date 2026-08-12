@@ -37,6 +37,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 
@@ -306,6 +307,7 @@ private:
     AutoPtr<TBoostLogFormatter>  m_Upper;
     /// If report is XML or not
     bool                         m_IsXML;
+    CNcbiDiag                    m_CurrentEntry;
 };
 
 
@@ -2092,6 +2094,28 @@ CNcbiBoostLogger::log_exception_start(ostream& ostr,
                                       but::log_checkpoint_data const& lcd,
                                       boost::execution_exception const& ex)
 {
+    const auto& loc = ex.where();
+    CDirEntry de(FORMAT(loc.m_file_name)), de2(de.GetDir());
+    string mod = de2.GetName();
+    NStr::ToUpper(mod);
+    CNcbiDiag diag;
+
+    if (mod != ".") {
+        diag.SetModule(mod.c_str()).SetFile(de.GetName().c_str());
+    } else if (de.GetName() != "unknown location") {
+        diag.SetFile(de.GetName().c_str());
+    }
+    if (loc.m_line_num > 0) {
+        diag.SetLine(loc.m_line_num);
+    }
+    if ( !loc.m_function.empty() ) {
+        diag.SetFunction(string(FORMAT(loc.m_function)).c_str());
+    } else {
+        diag.SetClass(but::framework::current_test_unit().p_name->c_str())
+            .SetFunction("test_method");
+    }
+
+    diag << ex.what() << Endm;
     m_Upper->log_exception_start(ostr, lcd, ex);
 }
 
@@ -2120,18 +2144,44 @@ void
 CNcbiBoostLogger::log_entry_start(ostream& ostr, but::log_entry_data const& led, log_entry_types let)
 {
     m_Upper->log_entry_start(ostr, led, let);
+    CDirEntry de(led.m_file_name), de2(de.GetDir());
+    string mod = de2.GetName();
+    NStr::ToUpper(mod);
+    switch (let) {
+    case BOOST_UTL_ET_INFO:
+    case BOOST_UTL_ET_MESSAGE:
+        m_CurrentEntry << Info;
+        break;
+    case BOOST_UTL_ET_WARNING:
+        m_CurrentEntry << Warning;
+        break;
+    case BOOST_UTL_ET_ERROR:
+        m_CurrentEntry << Error;
+        break;
+    case BOOST_UTL_ET_FATAL_ERROR:
+        m_CurrentEntry << Critical;
+        break;
+    }
+    if (mod != ".") {
+        m_CurrentEntry.SetModule(mod.c_str());
+    }
+    m_CurrentEntry.SetFile(de.GetName().c_str());
+    m_CurrentEntry.SetFunction("test_method").SetLine(led.m_line_num)
+        .SetClass(but::framework::current_test_unit().p_name->c_str());
 }
 
 void
 CNcbiBoostLogger::log_entry_value(ostream& ostr, but::const_string value)
 {
     m_Upper->log_entry_value(ostr, value);
+    m_CurrentEntry << value;
 }
 
 void
 CNcbiBoostLogger::log_entry_finish(ostream& ostr)
 {
     m_Upper->log_entry_finish(ostr);
+    m_CurrentEntry << Endm;
 }
 
 #if BOOST_VERSION >= 105900
