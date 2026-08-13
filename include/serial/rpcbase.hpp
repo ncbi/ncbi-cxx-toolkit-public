@@ -36,12 +36,18 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_conn_stream.hpp>
+#include <connect/ncbi_ipv6.h>
+#include <connect/ncbi_service.h>
 #include <connect/ncbi_util.h>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
 #include <util/retry_ctx.hpp>
 #include <serial/rpcbase_impl.hpp>
+
+#ifdef NCBI_OS_UNIX
+#  include <netinet/in.h>
+#endif
 
 /** @addtogroup GenClassSupport
  *
@@ -64,21 +70,22 @@ class CRPCClient : public    CObject,
 public:
     CRPCClient(const string& service = kEmptyStr)
         : CRPCClient_Base(service, eSerial_AsnBinary),
-          m_Timeout(kDefaultTimeout)
+          m_Timeout(kDefaultTimeout), m_ServIter(nullptr)
         {}
     CRPCClient(const string&     service,
         ESerialDataFormat        format)
         : CRPCClient_Base(service, format),
-        m_Timeout(kDefaultTimeout)
+          m_Timeout(kDefaultTimeout), m_ServIter(nullptr)
     {}
     CRPCClient(const string& service,
         ESerialDataFormat    format,
         unsigned int         try_limit)
         : CRPCClient_Base(service, format, try_limit),
-        m_Timeout(kDefaultTimeout)
+          m_Timeout(kDefaultTimeout), m_ServIter(nullptr)
     {}
     virtual ~CRPCClient(void)
     {
+        SERV_Close(m_ServIter); // No-op if null
         if ( !sx_IsSpecial(m_Timeout) ) {
             delete const_cast<STimeout*>(m_Timeout);
         }
@@ -91,7 +98,14 @@ public:
     { out << request; }
 
     virtual void ReadReply(CObjectIStream& in, TReply& reply)
-    { in >> reply; }
+    {
+        in >> reply;
+        // Treat this server (and any previously tried ones) neutrally
+        // if reconnection becomes necessary.  (Servers can break but
+        // can also simply prune idle connections.)
+        SERV_Close(m_ServIter);
+        m_ServIter = nullptr;
+    }
 
     EIO_Status      SetTimeout(const STimeout* timeout,
                                EIO_Event direction = eIO_ReadWrite);
@@ -140,6 +154,8 @@ private:
     void x_FillConnNetInfo(SConnNetInfo& net_info, SSERVICE_Extra* x_extra);
 
     unique_ptr<CConn_ServiceStream> m_AsyncStream;    
+    SERV_ITER                       m_ServIter;
+    const SSERV_Info*               m_ServInfo;
 };
 
 
@@ -159,6 +175,11 @@ inline
 void CRPCClient<TRequest, TReply>::x_FillConnNetInfo(SConnNetInfo& net_info,
                                                      SSERVICE_Extra* x_extra)
 {
+#ifdef INADDR_NONE
+    static const unsigned int kNoIPV4 = INADDR_NONE;
+#else
+    static const unsigned int kNoIPV4 = ~0U;
+#endif
     if ( !m_Args.empty() ) {
         if ( !ConnNetInfo_AppendArg(&net_info, m_Args.c_str(), 0) ) {
             NCBI_THROW(CRPCClientException, eArgs,
@@ -176,6 +197,27 @@ void CRPCClient<TRequest, TReply>::x_FillConnNetInfo(SConnNetInfo& net_info,
             NCBI_THROW(CRPCClientException, eArgs,
                 "Error sending request affinity");
         }
+    }
+    if (m_ServIter == nullptr) {
+        m_ServIter = SERV_Open(m_Service.c_str(), fSERV_Any, 0, &net_info);
+    }
+    m_ServInfo = SERV_GetNextInfo(m_ServIter);
+    if (m_ServInfo == nullptr) { // iterator exhausted; start over
+        SERV_Close(m_ServIter);
+        m_ServIter = SERV_Open(m_Service.c_str(), fSERV_Any, 0, &net_info);
+        m_ServInfo = SERV_GetNextInfo(m_ServIter);
+    }
+    if (m_ServInfo->host == kNoIPV4) {
+        NcbiIPv6ToString(net_info.host, CONN_HOST_LEN + 1, &m_ServInfo->addr);
+    } else {
+        SOCK_ntoa(m_ServInfo->host, net_info.host, CONN_HOST_LEN + 1);
+    }
+    net_info.port = m_ServInfo->port;
+    // net_info.lb_disable = 1;
+    net_info.stateless = (m_ServInfo->mode & fSERV_Stateful) == 0;
+    if ((m_ServInfo->mode & fSERV_Secure) != 0
+        &&  (m_ServInfo->type & fSERV_Http) != 0) {
+        net_info.scheme = eURL_Https;
     }
     if (x_extra == nullptr) {
         return;
@@ -214,7 +256,8 @@ void CRPCClient<TRequest, TReply>::x_Connect(void)
 
     unique_ptr<CConn_ServiceStream> stream
         (new CConn_ServiceStream
-         (m_Service, fSERV_Any | fSERV_DelayOpen, net_info.get(), &x_extra, m_Timeout));
+         (m_Service, static_cast<int>(m_ServInfo->type) | fSERV_DelayOpen,
+          net_info.get(), &x_extra, m_Timeout));
     if ( m_Canceler.NotNull() ) {
         stream->SetCanceledCallback(m_Canceler.GetNonNullPointer());
     }
@@ -304,8 +347,8 @@ EIO_Status CRPCClient<TRequest, TReply>::AsyncConnect(void* handle_buf,
     x_FillConnNetInfo(*net_info, &x_extra);
 
     m_AsyncStream.reset(
-        new CConn_ServiceStream(m_Service, fSERV_Any, net_info.get(), &x_extra,
-                                &kZeroTimeout));
+        new CConn_ServiceStream(m_Service, m_ServInfo->type, net_info.get(),
+                                &x_extra, &kZeroTimeout));
     if (m_Timeout == kDefaultTimeout) {
         m_Timeout = kInfiniteTimeout;
     }
