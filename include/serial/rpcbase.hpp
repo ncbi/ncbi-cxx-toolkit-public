@@ -45,10 +45,6 @@
 #include <util/retry_ctx.hpp>
 #include <serial/rpcbase_impl.hpp>
 
-#ifdef NCBI_OS_UNIX
-#  include <netinet/in.h>
-#endif
-
 /** @addtogroup GenClassSupport
  *
  * @{
@@ -215,12 +211,6 @@ template<class TRequest, class TReply>
 inline
 string CRPCClient<TRequest, TReply>::x_GetEndpoint(SConnNetInfo& net_info)
 {
-#ifdef INADDR_NONE
-    static const unsigned int kNoIPV4 = INADDR_NONE;
-#else
-    static const unsigned int kNoIPV4 = ~0U;
-#endif
-
     if (m_ServIter == nullptr) {
         m_ServIter = SERV_Open(m_Service.c_str(), fSERV_Any, 0, &net_info);
     }
@@ -229,14 +219,15 @@ string CRPCClient<TRequest, TReply>::x_GetEndpoint(SConnNetInfo& net_info)
         SERV_Close(m_ServIter);
         m_ServIter = SERV_Open(m_Service.c_str(), fSERV_Any, 0, &net_info);
         m_ServInfo = SERV_GetNextInfo(m_ServIter);
+        if (m_ServInfo == nullptr) { // still nothing!
+            SERV_Close(m_ServIter);
+            m_ServIter = nullptr;
+            return m_Service;
+        }
     }
 
-    string ret;
-    if (m_ServInfo->host == kNoIPV4) {
-        ret = CSocketAPI::HostPortToString(m_ServInfo->addr, m_ServInfo->port);
-    } else {
-        ret = CSocketAPI::HostPortToString(m_ServInfo->host, m_ServInfo->port);
-    }
+    string ret = CSocketAPI::HostPortToString(m_ServInfo->addr,
+                                              m_ServInfo->port);
     if ((m_ServInfo->type & fSERV_Http) != 0) {
         string scheme = "http";
         if ((m_ServInfo->mode & fSERV_Secure) != 0) {
