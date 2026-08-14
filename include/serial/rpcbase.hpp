@@ -36,14 +36,18 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_conn_stream.hpp>
-#include <connect/ncbi_ipv6.h>
 #include <connect/ncbi_service.h>
+#include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_util.h>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
 #include <util/retry_ctx.hpp>
 #include <serial/rpcbase_impl.hpp>
+
+#ifdef NCBI_OS_UNIX
+#  include <netinet/in.h>
+#endif
 
 /** @addtogroup GenClassSupport
  *
@@ -142,18 +146,13 @@ protected:
                                             void*       user_data,
                                             int         server_error);
 
-    // Callback for getting the next instance to use.
-    // 'user_data' must point to an instance of CRPCClient, whose own
-    // iterator's latest (cached) result it will consult in lieu of the
-    // passed blank-slate one.
-    static const SSERV_Info* sx_GetNextInfo(void* user_data, SERV_ITER iter);
-
     static bool sx_IsSpecial(const STimeout* timeout);
 
     const STimeout*          m_Timeout; ///< Cloned if not special.
 
 private:
     void x_FillConnNetInfo(SConnNetInfo& net_info, SSERVICE_Extra* x_extra);
+    string x_GetEndpoint(SConnNetInfo& net_info);
 
     unique_ptr<CConn_ServiceStream> m_AsyncStream;    
     SERV_ITER                       m_ServIter;
@@ -198,7 +197,30 @@ void CRPCClient<TRequest, TReply>::x_FillConnNetInfo(SConnNetInfo& net_info,
     if (x_extra == nullptr) {
         return;
     }
-    // Install and prepare for callbacks.
+    // Install and prepare for callback.
+    memset(x_extra, 0, sizeof(*x_extra));
+    x_extra->data = this;
+    x_extra->parse_header = sx_ParseHeader;
+    x_extra->flags = fHTTP_NoAutoRetry;
+    const char* user_header = GetContentTypeHeader(GetFormat());
+    if (user_header != NULL  &&  *user_header != '\0') {
+        if ( !ConnNetInfo_OverrideUserHeader(&net_info, user_header)) {
+            NCBI_THROW(CRPCClientException, eArgs,
+                "Error sending user header");
+        }
+    }
+}
+
+template<class TRequest, class TReply>
+inline
+string CRPCClient<TRequest, TReply>::x_GetEndpoint(SConnNetInfo& net_info)
+{
+#ifdef INADDR_NONE
+    static const unsigned int kNoIPV4 = INADDR_NONE;
+#else
+    static const unsigned int kNoIPV4 = ~0U;
+#endif
+
     if (m_ServIter == nullptr) {
         m_ServIter = SERV_Open(m_Service.c_str(), fSERV_Any, 0, &net_info);
     }
@@ -208,18 +230,21 @@ void CRPCClient<TRequest, TReply>::x_FillConnNetInfo(SConnNetInfo& net_info,
         m_ServIter = SERV_Open(m_Service.c_str(), fSERV_Any, 0, &net_info);
         m_ServInfo = SERV_GetNextInfo(m_ServIter);
     }
-    memset(x_extra, 0, sizeof(*x_extra));
-    x_extra->data = this;
-    x_extra->parse_header = sx_ParseHeader;
-    x_extra->get_next_info = sx_GetNextInfo;
-    x_extra->flags = fHTTP_NoAutoRetry;
-    const char* user_header = GetContentTypeHeader(GetFormat());
-    if (user_header != NULL  &&  *user_header != '\0') {
-        if ( !ConnNetInfo_OverrideUserHeader(&net_info, user_header)) {
-            NCBI_THROW(CRPCClientException, eArgs,
-                "Error sending user header");
-        }
+
+    string ret;
+    if (m_ServInfo->host == kNoIPV4) {
+        ret = CSocketAPI::HostPortToString(m_ServInfo->addr, m_ServInfo->port);
+    } else {
+        ret = CSocketAPI::HostPortToString(m_ServInfo->host, m_ServInfo->port);
     }
+    if ((m_ServInfo->type & fSERV_Http) != 0) {
+        string scheme = "http";
+        if ((m_ServInfo->mode & fSERV_Secure) != 0) {
+            scheme += 's';
+        }
+        ret = scheme + "://" + ret + SERV_HTTP_PATH(&m_ServInfo->u.http);
+    }
+    return ret;
 }
 
 template<class TRequest, class TReply>
@@ -239,10 +264,11 @@ void CRPCClient<TRequest, TReply>::x_Connect(void)
     SSERVICE_Extra x_extra;
     AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(m_Service.c_str()));
     x_FillConnNetInfo(*net_info, &x_extra);
+    string endpoint = x_GetEndpoint(*net_info); // populates m_ServInfo
 
     unique_ptr<CConn_ServiceStream> stream
         (new CConn_ServiceStream
-         (m_Service, static_cast<int>(m_ServInfo->type) | fSERV_DelayOpen,
+         (endpoint, static_cast<int>(m_ServInfo->type) | fSERV_DelayOpen,
           net_info.get(), &x_extra, m_Timeout));
     if ( m_Canceler.NotNull() ) {
         stream->SetCanceledCallback(m_Canceler.GetNonNullPointer());
@@ -331,9 +357,10 @@ EIO_Status CRPCClient<TRequest, TReply>::AsyncConnect(void* handle_buf,
     SSERVICE_Extra x_extra;
     AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(m_Service.c_str()));
     x_FillConnNetInfo(*net_info, &x_extra);
+    string endpoint = x_GetEndpoint(*net_info); // populates m_ServInfo
 
     m_AsyncStream.reset(
-        new CConn_ServiceStream(m_Service, m_ServInfo->type, net_info.get(),
+        new CConn_ServiceStream(endpoint, m_ServInfo->type, net_info.get(),
                                 &x_extra, &kZeroTimeout));
     if (m_Timeout == kDefaultTimeout) {
         m_Timeout = kInfiniteTimeout;
@@ -372,20 +399,6 @@ CRPCClient<TRequest, TReply>::sx_ParseHeader(const char* http_header,
 
     // Always read response body - normal content or error.
     return eHTTP_HeaderContinue;
-}
-
-
-template<class TRequest, class TReply>
-inline
-const SSERV_Info*
-CRPCClient<TRequest, TReply>::sx_GetNextInfo(void* user_data, SERV_ITER iter)
-{
-    if (user_data == nullptr) { // Shouldn't happen
-        return SERV_GetNextInfo(iter);
-    }
-    auto* client = reinterpret_cast<CRPCClient*>(user_data);
-    _ASSERT(client);
-    return client->m_ServInfo;
 }
 
 
