@@ -157,6 +157,11 @@ typedef union {
     SSERV_DnsInfo         dns;
 } USERV_Info;
 
+/* NOTE: The "host" field is retained for backward compatibility.  It is
+ * INADDR_NONE(-1) for IPv6 servers.  The "addr" field always contains
+ * either a full IPv6 address or an embedded IPv4 address; in the latter
+ * case, "host" contains the equivalent IPv4 value.
+ */
 typedef struct {
     ESERV_Type            type; /* type of server                            */
     unsigned int          host; /* host the server running on, network b.o.  */
@@ -170,7 +175,7 @@ typedef struct {
     EMIME_SubType       mime_s; /*     subtype,                              */
     EMIME_Encoding      mime_e; /*         and encoding for content-type     */
     TSERV_Algo            algo; /* rate algorithm for the server             */
-    TNCBI_IPv6Addr        addr; /* IPv6 address (for host == INADDR_NONE(-1))*/
+    TNCBI_IPv6Addr        addr; /* server's host address (IPv6/IPv4)         */
     unsigned char        vhost; /* extra (v)host namelen if non-zero (+'\0') */
     unsigned short       extra; /* extra data size if non-zero               */
     USERV_Info               u; /* server type-specific data/params          */
