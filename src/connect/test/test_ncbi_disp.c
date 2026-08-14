@@ -284,7 +284,7 @@ int main(int argc, const char* argv[])
                 const char* e = HINFO_Environment(hinfo);
                 const char* a = HINFO_AffinityArgument(hinfo);
                 const char* v = HINFO_AffinityArgvalue(hinfo);
-                CORE_LOG(eLOG_Note, "  Host info available:");
+                CORE_LOG(eLOG_Note,       "  Host info available:");
                 CORE_LOGF(eLOG_Note,     ("    CPUs:        %d",
                                           HINFO_CpuCount(hinfo)));
                 CORE_LOGF(eLOG_Note,     ("    CPU units:   %d @ %.0fMHz",
