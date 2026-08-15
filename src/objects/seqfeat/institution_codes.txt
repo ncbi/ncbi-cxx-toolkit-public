@@ -1282,6 +1282,7 @@ CHRB	s	Rutgers University - Cook College
 CHRG	s	Grosvenor Museum			
 CHSC	s	California State University, Chico			
 CHT	s	Cheltenham College			
+CHUFC	s	Herpetological Collection of the Federal University of Ceara (Colecao Herpetologica da Universidade Federal do Ceara)			
 CHUG	s	Garyounis University, Botany Department			
 CHULA	c	Microbiology Department Faculty of Science			
 CHUNB	s	University of Brasilia Herpetological Collection			
@@ -8437,6 +8438,7 @@ UQTR	s	Universite du Quebec a Trois-Rivieres, Departement de chimie-biologie
 UQUH	s	Umm Al-Qura University			
 UR	s	Instituto Federal de Educacao, Ciencia e Tecnologia Goiano, Campus Urutai			
 URB	s	Ryukyu University Department of Zoology			
+URCA-H	s	Herpetological Collection of the Regional University of Cariri (Colecao Herpetologica da Universidade Regional do Cariri)			
 URI	s	Naturforschende Gesellschaft Uri			
 URIC	s	University of Rhode Island			
 URIMC	s	University of Rhode Island, Mammal Collection			

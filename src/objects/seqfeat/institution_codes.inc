@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Fri Aug 14 05:33:04 EDT 2026; formally
+/* time_t value corresponding to Sat Aug 15 05:33:04 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1786699984UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1786786384UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -1318,6 +1318,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CHRG\ts\tGrosvenor Museum\t\t\t",
 "CHSC\ts\tCalifornia State University, Chico\t\t\t",
 "CHT\ts\tCheltenham College\t\t\t",
+"CHUFC\ts\tHerpetological Collection of the Federal University of Ceara (Colecao Herpetologica da Universidade Federal do Ceara)\t\t\t",
 "CHUG\ts\tGaryounis University, Botany Department\t\t\t",
 "CHULA\tc\tMicrobiology Department Faculty of Science\t\t\t",
 "CHUNB\ts\tUniversity of Brasilia Herpetological Collection\t\t\t",
@@ -8473,6 +8474,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UQUH\ts\tUmm Al-Qura University\t\t\t",
 "UR\ts\tInstituto Federal de Educacao, Ciencia e Tecnologia Goiano, Campus Urutai\t\t\t",
 "URB\ts\tRyukyu University Department of Zoology\t\t\t",
+"URCA-H\ts\tHerpetological Collection of the Regional University of Cariri (Colecao Herpetologica da Universidade Regional do Cariri)\t\t\t",
 "URI\ts\tNaturforschende Gesellschaft Uri\t\t\t",
 "URIC\ts\tUniversity of Rhode Island\t\t\t",
 "URIMC\ts\tUniversity of Rhode Island, Mammal Collection\t\t\t",
