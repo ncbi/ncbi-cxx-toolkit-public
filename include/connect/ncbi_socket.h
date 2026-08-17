@@ -2191,7 +2191,7 @@ extern NCBI_XCONNECT_EXPORT int SOCK_ntoa
  *  [in]  non-zero to only accept "host" if it is a full-quad IPv4 notation
  * @return
  *  Non-zero (true) if given string is an IPv4 address, zero (false) otherwise.
- * @note
+ * @caution
  *  Unless "fullquad" is requested, valid IPv4 addresses may have various
  *  formats (e.g. legal to be 32-bit integers, or have fewer than 3 dots).
  */
@@ -2223,11 +2223,11 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_isip6
  );
 
 
-/** Check whether a given string represents a bare IP address.
+/** Check whether a given string represents a valid bare IP address.
 * @param host
 *  [in]  '\0'-terminated string to check against being a bare address
 * @return
-*  Non-zero (true) if given string is an IPv6 address, zero (false) otherwise.
+*  Non-zero (true) if given string is an IPv4 or IPv6 address, zero (false) otherwise.
 * @note
 *  Equivalent to "SOCK_isip(host) || SOCK_isip6(host)".
 * @sa
