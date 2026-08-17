@@ -813,8 +813,11 @@ private:
 /// kDefaultTimeout, it overrides the value supplied by an underlying connector
 /// (the latter value is kept in SConnNetInfo::timeout).
 ///
+/// @note See SERV_OpenEx() in <connect/ncbi_service.h> for the description of
+///    the accepted service names.
+///
 /// @sa
-///   SERVICE_CreateConnector
+///   SERVICE_CreateConnector, SERV_OpenEx
 ///
 
 class NCBI_XCONNECT_EXPORT CConn_ServiceStream : public CConn_HttpStream_Base
