@@ -182,7 +182,7 @@ typedef struct {
 } SSERV_Info;
 
 
-/* Constructors for the various types of NCBI server meta-addressesr45
+/* Constructors for the various types of NCBI server meta-addresses
  */
 extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_CreateNcbidInfo
 (unsigned int   host,           /* network byte order                        */
