@@ -307,7 +307,7 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 #define DEF_CONN_HTTP_REFERER       0
 
 /* Environment/registry keys that are *not* kept in SConnNetInfo */
-#define REG_CONN_INTERNAL_DISABLE   "SERVICE_PARSE_DISABLE"
+#define REG_CONN_INTERNAL_DISABLE   "SERVICE_ENDPOINT_FALLBACK_DISABLE"
 #define REG_CONN_LOCAL_ENABLE       "LOCAL_ENABLE"
 #define REG_CONN_LBNULL_ENABLE      "LBNULL_ENABLE"
 #define REG_CONN_LBSMD_DISABLE      "LBSMD_DISABLE"
@@ -327,7 +327,7 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 #define REG_CONN_LOCAL_SERVER       DEF_CONN_REG_SECTION "_" "LOCAL_SERVER"
 
 
-/* Implicit server type (LBNULL/LINKERD/NAMERD) */
+/* Implicit server type (INTERNAL/LBNULL/LINKERD/NAMERD) */
 #define REG_CONN_IMPLICIT_SERVER_TYPE  "IMPLICIT_SERVER_TYPE"
 
 
