@@ -697,7 +697,7 @@ static int/*bool*/ x_InternalResolve(const char* name, struct SINTERNAL_Data* da
     unsigned int   ipv4;
     SSERV_Info*    info;
 
-    assert(!data->info);
+    assert(!data->info  &&  data->type);
     if (!SOCK_gethostbyname6(&ipv6, net_info->host))
         return 0/*failure*/;
 
@@ -714,6 +714,7 @@ static int/*bool*/ x_InternalResolve(const char* name, struct SINTERNAL_Data* da
         assert(len <= CONN_HOST_LEN);
         if (args)
             *args++ = '\0';
+        assert(!(data->type & ~fSERV_Http));
         info = SERV_CreateHttpInfoEx(data->type, ipv4, 0/*port*/,
                                      net_info->path[0] ? net_info->path : "/",
                                      args,
@@ -749,6 +750,7 @@ static int/*bool*/ x_InternalResolve(const char* name, struct SINTERNAL_Data* da
         }
     } else {
         assert(port);
+        assert(data->type == fSERV_Standalone);
         info = SERV_CreateStandaloneInfo(ipv4, 0/*port*/);
     }
 
@@ -963,6 +965,7 @@ static struct SINTERNAL_Data* s_InternalMapper(const char** svc,
             }
         }
     }
+    /* NB: data->type has either fSERV_Http OR one or both of (fSERV_Dns, fSERV_Standalone) */
     assert(!(data->type & fSERV_Http) ^ !(data->type & (fSERV_Dns | fSERV_Standalone)));
     if (types  &&  !(data->type &= types))
         goto out;
