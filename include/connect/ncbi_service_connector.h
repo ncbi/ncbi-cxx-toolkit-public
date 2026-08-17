@@ -67,6 +67,12 @@ typedef struct {
 } SSERVICE_Extra;
 
 
+/** Create a SERVICE connector.
+ * See SERV_OpenEx() in <connect/ncbi_service.h> for the description of the
+ * accepted service names.
+ * @sa
+ *   CONN_CreateEx, SERV_OpenEx
+ */
 extern NCBI_XCONNECT_EXPORT CONNECTOR SERVICE_CreateConnectorEx
 (const char*           service,
  TSERV_Type            types,
