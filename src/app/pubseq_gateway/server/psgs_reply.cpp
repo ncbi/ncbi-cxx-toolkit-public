@@ -417,6 +417,21 @@ void CPSGS_Reply::PrepareBioseqMessage(size_t  item_id,
     if (m_ConnectionCanceled || IsFinished())
         return;
 
+    string      ambiguity_json;
+    if (status == CRequestStatus::e300_MultipleChoices) {
+        ambiguity_json = proc->m_CacheAmbiguityJson;
+        if (!proc->m_CassAmbiguityJson.empty()) {
+            ambiguity_json = proc->m_CassAmbiguityJson;
+        }
+    }
+
+    if (status == CRequestStatus::e300_MultipleChoices && !ambiguity_json.empty()) {
+        // Ambiguity severity must be an error in the PSG chunk.
+        // For the applog and other purposes like error/warning counters the
+        // severity is warning. So adjust it here.
+        severity = eDiag_Error;
+    }
+
     string  header = GetBioseqMessageHeader(item_id, processor_id,
                                             msg.size(), status,
                                             err_code, severity);
@@ -431,11 +446,6 @@ void CPSGS_Reply::PrepareBioseqMessage(size_t  item_id,
     ++m_TotalSentReplyChunks;
 
     if (status == CRequestStatus::e300_MultipleChoices) {
-        string      ambiguity_json = proc->m_CacheAmbiguityJson;
-        if (!proc->m_CassAmbiguityJson.empty()) {
-            ambiguity_json = proc->m_CassAmbiguityJson;
-        }
-
         if (!ambiguity_json.empty()) {
             size_t      ambiguity_item_id = GetItemId();
             string      ambiguity_header = GetBioseqMatchHeader(ambiguity_item_id,
