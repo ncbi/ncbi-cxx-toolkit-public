@@ -539,7 +539,8 @@ NCBIcomponent_report(OpenGL)
 
 ##############################################################################
 # GRPC/PROTOBUF
-NCBI_define_Xcomponent(NAME PROTOBUF CMAKE_PACKAGE Protobuf CMAKE_LIB libprotobuf
+NCBI_define_Xcomponent(NAME PROTOBUF INTERFACELIB protobuf::protobuf
+    CMAKE_PACKAGE Protobuf CMAKE_LIB libprotobuf
     PACKAGE Protobuf LIB protobuf CHECK_INCLUDE google/protobuf/stubs/platform_macros.h)
 NCBIcomponent_report(PROTOBUF)
 if(NOT NCBI_PROTOC_APP)
@@ -560,7 +561,7 @@ if(NCBI_TRACE_COMPONENT_PROTOBUF OR NCBI_TRACE_ALLCOMPONENTS)
     message("NCBI_PROTOC_APP = ${NCBI_PROTOC_APP}")
 endif()
 
-NCBI_define_Xcomponent(NAME GRPC CMAKE_PACKAGE gRPC CMAKE_LIB grpc++)
+NCBI_define_Xcomponent(NAME GRPC INTERFACELIB grpc::grpc CMAKE_PACKAGE gRPC CMAKE_LIB grpc++)
 if(NOT NCBI_COMPONENT_GRPC_FOUND)
     NCBI_define_Xcomponent(NAME Boring LIB boringssl boringcrypto)
     NCBI_define_Xcomponent(NAME GRPC MODULE grpc++ LIB

@@ -676,9 +676,16 @@ NCBI_define_Xcomponent(NAME XERCES MODULE xerces-c PACKAGE XercesC LIB xerces-c)
 NCBIcomponent_report(XERCES)
 
 ##############################################################################
-# GRPC/PROTOBUF
+# Abseil
+# Explicitly cover a subset of Abseil, for the potential sake of OpenTelemetry
+NCBI_define_Xcomponent(NAME Abseil INTERFACELIB abseil::abseil
+    CMAKE_PACKAGE absl CMAKE_LIB strings bad_variant_access any base bits city
+    PACKAGE absl)
 
-NCBI_define_Xcomponent(NAME PROTOBUF CMAKE_PACKAGE Protobuf CMAKE_LIB libprotobuf
+##############################################################################
+# GRPC/PROTOBUF
+NCBI_define_Xcomponent(NAME PROTOBUF INTERFACELIB protobuf::protobuf
+    CMAKE_PACKAGE Protobuf CMAKE_LIB libprotobuf
     PACKAGE Protobuf LIB protobuf CHECK_INCLUDE google/protobuf/stubs/platform_macros.h)
 NCBIcomponent_report(PROTOBUF)
 if(NOT NCBI_PROTOC_APP)
@@ -708,7 +715,7 @@ if(NCBI_TRACE_COMPONENT_PROTOBUF OR NCBI_TRACE_ALLCOMPONENTS)
     message("NCBI_PROTOC_APP = ${NCBI_PROTOC_APP}")
 endif()
 
-NCBI_define_Xcomponent(NAME GRPC CMAKE_PACKAGE gRPC CMAKE_LIB grpc++)
+NCBI_define_Xcomponent(NAME GRPC INTERFACELIB grpc::grpc CMAKE_PACKAGE gRPC CMAKE_LIB grpc++)
 if(NOT NCBI_COMPONENT_GRPC_FOUND)
     NCBI_define_Xcomponent(NAME Boring LIB boringssl boringcrypto)
     NCBI_define_Xcomponent(NAME GRPC MODULE grpc++ LIB
@@ -748,13 +755,11 @@ if(NCBI_TRACE_COMPONENT_GRPC OR NCBI_TRACE_ALLCOMPONENTS)
     message("NCBI_GRPC_PLUGIN = ${NCBI_GRPC_PLUGIN}")
 endif()
 
-# Explicitly cover a subset of Abseil, for the potential sake of OpenTelemetry
-NCBI_define_Xcomponent(NAME Abseil CMAKE_PACKAGE absl PACKAGE absl
-  CMAKE_LIB strings bad_variant_access any base bits city)
-
+#############################################################################
+# GFlags
 # Explicitly cover GFlags (from an older installation), for the
 # potential sake of RocksDB
-NCBI_define_Xcomponent(NAME GFlags CMAKE_PACKAGE gflags CMAKE_LIB gflags)
+NCBI_define_Xcomponent(NAME GFlags INTERFACELIB gflags::gflags CMAKE_PACKAGE gflags CMAKE_LIB gflags)
 
 #############################################################################
 # XALAN
@@ -846,7 +851,7 @@ NCBIcomponent_report(URing)
 
 #############################################################################
 # ROCKSDB
-NCBI_define_Xcomponent(NAME ROCKSDB CMAKE_PACKAGE RocksDB CMAKE_LIB rocksdb)
+NCBI_define_Xcomponent(NAME ROCKSDB INTERFACELIB RocksDB::rocksdb CMAKE_PACKAGE RocksDB CMAKE_LIB rocksdb)
 NCBIcomponent_report(ROCKSDB)
 
 #############################################################################
@@ -951,7 +956,7 @@ NCBIcomponent_report(THRIFT)
 
 #############################################################################
 # NLohmann_JSON
-NCBI_define_Xcomponent(NAME NLohmann_JSON CMAKE_PACKAGE nlohmann_json)
+NCBI_define_Xcomponent(NAME NLohmann_JSON INTERFACELIB nlohmann_json::nlohmann_json CMAKE_PACKAGE nlohmann_json)
 NCBIcomponent_report(NLohmann_JSON)
 
 #############################################################################
@@ -972,8 +977,7 @@ NCBIcomponent_report(JAEGER)
 #############################################################################
 # OPENTELEMETRY
 NCBI_define_Xcomponent(NAME OPENTELEMETRY CMAKE_PACKAGE opentelemetry-cpp
-  CMAKE_LIB otlp_grpc_exporter otlp_http_exporter ostream_span_exporter
-            metrics)
+    CMAKE_LIB otlp_grpc_exporter otlp_http_exporter ostream_span_exporter metrics)
 NCBIcomponent_report(OPENTELEMETRY)
 
 #############################################################################
@@ -988,7 +992,7 @@ if(NOT NCBI_COMPONENT_AWS_SDK_FOUND AND NOT NCBI_COMPONENT_Z_DISABLED)
         aws-cpp-sdk-sts aws-cpp-sdk-s3 aws-cpp-sdk-iam aws-cpp-sdk-cognito-identity
         aws-cpp-sdk-core aws-c-event-stream aws-checksums aws-c-common
         crypto ssl ADD_COMPONENT CURL
-        CMAKE_PACKAGE AWSSDK COMPONENTS s3
+        INTERFACELIB aws-sdk-cpp::aws-sdk-cpp CMAKE_PACKAGE AWSSDK COMPONENTS s3
     )
     if(NCBI_COMPONENT_AWS_SDK_FOUND AND NOT TARGET ZLIB::ZLIB)
         find_package(ZLIB REQUIRED)
@@ -1005,7 +1009,7 @@ NCBIcomponent_report(SSH)
 #############################################################################
 # IPS4O
 if(NOT NCBI_COMPONENT_IPS4O_FOUND)
-    NCBI_define_Xcomponent(NAME TBB CMAKE_PACKAGE TBB CMAKE_LIB tbb)
+    NCBI_define_Xcomponent(NAME TBB INTERFACELIB onetbb::onetbb CMAKE_PACKAGE TBB CMAKE_LIB tbb)
     NCBIcomponent_report(TBB)
     if(NCBI_COMPONENT_TBB_FOUND)
         get_target_property(TBB_INCLUDE_DIR TBB::tbb INTERFACE_INCLUDE_DIRECTORIES)
