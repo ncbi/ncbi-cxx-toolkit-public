@@ -8865,6 +8865,24 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
         }
     }
 
+    bool is_circular = false;
+    bool is_complete = false;
+
+    if (bsh.IsSetInst_Topology() && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular) {
+        is_circular = true;
+    }
+
+    for (CSeqdesc_CI di(m_CurrentHandle); di; ++di) {
+        const CSeqdesc& desc = *di;
+
+        if (desc.Which() == CSeqdesc::e_Molinfo) {
+            const CMolInfo& molinfo = desc.GetMolinfo();
+            if ( molinfo.IsSetCompleteness() && molinfo.GetCompleteness() == CMolInfo::eCompleteness_complete) {
+                is_complete = true;
+            }
+        }
+    }
+
     for (CSeqdesc_CI di(m_CurrentHandle); di; ++di) {
         const CSeqdesc& desc = *di;
 
@@ -8946,7 +8964,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
         case CSeqdesc::e_Source: {
             const CSeqdesc::TSource& source = desc.GetSource();
 
-            m_Imp.ValidateBioSourceForSeq (source, desc, &ctx, m_CurrentHandle);
+            m_Imp.ValidateBioSourceForSeq (source, desc, &ctx, m_CurrentHandle, is_complete, is_circular);
 
             // look at orgref in comparison to other descs
             if (source.IsSetOrg()) {
