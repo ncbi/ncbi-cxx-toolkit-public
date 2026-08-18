@@ -1043,6 +1043,15 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_ProkaryoteChromosomeHasLetters,
     { "ProkaryoteChromosomeHasLetters",
         "Prokaryote chromosome name should not have letters" }},
+    { eErr_SEQ_DESCR_EukaryoteWithoutChromosome,
+    { "EukaryoteWithoutChromosome",
+        "Eukaryotic chromosome does not have chromosome qualifier" }},
+    { eErr_SEQ_DESCR_EukaryoteCompleteChromosome,
+    { "EukaryoteCompleteChromosome",
+        "Eukaryotic chromosome should not be complete" }},
+    { eErr_SEQ_DESCR_EukaryoteCircularChromosome,
+    { "EukaryoteCircularChromosome",
+        "Eukaryotic chromosome should not be complete and circular" }},
 
     /* SEQ_GENERIC */
 

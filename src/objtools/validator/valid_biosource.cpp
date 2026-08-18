@@ -2330,7 +2330,9 @@ void CValidError_imp::ValidateBioSourceForSeq
 (const CBioSource&    source,
 const CSerialObject& obj,
 const CSeq_entry    *ctx,
-const CBioseq_Handle& bsh)
+const CBioseq_Handle& bsh,
+const bool is_complete,
+const bool is_circular)
 {
     m_biosource_kind = source;
 
@@ -2394,10 +2396,13 @@ const CBioseq_Handle& bsh)
     }
 
     bool isViral = false;
+    bool isEukaryote = false;
     if (source.IsSetLineage()) {
         string lineage = source.GetLineage();
         if (NStr::StartsWith(lineage, "Viruses; ", NStr::eNocase) || NStr::EqualNocase(lineage, "Viruses")) {
             isViral = true;
+        } else if (NStr::StartsWith(lineage, "Eukaryota; ", NStr::eNocase) || NStr::EqualNocase(lineage, "Eukaryota")) {
+            isEukaryote = true;
         }
     }
 
@@ -2450,6 +2455,8 @@ const CBioseq_Handle& bsh)
 
     // validate subsources in context
 
+    bool has_chromosome = false;
+
     FOR_EACH_SUBSOURCE_ON_BIOSOURCE(it, source)
     {
         if (!(*it)->IsSetSubtype()) {
@@ -2474,11 +2481,33 @@ const CBioseq_Handle& bsh)
                 }
             }
             break;
+        case CSubSource::eSubtype_chromosome:
+            has_chromosome = true;
+            break;
         default:
             break;
         }
     }
 
+
+    if (IsIndexerVersion() && source.IsSetGenome() && source.GetGenome() == CBioSource::eGenome_chromosome && isEukaryote) {
+        if (! has_chromosome) {
+            PostObjErr(eDiag_Info, eErr_SEQ_DESCR_EukaryoteWithoutChromosome,
+                "INDEXER_ONLY - Eukaryotic chromosome does not have chromosome qualifier",
+                obj, ctx);
+        }
+        if (is_complete) {
+            if (is_circular) {
+                PostObjErr(eDiag_Info, eErr_SEQ_DESCR_EukaryoteCircularChromosome,
+                    "INDEXER_ONLY - Eukaryotic chromosome should not be complete and circular",
+                    obj, ctx);
+            } else {
+                PostObjErr(eDiag_Info, eErr_SEQ_DESCR_EukaryoteCompleteChromosome,
+                    "INDEXER_ONLY - Eukaryotic chromosome should not be complete",
+                    obj, ctx);
+            }
+        }
+    }
 
     // look at orgref in context
     if (source.IsSetOrg()) {

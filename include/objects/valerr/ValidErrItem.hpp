@@ -375,6 +375,9 @@ enum EErrType {
     eErr_SEQ_DESCR_EmptySubSourceList,
     eErr_SEQ_DESCR_EmptyOrgModList,
     eErr_SEQ_DESCR_ProkaryoteChromosomeHasLetters,
+    eErr_SEQ_DESCR_EukaryoteWithoutChromosome,
+    eErr_SEQ_DESCR_EukaryoteCompleteChromosome,
+    eErr_SEQ_DESCR_EukaryoteCircularChromosome,
     ERR_CODE_END(SEQ_DESCR),
 
 
