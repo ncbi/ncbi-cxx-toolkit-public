@@ -284,7 +284,7 @@ char* GetGenBankBlock(TDataBlkList& chain, char* ptr, Int2* retkw, char* eptr)
     char* offset;
     int   curkw;
     int   nextkw;
-    Int4  len;
+    size_t len;
 
     len    = 0;
     offset = ptr;
