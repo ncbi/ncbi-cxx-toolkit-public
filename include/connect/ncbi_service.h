@@ -76,13 +76,13 @@ typedef const SSERV_Info* SSERV_InfoCPtr;
  *  ESERV_Type, ESERV_OpenEx, SERV_GetInfoEx
  */
 enum ESERV_TypeSpecial {
-    fSERV_Any               = 0,
-    fSERV_All               = 0x00007FFF,  /**< Server type mask             */
+    fSERV_Any               = 0,           /**< Any type but fSERV_Dns       */
+    fSERV_All               = 0x00007FFF,  /**< Server type mask, really any */
     fSERV_Stateless         = 0x00008000,  /**< Stateless servers only       */
     fSERV_Reserved          = 0x00100000,  /**< Reserved, MBZ                */
     fSERV_DelayOpen         = 0x00400000,  /**< Don't open service until use */
     fSERV_ReverseDns        = 0x00800000,  /**< Reverse convert to DNS-type  */
-    /* The following allow to get otherwise excluded service instances       */
+    /* The following allow to get otherwise excluded server infos            */
     fSERV_IncludeDown       = 0x08000000,
     fSERV_IncludeStandby    = 0x10000000,
     fSERV_IncludeReserved   = 0x20000000,  /**< @note Not yet implemented    */
@@ -100,18 +100,18 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *       'hbo' stands for 'host byte order'.
  *
  * @param service
- *  A service name, may not be NULL or empty.
- * 
+ *  A service name; may not be NULL or empty.
+ *
  * @note A valid service name consists of a sequence of special identifiers
  *       separated by single slashes.  An identifier may contain only
  *       alphanumeric characters (including underscores) and embedded dashes
  *       (minus signs); a dash may not be adjacent to another dash or an
  *       underscore.  The first identifier must start with a letter or an
  *       underscore and must contain at least one letter.  Subsequent
- *       identifiers, if any, are not required to have a letter.
+ *       identifiers, if any, are not required to contain a letter.
  *
  *       A service name consisting of two or more identifiers is called a
- *       compound (or cataloged) name and can only be processed by the LOCAL,
+ *       compound (or cataloged) name and can be processed only by the LOCAL,
  *       LINKERD, and NAMERD service mappers.
  *
  *       A single-identifier service name may be followed by a dot and a
@@ -125,38 +125,34 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *       Compound service names may not have domain parts.
  *
  * @note A domain-suffixed service name may _also_ include a prefix consisting
- *       of dash-separated words followed by "-legacy-".  For all _legacy_
- *       resolvers, both the prefix and the domain suffix are stripped from the
- *       service name.  For the new LBNULL resolver designed for the P2
- *       environment, however, both parts remain significant.
+ *       of dash-separated words and terminated by "-legacy-".  The
+ *       "-legacy-" marker triggers this special treatment: without it, the
+ *       entire label preceding the domain part constitutes the service name
+ *       and no prefix stripping is performed.  The domain part itself remains
+ *       insignificant for service-related parameter lookups in the registry
+ *       or the environment, as described above.
+ *
+ *       For all _legacy_ resolvers, both the prefix (including the "-legacy-"
+ *       marker) and the domain suffix are stripped from the service name.
+ *       For the new LBNULL resolver designed for the P2 environment, however,
+ *       both parts remain significant.
  *
  *       The name remaining after stripping constitutes the legacy service
  *       name.  For lookups performed by legacy mappers, any dashes in that
  *       name are converted to underscores, unless the name is redirected
  *       (see below), case-insensitively, to the same name with some (or all)
- *       of the underscores replaced back with dashes; in that case, the name
- *       is used "as is" (with whatever dashes there are).  Also, the case
- *       is preserved in the same-name redirects.
+ *       of the underscores replaced back with dashes.  In that case, the name
+ *       is used "as is", with whatever dashes it contains.  The case is also
+ *       preserved for such same-name redirects.
  *
  * @note A service name may be prefixed with a server type, analogous to a URL
  *       scheme.  The scheme consists of a recognized server type followed by
- *       "+ncbilb://" (all case-insensitive).  As a special case,
+ *       "+ncbilb://".  The entire scheme is case-insensitive.  Additionally,
  *       "tcp+ncbilb://" is equivalent to "standalone+ncbilb://".
  *
  *       The specified server type restricts the search to servers of that
- *       particular type.  If the specified type conflicts with the in-code
- *       type selection specified by the "types" argument, the search fails.
- *
- * @note As an extension to the valid service names described above, the API
- *       also accepts URL-like strings in place of service names.  Based on
- *       their syntax, such strings can be interpreted as STANDALONE, HTTP, or
- *       DNS endpoints, depending on the server types requested by the call.
- *       This interpretation is attempted only when the input does not appear
- *       to be a valid service name.
- *
- *       To disable this fallback behavior, use the global Boolean setting
- *       [CONN]SERVICE_ENDPOINT_FALLBACK_DISABLE in the registry or, with
- *       precedence, CONN_SERVICE_ENDPOINT_FALLBACK_DISABLE in the environment.
+ *       particular type.  If this type conflicts with the in-code type
+ *       selection established by the "types" argument, the search fails.
  *
  * @note Examples of valid service names:
  *
@@ -164,7 +160,16 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *           A plain legacy service name, "echo".
  *
  *       "sutils201.be-md"
- *           A domain-enabled legacy service name, "sutils201".
+ *           A domain-enabled legacy service name, "sutils201"; the domain part
+ *           is insignificant for parameter lookups.
+ *
+ *       "a-simple-dashed-service"
+ *           A literal service name, "a-simple-dashed-service".
+ *
+ *       "a-simple-dashed-service.domain"
+ *           The same service name, "a-simple-dashed-service"; the domain part
+ *           is insignificant for parameter lookups but is used by LBNULL for
+ *           routing.
  *
  *       "cxxtk-tech-legacy-nc-test.bethesda-dev.consul.be-md"
  *           A "decorated" P2 service name corresponding to the legacy service
@@ -180,6 +185,44 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *       "PmQuerySrv/pubmed"
  *           A compound service name (used mainly in P1).
  *
+ * @note As an extension to the valid service names described above, the API
+ *       also accepts URL-like strings in place of service names.  Based on
+ *       their syntax, such strings can be interpreted as STANDALONE, HTTP, or
+ *       DNS endpoints, depending on the server types requested by the call.
+ *       This interpretation is attempted only when the input does not appear
+ *       to be a valid service name.
+ *
+ *       To disable this fallback behavior, use the global Boolean setting
+ *       [CONN]SERVICE_ENDPOINT_FALLBACK_DISABLE in the registry or, with
+ *       precedence, CONN_SERVICE_ENDPOINT_FALLBACK_DISABLE in the environment.
+ *
+ * @note When a URL-like service name is parsed through the fallback mechanism
+ *       described above, the global setting CONN_IMPLICIT_SERVER_TYPE=type
+ *       can be used to hint how an incomplete URL is to be interpreted.  For
+ *       example, "//hostname/" is interpreted as a DNS endpoint when
+ *       CONN_IMPLICIT_SERVER_TYPE is set to "dns" and the "types" parameter
+ *       permits all server types (fSERV_All).
+ *
+ *       If a service name is also known, such as when service name redirection
+ *       (see below) produces a URL-like target, a service-specific setting is
+ *       consulted first:
+ *
+ *           [service]
+ *           CONN_IMPLICIT_SERVER_TYPE=type
+ *
+ *       or the equivalent, higher-precedence environment setting
+ *
+ *           service_CONN_IMPLICIT_SERVER_TYPE=type
+ *
+ *       If no applicable service-specific setting is found, the global,
+ *       non-service-specific CONN_IMPLICIT_SERVER_TYPE setting is used.
+ *
+ *       CONN_IMPLICIT_SERVER_TYPE is only a hint and is ignored if it
+ *       conflicts with the server types allowed by the "types" parameter.
+ *       Unlike a server type specified in the service-name scheme (see above)
+ *       or CONN_SERVER_TYPE (see below), it never overrides the requested type
+ *       selection and cannot, by itself, cause the search to fail.
+ *
  * @note Finally, service names can be redirected through the registry or the
  *       environment.  A registry entry
  *
@@ -193,34 +236,74 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *       "newvalue".  In the environment variable name, all non-alphanumeric
  *       characters in "service" must be replaced with underscores.
  *
- *       Redirection is recursive and stops when either of the following
- *       occurs:
- *       1. no further redirection is found, or
- *       2. a redirected-to "newvalue" is the same as the redirected-from
- *           name (case-insensitively, and disregarding the dash / underscore /
- *           prefix and domain matching in case of a domain-enabled from-name)
- *           -- in this case "newvalue" is used in its exact form "as is" (the
- *           case and dash conversions are disabled), or
- *       3. a redirection produces a "newvalue" that is not a valid service
- *           name.  In this case, the service name itself does not change.
- *           However, if "newvalue" is a recognized URL-like string, that
- *           value is used to construct ("cook") an endpoint rather than
- *           resolve the service through service mappers (see the note above).
- * 
- *       Also, redirection ignores any server type "scheme", if encountered
- *       interim, except for the final "newvalue".
+ *       Redirection is recursive and stops when any of the following occurs:
  *
- *       Examples:
+ *       1. no further redirection is found; or
+ *
+ *       2. the redirection target "newvalue" is the same as the source name,
+ *          case-insensitively and, for a domain-enabled source name,
+ *          disregarding dash/underscore differences and the legacy prefix and
+ *          domain parts.  In this case, "newvalue" is used in its exact form,
+ *          "as is" (case and dash conversions are disabled); or
+ *
+ *       3. a redirection produces a "newvalue" that is not a valid service
+ *          name.  In this case, the service name itself does not change.
+ *          However, if "newvalue" is a recognized URL-like string, that value
+ *          is used to construct ("cook") an endpoint rather than resolve the
+ *          service through service mappers (see the note above); or
+ *
+ *       4. the redirection depth reaches the limit of 10, preventing possible
+ *          infinite redirection loops.
+ *
+ *       Any server type "scheme" encountered in an intermediate redirection
+ *       target is ignored; only the scheme, if any, of the final "newvalue"
+ *       is retained.
+ *
+ *       Examples (using the environment, for simplicity):
  *
  *       id2_CONN_SERVICE_NAME=id2_internal
- *           Redirects service ID2 to ID2_INTERNAL.
+ *           Redirects service "ID2" to "ID2_INTERNAL".
+ *
+ *       bounce_CONN_SERVICE_NAME="ncbid+ncbilb://bounce"
+ *           Redirects service "BOUNCE" to itself but restricts the server type
+ *           to NCBID.  As a side effect, the case of "bounce" is also
+ *           preserved by any mappers that support that.
  *
  *       echo_CONN_SERVICE_NAME="host:port"
- *           Resolves service "ECHO" to "host" and "port" (provided that
- *           lookup allowed STANDALONE and/or DNS type). 
+ *           Resolves service "ECHO" to "host" and "port" (provided that the
+ *           lookup allows the STANDALONE and/or DNS server types).
+ *
+ *       svc_CONN_SERVICE_NAME="ncbid+ncbilb://cxxtk-legacy-svc2.be-md"
+ *       svc2_CONN_SERVICE_NAME="http+ncbilb://svc3"
+ *       svc3_CONN_SERVER_TYPE=tcp
+ *           Redirects service "svc" via "svc2" to "svc3" and restricts the
+ *           server type to STANDALONE (synonymous with "tcp").  Note that all
+ *           intermediate server-type schemes and legacy "decorations" (such
+ *           as those for "svc2") are ignored.  Without the final
+ *           CONN_SERVER_TYPE setting, the resulting server type would be HTTP,
+ *           as specified alongside the terminal service name "svc3".
+ *
+ *       svc_CONN_SERVICE_NAME=demo-legacy-svc-dashed.st-va
+ *       svc_dashed_CONN_SERVICE_NAME=svc-simple.be-md
+ *           Redirects "svc" via the decorated legacy name "svc-dashed" to the
+ *           literal service name "svc-simple".  The first redirection target
+ *           is stripped of its legacy prefix and domain, while the second is
+ *           a regular dashed service name and remains "svc-simple".  The
+ *           domain parts are not part of either service name.
+ *
+ *           If the target of svc_dashed_CONN_SERVICE_NAME were instead
+ *           "svc-dashed.be-md", it would redirect "svc" to "svc-dashed", with
+ *           that name used by all legacy mappers without case or
+ *           dash-to-underscore conversions.
+ *
+ *           The same redirection applies to an equivalent decorated legacy
+ *           input, such as "cxxtk-legacy-svc.be-md", which is first stripped
+ *           to "svc".
  *
  *       PmQuerySrv_CONN_SERVICE_NAME=PmQuerySrv
- *           Makes sure that "PmQuerySrv" is used "as is" (no uppercasing).
+ *       or
+ *       PMQUERYSRV_CONN_SERVICE_NAME=PmQuerySrv
+ *           Both ensure that "PmQuerySrv" is used "as is" (no uppercasing).
  *
  *       Name redirection is performed internally by all service-aware APIs
  *       (e.g. ConnNetInfo_Create() and ConnNetInfo_GetValue()) and allows
@@ -233,8 +316,27 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *       See <connect/ncbi_connutil.h>.
  *
  * @param types
- *  A bitset of type(s) of servers requested.
+ *  A bitset specifying the requested server type(s).
  *
+ * @note A server type, if any, specified as a prefix to the service name
+ *       (see above) restricts the default selection implied by this "types"
+ *       parameter, but must be compatible with it; otherwise, the search
+ *       fails.  The server type can be further overridden at run time by the
+ *       registry entry
+ *
+ *           [service]
+ *           CONN_SERVER_TYPE=type
+ *
+ *       or the equivalent, higher-precedence environment setting
+ *
+ *           service_CONN_SERVER_TYPE=type
+ *
+ *       where "service" is the terminal service name obtained after all
+ *       service name redirections, if any.  An unrecognized or invalid "type"
+ *       is ignored (and an error is logged).  A valid "type" takes final
+ *       precedence, but must likewise be compatible with this "types"
+ *       parameter; otherwise, the search fails.
+ * 
  * @param preferred_host
  *  Preferred host to use the service at, nbo.
  * 

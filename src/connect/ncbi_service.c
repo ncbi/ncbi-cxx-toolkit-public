@@ -323,7 +323,8 @@ static const char* x_ServiceScheme(const char* svc, ESERV_Type* type)
 
     if (!scheme  ||  !scheme[3]  ||  (len = (size_t)(scheme - svc)) <= sizeof(NCBI_SCHEME_SERVICE))
         return svc;
-    len -= sizeof(NCBI_SCHEME_SERVICE);
+    if ((len -= sizeof(NCBI_SCHEME_SERVICE)) > 16/*NB: assume the longest "type" name!*/)
+        return svc;
     if (strncasecmp(svc + len, "+" NCBI_SCHEME_SERVICE, sizeof(NCBI_SCHEME_SERVICE)) != 0)
         return svc;
 
@@ -1093,14 +1094,16 @@ static SERV_ITER x_Open(const char*         service,
     if (!svc  ||  url)
         type = (ESERV_Type) fSERV_Any/*0*/;
     if (svc  &&  !ismask) {
+        int/*bool*/ tcp = 0/*false*/;
         char        buf[40];
         ESERV_Type  x_type;
         const char* end, *typ = ConnNetInfo_GetValueService(svc, REG_CONN_SERVER_TYPE,
                                                             buf, sizeof(buf), 0);
         assert(*svc);
         if (!typ
-            ||  (*typ
-                 &&  (!(end = SERV_ReadType(typ, &x_type))  ||  *end  ||  x_type == fSERV_Firewall))) {
+            ||  (*typ  &&  !(tcp = strcasecmp(typ, "tcp") == 0)
+                 &&  (!(end = SERV_ReadType(typ, &x_type))
+                      ||  *end  ||  x_type == fSERV_Firewall))) {
             CORE_LOGF_X(17, eLOG_Error,
                         ("[%s]  %s server type%s%s%s%s", svc,
                          !typ ? "Cannot read"  :
@@ -1110,8 +1113,10 @@ static SERV_ITER x_Open(const char*         service,
                          typ  ? " ignored"     : ""));
             if (typ)
                 type = (ESERV_Type) fSERV_Any/*0*/;
-        } else if (*typ)
-            type = x_type;
+        } else if (*typ) {
+            type = tcp ? fSERV_Standalone : x_type;
+            assert(type);
+        }
     }
     if (type/*!= fSERV_Any*/) {
         assert(svc  &&  *svc);
