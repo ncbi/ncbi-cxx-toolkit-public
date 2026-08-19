@@ -199,7 +199,7 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  * @note When a URL-like service name is parsed through the fallback mechanism
  *       described above, the global setting CONN_IMPLICIT_SERVER_TYPE=type
  *       can be used to hint how an incomplete URL is to be interpreted.  For
- *       example, "//hostname/" is interpreted as a DNS endpoint when
+ *       example, "//hostname/" is interpreted as a DNS-type endpoint when
  *       CONN_IMPLICIT_SERVER_TYPE is set to "dns" and the "types" parameter
  *       permits all server types (fSERV_All).
  *
@@ -261,7 +261,7 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *
  *       Examples (using the environment, for simplicity):
  *
- *       id2_CONN_SERVICE_NAME=id2_internal
+ *       id2_CONN_SERVICE_NAME="id2_internal"
  *           Redirects service "ID2" to "ID2_INTERNAL".
  *
  *       bounce_CONN_SERVICE_NAME="ncbid+ncbilb://bounce"
@@ -275,7 +275,7 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *
  *       svc_CONN_SERVICE_NAME="ncbid+ncbilb://cxxtk-legacy-svc2.be-md"
  *       svc2_CONN_SERVICE_NAME="http+ncbilb://svc3"
- *       svc3_CONN_SERVER_TYPE=tcp
+ *       svc3_CONN_SERVER_TYPE="tcp"
  *           Redirects service "svc" via "svc2" to "svc3" and restricts the
  *           server type to STANDALONE (synonymous with "tcp").  Note that all
  *           intermediate server-type schemes and legacy "decorations" (such
@@ -283,8 +283,8 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *           CONN_SERVER_TYPE setting, the resulting server type would be HTTP,
  *           as specified alongside the terminal service name "svc3".
  *
- *       svc_CONN_SERVICE_NAME=demo-legacy-svc-dashed.st-va
- *       svc_dashed_CONN_SERVICE_NAME=svc-simple.be-md
+ *       svc_CONN_SERVICE_NAME="demo-legacy-svc-dashed.st-va"
+ *       svc_dashed_CONN_SERVICE_NAME="svc-simple.be-md"
  *           Redirects "svc" via the decorated legacy name "svc-dashed" to the
  *           literal service name "svc-simple".  The first redirection target
  *           is stripped of its legacy prefix and domain, while the second is
@@ -300,9 +300,9 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *           input, such as "cxxtk-legacy-svc.be-md", which is first stripped
  *           to "svc".
  *
- *       PmQuerySrv_CONN_SERVICE_NAME=PmQuerySrv
+ *       PmQuerySrv_CONN_SERVICE_NAME="PmQuerySrv"
  *       or
- *       PMQUERYSRV_CONN_SERVICE_NAME=PmQuerySrv
+ *       PMQUERYSRV_CONN_SERVICE_NAME="PmQuerySrv"
  *           Both ensure that "PmQuerySrv" is used "as is" (no uppercasing).
  *
  *       Name redirection is performed internally by all service-aware APIs
