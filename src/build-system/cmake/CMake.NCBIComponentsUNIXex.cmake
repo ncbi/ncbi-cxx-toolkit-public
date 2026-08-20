@@ -261,7 +261,7 @@ NCBIcomponent_report(NCBI_C)
 
 #############################################################################
 # BACKWARD, UNWIND
-NCBI_define_Xcomponent(NAME BACKWARD)
+NCBI_define_Xcomponent(NAME BACKWARD INTERFACELIB Backward::Backward)
 NCBIcomponent_report(BACKWARD)
 if(NCBI_COMPONENT_BACKWARD_FOUND)
     set(HAVE_LIBBACKWARD_CPP YES)
@@ -281,7 +281,7 @@ if(NOT NCBI_COMPONENT_UNWIND_FOUND)
     if(NOT CYGWIN OR (DEFINED NCBI_COMPONENT_UNWIND_DISABLED AND NOT NCBI_COMPONENT_UNWIND_DISABLED))
         check_include_file(libunwind.h HAVE_LIBUNWIND_H)
         if(HAVE_LIBUNWIND_H)
-            NCBI_define_Xcomponent(NAME UNWIND MODULE libunwind LIB unwind)
+            NCBI_define_Xcomponent(NAME UNWIND INTERFACELIB libunwind::libunwind MODULE libunwind LIB unwind)
         endif()
     endif()
 endif()
@@ -302,12 +302,12 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 else()
     set(_check uuid/uuid.h)
 endif()
-NCBI_define_Xcomponent(NAME UUID MODULE uuid LIB uuid CHECK_INCLUDE ${_check})
+NCBI_define_Xcomponent(NAME UUID INTERFACELIB libuuid::libuuid MODULE uuid LIB uuid CHECK_INCLUDE ${_check})
 NCBIcomponent_report(UUID)
 
 ##############################################################################
 # CURL
-NCBI_define_Xcomponent(NAME CURL MODULE libcurl PACKAGE CURL LIB curl CHECK_INCLUDE curl/curl.h)
+NCBI_define_Xcomponent(NAME CURL INTERFACELIB CURL::libcurl MODULE libcurl PACKAGE CURL LIB curl CHECK_INCLUDE curl/curl.h)
 if(NCBI_COMPONENT_CURL_FOUND AND NOT TARGET CURL::libcurl)
     add_library(CURL::libcurl UNKNOWN IMPORTED GLOBAL)
     set_target_properties(CURL::libcurl PROPERTIES
@@ -331,10 +331,10 @@ set(HAVE_LIBLMDB ${NCBI_COMPONENT_LMDB_FOUND})
 
 #############################################################################
 # PCRE
-NCBI_define_Xcomponent(NAME PCRE MODULE libpcre LIB pcre CHECK_INCLUDE pcre.h)
+NCBI_define_Xcomponent(NAME PCRE INTERFACELIB pcre::pcre MODULE libpcre LIB pcre CHECK_INCLUDE pcre.h)
 NCBIcomponent_report(PCRE)
 
-NCBI_define_Xcomponent(NAME PCRE2 MODULE libpcre2 LIB pcre2-8)
+NCBI_define_Xcomponent(NAME PCRE2 INTERFACELIB pcre2::pcre2 MODULE libpcre2 LIB pcre2-8)
 NCBIcomponent_report(PCRE2)
 
 if(EXISTS ${NCBITK_INC_ROOT}/util/regexp/pcre.h
@@ -357,7 +357,7 @@ set(HAVE_LIBPCRE2 ${NCBI_COMPONENT_PCRE2_FOUND})
 
 #############################################################################
 # Z
-NCBI_define_Xcomponent(NAME Z MODULE zlib PACKAGE ZLIB LIB z CHECK_INCLUDE zlib.h)
+NCBI_define_Xcomponent(NAME Z INTERFACELIB ZLIB::ZLIB MODULE zlib PACKAGE ZLIB LIB z CHECK_INCLUDE zlib.h)
 NCBIcomponent_report(Z)
 if(NOT NCBI_COMPONENT_Z_FOUND)
     set(NCBI_COMPONENT_Z_FOUND ${NCBI_COMPONENT_LocalZ_FOUND})
@@ -384,7 +384,7 @@ NCBIcomponent_report(LZO)
 
 #############################################################################
 # ZSTD
-NCBI_define_Xcomponent(NAME ZSTD LIB zstd CHECK_INCLUDE zstd.h)
+NCBI_define_Xcomponent(NAME ZSTD INTERFACELIB zstd::libzstd LIB zstd CHECK_INCLUDE zstd.h)
 NCBIcomponent_report(ZSTD)
 if(NCBI_COMPONENT_ZSTD_FOUND AND
     (DEFINED NCBI_COMPONENT_ZSTD_VERSION AND "${NCBI_COMPONENT_ZSTD_VERSION}" VERSION_LESS "1.4"))
@@ -406,12 +406,12 @@ NCBIcomponent_report(Boost)
 
 #############################################################################
 # JPEG
-NCBI_define_Xcomponent(NAME JPEG MODULE libjpeg PACKAGE JPEG LIB jpeg CHECK_INCLUDE jpeglib.h)
+NCBI_define_Xcomponent(NAME JPEG INTERFACELIB JPEG::JPEG MODULE libjpeg PACKAGE JPEG LIB jpeg CHECK_INCLUDE jpeglib.h)
 NCBIcomponent_report(JPEG)
 
 #############################################################################
 # PNG
-NCBI_define_Xcomponent(NAME PNG MODULE libpng PACKAGE PNG LIB png CHECK_INCLUDE png.h)
+NCBI_define_Xcomponent(NAME PNG INTERFACELIB PNG::PNG MODULE libpng PACKAGE PNG LIB png CHECK_INCLUDE png.h)
 NCBIcomponent_report(PNG)
 
 #############################################################################
@@ -421,7 +421,7 @@ NCBIcomponent_report(GIF)
 
 #############################################################################
 # TIFF
-NCBI_define_Xcomponent(NAME TIFF MODULE libtiff-4 PACKAGE TIFF LIB tiff CHECK_INCLUDE tiffio.h)
+NCBI_define_Xcomponent(NAME TIFF INTERFACELIB TIFF::TIFF MODULE libtiff-4 PACKAGE TIFF LIB tiff CHECK_INCLUDE tiffio.h)
 NCBIcomponent_report(TIFF)
 
 #############################################################################
@@ -437,7 +437,7 @@ NCBIcomponent_report(FASTCGIPP)
 #############################################################################
 # SQLITE3
 if(NOT NCBI_COMPONENT_SQLITE3_FOUND)
-    NCBI_define_Xcomponent(NAME SQLITE3 MODULE sqlite3 PACKAGE SQLite3 LIB sqlite3)
+    NCBI_define_Xcomponent(NAME SQLITE3 INTERFACELIB SQLite::SQLite3 MODULE sqlite3 PACKAGE SQLite3 LIB sqlite3)
     if(NCBI_COMPONENT_SQLITE3_FOUND)
         check_symbol_exists(sqlite3_unlock_notify ${NCBI_COMPONENT_SQLITE3_INCLUDE}/sqlite3.h HAVE_SQLITE3_UNLOCK_NOTIFY)
         check_include_file(sqlite3async.h HAVE_SQLITE3ASYNC_H -I${NCBI_COMPONENT_SQLITE3_INCLUDE})
@@ -517,24 +517,26 @@ endif()
 
 if(NOT NCBI_COMPONENT_wxWidgets_FOUND)
     NCBI_define_Xcomponent(NAME GTK2 PACKAGE GTK2)
-    NCBI_define_Xcomponent(NAME FONTCONFIG MODULE fontconfig PACKAGE Fontconfig LIB fontconfig)
+    NCBI_define_Xcomponent(NAME FONTCONFIG INTERFACELIB Fontconfig::Fontconfig MODULE fontconfig PACKAGE Fontconfig LIB fontconfig)
     set(_wx_ver 3.2)
-    NCBI_define_Xcomponent(NAME wxWidgets LIB
-        wx_gtk2_gl-${_wx_ver}
-        wx_gtk2_richtext-${_wx_ver}
-        wx_gtk2_aui-${_wx_ver}
-        wx_gtk2_propgrid-${_wx_ver}
-        wx_gtk2_xrc-${_wx_ver}
-        wx_gtk2_html-${_wx_ver}
-        wx_gtk2_qa-${_wx_ver}
-        wx_gtk2_adv-${_wx_ver}
-        wx_gtk2_core-${_wx_ver}
-        wx_base_xml-${_wx_ver}
-        wx_base_net-${_wx_ver}
-        wx_base-${_wx_ver}
-        wxscintilla-${_wx_ver}
-        INCLUDE wx-${_wx_ver} ADD_COMPONENT FONTCONFIG GTK2
-    )
+    if(NCBI_COMPONENT_GTK2_FOUND AND NCBI_COMPONENT_FONTCONFIG_FOUND)
+        NCBI_define_Xcomponent(NAME wxWidgets LIB
+            wx_gtk2_gl-${_wx_ver}
+            wx_gtk2_richtext-${_wx_ver}
+            wx_gtk2_aui-${_wx_ver}
+            wx_gtk2_propgrid-${_wx_ver}
+            wx_gtk2_xrc-${_wx_ver}
+            wx_gtk2_html-${_wx_ver}
+            wx_gtk2_qa-${_wx_ver}
+            wx_gtk2_adv-${_wx_ver}
+            wx_gtk2_core-${_wx_ver}
+            wx_base_xml-${_wx_ver}
+            wx_base_net-${_wx_ver}
+            wx_base-${_wx_ver}
+            wxscintilla-${_wx_ver}
+            INCLUDE wx-${_wx_ver} ADD_COMPONENT FONTCONFIG GTK2
+        )
+    endif()
     if(NCBI_COMPONENT_wxWidgets_FOUND)
         list(GET NCBI_COMPONENT_wxWidgets_LIBS 0 _lib)
         get_filename_component(_libdir ${_lib} DIRECTORY)
@@ -559,12 +561,12 @@ NCBIcomponent_report(GCRYPT)
 
 #############################################################################
 # XML
-NCBI_define_Xcomponent(NAME XML MODULE libxml-2.0 PACKAGE LibXml2 LIB xml2 INCLUDE libxml2 CHECK_INCLUDE libxml/xmlexports.h)
+NCBI_define_Xcomponent(NAME XML INTERFACELIB LibXml2::LibXml2 MODULE libxml-2.0 PACKAGE LibXml2 LIB xml2 INCLUDE libxml2 CHECK_INCLUDE libxml/xmlexports.h)
 NCBIcomponent_report(XML)
 
 #############################################################################
 # XSLT
-NCBI_define_Xcomponent(NAME XSLT MODULE libxslt PACKAGE LibXslt LIB xslt ADD_COMPONENT XML CHECK_INCLUDE libxslt/xslt.h)
+NCBI_define_Xcomponent(NAME XSLT INTERFACELIB LibXslt::LibXslt MODULE libxslt PACKAGE LibXslt LIB xslt ADD_COMPONENT XML CHECK_INCLUDE libxslt/xslt.h)
 NCBIcomponent_report(XSLT)
 if(NCBI_COMPONENT_XSLT_FOUND)
     if(NOT NCBI_XSLTPROCTOOL)
@@ -587,7 +589,7 @@ endif()
 #############################################################################
 # EXSLT
 if(NOT NCBI_COMPONENT_EXSLT_FOUND)
-    NCBI_define_Xcomponent(NAME EXSLT MODULE libexslt PACKAGE LibXslt LIB exslt ADD_COMPONENT XML GCRYPT CHECK_INCLUDE libexslt/exslt.h)
+    NCBI_define_Xcomponent(NAME EXSLT INTERFACELIB libxslt::libxslt MODULE libexslt PACKAGE LibXslt LIB exslt ADD_COMPONENT XML GCRYPT CHECK_INCLUDE libexslt/exslt.h)
     if(NCBI_COMPONENT_EXSLT_FOUND)
         set(NCBI_COMPONENT_EXSLT_LIBS ${LIBXSLT_EXSLT_LIBRARIES} ${NCBI_COMPONENT_EXSLT_LIBS})
     endif()
@@ -616,12 +618,12 @@ NCBIcomponent_report(SAMTOOLS)
 
 #############################################################################
 # FreeType
-NCBI_define_Xcomponent(NAME FreeType MODULE freetype2 PACKAGE Freetype LIB freetype INCLUDE freetype2)
+NCBI_define_Xcomponent(NAME FreeType INTERFACELIB Freetype::Freetype MODULE freetype2 PACKAGE Freetype LIB freetype INCLUDE freetype2)
 NCBIcomponent_report(FreeType)
 
 #############################################################################
 # FTGL
-NCBI_define_Xcomponent(NAME FTGL MODULE ftgl LIB ftgl INCLUDE FTGL)
+NCBI_define_Xcomponent(NAME FTGL INTERFACELIB ftgl::ftgl MODULE ftgl LIB ftgl INCLUDE FTGL)
 NCBIcomponent_report(FTGL)
 
 #############################################################################
@@ -672,7 +674,7 @@ NCBIcomponent_report(OSMesa)
 
 #############################################################################
 # XERCES
-NCBI_define_Xcomponent(NAME XERCES MODULE xerces-c PACKAGE XercesC LIB xerces-c)
+NCBI_define_Xcomponent(NAME XERCES INTERFACELIB XercesC::XercesC MODULE xerces-c PACKAGE XercesC LIB xerces-c)
 NCBIcomponent_report(XERCES)
 
 ##############################################################################
@@ -763,7 +765,7 @@ NCBI_define_Xcomponent(NAME GFlags INTERFACELIB gflags::gflags CMAKE_PACKAGE gfl
 
 #############################################################################
 # XALAN
-NCBI_define_Xcomponent(NAME XALAN PACKAGE XalanC LIB xalan-c xalanMsg)
+NCBI_define_Xcomponent(NAME XALAN INTERFACELIB xalan-c::xalan-c PACKAGE XalanC LIB xalan-c xalanMsg)
 NCBIcomponent_report(XALAN)
 
 ##############################################################################
@@ -812,7 +814,7 @@ NCBIcomponent_report(SGE)
 
 #############################################################################
 # MONGOCXX
-NCBI_define_Xcomponent(NAME MONGOC LIB mongoc-1.0 bson-1.0)
+NCBI_define_Xcomponent(NAME MONGOC INTERFACELIB mongoc::mongoc LIB mongoc-1.0 bson-1.0)
 if(NCBI_COMPONENT_MONGOC_FOUND)
     list(GET NCBI_COMPONENT_MONGOC_LIBS 0 NCBI_COMPONENT_MONGOC_LIBS_0)
     get_filename_component(NCBI_COMPONENT_MONGOC_LIBDIR ${NCBI_COMPONENT_MONGOC_LIBS_0} DIRECTORY)
@@ -826,7 +828,7 @@ if(NCBI_COMPONENT_MONGOC_FOUND)
         list(APPEND NCBI_COMPONENT_MONGOC_LIBS ${NCBI_COMPONENT_MONGOC_LIBCRYPTO})
     endif()
 endif()
-NCBI_define_Xcomponent(NAME MONGOCXX MODULE libmongocxx LIB mongocxx bsoncxx INCLUDE mongocxx/v_noabi bsoncxx/v_noabi)
+NCBI_define_Xcomponent(NAME MONGOCXX INTERFACELIB mongocxx::mongocxx MODULE libmongocxx LIB mongocxx bsoncxx INCLUDE mongocxx/v_noabi bsoncxx/v_noabi)
 NCBIcomponent_report(MONGOCXX)
 NCBIcomponent_add(MONGOCXX MONGOC)
 
@@ -838,7 +840,7 @@ NCBIcomponent_report(LEVELDB)
 
 #############################################################################
 # URing
-NCBI_define_Xcomponent(NAME URing MODULE liburing LIB uring)
+NCBI_define_Xcomponent(NAME URing INTERFACELIB liburing::liburing MODULE liburing LIB uring)
 if(NCBI_COMPONENT_URing_FOUND AND NOT TARGET uring::uring)
     add_library(uring::uring UNKNOWN IMPORTED GLOBAL)
     set_target_properties(uring::uring PROPERTIES
@@ -874,7 +876,7 @@ NCBIcomponent_report(GLPK)
 #############################################################################
 # UV
 if(NOT NCBI_COMPONENT_UV_FOUND)
-    NCBI_define_Xcomponent(NAME UV MODULE libuv LIB uv)
+    NCBI_define_Xcomponent(NAME UV INTERFACELIB libuv::uv_a MODULE libuv LIB uv)
     if(NCBI_COMPONENT_UV_FOUND)
         set(NCBI_COMPONENT_UV_LIBS    ${NCBI_COMPONENT_UV_LIBS} ${CMAKE_THREAD_LIBS_INIT})
     endif()
@@ -883,7 +885,7 @@ NCBIcomponent_report(UV)
 
 #############################################################################
 # NGHTTP2
-NCBI_define_Xcomponent(NAME NGHTTP2 MODULE libnghttp2 LIB nghttp2)
+NCBI_define_Xcomponent(NAME NGHTTP2 INTERFACELIB libnghttp2::libnghttp2 MODULE libnghttp2 LIB nghttp2)
 NCBIcomponent_report(NGHTTP2)
 
 #############################################################################
@@ -893,7 +895,7 @@ NCBIcomponent_report(GL2PS)
 
 #############################################################################
 # GMOCK
-NCBI_define_Xcomponent(NAME GTEST MODULE gtest LIB gtest)
+NCBI_define_Xcomponent(NAME GTEST INTERFACELIB gtest::gtest MODULE gtest LIB gtest)
 NCBI_define_Xcomponent(NAME GMOCK MODULE gmock LIB gmock ADD_COMPONENT GTEST)
 NCBIcomponent_report(GMOCK)
 
@@ -1027,7 +1029,7 @@ endif()
 #############################################################################
 # ARROW
 if(NOT NCBI_COMPONENT_ARROW_FOUND)
-    NCBI_define_Xcomponent(NAME ARROW MODULE parquet LIB parquet arrow arrow_bundled_dependencies ADD_COMPONENT THRIFT)
+    NCBI_define_Xcomponent(NAME ARROW INTERFACELIB arrow::arrow MODULE parquet LIB parquet arrow arrow_bundled_dependencies ADD_COMPONENT THRIFT)
     if(NCBI_PTBCFG_COMPONENT_StaticComponents)
         set(NCBI_COMPONENT_ARROW_DEFINES ${NCBI_COMPONENT_ARROW_DEFINES} PARQUET_STATIC ARROW_STATIC)
     endif()
