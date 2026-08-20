@@ -484,9 +484,9 @@ NCBIcomponent_report(XML)
 #############################################################################
 # XSLT
 if(NOT NCBI_COMPONENT_XSLT_FOUND)
-    NCBI_define_VScomponent(NAME XSLT PACKAGE LibXslt INTERFACELIB libxslt::libxslt LIB libexslt libxslt)
+    NCBI_define_VScomponent(NAME XSLT PACKAGE LibXslt INTERFACELIB LibXslt::LibXslt LIB libxslt)
     if (NCBI_COMPONENT_XSLT_FOUND AND NCBI_PTBCFG_COMPONENT_StaticComponents)
-        target_compile_definitions(libxslt::libxslt INTERFACE LIBEXSLT_STATIC LIBXSLT_STATIC)
+        target_compile_definitions(LibXslt::LibXslt INTERFACE LIBEXSLT_STATIC LIBXSLT_STATIC)
     endif()
 endif()
 NCBIcomponent_report(XSLT)
@@ -494,9 +494,9 @@ NCBIcomponent_report(XSLT)
 #############################################################################
 # EXSLT
 if(NOT NCBI_COMPONENT_EXSLT_FOUND)
-    NCBI_define_VScomponent(NAME EXSLT PACKAGE LibExslt LIB libexslt)
+    NCBI_define_VScomponent(NAME EXSLT PACKAGE LibExslt INTERFACELIB libxslt::libxslt LIB libexslt libxslt)
     if (NCBI_COMPONENT_EXSLT_FOUND AND NCBI_PTBCFG_COMPONENT_StaticComponents)
-        target_compile_definitions(LibExslt::LibExslt INTERFACE LIBEXSLT_STATIC)
+        target_compile_definitions(libxslt::libxslt INTERFACE LIBEXSLT_STATIC)
     endif()
 endif()
 NCBIcomponent_report(EXSLT)
