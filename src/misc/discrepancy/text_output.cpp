@@ -49,7 +49,6 @@ static constexpr std::initializer_list<eTestNames> g_ReportOrder1 = {
         eTestNames::BIOMATERIAL_TAXNAME_MISMATCH,
         eTestNames::SPECVOUCHER_TAXNAME_MISMATCH,
         eTestNames::STRAIN_CULTURE_COLLECTION_MISMATCH,
-        eTestNames::TRINOMIAL_SHOULD_HAVE_QUALIFIER,
         eTestNames::REQUIRED_STRAIN,
         eTestNames::METAGENOMIC,
         eTestNames::METAGENOME_SOURCE,
