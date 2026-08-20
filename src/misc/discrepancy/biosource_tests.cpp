@@ -1720,56 +1720,6 @@ DISCREPANCY_CASE(CHECK_AUTHORITY, BIOSRC, eDisc | eOncaller, "Authority and Taxn
 }
 
 
-// TRINOMIAL_SHOULD_HAVE_QUALIFIER
-
-static const pair<int, string> srcqual_keywords[] = {
-    { COrgMod::eSubtype_sub_species, " subsp." } ,
-    { COrgMod::eSubtype_variety, " var." }
-};
-
-static const size_t srcqual_keywords_sz = ArraySize(srcqual_keywords);
-
-static string GetSrcQual(const CBioSource& bs, int qual)
-{
-    if (bs.GetOrg().CanGetOrgname() && bs.GetOrg().GetOrgname().CanGetMod()) {
-        for (const auto& it : bs.GetOrg().GetOrgname().GetMod()) {
-            if (it->CanGetSubtype() && it->GetSubtype() == qual) {
-                return it->GetSubname();
-            }
-        }
-    }
-    return kEmptyStr;
-}
-
-
-DISCREPANCY_CASE(TRINOMIAL_SHOULD_HAVE_QUALIFIER, BIOSRC, eDisc | eOncaller | eSmart, "Trinomial sources should have corresponding qualifier")
-{
-    for (const CBioSource* biosrc : context.GetBiosources()) {
-        if (biosrc->IsSetOrg() && biosrc->GetOrg().CanGetTaxname() && biosrc->GetOrg().GetTaxname().length() && NStr::FindNoCase(biosrc->GetOrg().GetTaxname(), " x ") == NPOS && !CDiscrepancyContext::HasLineage(*biosrc, context.GetLineage(), "Viruses")) {
-            const string& taxname = biosrc->GetOrg().GetTaxname();
-            for (size_t i = 0; i < srcqual_keywords_sz; i++) {
-                size_t n = NStr::FindNoCase(taxname, srcqual_keywords[i].second);
-                if (n != NPOS) {
-                    for (n += srcqual_keywords[i].second.length(); n < taxname.length(); n++) {
-                        if (taxname[n] != ' ') {
-                            break;
-                        }
-                    }
-                    if (n < taxname.length()) {
-                        string q = GetSrcQual(*biosrc, srcqual_keywords[i].first);
-                        string s = taxname.substr(n, q.length());
-                        if (!q.length() || NStr::CompareNocase(s, q)) {
-                            m_Objs["[n] trinomial source[s] lack[S] corresponding qualifier"].Add(*context.BiosourceObjRef(*biosrc));
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-    }
-}
-
-
 // AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE
 
 DISCREPANCY_CASE(AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE, BIOSRC, eOncaller, "Species-specific primers, no environmental sample")
