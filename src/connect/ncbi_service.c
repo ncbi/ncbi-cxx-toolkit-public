@@ -980,6 +980,7 @@ static struct SINTERNAL_Data* s_InternalMapper(const char** svc,
         return data;
 
  out:
+    assert(!data->info);
     free(data);
     return 0;
 }
@@ -1134,8 +1135,9 @@ static SERV_ITER x_Open(const char*         service,
                 url = 0;
             }
             CORE_LOGF_X(16, eLOG_Critical,
-                        ("[%s]  Explicit server type %s(0x%04X) violates the required"
-                         " server type mask 0x%04X -- service search impossible",
+                        ("[%s]  Explicit server type %s(0x%04X) conflicts"
+                         " with the allowed server type mask 0x%04X"
+                         " -- service search impossible",
                          svc, SERV_TypeStr(type), type, types & fSERV_All));
             free((void*) svc);
             svc = 0;
