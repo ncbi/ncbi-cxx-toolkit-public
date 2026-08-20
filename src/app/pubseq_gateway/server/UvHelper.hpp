@@ -260,10 +260,23 @@ public:
             NCBI_THROW2(CUvException, eUvIp4AddrFailure, ss.str(), e);
         }
 
+        // Note: libuv does
+        //       errno = 0;
+        //       right before calling bind(...) and this is the last call
+        //       before returning. So (unless libuv implementation changes) it
+        //       is safe to check errno.
+        //       The case of a second instance on the same port is caught by
+        //       errno check, not e check.
         e = uv_tcp_bind(&m_tcp, reinterpret_cast<struct sockaddr*>(&addr_in), 0);
-        if (e != 0 || errno == EADDRINUSE) {
-            ss << "failed to bind socket to address/port: " << addr << ':' << port;
-            NCBI_THROW2(CUvException, eUvTcpBindFailure, ss.str(), e);
+        if (e != 0 || errno != 0) {
+            string      err_msg = "failed to bind socket to address/port: " +
+                                  string(addr) + ":" +
+                                  to_string(port) + ". Libuv error code: " +
+                                  to_string(e) + ". Errno: " +
+                                  to_string(errno) + " (" +
+                                  string(strerror(errno)) + ")";
+
+            NCBI_THROW2(CUvException, eUvTcpBindFailure, err_msg, e);
         }
     }
     void Close(void (*close_cb)(uv_handle_t* handle)) {

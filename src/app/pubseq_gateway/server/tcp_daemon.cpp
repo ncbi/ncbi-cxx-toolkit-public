@@ -377,6 +377,7 @@ void CTcpWorker::Stop(void)
 
 void CTcpWorker::Execute(void)
 {
+    string      err_msg;
     try {
         // Set the thread name
         pthread_setname_np(pthread_self(), "psg_worker");
@@ -439,18 +440,31 @@ void CTcpWorker::Execute(void)
 
         UnregisterUVLoop(uv_thread_self());
     } catch (const CPubseqGatewayUVException &  exc) {
-        PSG_ERROR("Libuv exception while preparing/running worker " << m_id <<
-                  " UV error code: " << exc.GetUVLibraryErrorCode() <<
-                  " Error: " << exc.GetMsg());
+        err_msg = "Libuv exception while preparing/running worker " +
+                  to_string(m_id) + " UV error code: " +
+                  to_string(exc.GetUVLibraryErrorCode()) +
+                  " Error: " + exc.GetMsg();
+        PSG_ERROR(err_msg);
     } catch (const CException &  exc) {
-        PSG_ERROR("NCBI exception while preparing/running worker " << m_id <<
-                  " Error code: " << exc.GetErrCode() <<
-                  " Error: " << exc.GetMsg());
+        err_msg = "NCBI exception while preparing/running worker " +
+                  to_string(m_id) + " Error code: " +
+                  to_string(exc.GetErrCode()) +
+                  " Error: " + exc.GetMsg();
+        PSG_ERROR(err_msg);
     } catch (const exception &  exc) {
-        PSG_ERROR("Standard exception while preparing/running worker " << m_id <<
-                  " Error: " << exc.what());
+        err_msg = "Standard exception while preparing/running worker " +
+                  to_string(m_id) + " Error: " + string(exc.what());
+        PSG_ERROR(err_msg);
     } catch (...) {
-        PSG_ERROR("Unknown exception while preparing/running worker " << m_id);
+        err_msg = "Unknown exception while preparing/running worker " +
+                  to_string(m_id);
+        PSG_ERROR(err_msg);
+    }
+
+
+    if (!err_msg.empty()) {
+        CPubseqGatewayApp *     app = CPubseqGatewayApp::GetInstance();
+        app->GetAlerts().Register(ePSGS_WorkerThreadStartOrRunFailure, err_msg);
     }
 
     m_shuttingdown = true;

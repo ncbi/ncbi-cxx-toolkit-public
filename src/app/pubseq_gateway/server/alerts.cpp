@@ -64,7 +64,8 @@ const SAlertToId     kAlertToIdMap[] = {
     { ePSGS_SeqIdClassificationConfigFilesRefreshFailure,   "SeqIdClassificationConfigFilesRefreshFailure" },
     { ePSGS_SeqIdInconsistencyParsingAndAssess,             "SeqIdInconsistencyParsingAndAssess" },
     { ePSGS_RequestDropped,                                 "RequestDropped" },
-    { ePSGS_CassRequestQueueFull,                           "CassRequestQueueFull" }
+    { ePSGS_CassRequestQueueFull,                           "CassRequestQueueFull" },
+    { ePSGS_WorkerThreadStartOrRunFailure,                  "WorkerThreadStartOrRunFailure" }
 };
 const size_t        kAlertToIdMapSize = sizeof(kAlertToIdMap) / sizeof(SAlertToId);
 

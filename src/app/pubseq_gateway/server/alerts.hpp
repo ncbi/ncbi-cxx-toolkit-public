@@ -66,7 +66,8 @@ enum EPSGS_AlertType {
     ePSGS_SeqIdClassificationConfigFilesRefreshFailure = 18,
     ePSGS_SeqIdInconsistencyParsingAndAssess = 19,
     ePSGS_RequestDropped = 20,
-    ePSGS_CassRequestQueueFull = 21
+    ePSGS_CassRequestQueueFull = 21,
+    ePSGS_WorkerThreadStartOrRunFailure = 22
 };
 
 enum EPSGS_AlertAckResult {
