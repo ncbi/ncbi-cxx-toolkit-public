@@ -283,7 +283,7 @@ static void GetEmblDate(Parser::ESource source, const DataBlk& entry, CRef<CDate
     }
 
     while (offset < eptr) {
-        offset = SrchTheChar(string_view(offset, eptr), '\n');
+        offset = SrchTheChar(offset, eptr, '\n');
         if (! offset)
             break;
 
@@ -445,7 +445,7 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
 
         string name;
         if (code < 0) {
-            ptr = SrchTheChar(string_view(bptr, eptr), ';');
+            ptr = SrchTheChar(bptr, eptr, ';');
             name.assign(bptr, ptr);
 
             if (NStr::EqualNocase(name, "MD5")) {
@@ -453,7 +453,7 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
                     if (NStr::Equal(ptr, 0, 2, "DR"))
                         break;
 
-                    ptr = SrchTheChar(string_view(ptr, eptr), '\n');
+                    ptr = SrchTheChar(ptr, eptr, '\n');
                     if (*ptr == '\n')
                         ptr++;
                 }
@@ -475,8 +475,8 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
         }
 
         PointToNextToken(bptr); /* bptr points to primary_identifier */
-        p    = SrchTheChar(string_view(bptr, eptr), '\n');
-        ptr  = SrchTheChar(string_view(bptr, eptr), ';');
+        p    = SrchTheChar(bptr, eptr, '\n');
+        ptr  = SrchTheChar(bptr, eptr, ';');
 
         string id, id1;
 
@@ -604,7 +604,7 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
             if (fta_StartsWith(ptr, "DR"sv))
                 break;
 
-            ptr = SrchTheChar(string_view(ptr, eptr), '\n');
+            ptr = SrchTheChar(ptr, eptr, '\n');
             if (*ptr == '\n')
                 ptr++;
         }

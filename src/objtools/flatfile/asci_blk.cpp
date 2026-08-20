@@ -382,7 +382,7 @@ static void BuildFeatureBlock(DataBlk& dbp)
 
     bptr = dbp.mBuf.ptr;
     eptr = bptr + dbp.mBuf.len;
-    ptr  = SrchTheChar(string_view(bptr, eptr), '\n');
+    ptr  = SrchTheChar(bptr, eptr, '\n');
     if (! ptr)
         return;
 
@@ -394,11 +394,11 @@ static void BuildFeatureBlock(DataBlk& dbp)
         InsertDatablkVal(std::get<TDataBlkList>(dbp.mData), ParFlat_FEATBLOCK, bptr, eptr - bptr);
 
         do {
-            bptr = SrchTheChar(string_view(bptr, eptr), '\n');
+            bptr = SrchTheChar(bptr, eptr, '\n');
             bptr++;
 
             skip = false;
-            if (! string_view(bptr, eptr - bptr).starts_with("XX"sv))
+            if (! string_view(bptr, eptr).starts_with("XX"sv))
                 ptr = bptr + ParFlat_COL_FEATKEY;
             else
                 skip = true;
@@ -597,7 +597,7 @@ static bool TrimEmblFeatBlk(DataBlk& dbp)
 
     bptr = dbp.mBuf.ptr;
     eptr = bptr + dbp.mBuf.len;
-    ptr  = SrchTheChar(string_view(bptr, eptr), '\n');
+    ptr  = SrchTheChar(bptr, eptr, '\n');
 
     while (ptr && ptr + 1 < eptr) {
         if (ptr[2] == 'H') {
@@ -616,7 +616,7 @@ static bool TrimEmblFeatBlk(DataBlk& dbp)
             }
         }
 
-        ptr = SrchTheChar(string_view(bptr, eptr), '\n');
+        ptr = SrchTheChar(bptr, eptr, '\n');
     }
 
     return (flag);
@@ -1120,7 +1120,7 @@ string GetDescrComment(const char* offset, size_t len, Uint2 col_data, bool is_h
 
     const char* p;
     for (; bptr < eptr; bptr = p + 1) {
-        p = SrchTheChar(string_view(bptr, eptr), '\n');
+        p = SrchTheChar(bptr, eptr, '\n');
 
         /* skip HTG generated comments starting with '*' */
         if ((is_htg && bptr[col_data] == '*') ||

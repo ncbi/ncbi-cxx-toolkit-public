@@ -142,7 +142,7 @@ bool ConsumeStrI(U& iter, string_view s)
  * Return NULL if not found; otherwise, return a pointer points first
  * occurrence The character.
  */
-char* SrchTheChar(string_view where, Char letter);
+char* SrchTheChar(const char* bptr, const char* eptr, Char letter);
 
 /* Search The string.
  * Return NULL if not found; otherwise, return a pointer points first
