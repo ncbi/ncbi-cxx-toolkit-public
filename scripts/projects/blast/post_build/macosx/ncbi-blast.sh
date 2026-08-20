@@ -11,6 +11,9 @@ STAGE_DIR1=_stage1
 STAGE_DIR2=_stage2
 RESOURCES_DIR=Resources
 ID=gov.nlm.nih.ncbi.blast
+# Number of times to retry the "hdiutil create" command before giving up.
+# Can be overridden by setting HDIUTIL_CREATE_RETRIES in the environment.
+HDIUTIL_CREATE_RETRIES=${HDIUTIL_CREATE_RETRIES:-3}
 
 if [ $# -ne 3 ] ; then
     echo "Usage: ncbi-blast.sh [installation directory] [MacOSX post-build script directory] [BLAST version]";
@@ -94,6 +97,30 @@ create_product_archive()
     cp -p $SCRIPTDIR/uninstall_ncbi_blast.zip $PRODUCT
 }
 
+# Runs "hdiutil create" with the given arguments, retrying up to
+# $HDIUTIL_CREATE_RETRIES times if it fails, waiting exponentially longer
+# between each attempt (1s, 2s, 4s, ...).
+retry_hdiutil_create()
+{
+    attempt=1
+    wait_time=2
+    while [ $attempt -le $HDIUTIL_CREATE_RETRIES ]; do
+        /usr/bin/hdiutil create "$@"
+        rc=$?
+        if [ $rc -eq 0 ]; then
+            return 0
+        fi
+        if [ $attempt -eq $HDIUTIL_CREATE_RETRIES ]; then
+            echo "ERROR: hdiutil create failed after $attempt attempt(s)"
+            return $rc
+        fi
+        echo "WARNING: hdiutil create failed (attempt $attempt/$HDIUTIL_CREATE_RETRIES), retrying in ${wait_time}s..."
+        sleep $wait_time
+        wait_time=$((wait_time * 2))
+        attempt=$((attempt + 1))
+    done
+}
+
 create_disk_image()
 {
     du -shc $PRODUCT    # For diagnostics
@@ -108,7 +135,7 @@ create_disk_image()
     DMG_SIZE=$(/usr/bin/du -sm "$PRODUCT" | /usr/bin/awk '{ size = int($1 * 1.25) + 64; if (size < 512) size = 512; print size "m"; exit }')
     MOUNT_POINT=$(/usr/bin/mktemp -d "${TMPDIR:-/tmp}/${PRODUCT}.XXXXXX")
     rm -frv "$PRODUCT.dmg" "$PRODUCT.temp.dmg"
-    /usr/bin/hdiutil create \
+    retry_hdiutil_create \
         -srcfolder "$PRODUCT" \
         -size "$DMG_SIZE" \
         -format UDRW \
@@ -116,7 +143,7 @@ create_disk_image()
         -volname "$PRODUCT" \
         -ov \
         -nospotlight \
-        "$PRODUCT.temp.dmg"
+        "$PRODUCT.temp.dmg" || exit 1
     /usr/bin/hdiutil attach "$PRODUCT.temp.dmg" -mountpoint "$MOUNT_POINT" -nobrowse -owners on
     /usr/bin/ditto "$PRODUCT" "$MOUNT_POINT"
     sync
