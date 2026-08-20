@@ -143,7 +143,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
             assert((size_t) info->vhost == len);
         }
     } else {
-        assert(data->port);
+        assert((type & fSERV_Standalone)  &&  data->port);
         info = SERV_CreateStandaloneInfo(ipv4, 0/*port,assigned later*/);
     }
 
@@ -283,7 +283,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     type = SERV_GetImplicitServerTypeInternalEx(iter->name, (ESERV_Type) fSERV_Any);
     types = iter->types & fSERV_All;
     if (!type)
-        type = types ? types : fSERV_Standalone;
+        type = types ? types : fSERV_Standalone/*default*/;
     else if (types)
         type &= types;
     if (type & fSERV_Standalone)
@@ -294,6 +294,11 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
         type = fSERV_Dns;
     else
         return 0;
+    /* We rely on (in s_Resolve()): */
+    assert(type & (fSERV_Dns | fSERV_Http | fSERV_Standalone));
+    /* We actually have (either one of): */
+    assert(type  &&  (type == fSERV_Dns  ||  type == fSERV_Standalone
+                      ||  (type | fSERV_Http) == fSERV_Http));
 
     CORE_TRACEF(("SERV_LBNULL_Open(\"%s%s\" + \"%s\" + \"%s%s\")",
                  default_prefix ? default_prefix : "", &"-"[!default_prefix],
