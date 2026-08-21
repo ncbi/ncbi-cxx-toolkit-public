@@ -62,7 +62,7 @@ extern "C" {
 
 /* Fwdecl of an opaque type */
 struct SSERV_IterTag;
-/** Iterator through the servers */
+/** Iterator over resolved servers */
 typedef struct SSERV_IterTag* SERV_ITER;
 
 
@@ -82,7 +82,7 @@ enum ESERV_TypeSpecial {
     fSERV_Reserved          = 0x00100000,  /**< Reserved, MBZ                */
     fSERV_DelayOpen         = 0x00400000,  /**< Don't open service until use */
     fSERV_ReverseDns        = 0x00800000,  /**< Reverse convert to DNS-type  */
-    /* The following allow to get otherwise excluded server infos            */
+    /* The following allow to get otherwise excluded server-infos            */
     fSERV_IncludeDown       = 0x08000000,
     fSERV_IncludeStandby    = 0x10000000,
     fSERV_IncludeReserved   = 0x20000000,  /**< @note Not yet implemented    */
@@ -96,8 +96,6 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
 
 
 /** Create an iterator for sequential server lookup.
- * @note 'nbo' in comments denotes parameters coming in network byte order;
- *       'hbo' stands for 'host byte order'.
  *
  * @param service
  *  A service name; may not be NULL or empty.
@@ -177,13 +175,18 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *           is insignificant for parameter lookups but is used by LBNULL for
  *           routing.
  *
+ *       "cxxtk-tech-legacy-nc-test"
+ *           Another dashed service name, "cxxtk-tech-legacy-nc-test"; because
+ *           it has no domain part, "-legacy-" is not recognized as a marker
+ *           and no name stripping is performed.
+ *
  *       "cxxtk-tech-legacy-nc-test.bethesda-dev.consul.be-md"
  *           A "decorated" P2 service name corresponding to the legacy service
  *           name "nc_test".
  *
  *       "http+ncbilb://cxxtk-legacy-cxx-monitor-fcgi.bethesda-prod.consul"
- *           The legacy service "cxx_monitor_fcgi", suitable for P2 and
- *           restricted to HTTP servers only.
+ *           The legacy service "cxx_monitor_fcgi", suitable for P2 and pinned
+ *           to HTTP servers only.
  *
  *       "tcp+ncbilb://taxservice"
  *           The legacy service "taxservice", restricted to STANDALONE servers.
@@ -194,7 +197,7 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  * @note As an extension to the valid service names described above, the API
  *       also accepts URL-like strings in place of service names.  Based on
  *       their syntax, such strings can be interpreted as STANDALONE, HTTP, or
- *       DNS endpoints, depending on the server types requested by the call.
+ *       DNS endpoints, depending on the server types allowed by the call.
  *       This interpretation is attempted only when the input does not appear
  *       to be a valid service name.
  *
@@ -226,7 +229,7 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *       CONN_IMPLICIT_SERVER_TYPE is only a hint and is ignored if it
  *       conflicts with the server types allowed by the "types" parameter.
  *       Unlike a server type specified in the service-name scheme (see above)
- *       or CONN_SERVER_TYPE (see below), it never overrides the requested type
+ *       or CONN_SERVER_TYPE (see below), it never overrides the allowed type
  *       selection and cannot, by itself, cause the search to fail.
  *
  * @note Finally, service names can be redirected through the registry or the
@@ -429,7 +432,7 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenEx
  size_t               n_skip
  );
 
-/** Same as "SERV_OpenEx(., ., ., ., 0, 0)" -- i.e. w/o the "skip" array.
+/** Same as SERV_OpenEx(., ., ., ., 0, 0), i.e. without a "skip" array.
  * @sa
  *  SERV_OpenEx
  */
@@ -517,14 +520,14 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenSimple
  *       <connect/ncbi_host_info.h>.  The returned handle must be explicitly
  *       free()'d when no longer needed.
  * @sa
- *  SERV_Reset, SERV_Close, SERV_GetInfoEx, ncbi_host_info.h
+ *  SERV_Reset, SERV_Close, SERV_GetInfoEx, <connect/ncbi_host_info.h>
  */
 extern NCBI_XCONNECT_EXPORT SSERV_InfoCPtr SERV_GetNextInfoEx
 (SERV_ITER            iter,
  HOST_INFO*           host_info
  );
 
-/** Same as "SERV_GetNextInfoEx(., 0)" -- i.e. w/o the host information.
+/** Same as SERV_GetNextInfoEx(., 0), i.e. without host information.
  * @sa
  *  SERV_GetNextInfoEx
  */
@@ -584,8 +587,8 @@ extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfoEx
  HOST_INFO*           host_info
  );
 
-/** Same as "SERV_GetInfoEx(., ., ., ., 0, 0, 0)" -- i.e. w/o the "skip" array,
- * and w/o "host_info".
+/** Same as SERV_GetInfoEx(., ., ., ., 0, 0, 0), i.e. without a "skip" array
+ * or host information.
  * @sa
  *  SERV_GetInfoEx, SERV_Open
  */
@@ -596,10 +599,12 @@ extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfo
  const SConnNetInfo*  net_info
  );
 
-/** Equivalent to "SERV_GetInfo(., fSERV_Any, SERV_ANYHOST,
- *                              ConnNetInfo_Create(service))",
- * but it takes care not to leak its last "net_info" parameter, which it builds
- * on the fly.
+/** Equivalent to
+ *
+ *      SERV_GetInfo(., fSERV_Any, SERV_ANYHOST, ConnNetInfo_Create(service))
+ *
+ * except that this call creates and releases the SConnNetInfo structure
+ * internally.
  * @sa
  *  SERV_GetInfo, SERV_OpenSimple
  */
@@ -608,13 +613,16 @@ extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfoSimple
  );
 
 
-/** Penalize the server returned last from SERV_GetNextInfo[Ex]().
+/** Penalize the server most recently returned by SERV_GetNextInfo[Ex]().
+ *
  * @param iter
- *  An iterator handle obtained via a "SERV_Open*" call.
+ *  An iterator handle obtained from a SERV_Open*() call.
+ *
  * @param fine
- *  A fine value in the range [0=min..100=max] (%%), inclusive.
+ *  A penalty value in the inclusive range [0=min..100=max] (%%).
+ *
  * @return
- *  Return 0 if failed, non-zero if successful.
+ *  Non-zero on success, or 0 on failure.
  * @sa
  *  SERV_OpenEx, SERV_GetNextInfoEx
  */
@@ -624,24 +632,42 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_Penalize
  );
 
 
-/* Same as SERV_Penalize() but can specify a penalty hold time.
+/** Same as SERV_Penalize(), with an additional penalty hold time.
+ *
+ * @param iter
+ *  An iterator handle obtained from a SERV_Open*() call.
+ *
+ * @param fine
+ *  A penalty value in the inclusive range [0=min..100=max] (%%).
+ *
+ * @param time
+ *  Time, in seconds, for which to retain the penalty.
+ *
+ * @return
+ *  Non-zero on success, or 0 on failure.
+ * @sa
+ *  SERV_Penalize, SERV_OpenEx, SERV_GetNextInfoEx
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_PenalizeEx
-(SERV_ITER  iter,                    /* handle obtained via 'SERV_Open*' call*/
- double     fine,                    /* fine from range [0=min..100=max] (%%)*/
- TNCBI_Time time                     /* for how long to keep the penalty, sec*/
+(SERV_ITER            iter,
+ double               fine,
+ TNCBI_Time           time
  );
 
 
-/** Rerate the server returned last from SERV_GetNextInfo[Ex]().
+/** Rerate the server most recently returned by SERV_GetNextInfo[Ex]().
+ *
  * @note This is an experimental API.
+ *
  * @param iter
- *  An iterator handle obtained via a "SERV_Open*" call.
+ *  An iterator handle obtained from a SERV_Open*() call.
+ *
  * @param rate
- *  A new rate value, or 0.0 to turn the server off, or
- *  fabs(rate) >= LBSM_RERATE_DEFAULT to revert to the default.
+ *  A new rate value; 0.0 turns the server off, while
+ *  fabs(rate) >= LBSM_RERATE_DEFAULT restores the default rate.
+ *
  * @return
- *  Return 0 if failed, non-zero if successful.
+ *  Non-zero on success, or 0 on failure.
  * @sa
  *  SERV_OpenEx, SERV_GetNextInfoEx
  */
@@ -687,17 +713,22 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
  );
 
 
-/** Obtain a port number that corresponds to the named (standalone) service
- * declared at the specified host (per the LB configuration information).
+/** Obtain the port number for a named standalone service at the specified host,
+ * as declared by the LB configuration.
+ *
  * @param name
- *  Service name (of type fSERV_Standalone) to look up.
+ *  Name of the fSERV_Standalone service to look up.
+ *
  * @param host
- *  Host address (or SERV_LOCALHOST, or 0, same) to look the service up at.
+ *  Host address, in network byte order, at which to look up the service.
+ *  SERV_LOCALHOST and 0 are equivalent.
+ *
  * @return
- *  The port number or 0 on error (no suitable service found).
- * @note The call returns the first match, and does not check whether an
- *       application is already running at the returned port (i.e. regardless
- *       of whether or not the service is currently up).
+ *  The port number, or 0 on error or if no suitable service is found.
+ *
+ * @note The call returns the first match and does not check whether an
+ *       application is actually running at the returned port; thus, the
+ *       service need not currently be up.
  * @sa
  *  ESERV_Type, SERV_OpenEx, LSOCK_CreateEx
  */
@@ -707,17 +738,24 @@ extern NCBI_XCONNECT_EXPORT unsigned short SERV_ServerPort
  );
 
 
-/** Set a server type to use when a service mapper returns typeless entries for
- * the given service name (typed entries retain their types as received).
- * @note Current implementation of this call tries to store the association in
- *       the application's registry as a transient setting.  Only if that has
- *       failed, then it proceeds to store the association in the application
- *       environment.
- * @note Implicit server type designation is managed the same way as any other
- *       service-related parameters from <connect/ncbi_connutil.h>: this one is
- *       using the REG_CONN_IMPLICIT_SERVER_TYPE key.
+/** Set the implicit server type used for typeless entries returned by service
+ * mappers for the specified service.  Entries that already have an explicit
+ * type retain that type unchanged.
+ *
+ * @note The implicit server type is also used to disambiguate incomplete
+ *       URL-like strings encountered during service name resolution (see
+ *       above).
+ *
+ * @note The current implementation first attempts to store the association as
+ *       a transient setting in the application's registry.  If that fails, it
+ *       attempts to store the association in the application environment.
+ *
+ * @note The implicit server type is managed like other service-related
+ *       parameters described in <connect/ncbi_connutil.h>, using the
+ *       REG_CONN_IMPLICIT_SERVER_TYPE key.
+ *
  * @return
- *  0 if failed; non-zero if succeeded
+ *  Non-zero on success, or 0 on failure.
  * @sa
  *  ConnNetInfo_GetValue, SERV_GetImplicitServerType
  */
@@ -727,10 +765,11 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_SetImplicitServerType
  );
 
 
-/** Get a server type that would be assigned to typeless entries for the given
- * service name.
+/** Get the implicit server type that would be assigned to typeless entries for
+ * the specified service.
  * @sa
- *  ConnNetInfo_GetValue, SERV_SetImplicitServerType, SERV_GetImplicitServerTypeDefault
+ *  ConnNetInfo_GetValue, SERV_SetImplicitServerType,
+ *  SERV_GetImplicitServerTypeDefault
  */
 extern NCBI_XCONNECT_EXPORT ESERV_Type SERV_GetImplicitServerType
 (const char* service
