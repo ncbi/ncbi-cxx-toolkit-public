@@ -137,6 +137,7 @@ AHNU	s	Anhui Normal University Conservation Genetics Lab
 AHP	s	American Herbal Pharmacopoeia			
 AHS	s	Austin High School			
 AHU	c	AHU Culture Collection			
+AHU<CHN>	s	Anhui University Biology Museum			
 AHUC	s	University of California, Agronomy and Range Science Department			
 AIB	s	Anhui Institute of Biology			
 AIBU	s	Abant Izzet Baysal Universitesi, Biyoloji Bolumu			
@@ -8288,7 +8289,9 @@ UMZC	s	University Museum of Zoology Cambridge	CAMZM,CUMZ,UMZ
 UMZM	s	University of Montana, Zoological Museum			
 UN	s	University of Nebraska			
 UNA	s	University of Alabama, Department of Biological Sciences			
+UNA<CIV>	s	Nangui Abrogoua University			
 UNAB	s	Universidad Nacional, Facultad de Agronomia			
+UNAB<CIV>	s	Nangui Abrogoa University			
 UNAC	s	Universidad Nacional Agraria			
 UNAD	s	Universidad Nacional Agraria			
 UNAF	s	University of North Alabama, Department of Biology			
