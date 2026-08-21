@@ -1142,7 +1142,7 @@ void CSeqDB::GetSequenceAsString(int      oid,
                                  TSeqRange range /* = TSeqRange() */) const
 {
     CSeqUtil::ECoding code_to = ((GetSequenceType() == CSeqDB::eProtein)
-                                 ? CSeqUtil::e_Iupacaa
+                                 ? CSeqUtil::e_Ncbieaa
                                  : CSeqUtil::e_Iupacna);
 
     GetSequenceAsString(oid, code_to, output, range);
