@@ -179,7 +179,7 @@ NCBIcomponent_report(NCBI_C)
 
 #############################################################################
 # BACKWARD, UNWIND
-NCBI_define_Xcomponent(NAME BACKWARD)
+NCBI_define_Xcomponent(NAME BACKWARD INTERFACELIB Backward::Backward)
 if(NCBI_COMPONENT_BACKWARD_FOUND)
     set(HAVE_LIBBACKWARD_CPP YES)
     if(NOT NCBI_PTBCFG_USECONAN AND NOT NCBI_PTBCFG_HASCONAN AND NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED)
@@ -203,7 +203,7 @@ NCBIcomponent_report(KRB5)
 
 ##############################################################################
 # CURL
-NCBI_define_Xcomponent(NAME CURL MODULE libcurl PACKAGE CURL LIB curl CHECK_INCLUDE curl/curl.h)
+NCBI_define_Xcomponent(NAME CURL INTERFACELIB CURL::libcurl MODULE libcurl PACKAGE CURL LIB curl CHECK_INCLUDE curl/curl.h)
 NCBIcomponent_report(CURL)
 
 #############################################################################
@@ -219,7 +219,7 @@ set(HAVE_LIBLMDB ${NCBI_COMPONENT_LMDB_FOUND})
 
 #############################################################################
 # PCRE
-NCBI_define_Xcomponent(NAME PCRE LIB pcre CHECK_INCLUDE pcre.h)
+NCBI_define_Xcomponent(NAME PCRE INTERFACELIB pcre::pcre LIB pcre CHECK_INCLUDE pcre.h)
 set(NCBI_COMPONENT_PCRE2_FOUND NO)
 NCBIcomponent_report(PCRE)
 NCBIcomponent_report(PCRE2)
@@ -239,7 +239,7 @@ set(HAVE_LIBPCRE2 ${NCBI_COMPONENT_PCRE2_FOUND})
 
 #############################################################################
 # Z
-NCBI_define_Xcomponent(NAME Z MODULE zlib PACKAGE ZLIB LIB z CHECK_INCLUDE zlib.h)
+NCBI_define_Xcomponent(NAME Z INTERFACELIB ZLIB::ZLIB MODULE zlib PACKAGE ZLIB LIB z CHECK_INCLUDE zlib.h)
 NCBIcomponent_report(Z)
 if(NOT NCBI_COMPONENT_Z_FOUND)
     set(NCBI_COMPONENT_Z_FOUND ${NCBI_COMPONENT_LocalZ_FOUND})
@@ -266,7 +266,7 @@ NCBIcomponent_report(LZO)
 
 #############################################################################
 # ZSTD
-NCBI_define_Xcomponent(NAME ZSTD LIB zstd CHECK_INCLUDE zstd.h)
+NCBI_define_Xcomponent(NAME ZSTD INTERFACELIB zstd::libzstd LIB zstd CHECK_INCLUDE zstd.h)
 NCBIcomponent_report(ZSTD)
 if(NCBI_COMPONENT_ZSTD_FOUND AND
     (DEFINED NCBI_COMPONENT_ZSTD_VERSION AND "${NCBI_COMPONENT_ZSTD_VERSION}" VERSION_LESS "1.4"))
@@ -321,12 +321,12 @@ NCBIcomponent_report(Boost)
 
 #############################################################################
 # JPEG
-NCBI_define_Xcomponent(NAME JPEG MODULE libjpeg PACKAGE JPEG LIB jpeg CHECK_INCLUDE jpeglib.h)
+NCBI_define_Xcomponent(NAME JPEG INTERFACELIB JPEG::JPEG MODULE libjpeg PACKAGE JPEG LIB jpeg CHECK_INCLUDE jpeglib.h)
 NCBIcomponent_report(JPEG)
 
 #############################################################################
 # PNG
-NCBI_define_Xcomponent(NAME PNG MODULE libpng PACKAGE PNG LIB png CHECK_INCLUDE png.h)
+NCBI_define_Xcomponent(NAME PNG INTERFACELIB PNG::PNG MODULE libpng PACKAGE PNG LIB png CHECK_INCLUDE png.h)
 NCBIcomponent_report(PNG)
 
 #############################################################################
@@ -336,7 +336,7 @@ NCBIcomponent_report(GIF)
 
 #############################################################################
 # TIFF
-NCBI_define_Xcomponent(NAME TIFF MODULE libtiff-4 PACKAGE TIFF LIB tiff CHECK_INCLUDE tiffio.h)
+NCBI_define_Xcomponent(NAME TIFF INTERFACELIB TIFF::TIFF MODULE libtiff-4 PACKAGE TIFF LIB tiff CHECK_INCLUDE tiffio.h)
 NCBIcomponent_report(TIFF)
 
 #############################################################################
@@ -347,7 +347,7 @@ NCBIcomponent_report(FASTCGI)
 #############################################################################
 # SQLITE3
 if(NOT NCBI_COMPONENT_SQLITE3_FOUND)
-    NCBI_define_Xcomponent(NAME SQLITE3 MODULE sqlite3 PACKAGE SQLite3 LIB sqlite3)
+    NCBI_define_Xcomponent(NAME SQLITE3 INTERFACELIB SQLite::SQLite3 MODULE sqlite3 PACKAGE SQLite3 LIB sqlite3)
     if(NCBI_COMPONENT_SQLITE3_FOUND)
         check_symbol_exists(sqlite3_unlock_notify ${NCBI_COMPONENT_SQLITE3_INCLUDE}/sqlite3.h HAVE_SQLITE3_UNLOCK_NOTIFY)
         check_include_file(sqlite3async.h HAVE_SQLITE3ASYNC_H -I${NCBI_COMPONENT_SQLITE3_INCLUDE})
@@ -452,7 +452,7 @@ NCBIcomponent_report(wxWidgets)
 #############################################################################
 # XML
 if(NOT NCBI_COMPONENT_XML_FOUND)
-    NCBI_define_Xcomponent(NAME XML MODULE libxml-2.0 PACKAGE LibXml2 LIB xml2 INCLUDE libxml2 CHECK_INCLUDE libxml/xmlexports.h)
+    NCBI_define_Xcomponent(NAME XML INTERFACELIB LibXml2::LibXml2 MODULE libxml-2.0 PACKAGE LibXml2 LIB xml2 INCLUDE libxml2 CHECK_INCLUDE libxml/xmlexports.h)
     if(NCBI_COMPONENT_XML_FOUND)
         string(REPLACE ";" "?" _x "${NCBI_COMPONENT_XML_LIBS}")
         string(REPLACE "-L/sw/lib?" "" _x "${_x}")
@@ -464,7 +464,7 @@ NCBIcomponent_report(XML)
 #############################################################################
 # XSLT
 if(NOT NCBI_COMPONENT_XSLT_FOUND)
-    NCBI_define_Xcomponent(NAME XSLT MODULE libxslt PACKAGE LibXslt LIB xslt ADD_COMPONENT XML CHECK_INCLUDE libxslt/xslt.h)
+    NCBI_define_Xcomponent(NAME XSLT INTERFACELIB LibXslt::LibXslt MODULE libxslt PACKAGE LibXslt LIB xslt ADD_COMPONENT XML CHECK_INCLUDE libxslt/xslt.h)
     if(NCBI_COMPONENT_XSLT_FOUND)
         string(REPLACE ";" "?" _x "${NCBI_COMPONENT_XSLT_LIBS}")
         string(REPLACE "-L/sw/lib?" "" _x "${_x}")
@@ -490,7 +490,7 @@ NCBIcomponent_report(XSLT)
 #############################################################################
 # EXSLT
 if(NOT NCBI_COMPONENT_EXSLT_FOUND)
-    NCBI_define_Xcomponent(NAME EXSLT MODULE libexslt PACKAGE LibXslt LIB exslt ADD_COMPONENT XML GCRYPT CHECK_INCLUDE libexslt/exslt.h)
+    NCBI_define_Xcomponent(NAME EXSLT INTERFACELIB libxslt::libxslt MODULE libexslt PACKAGE LibXslt LIB exslt ADD_COMPONENT XML GCRYPT CHECK_INCLUDE libexslt/exslt.h)
     if(NCBI_COMPONENT_EXSLT_FOUND)
         set(NCBI_COMPONENT_EXSLT_LIBS ${LIBXSLT_EXSLT_LIBRARIES} ${NCBI_COMPONENT_EXSLT_LIBS})
 
@@ -508,12 +508,12 @@ NCBIcomponent_report(LAPACK)
 
 #############################################################################
 # FreeType
-NCBI_define_Xcomponent(NAME FreeType MODULE freetype2 PACKAGE Freetype LIB freetype INCLUDE freetype2)
+NCBI_define_Xcomponent(NAME FreeType INTERFACELIB Freetype::Freetype MODULE freetype2 PACKAGE Freetype LIB freetype INCLUDE freetype2)
 NCBIcomponent_report(FreeType)
 
 #############################################################################
 # FTGL
-NCBI_define_Xcomponent(NAME FTGL MODULE ftgl LIB ftgl INCLUDE FTGL)
+NCBI_define_Xcomponent(NAME FTGL INTERFACELIB ftgl::ftgl MODULE ftgl LIB ftgl INCLUDE FTGL)
 NCBIcomponent_report(FTGL)
 
 #############################################################################
@@ -600,12 +600,12 @@ endif()
 
 #############################################################################
 # UV
-NCBI_define_Xcomponent(NAME UV MODULE libuv LIB uv)
+NCBI_define_Xcomponent(NAME UV INTERFACELIB libuv::uv_a MODULE libuv LIB uv)
 NCBIcomponent_report(UV)
 
 #############################################################################
 # NGHTTP2
-NCBI_define_Xcomponent(NAME NGHTTP2 MODULE libnghttp2 LIB nghttp2)
+NCBI_define_Xcomponent(NAME NGHTTP2 INTERFACELIB libnghttp2::libnghttp2 MODULE libnghttp2 LIB nghttp2)
 NCBIcomponent_report(NGHTTP2)
 
 #############################################################################
