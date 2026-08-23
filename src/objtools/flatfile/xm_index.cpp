@@ -814,47 +814,36 @@ static bool XMLCheckRequiredTags(ParserPtr pp, IndexblkPtr ibp)
 }
 
 /**********************************************************/
-char* XMLLoadEntry(ParserPtr pp, bool err)
+unique_ptr<string> XMLLoadEntry(ParserPtr pp, bool err)
 {
-    IndexblkPtr ibp;
-    char*       entry;
-    char*       p;
-    size_t      i;
-    Int4        c;
-
     if (! pp || ! s_HasInput(*pp)) {
-        return nullptr;
+        return {};
     }
 
-    ibp = pp->entrylist[pp->curindx];
+    IndexblkPtr ibp = pp->entrylist[pp->curindx];
     if (! ibp || ibp->len == 0)
-        return nullptr;
+        return {};
 
-    entry = StringNew(ibp->len);
+    string entry;
+    entry.reserve(ibp->len);
     s_SetPointer(*pp, ibp->offset);
 
-
-    for (p = entry, i = 0; i < ibp->len; i++) {
-        c = s_GetCharAndAdvance(*pp);
+    for (size_t i = 0; i < ibp->len; i++) {
+        int c = s_GetCharAndAdvance(*pp);
         if (c == -1)
-            break;
+            return {};
         if (c == 13) {
             c = 10;
         }
         if (c > 126 || (c < 32 && c != 10)) {
             if (err)
                 FtaErrPost(SEV_WARNING, ERR_FORMAT_NonAsciiChar, "Non-ASCII character within the record which begins at line {}, decimal value {}, replaced by #.", ibp->linenum, c);
-            *p++ = '#';
+            entry.push_back('#');
         } else
-            *p++ = (Char)c;
+            entry.push_back((Char)c);
     }
-    if (i != ibp->len) {
-        MemFree(entry);
-        return nullptr;
-    }
-    *p = '\0';
 
-    return (entry);
+    return make_unique<string>(entry);
 }
 
 
@@ -1258,7 +1247,6 @@ static bool s_IsSegment(const IndexblkPtr& ibp)
 bool XMLIndex(ParserPtr pp)
 {
     IndexblkPtr ibp;
-    char*       entry;
 
     XMLPerformIndex(pp);
 
@@ -1273,51 +1261,43 @@ bool XMLIndex(ParserPtr pp)
             ibp->drop = true;
             continue;
         }
-        entry = XMLLoadEntry(pp, true);
+        auto entry = XMLLoadEntry(pp, true);
         if (! entry) {
             FtaErrPost(SEV_FATAL, ERR_INPUT_CannotReadEntry, "Failed ro read entry from file, which starts at line {}. Entry dropped.", ibp->linenum);
             ibp->drop = true;
             continue;
         }
 
-        XMLInitialEntry(ibp, entry, pp->accver, pp->source);
+        XMLInitialEntry(ibp, entry->c_str(), pp->accver, pp->source);
         if (ibp->drop) {
-            MemFree(entry);
             continue;
         }
         if (XMLTagCheck(ibp->xip, xmkwl) == false) {
             FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted XML record. Entry dropped.");
             ibp->drop = true;
-            MemFree(entry);
             continue;
         }
-        if (XMLAccessionsCheck(pp, ibp, entry) == false) {
-            MemFree(entry);
+        if (XMLAccessionsCheck(pp, ibp, entry->c_str()) == false) {
             continue;
         }
 
         if (s_IsSegment(ibp)) {
             ibp->drop = true;
-            MemFree(entry);
             continue;
         }
 
         if (XMLCheckRequiredTags(pp, ibp) == false) {
             ibp->drop = true;
-            MemFree(entry);
             continue;
         }
-        if (XMLKeywordsCheck(entry, ibp, pp->source) == false) {
-            MemFree(entry);
+        if (XMLKeywordsCheck(entry->c_str(), ibp, pp->source) == false) {
             continue;
         }
-        if (XMLIndexFeatures(entry, ibp->xip) == false ||
-            XMLIndexReferences(entry, ibp->xip, ibp->bases) == false) {
+        if (XMLIndexFeatures(entry->c_str(), ibp->xip) == false ||
+            XMLIndexReferences(entry->c_str(), ibp->xip, ibp->bases) == false) {
             ibp->drop = true;
-            MemFree(entry);
             continue;
         }
-        MemFree(entry);
     }
 
     pp->num_drop = 0;
