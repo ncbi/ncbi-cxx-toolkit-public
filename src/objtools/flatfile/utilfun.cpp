@@ -617,24 +617,6 @@ string GetTheCurrentToken(char** ptr)
     return (str);
 }
 
-/**********************************************************
- *
- *   char* SrchTheChar(bptr, eptr, letter):
- *
- *      Search The character letter.
- *      Return NULL if not found; otherwise, return
- *   a pointer points first occurrence The character.
- *
- **********************************************************/
-char* SrchTheChar(const char* bptr, const char* eptr, Char letter)
-{
-    auto i = std::find(bptr, eptr, letter);
-    if (i != eptr)
-        return const_cast<char*>(i);
-    else
-        return nullptr;
-}
-
 /**********************************************************/
 void CpSeqId(InfoBioseqPtr ibp, const CSeq_id& id)
 {
