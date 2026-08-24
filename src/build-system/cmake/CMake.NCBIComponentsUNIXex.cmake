@@ -842,12 +842,16 @@ NCBIcomponent_report(LEVELDB)
 # URing
 NCBI_define_Xcomponent(NAME URing INTERFACELIB liburing::liburing MODULE liburing LIB uring)
 if(NCBI_COMPONENT_URing_FOUND AND NOT TARGET uring::uring)
-    add_library(uring::uring ALIAS liburing::liburing)
-#    set_target_properties(uring::uring PROPERTIES
-#        IMPORTED_LOCATION ${NCBI_COMPONENT_URing_LIBS}
-#        IMPORTED_LOCATION_DEBUG ${NCBI_COMPONENT_URing_LIBS}
-#        IMPORTED_LOCATION_RELEASE ${NCBI_COMPONENT_URing_LIBS}
-#    )
+    if(TARGET liburing::liburing)
+        add_library(uring::uring ALIAS liburing::liburing)
+    else()
+        add_library(uring::uring UNKNOWN IMPORTED GLOBAL)
+        set_target_properties(uring::uring PROPERTIES
+            IMPORTED_LOCATION ${NCBI_COMPONENT_URing_LIBS}
+            IMPORTED_LOCATION_DEBUG ${NCBI_COMPONENT_URing_LIBS}
+            IMPORTED_LOCATION_RELEASE ${NCBI_COMPONENT_URing_LIBS}
+        )
+    endif()
 endif()
 NCBIcomponent_report(URing)
 
