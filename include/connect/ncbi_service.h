@@ -126,7 +126,7 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *       of dash-separated words and terminated by one of the recognized
  *       marker words:
  *
- *           "-legacy-", "-solr-", "-mssql-", "-mongodb-", or "-postgres-".
+ *           "-legacy-", "-mongodb-", "-mssql-", "-postgres-", or "-solr-".
  *
  *       Any such marker triggers the same special treatment: the entire
  *       prefix, including the marker itself, is stripped.  Without a
@@ -153,6 +153,10 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *       scheme.  The scheme consists of a recognized server type followed by
  *       "+ncbilb://".  The entire scheme is case-insensitive.  Additionally,
  *       "tcp+ncbilb://" is equivalent to "standalone+ncbilb://".
+ *
+ *       For reference, the following server types are currently recognized:
+ *
+ *           DNS, HTTP, HTTP_GET, HTTP_POST, NCBID, and STANDALONE.
  *
  *       The specified server type restricts the search to servers of that
  *       particular type.  If this type conflicts with the in-code type
@@ -270,15 +274,15 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *       target is ignored; only the scheme, if any, of the final "newvalue"
  *       is retained.
  *
- *       Examples (using the environment, for simplicity):
+ *       Examples (using the environment, for brevity):
  *
  *       id2_CONN_SERVICE_NAME="id2_internal"
  *           Redirects service "ID2" to "ID2_INTERNAL".
  *
  *       bounce_CONN_SERVICE_NAME="ncbid+ncbilb://bounce"
- *           Redirects service "BOUNCE" to itself but restricts the server type
- *           to NCBID.  As a side effect, the case of "bounce" is also
- *           preserved by any mappers that support that.
+ *           Redirects service "BOUNCE" to itself but pins the server type to
+ *           NCBID.  As a side effect, the case of "bounce" is also preserved
+ *           by any mappers that support that.
  *
  *       echo_CONN_SERVICE_NAME="host:port"
  *           Resolves service "ECHO" to "host" and "port" (provided that the
@@ -291,14 +295,15 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *           server type to STANDALONE (synonymous with "tcp").  Note that all
  *           intermediate server-type schemes and marker-based decorations
  *           (such as those for "svc2") are ignored.  Without the final
- *           CONN_SERVER_TYPE setting, the resulting server type would be HTTP,
- *           as specified alongside the terminal service name "svc3".
+ *           CONN_SERVER_TYPE setting (see below), the resulting server type
+ *           would be HTTP, as specified alongside the terminal service name
+ *           "svc3".
  *
  *       svc_CONN_SERVICE_NAME="demo-legacy-svc-dashed.st-va"
  *       svc_dashed_CONN_SERVICE_NAME="svc-simple.be-md"
  *           Redirects "svc" via the decorated target
  *           "demo-legacy-svc-dashed.st-va", which reduces to the legacy
- *           service name "svc-dashed", and then to the literal service name
+ *           service name "svc_dashed", and then to the literal service name
  *           "svc-simple".  The first redirection target is stripped of its
  *           marker-terminated prefix and domain, while the second is a regular
  *           dashed service name and remains "svc-simple".  The domain parts
