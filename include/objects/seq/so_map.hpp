@@ -48,6 +48,7 @@ public:
     static string SoTypeToId(std::string_view);
     static string SoIdToType(std::string_view);
     static bool SoTypeToFeature(std::string_view, CSeq_feat&, bool = false);
+    static bool SoTypeToRnaFeature(std::string_view so_type, CSeq_feat& rna_feature);
     static bool FeatureToSoType(const CSeq_feat&, string&);
 
     static bool GetSupportedSoTerms(vector<string>&);

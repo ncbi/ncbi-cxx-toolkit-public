@@ -633,7 +633,7 @@ void CGtfReader::xCreateRna(
 
     // RW-2484 - first attempt use transcript_biotype or transcript_type
     if (auto biotype = s_GetTranscriptBiotype(record.GtfAttributes());
-        biotype.empty() || (! CSoMap::SoTypeToFeature(biotype, *pFeature))) { 
+        biotype.empty() || (! CSoMap::SoTypeToRnaFeature(biotype, *pFeature))) { 
         auto rna_type = s_RnaTypeFromRecType(rec_type);
         pFeature->SetData().SetRna().SetType(rna_type);
     }
