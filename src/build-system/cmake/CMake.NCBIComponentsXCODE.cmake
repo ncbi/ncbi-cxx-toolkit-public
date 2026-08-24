@@ -250,7 +250,7 @@ set(HAVE_LIBZ ${NCBI_COMPONENT_Z_FOUND})
 
 #############################################################################
 # BZ2
-NCBI_define_Xcomponent(NAME BZ2 PACKAGE BZip2 LIB bz2 CHECK_INCLUDE bzlib.h)
+NCBI_define_Xcomponent(NAME BZ2 INTERFACELIB BZip2::BZip2 PACKAGE BZip2 LIB bz2 CHECK_INCLUDE bzlib.h)
 NCBIcomponent_report(BZ2)
 if(NOT NCBI_COMPONENT_BZ2_FOUND)
     set(NCBI_COMPONENT_BZ2_FOUND ${NCBI_COMPONENT_LocalBZ2_FOUND})
@@ -331,7 +331,7 @@ NCBIcomponent_report(PNG)
 
 #############################################################################
 # GIF
-NCBI_define_Xcomponent(NAME GIF PACKAGE GIF LIB gif)
+NCBI_define_Xcomponent(NAME GIF INTERFACELIB GIF::GIF PACKAGE GIF LIB gif)
 NCBIcomponent_report(GIF)
 
 #############################################################################
