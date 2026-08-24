@@ -1033,7 +1033,8 @@ endif()
 #############################################################################
 # ARROW
 if(NOT NCBI_COMPONENT_ARROW_FOUND)
-    NCBI_define_Xcomponent(NAME ARROW INTERFACELIB arrow::arrow MODULE parquet LIB parquet arrow arrow_bundled_dependencies ADD_COMPONENT THRIFT)
+#    NCBI_define_Xcomponent(NAME ARROW INTERFACELIB arrow::arrow MODULE parquet LIB parquet arrow arrow_bundled_dependencies ADD_COMPONENT THRIFT)
+    NCBI_define_Xcomponent(NAME ARROW INTERFACELIB arrow::arrow LIB parquet arrow arrow_bundled_dependencies ADD_COMPONENT THRIFT)
     if(NCBI_PTBCFG_COMPONENT_StaticComponents)
         set(NCBI_COMPONENT_ARROW_DEFINES ${NCBI_COMPONENT_ARROW_DEFINES} PARQUET_STATIC ARROW_STATIC)
     endif()
