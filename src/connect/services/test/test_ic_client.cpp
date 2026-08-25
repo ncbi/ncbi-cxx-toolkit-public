@@ -321,7 +321,7 @@ static void s_SimpleTest()
         }
     }
 
-    this_thread::sleep_for(chrono::seconds(1));
+    this_thread::sleep_for(chrono::seconds(3));
 
     try {
         using namespace ncbi::grid::netcache::search;
@@ -488,7 +488,7 @@ static void s_AsyncTest()
         // Actual async write starts here
     }
 
-    this_thread::sleep_for(chrono::seconds(1));
+    this_thread::sleep_for(chrono::seconds(3));
 
     try {
         using namespace ncbi::grid::netcache::search;
