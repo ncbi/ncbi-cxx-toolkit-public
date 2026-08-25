@@ -131,7 +131,7 @@ void PopulatePerRequestMomentousDictionary(CJsonNode &  dict)
                                active_proc_snapshot.m_ProcPerRequest[k].m_RequestCounter);
 
         one_request.SetInteger("backlogged",
-                               backlog_snapshot.m_BacklogPerRequest[k]);
+                               backlog_snapshot.m_BacklogPerRequest[k].load(memory_order_relaxed));
         per_request.SetByKey(request_name, one_request);
     }
 

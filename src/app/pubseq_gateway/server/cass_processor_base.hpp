@@ -50,7 +50,6 @@ const string    kCassandraProcessorEvent = "Cassandra";
 const string    kCassandraProcessorGroupName = "CASSANDRA";
 
 
-
 class CPSGS_CassProcessorBase : public IPSGS_Processor
 {
 public:
@@ -126,6 +125,8 @@ protected:
     optional<string>                        m_UserName;
     shared_ptr<CPSG_MyNCBIRequest_WhoAmI>   m_WhoAmIRequest;
     optional<string>                        m_MyNCBICookie;
+
+    mutable optional<size_t>                m_CheckedFetchSize;
 
 public:
     // Memorize the ambiguity message and json with records

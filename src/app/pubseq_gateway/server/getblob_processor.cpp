@@ -209,8 +209,7 @@ void CPSGS_GetBlobProcessor::x_Process(void)
         return;
     }
 
-    shared_ptr<CCassBlobFetch>  fetch_details;
-    fetch_details.reset(new CCassBlobFetch(*m_BlobRequest, m_BlobId));
+    shared_ptr<CCassBlobFetch>  fetch_details = make_shared<CCassBlobFetch>(*m_BlobRequest, m_BlobId);
 
     unique_ptr<CBlobRecord> blob_record(new CBlobRecord);
     CPSGCache               psg_cache(IPSGS_Processor::m_Request,

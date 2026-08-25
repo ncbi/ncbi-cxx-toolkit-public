@@ -646,8 +646,7 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
         }
     }
 
-    shared_ptr<CCassBlobFetch>  fetch_details;
-    fetch_details.reset(new CCassBlobFetch(*m_AnnotRequest, blob_id));
+    shared_ptr<CCassBlobFetch>  fetch_details = make_shared<CCassBlobFetch>(*m_AnnotRequest, blob_id);
 
     unique_ptr<CBlobRecord> blob_record(new CBlobRecord);
     CPSGCache               psg_cache(IPSGS_Processor::m_Request,

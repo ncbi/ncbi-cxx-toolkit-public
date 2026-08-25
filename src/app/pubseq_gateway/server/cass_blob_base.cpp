@@ -407,8 +407,7 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
                                   std::move(blob_record),
                                   true, nullptr);
 
-    shared_ptr<CCassBlobFetch>  cass_blob_fetch;
-    cass_blob_fetch.reset(new CCassBlobFetch(orig_blob_request, cass_blob_id));
+    shared_ptr<CCassBlobFetch>  cass_blob_fetch = make_shared<CCassBlobFetch>(orig_blob_request, cass_blob_id);
     cass_blob_fetch->SetLoader(load_task,
                                static_cast<CPSGS_CassProcessorBase*>(this));
 
@@ -529,8 +528,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
                           psg_clock_t::now());
 
     // Prepare Id2Info retrieval
-    shared_ptr<CCassBlobFetch>  cass_blob_fetch;
-    cass_blob_fetch.reset(new CCassBlobFetch(info_blob_request, info_blob_id));
+    shared_ptr<CCassBlobFetch>  cass_blob_fetch = make_shared<CCassBlobFetch>(info_blob_request, info_blob_id);
     bool                        info_blob_requested = false;
 
     if (x_CheckExcludeBlobCache(cass_blob_fetch.get(),
@@ -722,8 +720,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
                           vector<string>(), vector<string>(),
                           psg_clock_t::now());
 
-        shared_ptr<CCassBlobFetch>   details;
-        details.reset(new CCassBlobFetch(chunk_request, chunks_blob_id));
+        shared_ptr<CCassBlobFetch>   details = make_shared<CCassBlobFetch>(chunk_request, chunks_blob_id);
 
         // Check the already sent cache
         if (x_CheckExcludeBlobCache(details.get(),
@@ -976,8 +973,7 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
                           vector<string>(), vector<string>(),
                           psg_clock_t::now());
 
-        shared_ptr<CCassBlobFetch>   details;
-        details.reset(new CCassBlobFetch(chunk_request, chunks_blob_id));
+        shared_ptr<CCassBlobFetch>   details = make_shared<CCassBlobFetch>(chunk_request, chunks_blob_id);
 
         // Check the already sent cache
         if (x_CheckExcludeBlobCache(details.get(),
@@ -1459,8 +1455,7 @@ CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  blob_fetch_details,
         blob.GetFlag(EBlobFlags::eWithdrawn)) {
         // Request public comment
         auto                                    app = CPubseqGatewayApp::GetInstance();
-        shared_ptr<CCassPublicCommentFetch>     comment_fetch_details;
-        comment_fetch_details.reset(new CCassPublicCommentFetch());
+        shared_ptr<CCassPublicCommentFetch>     comment_fetch_details = make_shared<CCassPublicCommentFetch>();
         // Memorize the identification which will be used at the moment of
         // sending the comment to the client
         if (need_id2_identification) {

@@ -313,7 +313,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  http_req,
                         enabled_processors, disabled_processors,
                         now));
         shared_ptr<CPSGS_Request>
-            request(new CPSGS_Request(http_req, std::move(req), context));
+            request = make_shared<CPSGS_Request>(http_req, std::move(req), context);
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
@@ -444,7 +444,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  http_req,
                             processor_events,
                             enabled_processors, disabled_processors, now));
         shared_ptr<CPSGS_Request>
-                request(new CPSGS_Request(http_req, std::move(req), context));
+                request = make_shared<CPSGS_Request>(http_req, std::move(req), context);
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
@@ -569,7 +569,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  http_req,
                         processor_events,
                         enabled_processors, disabled_processors, now));
         shared_ptr<CPSGS_Request>
-            request(new CPSGS_Request(http_req, std::move(req), context));
+            request = make_shared<CPSGS_Request>(http_req, std::move(req), context);
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
@@ -679,7 +679,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  http_req,
                         use_cache, hops, include_hup, trace, processor_events,
                         enabled_processors, disabled_processors, now));
         shared_ptr<CPSGS_Request>
-            request(new CPSGS_Request(http_req, std::move(req), context));
+            request = make_shared<CPSGS_Request>(http_req, std::move(req), context);
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
@@ -895,7 +895,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  http_req,
                         enabled_processors, disabled_processors,
                         now));
         shared_ptr<CPSGS_Request>
-            request(new CPSGS_Request(http_req, std::move(req), context));
+            request = make_shared<CPSGS_Request>(http_req, std::move(req), context);
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
@@ -988,7 +988,7 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  http_req,
                         enabled_processors, disabled_processors,
                         now));
         shared_ptr<CPSGS_Request>
-            request(new CPSGS_Request(http_req, std::move(req), context));
+            request = make_shared<CPSGS_Request>(http_req, std::move(req), context);
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
@@ -1152,7 +1152,7 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  http_req,
                         enabled_processors, disabled_processors,
                         now));
         shared_ptr<CPSGS_Request>
-            request(new CPSGS_Request(http_req, std::move(req), context));
+            request = make_shared<CPSGS_Request>(http_req, std::move(req), context);
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {

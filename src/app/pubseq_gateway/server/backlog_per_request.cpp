@@ -39,39 +39,31 @@ using namespace std;
 
 
 SBacklogPerRequest      g_BacklogPerRequest;
-mutex                   g_BacklogPerRequestLock;
 
 
 size_t GetBacklogSize(void)
 {
     size_t              ret = 0;
-
-    lock_guard<mutex>   guard(g_BacklogPerRequestLock);
-    for (size_t  k = 0; k < sizeof(g_BacklogPerRequest.m_BacklogPerRequest) / sizeof(size_t); ++k) {
-        ret += g_BacklogPerRequest.m_BacklogPerRequest[k];
+    for (size_t  k = 0; k < CPSGS_Request::ePSGS_UnknownRequest; ++k) {
+        ret += g_BacklogPerRequest.m_BacklogPerRequest[k].load(memory_order_relaxed);
     }
     return ret;
 }
 
 SBacklogPerRequest GetBacklogPerRequestSnapshot(void)
 {
-    SBacklogPerRequest  ret;
-    lock_guard<mutex>   guard(g_BacklogPerRequestLock);
-    ret = g_BacklogPerRequest;
-    return ret;
+    return SBacklogPerRequest(g_BacklogPerRequest);
 }
 
 
 void RegisterBackloggedRequest(CPSGS_Request::EPSGS_Type  request_type)
 {
-    lock_guard<mutex>   guard(g_BacklogPerRequestLock);
-    ++g_BacklogPerRequest.m_BacklogPerRequest[static_cast<size_t>(request_type)];
+    g_BacklogPerRequest.m_BacklogPerRequest[request_type].fetch_add(1, memory_order_relaxed);
 }
 
 
 void UnregisterBackloggedRequest(CPSGS_Request::EPSGS_Type  request_type)
 {
-    lock_guard<mutex>   guard(g_BacklogPerRequestLock);
-    --g_BacklogPerRequest.m_BacklogPerRequest[static_cast<size_t>(request_type)];
+    g_BacklogPerRequest.m_BacklogPerRequest[request_type].fetch_sub(1, memory_order_relaxed);
 }
 

@@ -244,11 +244,16 @@ CHttpConnection::~CHttpConnection()
         x_UnregisterBacklog(it);
     }
 
-    while (!m_RunningRequests.empty()) {
-        auto it = m_RunningRequests.begin();
-        (*it).m_Reply->GetHttpReply()->CancelPending();
-        x_UnregisterRunning(it);
+    for (auto &  item : m_RunningRequests) {
+        if (item.m_Reply) {
+            auto *  http_reply = item.m_Reply->GetHttpReply();
+            if (http_reply) {
+                item.m_Reply->GetHttpReply()->CancelPending();
+            }
+            x_UnregisterRunning(item);
+        }
     }
+    m_RunningRequests.clear();
 
     if (m_H2oCtxInitialized) {
         m_H2oCtxInitialized = false;
@@ -297,11 +302,16 @@ void CHttpConnection::ResetForReuse(void)
         x_UnregisterBacklog(it);
     }
 
-    while (!m_RunningRequests.empty()) {
-        auto it = m_RunningRequests.begin();
-        (*it).m_Reply->GetHttpReply()->CancelPending();
-        x_UnregisterRunning(it);
+    for (auto &  item : m_RunningRequests) {
+        if (item.m_Reply) {
+            auto *  http_reply = item.m_Reply->GetHttpReply();
+            if (http_reply) {
+                item.m_Reply->GetHttpReply()->CancelPending();
+            }
+            x_UnregisterRunning(item);
+        }
     }
+    m_RunningRequests.clear();
 
     m_IsClosed = false;
 }
@@ -346,6 +356,18 @@ CHttpConnection::x_RegisterPending(shared_ptr<CPSGS_Request>  request,
                                    shared_ptr<CPSGS_Reply>  reply,
                                    list<string>  processor_names)
 {
+    if (m_RunningRequests.size() < m_HttpMaxRunning) {
+        x_Start(request, reply, std::move(processor_names));
+        return ePSGS_Running;
+    }
+
+    // Here: the running request list has reached its capacity
+    // However it could be that libuv had more events in a single loop than
+    // vacant places in the running list. That IO event loop cannot be
+    // interrupted. The requests however could have already be finished.
+    // So, run cleaning the finished requests and check again if there is some
+    // space in the running list.
+    x_MaintainFinished();
     if (m_RunningRequests.size() < m_HttpMaxRunning) {
         x_Start(request, reply, std::move(processor_names));
         return ePSGS_Running;
@@ -416,7 +438,8 @@ CHttpConnection::x_Start(shared_ptr<CPSGS_Request>  request,
     }
 
     // Add the reply to the list of running replies
-    x_RegisterRunning(request, reply);
+    m_RunningRequests.push_back(SRunningAttributes{request, reply});
+    m_RunTimeProps.UpdateLastRequestTimestamp();
 
     // To avoid a possibility to have cancel->start in progress messages in the
     // reply in case of multiple processors due to the first one may do things
@@ -489,17 +512,9 @@ void CHttpConnection::x_CancelAll(void)
 }
 
 
-void CHttpConnection::x_RegisterRunning(shared_ptr<CPSGS_Request>  request,
-                                        shared_ptr<CPSGS_Reply>  reply)
+void CHttpConnection::x_UnregisterRunning(SRunningAttributes &  attr)
 {
-    m_RunningRequests.push_back(SRunningAttributes{request, reply});
-    m_RunTimeProps.UpdateLastRequestTimestamp();
-}
-
-
-void CHttpConnection::x_UnregisterRunning(running_list_iterator_t &  it)
-{
-    size_t request_id = (*it).m_Reply->GetRequestId();
+    size_t request_id = attr.m_Reply->GetRequestId();
 
     // Note: without this call there will be memory leaks.
     // The infrastructure holds a shared_ptr to the reply, the pending
@@ -510,9 +525,7 @@ void CHttpConnection::x_UnregisterRunning(running_list_iterator_t &  it)
     // The call below resets a shared_ptr to the pending operation. It is
     // safe to do it here because this point is reached only when all
     // activity on processing a request is over.
-    (*it).m_Reply->GetHttpReply()->ResetPendingRequest();
-
-    m_RunningRequests.erase(it);
+    attr.m_Reply->GetHttpReply()->ResetPendingRequest();
 
     // Count as a completed request
     ++m_RunTimeProps.m_NumFinishedRequests;
@@ -558,16 +571,23 @@ void CHttpConnection::x_CancelBacklog(void)
 
 void CHttpConnection::x_MaintainFinished(void)
 {
-    running_list_iterator_t     it = m_RunningRequests.begin();
-    while (it != m_RunningRequests.end()) {
-        if ((*it).m_Reply->IsCompleted()) {
-            auto    next = it;
-            ++next;
-            x_UnregisterRunning(it);
-            it = next;
-        } else {
-            ++it;
+    if (m_RunningRequests.empty()) return;
+
+    bool        has_changes = false;
+    for (auto &  attr : m_RunningRequests) {
+        if (attr.m_Reply && attr.m_Reply->IsCompleted()) {
+            x_UnregisterRunning(attr);
+            has_changes = true;
         }
+    }
+
+    if (has_changes) {
+        auto trash_begin = std::remove_if(m_RunningRequests.begin(), m_RunningRequests.end(),
+                [](const SRunningAttributes& attr) {
+                    return !attr.m_Reply || attr.m_Reply->IsCompleted();
+                    });
+
+        m_RunningRequests.erase(trash_begin, m_RunningRequests.end());
     }
 }
 

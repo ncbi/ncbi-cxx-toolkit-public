@@ -638,8 +638,7 @@ CPSGS_AsyncResolveBase::x_PrepareAccessionLikeBioseqInfoQuery(void)
     m_BioseqInfoRequestedSeqIdType = -1;
     m_BioseqInfoRequestedGI = -1;
 
-    shared_ptr<CCassBioseqInfoFetch>   details;
-    details.reset(new CCassBioseqInfoFetch());
+    shared_ptr<CCassBioseqInfoFetch>   details = make_shared<CCassBioseqInfoFetch>();
 
     CBioseqInfoFetchRequest     bioseq_info_request;
     bioseq_info_request.SetAccession(upper_seq_id);
@@ -699,8 +698,7 @@ CPSGS_AsyncResolveBase::x_PreparePrimaryBioseqInfoQuery(
     m_BioseqInfoRequestedSeqIdType = seq_id_type;
     m_BioseqInfoRequestedGI = gi;
 
-    shared_ptr<CCassBioseqInfoFetch>   details;
-    details.reset(new CCassBioseqInfoFetch());
+    shared_ptr<CCassBioseqInfoFetch>   details = make_shared<CCassBioseqInfoFetch>();
 
     CBioseqInfoFetchRequest     bioseq_info_request;
     string                      accession;
@@ -772,8 +770,7 @@ void CPSGS_AsyncResolveBase::x_PrepareSi2csiQuery(const string &  secondary_id,
 {
     ++m_BioseqResolution.m_CassQueryCount;
 
-    shared_ptr<CCassSi2csiFetch>   details;
-    details.reset(new CCassSi2csiFetch());
+    shared_ptr<CCassSi2csiFetch>   details = make_shared<CCassSi2csiFetch>();
 
     CSi2CsiFetchRequest     si2csi_request;
 

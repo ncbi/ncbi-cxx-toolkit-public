@@ -305,7 +305,7 @@ private:
 
 private:
     // Registered processors
-    list<unique_ptr<IPSGS_Processor>>   m_RegisteredProcessors;
+    vector<unique_ptr<IPSGS_Processor>>     m_RegisteredProcessors;
 
 private:
     // Note: the data are spread between buckets so that there is less

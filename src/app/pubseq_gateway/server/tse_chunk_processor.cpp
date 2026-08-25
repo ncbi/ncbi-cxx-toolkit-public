@@ -429,8 +429,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2InfoFinalStage(void)
                                       vector<string>(), vector<string>(),
                                       psg_clock_t::now());
 
-            shared_ptr<CCassBlobFetch>  fetch_details;
-            fetch_details.reset(new CCassBlobFetch(chunk_request, chunk_blob_id));
+            shared_ptr<CCassBlobFetch>  fetch_details = make_shared<CCassBlobFetch>(chunk_request, chunk_blob_id);
             CCassBlobTaskLoadBlob *         load_task =
                 new CCassBlobTaskLoadBlob(cass_connection,
                                           chunk_blob_id.m_Keyspace->keyspace,
@@ -499,10 +498,10 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2InfoFinalStage(void)
     // - not found in cache
 
     // Initiate async the history request
-    shared_ptr<CCassSplitHistoryFetch>      fetch_details;
-    fetch_details.reset(new CCassSplitHistoryFetch(*m_TSEChunkRequest,
-                                                   m_IdModVerId2Info->GetTSEId(),
-                                                   m_IdModVerId2Info->GetSplitVersion()));
+    shared_ptr<CCassSplitHistoryFetch>      fetch_details =
+            make_shared<CCassSplitHistoryFetch>(*m_TSEChunkRequest,
+                                                m_IdModVerId2Info->GetTSEId(),
+                                                m_IdModVerId2Info->GetSplitVersion());
     CCassBlobTaskFetchSplitHistory *   load_task =
         new  CCassBlobTaskFetchSplitHistory(cass_connection,
                                             m_IdModVerId2Info->GetTSEId().m_Keyspace->keyspace,
@@ -669,8 +668,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2InfoFinalStage(void)
                                       vector<string>(), vector<string>(),
                                       psg_clock_t::now());
 
-    shared_ptr<CCassBlobFetch>  fetch_details;
-    fetch_details.reset(new CCassBlobFetch(chunk_request, m_SatInfoChunkVerBlobId));
+    shared_ptr<CCassBlobFetch>  fetch_details = make_shared<CCassBlobFetch>(chunk_request, m_SatInfoChunkVerBlobId);
 
     CCassBlobTaskLoadBlob *         load_task = nullptr;
     if (tse_blob_prop_cache_lookup_result != ePSGS_CacheHit) {

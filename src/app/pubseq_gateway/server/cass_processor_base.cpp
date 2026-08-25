@@ -184,15 +184,19 @@ IPSGS_Processor::EPSGS_Status CPSGS_CassProcessorBase::GetStatus(void) const
 
 bool CPSGS_CassProcessorBase::AreAllFinishedRead(void) const
 {
+    const size_t current_size = m_FetchDetails.size();
+
+    if (m_CheckedFetchSize.has_value() && m_CheckedFetchSize.value() == current_size) {
+        return true;
+    }
+
     for (const auto &  details: m_FetchDetails) {
-        if (details) {
-            if (!details->HasError()) {
-                if (!details->ReadFinished()) {
-                    return false;
-                }
-            }
+        if (details && !details->HasError() && !details->ReadFinished()) {
+            return false;
         }
     }
+
+    m_CheckedFetchSize = current_size;
     return true;
 }
 

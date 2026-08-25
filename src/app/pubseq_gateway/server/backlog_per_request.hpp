@@ -39,14 +39,29 @@
 
 // This is to collect momentous counters of the backlogged requests split by a
 // request type
+// Note: when a snapshot is taken the counters are retrieved one by one. So
+//       they could be inconsistent. However the precision is not required here
+//       because it also could be a timing of adding/removing other backlogged
+//       requests. Thus, to avoid a mutex, an individual atomic counters are
+//       used.
 struct SBacklogPerRequest
 {
-    size_t          m_BacklogPerRequest[CPSGS_Request::ePSGS_UnknownRequest];
+    atomic<size_t>      m_BacklogPerRequest[CPSGS_Request::ePSGS_UnknownRequest];
 
     SBacklogPerRequest()
     {
-        for (size_t  k = 0; k < sizeof(m_BacklogPerRequest) / sizeof(size_t); ++k)
-            m_BacklogPerRequest[k] = 0;
+        for (size_t k = 0; k < CPSGS_Request::ePSGS_UnknownRequest; ++k) {
+            m_BacklogPerRequest[k].store(0, memory_order_relaxed);
+        }
+    }
+
+    SBacklogPerRequest(const SBacklogPerRequest &  other)
+    {
+        for (size_t k = 0; k < CPSGS_Request::ePSGS_UnknownRequest; ++k) {
+            m_BacklogPerRequest[k].store(
+                    other.m_BacklogPerRequest[k].load(memory_order_relaxed),
+                    memory_order_relaxed);
+        }
     }
 };
 

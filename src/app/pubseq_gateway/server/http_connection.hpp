@@ -113,7 +113,9 @@ public:
         m_HttpCtx({0}),
         m_HttpAcceptCtx({0}),
         m_H2oCtxInitialized(false)
-    {}
+    {
+        m_RunningRequests.reserve(http_max_running);
+    }
 
     ~CHttpConnection();
 
@@ -275,17 +277,14 @@ private:
         shared_ptr<CPSGS_Request>   m_Request;
         shared_ptr<CPSGS_Reply>     m_Reply;
     };
-    list<SRunningAttributes>        m_RunningRequests;
+    vector<SRunningAttributes>      m_RunningRequests;
 
     void x_CancelAll(void);
     void x_CancelBacklog(void);
 
-    using running_list_iterator_t = typename list<SRunningAttributes>::iterator;
     using backlog_list_iterator_t = typename list<SBacklogAttributes>::iterator;
 
-    void x_RegisterRunning(shared_ptr<CPSGS_Request>  request,
-                           shared_ptr<CPSGS_Reply>  reply);
-    void x_UnregisterRunning(running_list_iterator_t &  it);
+    void x_UnregisterRunning(SRunningAttributes &  attr);
     void x_UnregisterBacklog(backlog_list_iterator_t &  it);
 
     EPSGS_PostponeResultType  x_RegisterPending(shared_ptr<CPSGS_Request>  request,
