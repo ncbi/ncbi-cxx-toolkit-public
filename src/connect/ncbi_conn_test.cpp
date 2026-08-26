@@ -46,7 +46,7 @@
                        : m_Email)
 
 #define NCBI_WWW       DEF_CONN_HOST
-#define NCBI_WWW_BEMD  "www.be-md.ncbi.nlm.nih.gov"
+#define NCBI_WWW_BEMD  "www.ncbi.nlm.nih.gov"
 #define NCBI_FWD_BEMD  "130.14.29.112"
 
 
