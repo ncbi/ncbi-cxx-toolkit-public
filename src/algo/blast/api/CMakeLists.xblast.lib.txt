@@ -79,7 +79,8 @@ set(SRC_BLAST_CXX_CORE
 
 
 NCBI_begin_lib(xblast)
-   if(NCBI_DLL_BUILD AND MaxDebug IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+   if(NCBI_DLL_BUILD AND NOT NCBI_PTBCFG_ALLOW_COMPOSITE
+      AND MaxDebug IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     set(extra_lib blast)
     set(extra_src "")
   else()
