@@ -181,11 +181,13 @@ static EHTTP_HeaderParse s_ParseHeader(const char* header,
                 char ipaddr[40];
 
                 if (sscanf(header, "%u.%u.%u.%u%n", &i1, &i2, &i3, &i4, &n) < 4
-                    ||  sscanf(header + n, "%hu%x%n", &uuu->port, &tkt, &m) < 2
-                    || (header[m += n]  &&  !(header[m] == '$')  &&
-                        !isspace((unsigned char)((header + m)
-                                                 [header[m] == '$'])))) {
+                    ||  sscanf(header + n, "%hu%x%n", &uuu->port, &tkt, &m) < 2) {
                     break/*failed - unreadable connection info*/;
+                }
+                if (header[m += n]) {
+                    unsigned char eol = (header + m)[!!(header[m] == '$')];
+                    if (eol  &&  !isspace(eol))
+                        break/*failed - unreadable connection info*/;
                 }
                 o1 = (unsigned char) i1;
                 o2 = (unsigned char) i2;
