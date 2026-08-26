@@ -21,8 +21,8 @@ function(ParseCPPFile filename codes_var autofix_var)
         endif()
 
     endforeach()
-    
-    set(all_codes   ${all_codes} PARENT_SCOPE)    
+
+    set(all_codes   ${all_codes} PARENT_SCOPE)
     set(all_autofix ${all_autofix} PARENT_SCOPE)
 endfunction()
 
@@ -50,10 +50,10 @@ enum class eTestNames
     list(JOIN all_autofix ",  \\\n    eTestNames::"  _s_autofix)
 
     string(REPLACE "__CODES_PLACE__" "${_s_codes}" _header "${_header}")
-    string(REPLACE "__AUTOFIX_PLACE__" "${_s_autofix}" _header "${_header}")    
+    string(REPLACE "__AUTOFIX_PLACE__" "${_s_autofix}" _header "${_header}")
 
-    file(WRITE ${test_names_int} "${_header}")
-    
+    file(CONFIGURE OUTPUT ${test_names_int} CONTENT "${_header}" NEWLINE_STYLE LF)
+
 endfunction(ProduceCPPFile)
 
 foreach(_filename ${all_cpp_files})
