@@ -230,7 +230,7 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 } SConnNetInfo;
 
 
-/* Defaults and the registry entry names for "SConnNetInfo" fields
+/* Registry entry key names and their defaults for the "SConnNetInfo" fields
  */
 #define DEF_CONN_REG_SECTION        "CONN"
 
@@ -381,12 +381,13 @@ extern NCBI_XCONNECT_EXPORT const char* ConnNetInfo_GetValue
 /* Return non-zero if "str" (when non-NULL, non-empty) represents a boolean
  * true value;  return 0 otherwise.
  * Any of the following strings is recognized as a true value:
- *   "1", "ON", "YES", "TRUE";
+ *   "1", "Y", "ON", "YES", "TRUE";
  * Any of the following strings is recognized as a false value:
- *   "0", "OFF", "NO", "FALSE".
+ *   "0", "N", "OFF", "NO", "FALSE".
  * The strings above are treated case-insensitively.
- * Any other value (including NULL or empty string) gets returned as
- * false(0), with a warning issued to the log.
+ * An empty string ("") is treated like FALSE, and returns 0.
+ * Any other value (including NULL) gets returned as false(0),
+ * with a warning issued to the log.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
 (const char* str
