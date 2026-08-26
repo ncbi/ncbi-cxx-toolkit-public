@@ -134,7 +134,7 @@ create_disk_image()
     # Debugging END
     DMG_SIZE=$(/usr/bin/du -sm "$PRODUCT" | /usr/bin/awk '{ size = int($1 * 1.25) + 64; if (size < 512) size = 512; print size "m"; exit }')
     MOUNT_POINT=$(/usr/bin/mktemp -d "${TMPDIR:-/tmp}/${PRODUCT}.XXXXXX")
-    DMG=$(/usr/bin/mktemp -u "${TMPDIR:-/tmp}/${PRODUCT}.XXXXXX.dmg")
+    DMG=$(/usr/bin/mktemp -u "${TMPDIR:-/tmp}/${PRODUCT}.XXXXXX")
     rm -frv "$PRODUCT.dmg"
     retry_hdiutil_create \
         -srcfolder "$PRODUCT" \
