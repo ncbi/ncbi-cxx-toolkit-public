@@ -866,6 +866,8 @@ macro(NCBIcomponent_find_package _name _pkglib _pkg)
                 set_property(TARGET ${_pkglib} APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${_pkg_include})
                 set_property(TARGET ${_pkglib} APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS ${_pkg_defines})
                 set(_plib "${_pkglib}")
+	    else()
+                set(_plib "${_pkglib}")
             endif()
 
             set(NCBI_COMPONENT_${_name}_VERSION "${_pkg_version}")
