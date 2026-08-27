@@ -13,7 +13,7 @@ RESOURCES_DIR=Resources
 ID=gov.nlm.nih.ncbi.blast
 # Number of times to retry the "hdiutil create" command before giving up.
 # Can be overridden by setting HDIUTIL_CREATE_RETRIES in the environment.
-HDIUTIL_CREATE_RETRIES=${HDIUTIL_CREATE_RETRIES:-3}
+HDIUTIL_CREATE_RETRIES=${HDIUTIL_CREATE_RETRIES:-5}
 
 if [ $# -ne 3 ] ; then
     echo "Usage: ncbi-blast.sh [installation directory] [MacOSX post-build script directory] [BLAST version]";
@@ -97,19 +97,21 @@ create_product_archive()
     cp -p $SCRIPTDIR/uninstall_ncbi_blast.zip $PRODUCT
 }
 
-# Runs "hdiutil create" with the given arguments, retrying up to
-# $HDIUTIL_CREATE_RETRIES times if it fails, waiting exponentially longer
-# between each attempt (1s, 2s, 4s, ...).
+# Runs "hdiutil create" with the given arguments and a fresh temporary output
+# path, retrying up to $HDIUTIL_CREATE_RETRIES times if it fails, waiting
+# exponentially longer between each attempt (1s, 2s, 4s, ...).
 retry_hdiutil_create()
 {
     attempt=1
     wait_time=2
     while [ $attempt -le $HDIUTIL_CREATE_RETRIES ]; do
-        /usr/bin/hdiutil create "$@"
+        DMG=$(/usr/bin/mktemp -u "${TMPDIR:-/tmp}/${PRODUCT}.XXXXXX") || return $?
+        /usr/bin/hdiutil create -debug "$@" "$DMG"
         rc=$?
         if [ $rc -eq 0 ]; then
             return 0
         fi
+        rm -frv "$DMG"
         if [ $attempt -eq $HDIUTIL_CREATE_RETRIES ]; then
             echo "ERROR: hdiutil create failed after $attempt attempt(s)"
             return $rc
@@ -134,7 +136,6 @@ create_disk_image()
     # Debugging END
     DMG_SIZE=$(/usr/bin/du -sm "$PRODUCT" | /usr/bin/awk '{ size = int($1 * 1.25) + 64; if (size < 512) size = 512; print size "m"; exit }')
     MOUNT_POINT=$(/usr/bin/mktemp -d "${TMPDIR:-/tmp}/${PRODUCT}.XXXXXX")
-    DMG=$(/usr/bin/mktemp -u "${TMPDIR:-/tmp}/${PRODUCT}.XXXXXX")
     rm -frv "$PRODUCT.dmg"
     retry_hdiutil_create \
         -srcfolder "$PRODUCT" \
@@ -143,13 +144,12 @@ create_disk_image()
         -fs HFS+ \
         -volname "$PRODUCT" \
         -ov \
-        -nospotlight \
-        "$DMG" || exit 1
-    /usr/bin/hdiutil attach "$DMG" -mountpoint "$MOUNT_POINT" -nobrowse -owners on
+        -nospotlight || exit 1
+    /usr/bin/hdiutil attach -debug "$DMG" -mountpoint "$MOUNT_POINT" -nobrowse -owners on
     /usr/bin/ditto "$PRODUCT" "$MOUNT_POINT"
     sync
-    /usr/bin/hdiutil detach "$MOUNT_POINT" || /usr/bin/hdiutil detach "$MOUNT_POINT" -force
-    /usr/bin/hdiutil convert "$DMG" -format UDZO -o "$PRODUCT.dmg"
+    /usr/bin/hdiutil detach -debug "$MOUNT_POINT" || /usr/bin/hdiutil detach -debug "$MOUNT_POINT" -force
+    /usr/bin/hdiutil convert -debug "$DMG" -format UDZO -o "$PRODUCT.dmg"
     rm -frv "$DMG"
     mkdir $INSTALLDIR/installer
     mv $PRODUCT.dmg $INSTALLDIR/installer
