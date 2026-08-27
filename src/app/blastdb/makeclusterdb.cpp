@@ -78,62 +78,67 @@ class CCluster;
 
 class CClusterSeq : public CObject {
 public:
-	CClusterSeq(CRef<CCluster> cluster, const string & id, bool is_refseq) :
-		m_Cluster(cluster), m_Id(id), m_IsRefSeq(is_refseq) { }
-	CRef<CCluster> & GetCluster() { return m_Cluster; }
-	const string & GetId() const { return m_Id; }
-	bool IsRefSeq() const { return m_IsRefSeq; }
-	void SetOid(int64_t oid) { m_Oid = oid; }
-	int64_t GetOid() const { return m_Oid; }
+    CClusterSeq(CRef<CCluster> cluster, const string & id, bool is_refseq) :
+        m_Cluster(cluster), m_Id(id), m_IsRefSeq(is_refseq) { }
+    CRef<CCluster> & GetCluster() { return m_Cluster; }
+    const string & GetId() const { return m_Id; }
+    bool IsRefSeq() const { return m_IsRefSeq; }
+    void SetOid(int64_t oid) { m_Oid = oid; }
+    int64_t GetOid() const { return m_Oid; }
 private:
-	CRef<CCluster> m_Cluster;
-	string m_Id;
-	bool m_IsRefSeq;
-	blastdb::TOid m_Oid;
+    CRef<CCluster> m_Cluster;
+    string m_Id;
+    bool m_IsRefSeq;
+    blastdb::TOid m_Oid;
 };
 
 class CCluster : public CObject {
 public:
-	CCluster (unsigned int cluster_id) : m_ClusterId(cluster_id) {}
-	unsigned int GetClusterId() const { return m_ClusterId; }
-	CRef<CClusterSeq> & GetRefSeq() { return m_RefSeq; }
-	const string & GetRefSeqId() { return(m_RefSeq.Empty() ? kEmptyStr : m_RefSeq->GetId()); }
-	void SetRefSeq(CRef<CClusterSeq> & r) {
-		m_RefSeq.Reset(r); }
-	const vector<CRef<CClusterSeq> > &  GetMemSeqs() { return m_MemSeqs; }
-	void AddMemSeq(CRef<CClusterSeq> & m) {
-		m_MemSeqs.push_back(m);
-	}
-	int64_t GetRefSeqOid() const {
-		if(m_RefSeq.NotEmpty()) {
-			return m_RefSeq->GetOid();
-		}
-		return -1;
-	}
+    CCluster (unsigned int cluster_id) : m_ClusterId(cluster_id) {}
+    unsigned int GetClusterId() const { return m_ClusterId; }
+    const CRef<CClusterSeq> & GetRefSeq() const { return m_RefSeq; }
+    const string & GetRefSeqId() { return(m_RefSeq.Empty() ? kEmptyStr : m_RefSeq->GetId()); }
+    void SetRefSeq(CRef<CClusterSeq> & r) {
+        m_RefSeq.Reset(r); }
+    const vector<CRef<CClusterSeq> > &  GetMemSeqs() const { return m_MemSeqs; }
+    void AddMemSeq(CRef<CClusterSeq> & m) {
+        m_MemSeqs.push_back(m);
+    }
+    int64_t GetRefSeqOid() const {
+        if(m_RefSeq.NotEmpty()) {
+            return m_RefSeq->GetOid();
+        }
+        return -1;
+    }
 private:
-	unsigned int m_ClusterId;
-	CRef<CClusterSeq> m_RefSeq;
-	vector<CRef<CClusterSeq> > m_MemSeqs;
+    unsigned int m_ClusterId;
+    CRef<CClusterSeq> m_RefSeq;
+    vector<CRef<CClusterSeq> > m_MemSeqs;
 
 };
 
 bool SortClusterSeqs(const CRef<CClusterSeq> & a, const CRef<CClusterSeq> & b)
 {
-	return (a->GetId() < b->GetId());
+    return (a->GetId() < b->GetId());
 }
 
 bool SortCluster(const CRef<CCluster> & a, const CRef<CCluster> & b)
 {
-	return (a->GetRefSeqOid() < b->GetRefSeqOid());
+    return (a->GetRefSeqOid() < b->GetRefSeqOid());
 }
 
 
 class CClusterDBSource : public IRawSequenceSource {
 public:
-    CClusterDBSource(CRef<CSeqDBExpert> & source_db, vector<CRef<CCluster> > & clusters, CBuildDatabase * outdb);
+    CClusterDBSource(CRef<CSeqDBExpert> & source_db, vector<CRef<CCluster> > & clusters,
+                     CBuildDatabase * outdb,
+                     CNcbiOfstream *  cluster_metadata);
 
     virtual ~CClusterDBSource()
     {
+        if(m_ClusterMetadata != nullptr){
+            m_ClusterMetadata->close();
+        }
     }
 
     virtual bool GetNext(CTempString               & sequence,
@@ -162,9 +167,35 @@ public:
 #endif
 
 private:
+
+    /// Extract unique taxids for each IPG from deflines
+    /// return defline for representative seq with all unique taxids in cluster
+    void x_ProcessTaxids_5Cols(const CRef<CCluster> & cluster,
+                               CRef<CBlast_def_line>   & bf);
+
+    /// Extract unique taxids for all members in a cluster by oids
+    /// return defline for representative seq with all unique taxids in cluster
+    void x_ProcessTaxids(const CRef<CCluster> & cluster,
+                         CRef<CBlast_def_line> & bf);
+
+    /// Helper functions for printing 5 cols metadata:-
+    /// representative_id,member_id,member_taxid,PIG,is_identical_protein
+    void x_Print5ColsMetadata(const string & ref_acc,
+                              const string & mem_acc,
+                              const CBlast_def_line::TTaxid mem_taxid,
+                              int ipg,
+                              bool isIdenticalProtein);
+
+    void x_Print5ColsMetadata(const string & ref_acc,
+                              const string & mem_acc,
+                              const CBlast_def_line::TTaxIds & leaf_taxids,
+                              int ipg,
+                              bool isIdenticalProtein);
+
     CRef<CSeqDBExpert> m_Source;
     vector<CRef<CCluster> > & m_Clusters;
     uint64_t m_CurrentCluster;
+    CNcbiOfstream *  m_ClusterMetadata;
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     vector<CBlastDbBlob> m_Blobs;
@@ -175,8 +206,10 @@ private:
 #endif
 };
 
-CClusterDBSource::CClusterDBSource(CRef<CSeqDBExpert> & source_db, vector<CRef<CCluster> > & cluster, CBuildDatabase * outdb)
-    : m_Source(source_db), m_Clusters(cluster), m_CurrentCluster(0)
+CClusterDBSource::CClusterDBSource(CRef<CSeqDBExpert> & source_db,
+                                   vector<CRef<CCluster> > & cluster, CBuildDatabase * outdb,
+                                   CNcbiOfstream * cluster_metadata)
+    : m_Source(source_db), m_Clusters(cluster), m_CurrentCluster(0), m_ClusterMetadata(cluster_metadata)
 {
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
@@ -197,82 +230,232 @@ CClusterDBSource::CClusterDBSource(CRef<CSeqDBExpert> & source_db, vector<CRef<C
         m_ColumnIds.push_back(m_Source->GetColumnId(m_ColumnNames[i]));
     }
 #endif
-	for (m_CurrentCluster=0; m_CurrentCluster< m_Clusters.size(); m_CurrentCluster++) {
-		if(m_Clusters[m_CurrentCluster]->GetRefSeqOid() < 0) {
-			LOG_POST(Warning << m_Clusters[m_CurrentCluster]->GetRefSeqId() + " not in source db");
-		}
-		else {
-			break;
-		}
-	}
+    for (m_CurrentCluster=0; m_CurrentCluster< m_Clusters.size(); m_CurrentCluster++) {
+        if(m_Clusters[m_CurrentCluster]->GetRefSeqOid() < 0) {
+            LOG_POST(Warning << m_Clusters[m_CurrentCluster]->GetRefSeqId() + " not in source db");
+        }
+        else {
+            break;
+        }
+    }
 
-	if(m_CurrentCluster == m_Clusters.size()) {
+    if(m_CurrentCluster == m_Clusters.size()) {
         NCBI_THROW(CSeqDBException, eArgErr, "No valid cluster");
-	}
+    }
+}
+void CClusterDBSource::x_Print5ColsMetadata(const string & ref_acc,
+                                            const string & mem_acc,
+                                            const CBlast_def_line::TTaxIds & leaf_taxids,
+                                            int ipg,
+                                            bool isIdenticalProtein)
+{
+    _ASSERT(m_ClusterMetadata != nullptr);
+    for(const auto & leaf : leaf_taxids) {
+        x_Print5ColsMetadata(ref_acc, mem_acc, leaf, ipg, isIdenticalProtein);
+    }
 }
 
-bool
-CClusterDBSource::GetNext(CTempString               & sequence,
-                         CTempString               & ambiguities,
-                         CRef<CBlast_def_line_set> & deflines,
-                         vector<SBlastDbMaskData>  & mask_range,
-                         vector<int>               & column_ids,
-                         vector<CTempString>       & column_blobs)
+void CClusterDBSource::x_Print5ColsMetadata(const string & ref_acc,
+                                            const string & mem_acc,
+                                            const CBlast_def_line::TTaxid mem_taxid,
+                                            int ipg,
+                                            bool isIdenticalProtein)
 {
-	if(m_CurrentCluster >= m_Clusters.size()) {
-		return false;
-	}
+    _ASSERT(m_ClusterMetadata != nullptr);
 
-    CRef<CCluster> cluster = m_Clusters[m_CurrentCluster];
-	blastdb::TOid ref_oid = cluster->GetRefSeqOid();
-	if (! m_Source->CheckOrFindOID(ref_oid)){
-	    return false;
-	}
+    CNcbiOfstream & meta_file = *m_ClusterMetadata;
+    const char kDelimiter = ',';
+    meta_file << ref_acc << kDelimiter
+              << mem_acc << kDelimiter
+              << mem_taxid << kDelimiter
+              << ipg << kDelimiter
+              << (isIdenticalProtein ? 'T' : 'F')
+              << '\n';
+}
 
-	if (ref_oid != cluster->GetRefSeqOid()) {
-        NCBI_THROW(CSeqDBException, eArgErr, "Oid not found");
-	}
+static int
+s_GetIpg(const CRef<CBlast_def_line_set> & defline_set, const string & acc)
+{
+    if (defline_set.Empty() || (!defline_set->IsSet())) {
+        NCBI_THROW(CSeqDBException, eArgErr, "Empty defline set for " + acc);
+    }
+    for (const auto& defline : defline_set->Get()) {
+        if (defline->IsSetOther_info()) {
+            for (int ipg : defline->GetOther_info()) {
+                if (ipg != -1) {
+                    return ipg;
+                }
+            }
+        }
+    }
+    NCBI_THROW(CSeqDBException, eArgErr, "Invalid IPG for " + acc);
+}
 
-    const char * seq_ptr;
-    int slength(0), alength(0);
+static string
+s_GetSeqIdString(const CSeq_id & seqid)
+{
+    if(seqid.IsPir() || seqid.IsPrf()) {
+        return seqid.AsFastaString();
+    }
+    return seqid.GetSeqIdString(true);
+}
 
-    m_Source->GetRawSeqAndAmbig(ref_oid, &seq_ptr, & slength, & alength);
+void
+CClusterDBSource::x_ProcessTaxids_5Cols(const CRef<CCluster> & cluster, CRef<CBlast_def_line> & bf)
+{
+    const CRef<CClusterSeq> & ref_seq = cluster->GetRefSeq();
+    const string ref_acc = ref_seq->GetId();
+    const blastdb::TOid ref_oid = cluster->GetRefSeqOid();
+    CSeq_id ref_seqid(ref_acc);
 
-    sequence    = CTempString(seq_ptr, slength);
-    ambiguities = CTempString(seq_ptr + slength, alength);
+    CBlast_def_line::TTaxIds ref_taxid_set;
+    CBlast_def_line::TTaxIds taxids;
+    {
+        CRef<CBlast_def_line_set> ref_defline_set = m_Source->GetHdr(ref_oid);
+        int ref_ipg = s_GetIpg(ref_defline_set, ref_acc);
+        bool found = false;
+        NON_CONST_ITERATE(CBlast_def_line_set::Tdata, itr, ref_defline_set->Set()) {
+            ITERATE(list< CRef<CSeq_id> >, seqid, (*itr)->GetSeqid()) {
+                if(ref_seqid.Match(**seqid)) {
+                    bf.Reset(*itr);
+                    CBlast_def_line::TTaxid taxid = (*itr)->GetTaxid();
+                    x_Print5ColsMetadata(ref_acc, ref_acc, taxid, ref_ipg, false);
+                    CBlast_def_line::TTaxIds leaf_node_taxids = (*itr)->GetLeafTaxIds();
+                    // Note that taxid is duplicated in link (leaf-node) as well
+                    leaf_node_taxids.erase(taxid);
+                    x_Print5ColsMetadata(ref_acc, ref_acc, leaf_node_taxids, ref_ipg, false);
+                    ref_taxid_set.insert(taxid);
+                    ref_taxid_set.insert(leaf_node_taxids.begin(), leaf_node_taxids.end());
+                    found = true;
+                    break;
+                }
+            }
+            if (found){
+                break;
+            }
+        }
+        _ASSERT(bf.NotEmpty());
 
+        taxids = ref_taxid_set;
+        // Process representative IPG seqs
+        ITERATE(CBlast_def_line_set::Tdata, itr, ref_defline_set->Get()) {
+            ITERATE(list< CRef<CSeq_id> >, seqid, (*itr)->GetSeqid()) {
+                if(!(*seqid)->IsGi() && !ref_seqid.Match(**seqid)) {
+                    //IPG can't be WP, so no leaf-node taxids
+                    CBlast_def_line::TTaxid taxid = (*itr)->GetTaxid();
+                    auto rv = taxids.insert(taxid);
+                    if(rv.second) {
+                        string ipg_acc = s_GetSeqIdString(**seqid);
+                        x_Print5ColsMetadata(ref_acc, ipg_acc, taxid, ref_ipg, true);
+                    }
+                }
+            }
+        }
+    }
+
+    {
+        const vector<CRef<CClusterSeq> > &  mem_seqs = cluster->GetMemSeqs();
+        for (const auto & mem_seq : mem_seqs) {
+            int64_t mem_oid = mem_seq->GetOid();
+            const string mem_acc = mem_seq->GetId();
+            if (mem_oid < 0) {
+                LOG_POST(Warning << mem_acc + " not in source db");
+                continue;
+            }
+            CSeq_id mem_seqid(mem_acc);
+            CRef<CBlast_def_line_set> mem_defline_set = m_Source->GetHdr(mem_oid);
+            int mem_ipg = s_GetIpg(mem_defline_set, mem_acc);
+
+            set<TTaxId> mem_taxid_set;
+            bool found = false;
+            ITERATE(CBlast_def_line_set::Tdata, itr, mem_defline_set->Get()) {
+                ITERATE(list< CRef<CSeq_id> >, seqid, (*itr)->GetSeqid()) {
+                    if(mem_seqid.Match(**seqid)) {
+                        CBlast_def_line::TTaxid taxid = (*itr)->GetTaxid();
+                        x_Print5ColsMetadata(ref_acc, mem_acc, taxid, mem_ipg, false);
+                        CBlast_def_line::TTaxIds leaf_node_taxids = (*itr)->GetLeafTaxIds();
+                        leaf_node_taxids.erase(taxid);
+                        x_Print5ColsMetadata(ref_acc, mem_acc, leaf_node_taxids, mem_ipg, false);
+                        mem_taxid_set.insert(taxid);
+                        mem_taxid_set.insert(leaf_node_taxids.begin(), leaf_node_taxids.end());
+                        found = true;
+                        break;
+                    }
+                }
+                if (found){
+                    break;
+                }
+            }
+
+            // Process member IPG seqs
+            ITERATE(CBlast_def_line_set::Tdata, itr, mem_defline_set->Get()) {
+                ITERATE(list< CRef<CSeq_id> >, seqid, (*itr)->GetSeqid()) {
+                    if(!(*seqid)->IsGi() && !mem_seqid.Match(**seqid)) {
+                         //IPG can't be WP, so no leaf-node taxids
+                         CBlast_def_line::TTaxid taxid = (*itr)->GetTaxid();
+                         auto rv = mem_taxid_set.insert(taxid);
+                         if(rv.second) {
+                             string ipg_acc = s_GetSeqIdString(**seqid);
+                             x_Print5ColsMetadata(ref_acc, ipg_acc, taxid, mem_ipg, true);
+                         }
+                     }
+                 }
+            }
+            taxids.insert(mem_taxid_set.begin(), mem_taxid_set.end());
+        }
+    }
+    vector<CBlast_def_line::TTaxid> diff_taxid;
+
+    std::set_difference(taxids.begin(), taxids.end(), ref_taxid_set.begin(), ref_taxid_set.end(), std::back_inserter(diff_taxid));
+    if (diff_taxid.size() > 0) {
+        CBlast_def_line::TTaxIds leaf_ts(diff_taxid.begin(), diff_taxid.end());
+        const CBlast_def_line::TTaxIds& tx = bf->GetLeafTaxIds();
+        if(tx.size() > 0) {
+            leaf_ts.insert(tx.begin(), tx.end());
+        }
+        bf->SetLeafTaxIds(leaf_ts);
+    }
+}
+
+
+void
+CClusterDBSource::x_ProcessTaxids(const CRef<CCluster> & cluster, CRef<CBlast_def_line> & bf)
+{
+
+    const CRef<CClusterSeq> & ref_seq = cluster->GetRefSeq();
+    const blastdb::TOid ref_oid = cluster->GetRefSeqOid();
     CRef<CBlast_def_line_set> ref_defline_set = m_Source->GetHdr(ref_oid);
+    CSeq_id ref_seqid(ref_seq->GetId());
+
     CBlast_def_line_set::Tdata ref_deflines = ref_defline_set->Set();
     CBlast_def_line::TTaxIds taxids;
-    CRef<CBlast_def_line> bf;
-
-    CRef<CClusterSeq> ref_seq = cluster->GetRefSeq();
-    CSeq_id ref_seqid(ref_seq->GetId());
-   	CBlast_def_line::TTaxIds ref_ts;
+    CBlast_def_line::TTaxIds ref_taxids;
     NON_CONST_ITERATE(CBlast_def_line_set::Tdata, itr, ref_deflines) {
-    	CBlast_def_line::TTaxIds ts = (*itr)->GetTaxIds();
-    	taxids.insert(ts.begin(), ts.end());
-    	ITERATE(list< CRef<CSeq_id> >, seqid, (*itr)->GetSeqid()) {
-    		if (ref_seqid.Match(**seqid)) {
-    			bf.Reset(*itr);
-    			ref_ts.insert(ts.begin(), ts.end());
-    			break;
-    		}
-    	}
+        CBlast_def_line::TTaxIds ts = (*itr)->GetTaxIds();
+        taxids.insert(ts.begin(), ts.end());
+        if (!ref_taxids.size()) {
+            ITERATE(list< CRef<CSeq_id> >, seqid, (*itr)->GetSeqid()) {
+                if (ref_seqid.Match(**seqid)) {
+                    bf.Reset(*itr);
+                    ref_taxids.insert(ts.begin(), ts.end());
+                    break;
+                }
+            }
+        }
     }
 
     _ASSERT(bf.NotEmpty());
     const vector<CRef<CClusterSeq> > &  mem_seqs = cluster->GetMemSeqs();
     if (mem_seqs.size() > 0) {
-    	vector<blastdb::TOid> mem_oids;
-    	for (unsigned int i=0; i < mem_seqs.size(); i++) {
-    		int64_t mem_oid = mem_seqs[i]->GetOid();
-    		if (mem_oid < 0) {
-    			LOG_POST(Warning << mem_seqs[i]->GetId() + " not in source db");
-    			continue;
-    		}
-    		mem_oids.push_back(mem_oid);
-    	}
+        vector<blastdb::TOid> mem_oids;
+        for (const auto & mem_seq : mem_seqs) {
+            int64_t mem_oid = mem_seq->GetOid();
+            if (mem_oid < 0) {
+                LOG_POST(Warning << mem_seq->GetId() + " not in source db");
+                continue;
+            }
+            mem_oids.push_back(mem_oid);
+        }
 #ifdef HAVE_IPS4O_HPP
 
 #ifdef HAVE_LIBTBB
@@ -282,25 +465,61 @@ CClusterDBSource::GetNext(CTempString               & sequence,
 #endif /* HAVE_LIBTBB */
 
 #else
-    	std::sort(mem_oids.begin(), mem_oids.end());
+        std::sort(mem_oids.begin(), mem_oids.end());
 #endif /* HAVE_IPS4O_HPP */
-    	set<TTaxId> mem_ts;
-    	m_Source->GetTaxIdsForOids(mem_oids, mem_ts);
-    	taxids.insert(mem_ts.begin(), mem_ts.end());
+        set<TTaxId> mem_ts;
+        m_Source->GetTaxIdsForOids(mem_oids, mem_ts);
+        taxids.insert(mem_ts.begin(), mem_ts.end());
     }
-	vector<CBlast_def_line::TTaxid> diff_ts;
-	diff_ts.resize(taxids.size());
-	vector<CBlast_def_line::TTaxid>::iterator diff_ts_itr;
+    vector<CBlast_def_line::TTaxid> diff_taxids;
 
-    diff_ts_itr = std::set_difference(taxids.begin(), taxids.end(), ref_ts.begin(), ref_ts.end(), diff_ts.begin());
-    diff_ts.resize(diff_ts_itr - diff_ts.begin());
-    if (diff_ts.size() > 0) {
-    	CBlast_def_line::TTaxIds leaf_ts(diff_ts.begin(), diff_ts.end());
-    	const CBlast_def_line::TTaxIds& tx = bf->GetLeafTaxIds();
-    	if(tx.size() > 0) {
-    		leaf_ts.insert(tx.begin(), tx.end());
-    	}
-        bf->SetLeafTaxIds(leaf_ts);
+    std::set_difference(taxids.begin(), taxids.end(), ref_taxids.begin(), ref_taxids.end(), std::back_inserter(diff_taxids));
+    if (diff_taxids.size() > 0) {
+        CBlast_def_line::TTaxIds leaf_taxids(diff_taxids.begin(), diff_taxids.end());
+        const CBlast_def_line::TTaxIds& tx = bf->GetLeafTaxIds();
+        if(tx.size() > 0) {
+            leaf_taxids.insert(tx.begin(), tx.end());
+        }
+        bf->SetLeafTaxIds(leaf_taxids);
+    }
+
+}
+
+
+bool
+CClusterDBSource::GetNext(CTempString               & sequence,
+                            CTempString               & ambiguities,
+                            CRef<CBlast_def_line_set> & deflines,
+                            vector<SBlastDbMaskData>  & mask_range,
+                            vector<int>               & column_ids,
+                            vector<CTempString>       & column_blobs)
+{
+    if(m_CurrentCluster >= m_Clusters.size()) {
+        return false;
+    }
+
+    CRef<CCluster> cluster = m_Clusters[m_CurrentCluster];
+    blastdb::TOid ref_oid = cluster->GetRefSeqOid();
+    if (! m_Source->CheckOrFindOID(ref_oid)){
+        return false;
+    }
+
+    if (ref_oid != cluster->GetRefSeqOid()) {
+        NCBI_THROW(CSeqDBException, eArgErr, "Oid not found");
+    }
+
+    const char * seq_ptr;
+    int slength(0), alength(0);
+    m_Source->GetRawSeqAndAmbig(ref_oid, &seq_ptr, & slength, & alength);
+    sequence    = CTempString(seq_ptr, slength);
+    ambiguities = CTempString(seq_ptr + slength, alength);
+
+    CRef<CBlast_def_line> bf;
+    if (m_ClusterMetadata != nullptr) {
+        x_ProcessTaxids_5Cols(cluster, bf);
+    }
+    else {
+        x_ProcessTaxids(cluster, bf);
     }
 
     deflines.Reset(new CBlast_def_line_set());
@@ -356,12 +575,12 @@ public:
         SetFullVersion(version);
         m_StopWatch.Start();
         if (m_UsageReport.IsEnabled()) {
-        	m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
-        	m_UsageReport.AddParam(CBlastUsageReport::eProgram, (string) "makeclusterdb");
+            m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
+            m_UsageReport.AddParam(CBlastUsageReport::eProgram, (string) "makeclusterdb");
         }
     }
     ~CMakeClusterDBApp() {
-    	m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.Elapsed());
+        m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.Elapsed());
     }
 
 private:
@@ -436,7 +655,12 @@ void CMakeClusterDBApp::Init()
     arg_desc->SetConstraint("max_file_sz",
                             new CArgAllow_FileSize(kMinVolFileSize, kMaxVolFileSize));
     arg_desc->AddOptionalKey("metadata_output_prefix", "",
-    						"Path prefix for location of database files in metadata", CArgDescriptions::eString);
+                            "Path prefix for location of database files in metadata", CArgDescriptions::eString);
+    arg_desc->AddFlag("with_cluster_metadata", "Experimental - Generate cluster metadata file", true);
+    arg_desc->AddOptionalKey("cluster_metadata_filename", "cluster_metadata_filename",
+                             "Experimental - File name containing the cluster metadata.",
+                             CArgDescriptions::eString);
+    arg_desc->SetDependency("cluster_metadata_filename", CArgDescriptions::eRequires, "with_cluster_metadata");
     arg_desc->AddOptionalKey("logfile", "File_Name",
                              "File to which the program log should be redirected",
                              CArgDescriptions::eOutputFile,
@@ -473,40 +697,40 @@ static string Uint8ToString_DataSize(Uint8 v, unsigned minprec = 10)
 
 void CMakeClusterDBApp::x_ProcessInputFile(const string & input_file)
 {
-	 CNcbiIfstream input_stream(input_file);
-	 string line = kEmptyStr;
-	 CRef<CCluster> current_cluster;
-	 unsigned int cluster_id = 0;
-	 while (input_stream) {
-		 getline(input_stream, line);
-		 if(line.empty() || (line.find_first_not_of(' ') == std::string::npos)) {
-			 continue;
-		 }
+     CNcbiIfstream input_stream(input_file);
+     string line = kEmptyStr;
+     CRef<CCluster> current_cluster;
+     unsigned int cluster_id = 0;
+     while (input_stream) {
+         getline(input_stream, line);
+         if(line.empty() || (line.find_first_not_of(' ') == std::string::npos)) {
+             continue;
+         }
 
-		 vector<string>  cols;
-		 NStr::Split(line, " \t", cols);
-		 if (cols.size() < 3) {
-			 continue;
-		 }
-		 string ref_id(cols[0]);
-		 if(current_cluster.Empty() || (current_cluster->GetRefSeqId() != ref_id)) {
-			 current_cluster.Reset(new CCluster(cluster_id));
-			 cluster_id ++;
-			 CRef<CClusterSeq> r_seq(new CClusterSeq(current_cluster, ref_id, true));
-			 current_cluster->SetRefSeq(r_seq);
-			 m_Clusters.push_back(current_cluster);
-			 m_ClusterSeqs.push_back(r_seq);
-		 }
-		 string mem_id(cols[1]);
-		 if (ref_id != mem_id) {
-			 CRef<CClusterSeq> m(new CClusterSeq(current_cluster, mem_id, false));
-			 current_cluster->AddMemSeq(m);
-			 m_ClusterSeqs.push_back(m);
-		 }
-	 }
+         vector<string>  cols;
+         NStr::Split(line, " \t", cols);
+         if (cols.size() < 3) {
+             continue;
+         }
+         string ref_id(cols[0]);
+         if(current_cluster.Empty() || (current_cluster->GetRefSeqId() != ref_id)) {
+             current_cluster.Reset(new CCluster(cluster_id));
+             cluster_id ++;
+             CRef<CClusterSeq> r_seq(new CClusterSeq(current_cluster, ref_id, true));
+             current_cluster->SetRefSeq(r_seq);
+             m_Clusters.push_back(current_cluster);
+             m_ClusterSeqs.push_back(r_seq);
+         }
+         string mem_id(cols[1]);
+         if (ref_id != mem_id) {
+             CRef<CClusterSeq> m(new CClusterSeq(current_cluster, mem_id, false));
+             current_cluster->AddMemSeq(m);
+             m_ClusterSeqs.push_back(m);
+         }
+     }
 
-	 LOG_POST(Info <<"Num of Reference Seqs: " << cluster_id);
-	 LOG_POST(Info <<"Num of Cluster Seqs: " << m_ClusterSeqs.size());
+     LOG_POST(Info <<"Num of Reference Seqs: " << cluster_id);
+     LOG_POST(Info <<"Num of Cluster Seqs: " << m_ClusterSeqs.size());
 #ifdef HAVE_IPS4O_HPP
 
 #ifdef HAVE_LIBTBB
@@ -516,31 +740,31 @@ void CMakeClusterDBApp::x_ProcessInputFile(const string & input_file)
 #endif /* HAVE_LIBTBB */
 
 #else
-	 std::sort(m_ClusterSeqs.begin(), m_ClusterSeqs.end(), SortClusterSeqs);
+     std::sort(m_ClusterSeqs.begin(), m_ClusterSeqs.end(), SortClusterSeqs);
 #endif /* HAVE_IPS4O_HPP */
 }
 
 void CMakeClusterDBApp::x_ProcessInputData(const string & source_db, bool is_protein)
 {
-	vector<string> accs;
-	vector<blastdb::TOid> oids;
-	accs.reserve(m_ClusterSeqs.size());
-	oids.reserve(m_ClusterSeqs.size());
-	CSeqDB::ESeqType seq_type = is_protein ? CSeqDB::eProtein : CSeqDB::eNucleotide;
-	m_SourceDB.Reset(new CSeqDBExpert(source_db, seq_type));
+    vector<string> accs;
+    vector<blastdb::TOid> oids;
+    accs.reserve(m_ClusterSeqs.size());
+    oids.reserve(m_ClusterSeqs.size());
+    CSeqDB::ESeqType seq_type = is_protein ? CSeqDB::eProtein : CSeqDB::eNucleotide;
+    m_SourceDB.Reset(new CSeqDBExpert(source_db, seq_type));
 
-	NON_CONST_ITERATE(vector<CRef<CClusterSeq> >, itr, m_ClusterSeqs) {
-		accs.push_back((*itr)->GetId());
-	}
-	m_SourceDB->AccessionsToOids(accs, oids);
+    NON_CONST_ITERATE(vector<CRef<CClusterSeq> >, itr, m_ClusterSeqs) {
+        accs.push_back((*itr)->GetId());
+    }
+    m_SourceDB->AccessionsToOids(accs, oids);
 
-	if (oids.size() != m_ClusterSeqs.size()) {
+    if (oids.size() != m_ClusterSeqs.size()) {
         NCBI_THROW(CSeqDBException, eArgErr, " Accessions to Oids look up error");
-	}
+    }
 
-	for (uint64_t i=0; i < oids.size(); i++) {
-		m_ClusterSeqs[i]->SetOid(oids[i]);
-	}
+    for (uint64_t i=0; i < oids.size(); i++) {
+        m_ClusterSeqs[i]->SetOid(oids[i]);
+    }
 #ifdef HAVE_IPS4O_HPP
 
 #ifdef HAVE_LIBTBB
@@ -550,7 +774,7 @@ void CMakeClusterDBApp::x_ProcessInputData(const string & source_db, bool is_pro
 #endif /* HAVE_LIBTBB */
 
 #else
-	std::sort(m_Clusters.begin(), m_Clusters.end(), SortCluster);
+    std::sort(m_Clusters.begin(), m_Clusters.end(), SortCluster);
 #endif /* HAVE_IPS4O_HPP */
 }
 
@@ -591,27 +815,40 @@ void CMakeClusterDBApp::x_BuildDatabase()
     TIdToLeafs empty;
     m_DB->SetLeafTaxIds(empty, true);
 
-    CRef<IRawSequenceSource> raw( new CClusterDBSource(m_SourceDB, m_Clusters, m_DB.GetPointer()));
+    std::unique_ptr<CNcbiOfstream> cluster_metadata(nullptr);
+    string meta_filename = kEmptyStr;
+    if (args["with_cluster_metadata"]) {
+        if (args["cluster_metadata_filename"]) {
+            meta_filename = args["cluster_metadata_filename"].AsString();
+            cluster_metadata.reset(new CNcbiOfstream());
+        }
+        else {
+            meta_filename = out_dbname + ".meta.csv";
+        }
+        CFile(meta_filename).Remove();
+        cluster_metadata.reset(new CNcbiOfstream(meta_filename.c_str()));
+        *cluster_metadata << "representative_id,member_id,member_taxid,PIG,is_identical_protein\n";
+    }
+    CRef<IRawSequenceSource> raw( new CClusterDBSource(m_SourceDB, m_Clusters, m_DB.GetPointer(), cluster_metadata.get()));
     m_DB->AddSequences(*raw);
 
     bool success = m_DB->EndBuild();
-   	string new_db = m_DB->GetOutputDbName();
 
 #ifdef METADATA_CLUSTERDB  
     if(success) {
-    	string new_db = m_DB->GetOutputDbName();
-    	CSeqDB::ESeqType t = is_protein? CSeqDB::eProtein: CSeqDB::eNucleotide;
-    	CSeqDB sdb(new_db, t);
+        string new_db = m_DB->GetOutputDbName();
+        CSeqDB::ESeqType t = is_protein? CSeqDB::eProtein: CSeqDB::eNucleotide;
+        CSeqDB sdb(new_db, t);
         string output_prefix = args["metadata_output_prefix"]
                 ? args["metadata_output_prefix"].AsString() : kEmptyStr;
 
         if (!output_prefix.empty() && (output_prefix.back() != CFile::GetPathSeparator())) {
             output_prefix += CFile::GetPathSeparator();
         }
-    	CRef<CBlast_db_metadata> m = sdb.GetDBMetaData(output_prefix);
-    	string extn (kEmptyStr);
-    	SeqDB_GetMetadataFileExtension(is_protein, extn);
-    	string metadata_filename = new_db + "." + extn;
+        CRef<CBlast_db_metadata> m = sdb.GetDBMetaData(output_prefix);
+        string extn (kEmptyStr);
+        SeqDB_GetMetadataFileExtension(is_protein, extn);
+        string metadata_filename = new_db + "." + extn;
         ofstream out(metadata_filename.c_str());
         unique_ptr<CObjectOStreamJson> json_out(new CObjectOStreamJson(out, eNoOwnership));
         json_out->SetDefaultStringEncoding(eEncoding_Ascii);
@@ -641,9 +878,9 @@ int CMakeClusterDBApp::Run(void)
 
 void CMakeClusterDBApp::x_AddCmdOptions()
 {
-	const CArgs & args = GetArgs();
+    const CArgs & args = GetArgs();
     if (args[kArgDbType].HasValue()) {
-    	 m_UsageReport.AddParam(CBlastUsageReport::eSeqType, args[kArgDbType].AsString());
+         m_UsageReport.AddParam(CBlastUsageReport::eSeqType, args[kArgDbType].AsString());
     }
 }
 
