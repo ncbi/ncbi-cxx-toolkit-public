@@ -256,6 +256,9 @@ public:
                 Error(CRequestStatus::e500_InternalServerError, CCassandraException::eUnknown, eDiag_Error, "Unknown exception");
             }
             finished = Finished();
+            if (finished) {
+                CloseAll();
+            }
             if (m_Async) {
                 break;
             }
@@ -406,9 +409,12 @@ protected:
     void CloseAll()
     {
         for (auto & it : m_QueryArr) {
-            it.query->Close();
+            if (it.query) {
+                it.query->Close();
+            }
             it.restart_count = 0;
         }
+        m_QueryArr.clear();
     }
 
     void SetupQueryCB3(shared_ptr<CCassQuery>& query)

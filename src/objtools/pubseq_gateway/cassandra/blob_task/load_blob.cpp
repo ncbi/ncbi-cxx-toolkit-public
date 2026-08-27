@@ -307,6 +307,7 @@ void CCassBlobTaskLoadBlob::Wait1()
                     }
                     ++m_ChunkCallbackCalled;
                     m_ChunkCallback(*m_Blob, nullptr, 0, -1);
+                    CloseAll();
                     m_State = eDone;
                 }
                 break;
