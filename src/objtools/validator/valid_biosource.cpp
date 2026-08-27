@@ -2492,17 +2492,17 @@ const bool is_circular)
 
     if (IsIndexerVersion() && source.IsSetGenome() && source.GetGenome() == CBioSource::eGenome_chromosome && isEukaryote) {
         if (! has_chromosome) {
-            PostObjErr(eDiag_Info, eErr_SEQ_DESCR_EukaryoteWithoutChromosome,
+            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_EukaryoteWithoutChromosome,
                 "INDEXER_ONLY - Eukaryotic chromosome does not have chromosome qualifier",
                 obj, ctx);
         }
         if (is_complete) {
             if (is_circular) {
-                PostObjErr(eDiag_Info, eErr_SEQ_DESCR_EukaryoteCircularChromosome,
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_EukaryoteCircularChromosome,
                     "INDEXER_ONLY - Eukaryotic chromosome should not be complete and circular",
                     obj, ctx);
             } else {
-                PostObjErr(eDiag_Info, eErr_SEQ_DESCR_EukaryoteCompleteChromosome,
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_EukaryoteCompleteChromosome,
                     "INDEXER_ONLY - Eukaryotic chromosome should not be complete",
                     obj, ctx);
             }
