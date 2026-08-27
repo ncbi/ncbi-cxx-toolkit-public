@@ -119,12 +119,18 @@ int CBlastUsageReportApp::Run(void)
 		        ERR_POST(Warning << "Existing usage configuration override opt-in selection.\n"
 		                            "Please run status option for more information.");
             }
+            else {
+                LOG_POST("BLAST Usage Report: Enabled");
+            }
         }
         else if (args[kArgOff]){
 		    m_PhoneHomePolicy.SetUserUsageReportPreference(false);
 		    if (m_PhoneHomePolicy.IsEnabled() != false) {
 		        ERR_POST(Warning << "Existing usage configuration override opt-in selection.\n"
 		                            "Please run status option for more information.");
+            }
+            else {
+                LOG_POST("BLAST Usage Report: Disabled");
             }
         }
         else if (args[kArgPrivacyMsg]){
