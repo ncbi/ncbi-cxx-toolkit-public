@@ -657,6 +657,7 @@ EPSG_Status SPSG_Reply::SState::SStatus::From(int status)
         case CRequestStatus::e407_ProxyAuthRequired:                return EPSG_Status::eForbidden;
         case CRequestStatus::e451_Unavailable_For_Legal_Reasons:    return EPSG_Status::eForbidden;
         case CRequestStatus::e404_NotFound:         return EPSG_Status::eNotFound;
+        case CRequestStatus::e300_MultipleChoices:  return EPSG_Status::eNotFound;
         default:                                    return EPSG_Status::eError;
     }
 }
