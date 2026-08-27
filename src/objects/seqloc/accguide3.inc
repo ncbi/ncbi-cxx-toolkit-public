@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Thu Aug 27 10:04:48 EDT 2026; formally
+/* time_t value corresponding to Thu Aug 27 13:11:19 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kBuiltInGuide_Timestamp = 1787839488UL;
+static const unsigned long kBuiltInGuide_Timestamp = 1787850679UL;
 static const char* const kBuiltInGuide[] = {
     "# $Id$",
     "version  3 # of file format",
