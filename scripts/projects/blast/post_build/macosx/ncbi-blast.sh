@@ -132,7 +132,7 @@ create_disk_image()
     rm -frv "$PRODUCT.dmg"
     retry_hdiutil_create \
         -size "$DMG_SIZE" \
-        -format UDRW \
+        -type UDIF \
         -fs HFS+ \
         -volname "$PRODUCT" \
         -ov \
