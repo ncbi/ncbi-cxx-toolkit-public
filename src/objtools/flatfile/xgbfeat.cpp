@@ -127,12 +127,11 @@ static Int2 GBQualSplit(const Char* qual)
  *****************************************************************************/
 int XGBFeatKeyQualValid(CSeqFeatData::ESubtype subtype, TQualVector& quals, bool error_msgs, bool perform_corrections)
 {
-    bool fqual  = false;
-    int  retval = GB_FEAT_ERR_NONE;
+    bool fqual = false;
 
     /* unknown qual will be drop after the routine */
-    retval = SplitMultiValQual(quals);
-    retval = GBQualSemanticValid(quals, error_msgs, perform_corrections);
+    SplitMultiValQual(quals);
+    int retval = GBQualSemanticValid(quals, error_msgs, perform_corrections);
     /*----------------------------------------
          if the Semnatic QUALIFIER validator says drop, then
          at the feature level, it is repairable by dropping the
