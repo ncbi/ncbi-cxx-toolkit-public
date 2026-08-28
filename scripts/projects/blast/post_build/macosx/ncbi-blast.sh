@@ -126,26 +126,20 @@ retry_hdiutil_create()
 create_disk_image()
 {
     du -shc $PRODUCT    # For diagnostics
-    # Note: if this command fails, it could be because the -size argument is no
-    # longer large enough, adjust accordingly
-    # June 24 2026, disabled size at all.
-    # /usr/bin/hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT -verbose -size 500m
-    # Debugging START
-    set +e
     set -x
-    # Debugging END
     DMG_SIZE=$(/usr/bin/du -sm "$PRODUCT" | /usr/bin/awk '{ size = int($1 * 1.25) + 64; if (size < 512) size = 512; print size "m"; exit }')
     MOUNT_POINT=$(/usr/bin/mktemp -d "${TMPDIR:-/tmp}/${PRODUCT}.XXXXXX")
     rm -frv "$PRODUCT.dmg"
     retry_hdiutil_create \
-        -srcfolder "$PRODUCT" \
         -size "$DMG_SIZE" \
         -format UDRW \
         -fs HFS+ \
         -volname "$PRODUCT" \
         -ov \
         -nospotlight || exit 1
+    sleep 10
     /usr/bin/hdiutil attach -debug "$DMG" -mountpoint "$MOUNT_POINT" -nobrowse -owners on
+    sleep 10
     /usr/bin/ditto "$PRODUCT" "$MOUNT_POINT"
     sync
     /usr/bin/hdiutil detach -debug "$MOUNT_POINT" || /usr/bin/hdiutil detach -debug "$MOUNT_POINT" -force
