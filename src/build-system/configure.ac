@@ -9746,7 +9746,8 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(opentelemetry, OPENTELEMETRY,
    -lopentelemetry_proto -lopentelemetry_http_client_curl \
    -lopentelemetry_logs -lopentelemetry_metrics \
    -lopentelemetry_resources -lopentelemetry_common],
-  [$GRPC_LIBS $PROTOBUF_LIBS $CURL_LIBS], [$GRPC_INCLUDE $OPENTELEMETRY_CFLAGS])
+  [$GRPC_LIBS $PROTOBUF_LIBS $CURL_LIBS $Z_LIBS],
+  [$GRPC_INCLUDE $OPENTELEMETRY_CFLAGS])
 OPENTELEMETRY_LIBS=`echo "$OPENTELEMETRY_LIBS" | sed -e 's/  */ /g'`
 if test "$with_opentelemetry" != no \
    -a -f "$OPENTELEMETRY_PATH/lib/libopentelemetry_common-static.a"; then
