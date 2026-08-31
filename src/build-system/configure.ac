@@ -915,6 +915,7 @@ elif test "$with_jni" = "yes" ; then
 fi
 
 if test "$with_bin_release" = "yes" ; then
+   favor_static_deps=yes
    # Default some other options accordingly
    : ${with_ncbi_public=yes}
    : ${with_libdw=no}
@@ -924,6 +925,8 @@ if test "$with_bin_release" = "yes" ; then
    : ${with_sse42=no}
    AC_DEFINE(NCBI_BIN_RELEASE, 1,
              [Define to 1 when building binaries for public release.])
+else
+   favor_static_deps=no
 fi
 
 case "$with_strip:$with_symbols" in
@@ -971,7 +974,7 @@ case "$with_static_vdb:$with_vdb" in
       with_vdb=yes
       ;;
    :* )
-      with_static_vdb=$with_bin_release
+      with_static_vdb=$favor_static_deps
       ;;
 esac
 
@@ -983,7 +986,7 @@ case "$with_static_gnutls:$with_gnutls" in
       with_gnutls=yes
       ;;
    :yes )
-      with_static_gnutls=$with_bin_release
+      with_static_gnutls=$favor_static_deps
       ;;
 esac
 
@@ -4983,7 +4986,7 @@ fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(lzo, LZO, lzo2,
  [AC_LANG_PROGRAM([@%:@include <lzo/lzo1x.h>],
       [[lzo_uint32 c = lzo_crc32(0, (const unsigned char*)"foo", 3);]])])
-if test -n "$LZO_LIBS" -a "x$with_bin_release" = xyes \
+if test -n "$LZO_LIBS" -a "x$favor_static_deps" = xyes \
         -a \( -f "$LZO_PATH/lib$bit64_sfx/liblzo2-static.a" \
               -o -f "$LZO_PATH/lib/liblzo2-static.a" \); then
    LZO_LIBS="$LZO_LIBPATH -llzo2-static"
@@ -5010,7 +5013,7 @@ if test -n "$ZSTD_LIBS" -a \( -f "$ZSTD_PATH/lib$bit64_sfx/libzstd-static.a" \
 else
    ZSTD_STATIC_LIBS=$ZSTD_LIBS
 fi
-if test "x$with_bin_release" = xyes; then
+if test "x$favor_static_deps" = xyes; then
    ZSTD_LIBS=$ZSTD_STATIC_LIBS
 fi
 
@@ -5796,7 +5799,7 @@ if test "$with_bdb" != "no" ; then
    fi
    if test -f "${BERKELEYDB_LIBPATH}/libdb-static.a"; then
       BERKELEYDB_STATIC_LIBS="-L${BERKELEYDB_LIBPATH} -ldb-static"
-      if test "x$with_bin_release" = "xyes"; then
+      if test "x$favor_static_deps" = "xyes"; then
          BERKELEYDB_LIBS=$BERKELEYDB_STATIC_LIBS
       fi
    else
@@ -6325,7 +6328,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    BOOST_REGEX_LIBS=-lboost_regex${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_regex$BOOST_STATIC_TAG.a"; then
        BOOST_REGEX_STATIC_LIBS=-lboost_regex$BOOST_STATIC_TAG
-       if test "x$with_bin_release" = "xyes"; then
+       if test "x$favor_static_deps" = "xyes"; then
            BOOST_REGEX_LIBS=$BOOST_REGEX_STATIC_LIBS
        fi
    else
@@ -6365,7 +6368,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    BOOST_SYSTEM_LIBS=-lboost_system${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_system$BOOST_STATIC_TAG.a"; then
        BOOST_SYSTEM_STATIC_LIBS=-lboost_system$BOOST_STATIC_TAG
-       if test "x$with_bin_release" = "xyes"; then
+       if test "x$favor_static_deps" = "xyes"; then
            BOOST_SYSTEM_LIBS=$BOOST_SYSTEM_STATIC_LIBS
        fi
    else
@@ -6386,7 +6389,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    boost_chrono_lib=-lboost_chrono${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_chrono$BOOST_STATIC_TAG.a"; then
        boost_chrono_static_lib=-lboost_chrono$BOOST_STATIC_TAG
-       if test "x$with_bin_release" = "xyes"; then
+       if test "x$favor_static_deps" = "xyes"; then
            boost_chrono_lib=$boost_chrono_static_lib
        fi
    else
@@ -6407,7 +6410,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    boost_fs_lib=-lboost_filesystem${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_filesystem$BOOST_STATIC_TAG.a"; then
        boost_fs_static_lib=-lboost_filesystem$BOOST_STATIC_TAG
-       if test "x$with_bin_release" = "xyes"; then
+       if test "x$favor_static_deps" = "xyes"; then
            boost_fs_lib=$boost_fs_static_lib
        fi
    else
@@ -6428,7 +6431,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    BOOST_IOSTREAMS_LIBS=-lboost_iostreams${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_iostreams$BOOST_STATIC_TAG.a"; then
        BOOST_IOSTREAMS_STATIC_LIBS=-lboost_iostreams$BOOST_STATIC_TAG
-       if test "x$with_bin_release" = "xyes"; then
+       if test "x$favor_static_deps" = "xyes"; then
            BOOST_IOSTREAMS_LIBS=$BOOST_IOSTREAMS_STATIC_LIBS
        fi
    else
@@ -6447,7 +6450,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    BOOST_PROGRAM_OPTIONS_LIBS=-lboost_program_options${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_program_options$BOOST_STATIC_TAG.a"; then
        BOOST_PROGRAM_OPTIONS_STATIC_LIBS=-lboost_program_options$BOOST_STATIC_TAG
-       if test "x$with_bin_release" = "xyes"; then
+       if test "x$favor_static_deps" = "xyes"; then
            BOOST_PROGRAM_OPTIONS_LIBS=$BOOST_PROGRAM_OPTIONS_STATIC_LIBS
        fi
    else
@@ -6467,7 +6470,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    BOOST_SERIALIZATION_LIBS=-lboost_serialization${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_serialization$BOOST_STATIC_TAG.a"; then
        BOOST_SERIALIZATION_STATIC_LIBS=-lboost_serialization$BOOST_STATIC_TAG
-       if test "x$with_bin_release" = "xyes"; then
+       if test "x$favor_static_deps" = "xyes"; then
            BOOST_SERIALIZATION_LIBS=$BOOST_SERIALIZATION_STATIC_LIBS
        fi
    else
@@ -6559,7 +6562,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    BOOST_THREAD_LIBS="-lboost_thread${BOOST_TAG} $BOOST_SYSTEM_LIBS"
    if test -f "$BOOST_LIBPATH_/libboost_thread$BOOST_STATIC_TAG.a"; then
        BOOST_THREAD_STATIC_LIBS="-lboost_thread$BOOST_STATIC_TAG $BOOST_SYSTEM_STATIC_LIBS"
-       if test "x$with_bin_release" = "xyes"; then
+       if test "x$favor_static_deps" = "xyes"; then
            BOOST_THREAD_LIBS=$BOOST_THREAD_STATIC_LIBS
        fi
    else
@@ -7659,7 +7662,7 @@ AC_SUBST(LIBXML_LIBS)
 
 if test -f "${LIBXML_LIBPATH_}/libxml2-static.a"; then
    LIBXML_STATIC_LIBS="-L${LIBXML_LIBPATH_} -lxml2-static $ICONV_LIBS"
-   if test "x$with_bin_release" = "xyes"; then
+   if test "x$favor_static_deps" = "xyes"; then
       LIBXML_LIBS=$LIBXML_STATIC_LIBS
    fi
 else
@@ -7674,7 +7677,7 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(libxslt, LIBXSLT, xslt,
 # XXX - they might be in different directories in some setups
 if test -f "${LIBXML_LIBPATH_}/libxslt-static.a"; then
    LIBXSLT_STATIC_LIBS="-L${LIBXML_LIBPATH_} -lxslt-static"
-   if test "x$with_bin_release" = "xyes"; then
+   if test "x$favor_static_deps" = "xyes"; then
       LIBXSLT_LIBS=$LIBXSLT_STATIC_LIBS
    fi
 else
@@ -7698,7 +7701,7 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(libexslt, LIBEXSLT, exslt,
 # XXX - they might be in different directories in some setups
 if test -f "${LIBXML_LIBPATH_}/libexslt-static.a"; then
    LIBEXSLT_STATIC_LIBS="-L${LIBXML_LIBPATH_} -lexslt-static $GCRYPT_LIBS"
-   if test "x$with_bin_release" = "xyes"; then
+   if test "x$favor_static_deps" = "xyes"; then
       LIBEXSLT_LIBS=$LIBEXSLT_STATIC_LIBS
    fi
 else
@@ -7930,7 +7933,7 @@ else
 fi
 if test -n "$SQLITE3_LIBS" -a -f "$SQLITE3_LIBDIR/libsqlite3-static.a"; then
    SQLITE3_STATIC_LIBS="-L$SQLITE3_LIBDIR -lsqlite3-static"
-   if test "x$with_bin_release" = "xyes"; then
+   if test "x$favor_static_deps" = "xyes"; then
       SQLITE3_LIBS=$SQLITE3_STATIC_LIBS
    fi
 else
@@ -8840,7 +8843,7 @@ if test -z "$LMDB_LIBS"; then
 fi
 if test "$with_lmdb" != no -a -f "$LMDB_PATH/lib/liblmdb-static.a"; then
     LMDB_STATIC_LIBS="-L$LMDB_PATH/lib -llmdb-static"
-    if test "x$with_bin_release" = "xyes"; then
+    if test "x$favor_static_deps" = "xyes"; then
        LMDB_LIBS=$LMDB_STATIC_LIBS
     fi
 else
@@ -8872,7 +8875,7 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(libuv, LIBUV, uv,
       [[uv_mutex_t m; return uv_mutex_init(&m);]])])
 if test "$with_libuv" != no -a -f "$LIBUV_LIBDIR/libuv-static.a"; then
     LIBUV_STATIC_LIBS="-L$LIBUV_LIBDIR -luv-static"
-    if test "x$with_bin_release" = "xyes"; then
+    if test "x$favor_static_deps" = "xyes"; then
        LIBUV_LIBS=$LIBUV_STATIC_LIBS
     fi
 else
@@ -8979,7 +8982,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(nghttp2,
 if test "$with_nghttp2" != no -a \
      -f "$NGHTTP2_LIBDIR/libnghttp2-static.a"; then
    NGHTTP2_STATIC_LIBS="-L$NGHTTP2_LIBDIR -lnghttp2-static"
-   if test "x$with_bin_release" = "xyes"; then
+   if test "x$favor_static_deps" = "xyes"; then
       NGHTTP2_LIBS=$NGHTTP2_STATIC_LIBS
    fi
 else
@@ -9174,7 +9177,7 @@ if test -n "$PROTOBUF_LIBS"; then
                ;;
          esac
       done
-      if test "x$with_bin_release" = "xyes"; then
+      if test "x$favor_static_deps" = "xyes"; then
          PROTOBUF_LIBS=$PROTOBUF_STATIC_LIBS
       fi
    else
@@ -9370,7 +9373,7 @@ if test -n "$GRPC_LIBS"; then
       done
       GRPC_REFLECTION_STATIC_LIBS=`echo "$GRPC_REFLECTION_LIBS" \
          | sed -e 's/_reflection/&-static/'`
-      if test "x$with_bin_release" = "xyes"; then
+      if test "x$favor_static_deps" = "xyes"; then
          GRPC_LIBS=$GRPC_STATIC_LIBS
          GRPC_REFLECTION_LIBS=$GRPC_REFLECTION_STATIC_LIBS
          GRPC_UNSECURE_LIBS=$GRPC_UNSECURE_STATIC_LIBS
