@@ -9548,6 +9548,11 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(apache_arrow, APACHE_ARROW, parquet,
   [AC_LANG_PROGRAM([[@%:@include <parquet/api/reader.h>]],
      [[parquet::ParquetFileReader pfr;]])],
   [-larrow $THRIFT_LIBS])
+for d in "$APACHE_ARROW_PATH/lib$bit64_sfx" "$APACHE_ARROW_PATH/lib"; do
+   if test -d $d; then
+      APACHE_ARROW_LIBDIR=$d
+   fi
+done
 if test "$with_apache_arrow" != no -a \
      -f "$APACHE_ARROW_LIBDIR/libparquet-static.a"; then
     APACHE_ARROW_STATIC_LIBS="-L$APACHE_ARROW_LIBDIR -lparquet-static -larrow-static -larrow_bundled_dependencies-static $THRIFT_STATIC_LIBS $BZ2_LIBS $Z_LIBS -lzstd"
