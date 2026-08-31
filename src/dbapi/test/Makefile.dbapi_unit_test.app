@@ -28,8 +28,8 @@ CHECK_CMD = dbapi_unit_test -dr ftds100    -S MsSql
 CHECK_CMD = dbapi_unit_test -dr ftds100    -S MsSql -V 74
 CHECK_CMD = dbapi_unit_test -dr ftds14     -S MsSql
 CHECK_CMD = dbapi_unit_test -dr ftds14     -S MsSql -V 74
-CHECK_CMD = dbapi_unit_test -dr odbc       -S MsSql --log_level=test_suite
-CHECK_CMD = dbapi_unit_test -dr odbc -V 74 -S MsSql --log_level=test_suite
+CHECK_CMD = dbapi_unit_test -dr odbc       -S MsSql
+CHECK_CMD = dbapi_unit_test -dr odbc       -S MsSql -V 74
 CHECK_CMD = dbapi_unit_test -dr ctlib      -S Sybase
 CHECK_CMD = dbapi_unit_test -dr ftds100    -S Sybase
 CHECK_CMD = dbapi_unit_test -dr ftds14     -S Sybase
