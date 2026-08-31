@@ -50,8 +50,7 @@ class NCBI_SRAREAD_EXPORT CWGSResolver_VDB : public CWGSResolver
 public:
     enum EIndexType {
         eMainIndex,
-        eSecondIndex,
-        eThirdIndex
+        eSecondIndex
     };
     explicit CWGSResolver_VDB(const CVDBMgr& mgr,
                               EIndexType index_type = eMainIndex,
@@ -80,10 +79,6 @@ public:
     
     bool IsValid(void) const {
         return m_Impl->m_Db;
-    }
-
-    bool AccIndexIsPrefix() const {
-        return m_Impl->m_AccIndexIsPrefix;
     }
 
     const CTime& GetTimestamp(void) const {
@@ -147,7 +142,6 @@ private:
         CVDBTable m_GiIdxTable;
         CVDBTable m_AccIdxTable;
         CVDBTableIndex m_AccIndex;
-        bool m_AccIndexIsPrefix;
         CVDBObjectCache<SGiIdxTableCursor> m_GiIdxCursorCache;
         CVDBObjectCache<SAccIdxTableCursor> m_AccIdxCursorCache;
         atomic<Uint8> m_FailedGiRequestCount;
