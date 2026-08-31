@@ -439,6 +439,11 @@ void CTcpWorker::Execute(void)
         err_code = uv_run(m_internal->m_loop.Handle(), UV_RUN_DEFAULT);
 
         UnregisterUVLoop(uv_thread_self());
+
+        if (err_code != 0) {
+            PSG_INFO("uv_run() worker " + to_string(m_id) +
+                     " returned " + to_string(err_code));
+        }
     } catch (const CPubseqGatewayUVException &  exc) {
         err_msg = "Libuv exception while preparing/running worker " +
                   to_string(m_id) + " UV error code: " +

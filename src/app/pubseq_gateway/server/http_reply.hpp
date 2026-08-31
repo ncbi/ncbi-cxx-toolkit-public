@@ -275,6 +275,40 @@ public:
                    "Request pool is not available");
     }
 
+    h2o_iovec_t PrepareChunk(const unsigned char *  data_1, unsigned int  size_1,
+                             const unsigned char *  data_2, unsigned int  size_2)
+    {
+        if (m_Req) {
+            h2o_iovec_t     chunks[] = {
+                h2o_iovec_init(data_1, size_1),
+                h2o_iovec_init(data_2, size_2)
+            };
+
+            return h2o_concat_list(&m_Req->pool, chunks, sizeof(chunks) / sizeof(chunks[0]));
+        }
+
+        NCBI_THROW(CPubseqGatewayException, eRequestPoolNotAvailable,
+                   "Request pool is not available");
+    }
+
+    h2o_iovec_t PrepareChunk(const unsigned char *  data_1, unsigned int  size_1,
+                             const unsigned char *  data_2, unsigned int  size_2,
+                             const unsigned char *  data_3, unsigned int  size_3)
+    {
+        if (m_Req) {
+            h2o_iovec_t     chunks[] = {
+                h2o_iovec_init(data_1, size_1),
+                h2o_iovec_init(data_2, size_2),
+                h2o_iovec_init(data_3, size_3)
+            };
+
+            return h2o_concat_list(&m_Req->pool, chunks, sizeof(chunks) / sizeof(chunks[0]));
+        }
+
+        NCBI_THROW(CPubseqGatewayException, eRequestPoolNotAvailable,
+                   "Request pool is not available");
+    }
+
     void Error(const char *  what)
     {
         switch (m_State) {
