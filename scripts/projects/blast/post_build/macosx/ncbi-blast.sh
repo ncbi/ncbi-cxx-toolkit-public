@@ -138,12 +138,12 @@ create_disk_image()
         -ov \
         -nospotlight || exit 1
     sleep 10
-    /usr/bin/hdiutil attach -debug "$DMG" -mountpoint "$MOUNT_POINT" -nobrowse -owners on
+    /usr/bin/hdiutil attach "$DMG".dmg -mountpoint "$MOUNT_POINT" -nobrowse -owners on
     sleep 10
     /usr/bin/ditto "$PRODUCT" "$MOUNT_POINT"
     sync
-    /usr/bin/hdiutil detach -debug "$MOUNT_POINT" || /usr/bin/hdiutil detach -debug "$MOUNT_POINT" -force
-    /usr/bin/hdiutil convert -debug "$DMG" -format UDZO -o "$PRODUCT.dmg"
+    /usr/bin/hdiutil detach "$MOUNT_POINT" || /usr/bin/hdiutil detach "$MOUNT_POINT" -force
+    /usr/bin/hdiutil convert "$DMG".dmg -format UDZO -o "$PRODUCT.dmg"
     rm -frv "$DMG"
     mkdir $INSTALLDIR/installer
     mv $PRODUCT.dmg $INSTALLDIR/installer
