@@ -82,8 +82,6 @@ static const string kBinaryScoremat("binary");
 static const string kUseCmdlineThreshold("force");
 static const string kMaxSmpFilesPerVol("max_smp_vol");
 
-static const string kLogFile("logfile");
-
 //Supported Output Database Types
 static const string kOutDbRps = "rps";
 static const string kOutDbCobalt = "cobalt";
@@ -279,7 +277,6 @@ private:
     void x_CreateAliasFile(void);
 
     // Data
-    CNcbiOstream * m_LogFile;
     CNcbiIstream * m_InPssmList;
     string m_Title;
     double m_WordDefaultScoreThreshold;
@@ -312,7 +309,7 @@ private:
 };
 
 CMakeProfileDBApp::CMakeProfileDBApp(void)
-                : m_LogFile(NULL), m_InPssmList(NULL), m_Title(kEmptyStr),
+                : m_InPssmList(NULL), m_Title(kEmptyStr),
                   m_WordDefaultScoreThreshold(0), m_OutDbName(kEmptyStr),
                   m_OutDbType(kEmptyStr), m_CreateIndexFile(false),m_GapOpenPenalty(0),
                   m_GapExtPenalty(0), m_PssmScaleFactor(0),m_Matrix(kEmptyStr),  m_op_mode(op_invalid),
@@ -485,13 +482,6 @@ void CMakeProfileDBApp::x_SetupArgDescriptions(void)
 void CMakeProfileDBApp::x_InitProgramParameters(void)
 {
 	const CArgs& args = GetArgs();
-
-	//log_file
-	if (args[kLogFile].HasValue())
-		m_LogFile = &args[kLogFile].AsOutputFile();
-	else
-		m_LogFile = &cout;
-
 
 	//in_list
 	if (args[kInPssmList].HasValue())
@@ -1329,7 +1319,7 @@ int CMakeProfileDBApp::x_Run(void)
 {
 	 CBuildDatabase::CreateDirectories(m_OutDbName);
 	 if ( s_DeleteMakeprofileDb(m_OutDbName)) {
-		 *m_LogFile << "Deleted existing BLAST database with identical name." << endl;
+		 LOG_POST(Warning << "Deleted existing BLAST database with identical name.");
 	 }
 	vector<string> smpFilenames = (op_delta == m_op_mode )? x_CreateDeltaList():x_GetSMPFilenames();
 	int num_smps = smpFilenames.size();
@@ -1803,15 +1793,15 @@ bool CMakeProfileDBApp::x_CheckDelta( const CPssm  & pssm, Int4 seq_size, const 
     double max_obsr = *max_element(obsr.begin(), obsr.end()) + 1.0;
     if(max_obsr < m_ObsrvThreshold)
     {
-    	*m_LogFile << filename +
-    			" was excluded: due to too few independent observations\n";
+    	LOG_POST(Warning << filename +
+    			" was excluded: due to too few independent observations");
     	return false;
     }
 
     if( !x_ValidateCd(freqs, obsr, BLASTAA_SIZE) && m_ExcludeInvalid)
     {
-    	*m_LogFile << filename +
-    			" was excluded: it conatins an invalid CD \n";
+    	LOG_POST(Warning << filename +
+    			" was excluded: it conatins an invalid CD");
     	return false;
     }
     return true;
