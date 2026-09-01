@@ -100,6 +100,7 @@ struct SPSG_ArgsBase : CUrlArgs
         eProcessor,
         eIpgInfo,
         eAccVerHistory,
+        eReplyData,
         eUnknownItem,
     };
 

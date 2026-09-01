@@ -130,6 +130,7 @@ SPSG_ArgsBase::SArg<SPSG_ArgsBase::eItemType>::TType SPSG_ArgsBase::SArg<SPSG_Ar
     if (value == "processor")       return { SPSG_ArgsBase::eProcessor,      cref(value) };
     if (value == "ipg_info")        return { SPSG_ArgsBase::eIpgInfo,        cref(value) };
     if (value == "acc_ver_history") return { SPSG_ArgsBase::eAccVerHistory,  cref(value) };
+    if (value == "reply_data")      return { SPSG_ArgsBase::eReplyData,      cref(value) };
     if (value.empty())              return { SPSG_ArgsBase::eReply,          cref(value) };
     return { SPSG_ArgsBase::eUnknownItem, cref(value) };
 };
