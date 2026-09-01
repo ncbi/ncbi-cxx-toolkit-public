@@ -328,7 +328,7 @@ Help prioritize software features and improvements. Make sure that your favorite
 
 Participation is OPTIONAL. 
 
-To opt in run blast_usage_report -on or set environment variable BLAST_USAGE_RPORT=1. You do not need to do anything to opt out. 
+To opt in run blast_usage_report -on or set environment variable BLAST_USAGE_REPORT=1. You do not need to do anything to opt out. 
 
 See https://www.ncbi.nlm.nih.gov/books/NBK569851/ for more information.
 
