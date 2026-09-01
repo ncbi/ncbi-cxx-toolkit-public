@@ -208,7 +208,7 @@ NCBIcomponent_report(CURL)
 
 #############################################################################
 # LMDB
-NCBI_define_Xcomponent(NAME LMDB LIB lmdb)
+NCBI_define_Xcomponent(NAME LMDB INTERFACELIB lmdb::lmdb LIB lmdb)
 NCBIcomponent_report(LMDB)
 if(NOT NCBI_COMPONENT_LMDB_FOUND)
     set(NCBI_COMPONENT_LMDB_FOUND ${NCBI_COMPONENT_LocalLMDB_FOUND})
@@ -261,7 +261,7 @@ set(HAVE_LIBBZ2 ${NCBI_COMPONENT_BZ2_FOUND})
 
 #############################################################################
 # LZO
-NCBI_define_Xcomponent(NAME LZO LIB lzo2 CHECK_INCLUDE lzo/lzo1x.h)
+NCBI_define_Xcomponent(NAME LZO INTERFACELIB lzo::lzo LIB lzo2 CHECK_INCLUDE lzo/lzo1x.h)
 NCBIcomponent_report(LZO)
 
 #############################################################################
@@ -341,7 +341,7 @@ NCBIcomponent_report(TIFF)
 
 #############################################################################
 # FASTCGI
-NCBI_define_Xcomponent(NAME FASTCGI LIB fcgi)
+NCBI_define_Xcomponent(NAME FASTCGI INTERFACELIB fcgi::fcgi LIB fcgi)
 NCBIcomponent_report(FASTCGI)
 
 #############################################################################
@@ -357,7 +357,7 @@ NCBIcomponent_report(SQLITE3)
 
 #############################################################################
 #BerkeleyDB
-NCBI_define_Xcomponent(NAME BerkeleyDB LIB db CHECK_INCLUDE db.h)
+NCBI_define_Xcomponent(NAME BerkeleyDB INTERFACELIB libdb::libdb LIB db CHECK_INCLUDE db.h)
 if(NCBI_COMPONENT_BerkeleyDB_FOUND)
   set(HAVE_BERKELEY_DB 1)
   set(HAVE_BDB         1)
@@ -386,7 +386,7 @@ set(NCBI_COMPONENT_Sybase_FOUND NO)
 
 #############################################################################
 # PYTHON
-NCBI_define_Xcomponent(NAME PYTHON LIB python${NCBI_ThirdParty_PYTHON_VERSION} INCLUDE python${NCBI_ThirdParty_PYTHON_VERSION})
+NCBI_define_Xcomponent(NAME PYTHON INTERFACELIB cpython::cpython LIB python${NCBI_ThirdParty_PYTHON_VERSION} INCPATH_SUFFIX python${NCBI_ThirdParty_PYTHON_VERSION})
 if(NCBI_COMPONENT_PYTHON_FOUND AND EXISTS ${NCBI_ThirdParty_XCODE_FRAMEWORKS})
     set(NCBI_COMPONENT_PYTHON_LIBS -Wl,-rpath,${NCBI_ThirdParty_XCODE_FRAMEWORKS} ${NCBI_COMPONENT_PYTHON_LIBS})
 endif()
@@ -405,15 +405,15 @@ if(NOT NCBI_COMPONENT_VDB_DISABLED AND NOT NCBI_COMPONENT_VDB_FOUND)
     else() # Specifically check for "GCC"?
         set(NCBI_ThirdParty_VDB_COMPILER gcc)
     endif()
-    NCBI_define_Xcomponent(NAME VDB LIB ncbi-vdb
+    NCBI_define_Xcomponent(NAME VDB INTERFACELIB ncbi-vdb::ncbi-vdb LIB ncbi-vdb
         LIBPATH_SUFFIX mac/release/${NCBI_ThirdParty_VDB_ARCH}/lib INCPATH_SUFFIX interfaces)
     if(NCBI_COMPONENT_VDB_FOUND)
         set(NCBI_COMPONENT_VDB_INCLUDE
-            ${NCBI_COMPONENT_VDB_INCLUDE} 
-            ${NCBI_COMPONENT_VDB_INCLUDE}/os/mac
-            ${NCBI_COMPONENT_VDB_INCLUDE}/os/unix
-            ${NCBI_COMPONENT_VDB_INCLUDE}/cc/${NCBI_ThirdParty_VDB_COMPILER}/${NCBI_ThirdParty_VDB_ARCH}
-            ${NCBI_COMPONENT_VDB_INCLUDE}/cc/${NCBI_ThirdParty_VDB_COMPILER}
+            ${NCBI_ThirdParty_VDB}/interfaces 
+            ${NCBI_ThirdParty_VDB}/interfaces/os/mac
+            ${NCBI_ThirdParty_VDB}/interfaces/os/unix
+            ${NCBI_ThirdParty_VDB}/interfaces/cc/${NCBI_ThirdParty_VDB_COMPILER}/${NCBI_ThirdParty_VDB_ARCH}
+            ${NCBI_ThirdParty_VDB}/interfaces/cc/${NCBI_ThirdParty_VDB_COMPILER}
         )
         set(NCBI_COMPONENT_VDB_LIBPATH ${NCBI_ThirdParty_VDB}/mac/release/${NCBI_ThirdParty_VDB_ARCH}/lib)
         set(HAVE_NCBI_VDB 1)
@@ -518,7 +518,7 @@ NCBIcomponent_report(FTGL)
 
 #############################################################################
 # GLEW
-NCBI_define_Xcomponent(NAME GLEW MODULE glew LIB GLEW)
+NCBI_define_Xcomponent(NAME GLEW INTERFACELIB GLEW::GLEW MODULE glew LIB GLEW)
 if(NCBI_COMPONENT_GLEW_FOUND)
     get_filename_component(_incdir "${NCBI_COMPONENT_GLEW_INCLUDE}" DIRECTORY)
     get_filename_component(_incGL "${NCBI_COMPONENT_GLEW_INCLUDE}" NAME)
@@ -610,25 +610,25 @@ NCBIcomponent_report(NGHTTP2)
 
 #############################################################################
 # GL2PS
-NCBI_define_Xcomponent(NAME GL2PS LIB gl2ps)
+NCBI_define_Xcomponent(NAME GL2PS INTERFACELIB gl2ps::gl2ps LIB gl2ps)
 NCBIcomponent_report(GL2PS)
 
 #############################################################################
 # GMP
-NCBI_define_Xcomponent(NAME GMP LIB gmp CHECK_INCLUDE gmp.h)
+NCBI_define_Xcomponent(NAME GMP INTERFACELIB gmp::gmp LIB gmp CHECK_INCLUDE gmp.h)
 NCBIcomponent_report(GMP)
 
 #############################################################################
 # NETTLE
-NCBI_define_Xcomponent(NAME NETTLE LIB hogweed nettle ADD_COMPONENT GMP CHECK_INCLUDE nettle/nettle-stdint.h)
+NCBI_define_Xcomponent(NAME NETTLE INTERFACELIB nettle::nettle LIB hogweed nettle ADD_COMPONENT GMP CHECK_INCLUDE nettle/nettle-stdint.h)
 NCBIcomponent_report(NETTLE)
 
 #############################################################################
 # GNUTLS
-NCBI_define_Xcomponent(NAME GNUTLS LIB gnutls ADD_COMPONENT NETTLE Z ZSTD)
+NCBI_define_Xcomponent(NAME GNUTLS INTERFACELIB GnuTLS::GnuTLS LIB gnutls ADD_COMPONENT NETTLE Z ZSTD)
 NCBIcomponent_report(GNUTLS)
 
 #############################################################################
 # NCBICRYPT
-NCBI_define_Xcomponent(NAME NCBICRYPT LIB ncbicrypt)
+NCBI_define_Xcomponent(NAME NCBICRYPT INTERFACELIB ncbicrypt::ncbicrypt LIB ncbicrypt)
 NCBIcomponent_report(NCBICRYPT)

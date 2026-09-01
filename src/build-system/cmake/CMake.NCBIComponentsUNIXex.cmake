@@ -288,7 +288,7 @@ endif()
 
 ############################################################################
 # Kerberos 5 (via GSSAPI)
-NCBI_define_Xcomponent(NAME KRB5 LIB gssapi_krb5 krb5 k5crypto com_err CHECK_INCLUDE gssapi/gssapi_krb5.h)
+NCBI_define_Xcomponent(NAME KRB5 INTERFACELIB krb5::krb5 LIB gssapi_krb5 krb5 k5crypto com_err CHECK_INCLUDE gssapi/gssapi_krb5.h)
 if(NCBI_COMPONENT_KRB5_FOUND)
     set(KRB5_INCLUDE ${NCBI_COMPONENT_KRB5_INCLUDE})
     set(KRB5_LIBS ${NCBI_COMPONENT_KRB5_LIBS})
@@ -320,7 +320,7 @@ NCBIcomponent_report(CURL)
 
 #############################################################################
 # LMDB
-NCBI_define_Xcomponent(NAME LMDB LIB lmdb)
+NCBI_define_Xcomponent(NAME LMDB INTERFACELIB lmdb::lmdb LIB lmdb)
 NCBIcomponent_report(LMDB)
 if(NOT NCBI_COMPONENT_LMDB_FOUND)
     set(NCBI_COMPONENT_LMDB_FOUND ${NCBI_COMPONENT_LocalLMDB_FOUND})
@@ -379,7 +379,7 @@ set(HAVE_LIBBZ2 ${NCBI_COMPONENT_BZ2_FOUND})
 
 #############################################################################
 # LZO
-NCBI_define_Xcomponent(NAME LZO LIB lzo2 CHECK_INCLUDE lzo/lzo1x.h)
+NCBI_define_Xcomponent(NAME LZO INTERFACELIB lzo::lzo LIB lzo2 CHECK_INCLUDE lzo/lzo1x.h)
 NCBIcomponent_report(LZO)
 
 #############################################################################
@@ -391,6 +391,11 @@ if(NCBI_COMPONENT_ZSTD_FOUND AND
     message("ZSTD: Version requirement not met (required at least v1.4)")
     set(NCBI_COMPONENT_ZSTD_FOUND NO)
     set(HAVE_LIBZSTD 0)
+endif()
+if(NCBI_COMPONENT_ZSTD_FOUND)
+    if(TARGET zstd::libzstd AND NOT TARGET zstd::zstd)
+        add_library(zstd::zstd ALIAS zstd::libzstd)
+    endif()
 endif()
 
 #############################################################################
@@ -426,12 +431,12 @@ NCBIcomponent_report(TIFF)
 
 #############################################################################
 # FASTCGI
-NCBI_define_Xcomponent(NAME FASTCGI LIB fcgi)
+NCBI_define_Xcomponent(NAME FASTCGI INTERFACELIB fcgi::fcgi LIB fcgi)
 NCBIcomponent_report(FASTCGI)
 
 #############################################################################
 # FASTCGIPP
-NCBI_define_Xcomponent(NAME FASTCGIPP LIB fastcgipp)
+NCBI_define_Xcomponent(NAME FASTCGIPP INTERFACELIB fastcgipp::fastcgipp LIB fastcgipp)
 NCBIcomponent_report(FASTCGIPP)
 
 #############################################################################
@@ -447,7 +452,7 @@ NCBIcomponent_report(SQLITE3)
 
 #############################################################################
 # BerkeleyDB
-NCBI_define_Xcomponent(NAME BerkeleyDB LIB db CHECK_INCLUDE db.h)
+NCBI_define_Xcomponent(NAME BerkeleyDB INTERFACELIB libdb::libdb LIB db CHECK_INCLUDE db.h)
 if(NCBI_COMPONENT_BerkeleyDB_FOUND)
     set(HAVE_BERKELEY_DB 1)
     set(HAVE_BDB         1)
@@ -466,12 +471,12 @@ endif()
 #############################################################################
 # MySQL
 #NCBI_define_Xcomponent(NAME MySQL PACKAGE Mysql LIB mysqlclient LIBPATH_SUFFIX mysql INCLUDE mysql/mysql.h)
-NCBI_define_Xcomponent(NAME MySQL LIB mysqlclient LIBPATH_SUFFIX mysql INCLUDE mysql/mysql.h)
+NCBI_define_Xcomponent(NAME MySQL INTERFACELIB libmysqlclient::libmysqlclient LIB mysqlclient LIBPATH_SUFFIX mysql INCLUDE mysql/mysql.h)
 NCBIcomponent_report(MySQL)
 
 #############################################################################
 # PYTHON
-NCBI_define_Xcomponent(NAME PYTHON LIB python${NCBI_ThirdParty_PYTHON_VERSION} python3 INCLUDE python${NCBI_ThirdParty_PYTHON_VERSION})
+NCBI_define_Xcomponent(NAME PYTHON INTERFACELIB cpython::cpython LIB python${NCBI_ThirdParty_PYTHON_VERSION} python3 INCPATH_SUFFIX include/python${NCBI_ThirdParty_PYTHON_VERSION})
 NCBIcomponent_report(PYTHON)
 
 #############################################################################
@@ -492,17 +497,17 @@ if(NOT NCBI_COMPONENT_VDB_DISABLED AND NOT NCBI_COMPONENT_VDB_FOUND)
     else() # Specifically check for "GCC"?
         set(NCBI_ThirdParty_VDB_COMPILER gcc)
     endif()
-    NCBI_define_Xcomponent(NAME VDB LIB ncbi-vdb
+    NCBI_define_Xcomponent(NAME VDB INTERFACELIB ncbi-vdb::ncbi-vdb LIB ncbi-vdb
         LIBPATH_SUFFIX ${NCBI_ThirdParty_VDB_OS}/release/${NCBI_ThirdParty_VDB_ARCH}/lib
 #        LIBPATH_SUFFIX ${NCBI_ThirdParty_VDB_OS}/$<LOSTDCONFIG>/${NCBI_ThirdParty_VDB_ARCH}/lib
         INCPATH_SUFFIX interfaces)
     if(NCBI_COMPONENT_VDB_FOUND)
         set(NCBI_COMPONENT_VDB_INCLUDE
-            ${NCBI_COMPONENT_VDB_INCLUDE} 
-            ${NCBI_COMPONENT_VDB_INCLUDE}/os/${NCBI_ThirdParty_VDB_OS}
-            ${NCBI_COMPONENT_VDB_INCLUDE}/os/unix
-            ${NCBI_COMPONENT_VDB_INCLUDE}/cc/${NCBI_ThirdParty_VDB_COMPILER}/${NCBI_ThirdParty_VDB_ARCH}
-            ${NCBI_COMPONENT_VDB_INCLUDE}/cc/${NCBI_ThirdParty_VDB_COMPILER}
+            ${NCBI_ThirdParty_VDB}/interfaces 
+            ${NCBI_ThirdParty_VDB}/interfaces/os/${NCBI_ThirdParty_VDB_OS}
+            ${NCBI_ThirdParty_VDB}/interfaces/os/unix
+            ${NCBI_ThirdParty_VDB}/interfaces/cc/${NCBI_ThirdParty_VDB_COMPILER}/${NCBI_ThirdParty_VDB_ARCH}
+            ${NCBI_ThirdParty_VDB}/interfaces/cc/${NCBI_ThirdParty_VDB_COMPILER}
         )
         set(HAVE_NCBI_VDB 1)
     endif()
@@ -555,8 +560,8 @@ NCBIcomponent_report(wxWidgets)
 
 ##############################################################################
 # GCRYPT
-NCBI_define_Xcomponent(NAME GPG    LIB gpg-error CHECK_INCLUDE gpg-error.h)
-NCBI_define_Xcomponent(NAME GCRYPT LIB gcrypt ADD_COMPONENT GPG CHECK_INCLUDE gcrypt.h)
+NCBI_define_Xcomponent(NAME GPG    INTERFACELIB libgpg-error::libgpg-error LIB gpg-error CHECK_INCLUDE gpg-error.h)
+NCBI_define_Xcomponent(NAME GCRYPT INTERFACELIB libgcrypt::libgcrypt LIB gcrypt ADD_COMPONENT GPG CHECK_INCLUDE gcrypt.h)
 NCBIcomponent_report(GCRYPT)
 
 #############################################################################
@@ -598,7 +603,7 @@ NCBIcomponent_report(EXSLT)
 
 #############################################################################
 # XLSXWRITER
-NCBI_define_Xcomponent(NAME XLSXWRITER LIB xlsxwriter)
+NCBI_define_Xcomponent(NAME XLSXWRITER INTERFACELIB libxlsxwriter::libxlsxwriter LIB xlsxwriter)
 NCBIcomponent_report(XLSXWRITER)
 
 #############################################################################
@@ -613,7 +618,7 @@ NCBIcomponent_report(LAPACK)
 
 #############################################################################
 # SAMTOOLS
-NCBI_define_Xcomponent(NAME SAMTOOLS LIB bam CHECK_INCLUDE bam.h)
+NCBI_define_Xcomponent(NAME SAMTOOLS INTERFACELIB samtools::samtools LIB bam CHECK_INCLUDE bam.h)
 NCBIcomponent_report(SAMTOOLS)
 
 #############################################################################
@@ -629,7 +634,7 @@ NCBIcomponent_report(FTGL)
 #############################################################################
 # GLEW
 #NCBI_define_Xcomponent(NAME GLEW MODULE glew LIB GLEW)
-NCBI_define_Xcomponent(NAME GLEW LIB GLEW)
+NCBI_define_Xcomponent(NAME GLEW INTERFACELIB GLEW::GLEW LIB GLEW)
 if(NCBI_COMPONENT_GLEW_FOUND)
     foreach( _inc IN LISTS NCBI_COMPONENT_GLEW_INCLUDE)
         get_filename_component(_incdir ${_inc} DIRECTORY)
@@ -661,7 +666,7 @@ NCBIcomponent_report(GLEW)
 ##############################################################################
 # OpenGL
 set(OpenGL_GL_PREFERENCE LEGACY)
-NCBI_define_Xcomponent(NAME OpenGL PACKAGE OpenGL LIB GLU GL)
+NCBI_define_Xcomponent(NAME OpenGL INTERFACELIB opengl::opengl PACKAGE OpenGL LIB GLU GL)
 if(NCBI_COMPONENT_OpenGL_FOUND)
     set(NCBI_COMPONENT_OpenGL_LIBS ${NCBI_COMPONENT_OpenGL_LIBS}  -lXmu -lXt -lXext -lX11)
 endif()
@@ -669,7 +674,7 @@ NCBIcomponent_report(OpenGL)
 
 ##############################################################################
 # OSMesa
-NCBI_define_Xcomponent(NAME OSMesa LIB OSMesa ADD_COMPONENT OpenGL)
+NCBI_define_Xcomponent(NAME OSMesa INTERFACELIB osmesa::osmesa LIB OSMesa ADD_COMPONENT OpenGL)
 NCBIcomponent_report(OSMesa)
 
 #############################################################################
@@ -706,11 +711,13 @@ if(NOT NCBI_PROTOC_APP)
 endif()
 # Needed for some OpenTelemetry versions
 if(TARGET protobuf::libprotobuf)
+    set(Protobuf_FOUND YES)
     set(Protobuf_LIBRARIES        protobuf::libprotobuf)
     set(Protobuf_LITE_LIBRARIES   protobuf::libprotobuf-lite)
     set(Protobuf_PROTOC_LIBRARIES protobuf::libprotoc)
     get_target_property(Protobuf_INCLUDE_DIR protobuf::libprotobuf
                         INTERFACE_INCLUDE_DIRECTORIES)
+    set(Protobuf_PROTOC_EXECUTABLE ${NCBI_PROTOC_APP})
 endif()
 
 if(NCBI_TRACE_COMPONENT_PROTOBUF OR NCBI_TRACE_ALLCOMPONENTS)
@@ -835,14 +842,14 @@ NCBIcomponent_add(MONGOCXX MONGOC)
 #############################################################################
 # LEVELDB
 # only has cmake cfg
-NCBI_define_Xcomponent(NAME LEVELDB LIB leveldb)
+NCBI_define_Xcomponent(NAME LEVELDB INTERFACELIB leveldb::leveldb LIB leveldb)
 NCBIcomponent_report(LEVELDB)
 
 #############################################################################
 # URing
 NCBI_define_Xcomponent(NAME URing INTERFACELIB liburing::liburing MODULE liburing LIB uring)
 if(NCBI_COMPONENT_URing_FOUND AND NOT TARGET uring::uring)
-    if(TARGET liburing::liburing)
+    if(TARGET liburing::liburing AND NOT TARGET uring::uring)
         add_library(uring::uring ALIAS liburing::liburing)
     else()
         add_library(uring::uring UNKNOWN IMPORTED GLOBAL)
@@ -874,7 +881,7 @@ NCBIcomponent_report(WGMLST)
 
 #############################################################################
 # GLPK
-NCBI_define_Xcomponent(NAME GLPK LIB glpk)
+NCBI_define_Xcomponent(NAME GLPK INTERFACELIB glpk::glpk LIB glpk)
 NCBIcomponent_report(GLPK)
 
 #############################################################################
@@ -894,7 +901,7 @@ NCBIcomponent_report(NGHTTP2)
 
 #############################################################################
 # GL2PS
-NCBI_define_Xcomponent(NAME GL2PS LIB gl2ps)
+NCBI_define_Xcomponent(NAME GL2PS INTERFACELIB gl2ps::gl2ps LIB gl2ps)
 NCBIcomponent_report(GL2PS)
 
 #############################################################################
@@ -905,7 +912,7 @@ NCBIcomponent_report(GMOCK)
 
 #############################################################################
 # CASSANDRA
-NCBI_define_Xcomponent(NAME CASSANDRA LIB cassandra)
+NCBI_define_Xcomponent(NAME CASSANDRA INTERFACELIB cassandra-cpp-driver::cassandra-cpp-driver LIB cassandra)
 NCBIcomponent_report(CASSANDRA)
 
 #############################################################################
@@ -915,12 +922,12 @@ NCBIcomponent_report(H2O)
 
 #############################################################################
 # GMP
-NCBI_define_Xcomponent(NAME GMP LIB gmp CHECK_INCLUDE gmp.h)
+NCBI_define_Xcomponent(NAME GMP INTERFACELIB gmp::gmp LIB gmp CHECK_INCLUDE gmp.h)
 NCBIcomponent_report(GMP)
 
 #############################################################################
 # NETTLE
-NCBI_define_Xcomponent(NAME NETTLE LIB hogweed nettle ADD_COMPONENT GMP CHECK_INCLUDE nettle/nettle-stdint.h)
+NCBI_define_Xcomponent(NAME NETTLE INTERFACELIB nettle::nettle LIB hogweed nettle ADD_COMPONENT GMP CHECK_INCLUDE nettle/nettle-stdint.h)
 NCBIcomponent_report(NETTLE)
 
 #############################################################################
@@ -930,7 +937,7 @@ if(NOT NCBI_COMPONENT_GNUTLS_DISABLED)
     if(NCBI_COMPONENT_IDN_LIBS)
         set(NCBI_COMPONENT_IDN_FOUND YES)
     endif()
-    NCBI_define_Xcomponent(NAME GNUTLS LIB gnutls
+    NCBI_define_Xcomponent(NAME GNUTLS INTERFACELIB GnuTLS::GnuTLS LIB gnutls
       ADD_COMPONENT NETTLE IDN Z ZSTD)
 endif()
 NCBIcomponent_report(GNUTLS)
@@ -951,12 +958,12 @@ endif()
 
 #############################################################################
 # NCBICRYPT
-NCBI_define_Xcomponent(NAME NCBICRYPT LIB ncbicrypt)
+NCBI_define_Xcomponent(NAME NCBICRYPT INTERFACELIB ncbicrypt::ncbicrypt LIB ncbicrypt)
 NCBIcomponent_report(NCBICRYPT)
 
 #############################################################################
 # THRIFT
-NCBI_define_Xcomponent(NAME THRIFT LIB thrift
+NCBI_define_Xcomponent(NAME THRIFT INTERFACELIB thrift::thrift LIB thrift
                         ADD_COMPONENT Boost.Test.Included)
 NCBIcomponent_report(THRIFT)
 
@@ -967,17 +974,17 @@ NCBIcomponent_report(NLohmann_JSON)
 
 #############################################################################
 # YAML_CPP
-NCBI_define_Xcomponent(NAME YAML_CPP LIB yaml-cpp)
+NCBI_define_Xcomponent(NAME YAML_CPP INTERFACELIB yaml-cpp::yaml-cpp LIB yaml-cpp)
 NCBIcomponent_report(YAML_CPP)
 
 #############################################################################
 # OPENTRACING
-NCBI_define_Xcomponent(NAME OPENTRACING LIB opentracing)
+NCBI_define_Xcomponent(NAME OPENTRACING INTERFACELIB OpenTracing::OpenTracing LIB opentracing)
 NCBIcomponent_report(OPENTRACING)
 
 #############################################################################
 # JAEGER
-NCBI_define_Xcomponent(NAME JAEGER LIB jaegertracing ADD_COMPONENT NLohmann_JSON OPENTRACING YAML_CPP THRIFT)
+NCBI_define_Xcomponent(NAME JAEGER INTERFACELIB jaeger::jaeger LIB jaegertracing ADD_COMPONENT NLohmann_JSON OPENTRACING YAML_CPP THRIFT)
 NCBIcomponent_report(JAEGER)
 
 #############################################################################
@@ -1009,7 +1016,7 @@ NCBIcomponent_report(AWS_SDK)
 
 #############################################################################
 # LIBSSH
-NCBI_define_Xcomponent(NAME SSH LIB ssh)
+NCBI_define_Xcomponent(NAME SSH INTERFACELIB ssh::ssh LIB ssh)
 NCBIcomponent_report(SSH)
 
 #############################################################################
@@ -1022,7 +1029,7 @@ if(NOT NCBI_COMPONENT_IPS4O_FOUND)
         get_target_property(TBB_LIBS        TBB::tbb LOCATION)
     endif()
 
-    NCBI_define_Xcomponent(NAME IPS4O)
+    NCBI_define_Xcomponent(NAME IPS4O INTERFACELIB ips4o::ips4o)
     NCBIcomponent_report(IPS4O)
     if(NOT HAVE_IPS4O_HPP)
         check_include_file_cxx(ips4o.hpp HAVE_IPS4O_HPP
