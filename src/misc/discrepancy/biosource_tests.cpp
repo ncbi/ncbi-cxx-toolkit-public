@@ -2128,5 +2128,37 @@ DISCREPANCY_CASE(SARS_QUALS, BIOSRC, eOncaller, "SARS-CoV-2 isolate must have co
 }
 
 
+// ORGANELLE_PRESENT
+
+DISCREPANCY_CASE(ORGANELLE_PRESENT, BIOSRC, eSubmitter | eSmart, "Discrepancy present")
+{
+    for (const CBioSource* biosrc : context.GetBiosources()) {
+        if (! biosrc->IsSetGenome()) {
+            continue;
+        }
+        CBioSource::EGenome Location = static_cast<CBioSource::EGenome>(biosrc->GetGenome());
+        switch ( Location ) {
+            case CBioSource::eGenome_mitochondrion:
+            case CBioSource::eGenome_chloroplast:
+            case CBioSource::eGenome_apicoplast:
+            case CBioSource::eGenome_chromoplast:
+            case CBioSource::eGenome_chromatophore:
+            case CBioSource::eGenome_cyanelle:
+            case CBioSource::eGenome_hydrogenosome:
+            case CBioSource::eGenome_kinetoplast:
+            case CBioSource::eGenome_leucoplast:
+            case CBioSource::eGenome_nucleomorph:
+            case CBioSource::eGenome_plastid:
+            case CBioSource::eGenome_nitroplast:
+                m_Objs["[n] organelle[s] [is] present"].Add(*context.BiosourceObjRef(*biosrc));
+                break;
+            default:
+                 break;
+        }
+    }
+}
+
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
