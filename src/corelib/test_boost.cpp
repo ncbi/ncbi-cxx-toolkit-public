@@ -2166,8 +2166,10 @@ CNcbiBoostLogger::log_entry_start(ostream& ostr, but::log_entry_data const& led,
         m_CurrentEntry.SetModule(mod.c_str());
     }
     m_CurrentEntry.SetFile(de.GetName().c_str());
-    m_CurrentEntry.SetFunction("test_method").SetLine(led.m_line_num)
-        .SetClass(but::framework::current_test_unit().p_name->c_str());
+    if (led.m_line_num > 0) {
+        m_CurrentEntry.SetFunction("test_method").SetLine(led.m_line_num)
+            .SetClass(but::framework::current_test_unit().p_name->c_str());
+    }
 }
 
 void
