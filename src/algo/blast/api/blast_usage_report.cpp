@@ -323,41 +323,14 @@ const string CBlastPhoneHomePolicy::kPrivacyNotice = R"DELIM(
 BLAST+ Usage Reporting and Privacy Notice
 -----------------------------------------
 
-NCBI/NLM would like your permission to collect limited usage data from this application to help improve BLAST+ reliability, performance, and long-term support.
+NCBI would like your permission to collect limited usage data for BLAST programs to help improve reliability, performance, and long-term support.
+Help prioritize software features and improvements. Make sure that your favorite BLAST features are supported.
 
-Participation is OPTIONAL.
+Participation is OPTIONAL. 
 
-If you choose to Opt In, BLAST+ will transmit limited technical and usage information to NCBI. No query or subject sequences, database contents, search results, or other biological research data are transmitted.
+To opt in run blast_usage_report -on or set environment variable BLAST_USAGE_RPORT=1. You do not need to do anything to opt out. 
 
-Data transmitted to NCBI may include:
-- Application name and BLAST program (e.g. blastp, blastn)
-- BLAST+ version
-- Operating system type
-- Runtime duration and exit status
-- Number of query sequences
-- Total query length
-- Selected BLAST parameters and options
-- Database metadata, including:
-    - database name
-    - database creation date
-    - database size
-    - number of sequences
-- Thread count
-- Output format
-- Apparent IP address of the host system
-- Internal NCBI logging fields required for usage data processing
-
-
-How changes to data collection will be communicated:
-Any changes to usage data collection practices or transmitted data elements will be documented in:
-- BLAST+ release notes - https://www.ncbi.nlm.nih.gov/books/NBK131777/
-- BLAST_PRIVACY.md documentation - https://github.com/ncbi/ncbi-cxx-toolkit-public/tree/main/include/algo/blast/BLAST_PRIVACY.md 
-- the BLAST+ User Manual - https://www.ncbi.nlm.nih.gov/books/NBK569851/
-Updated information will also reference the applicable NLM privacy policies.
-
-You may enable or disable usage data sharing at any time by running the utility: blast_usage_report
-
-NLM Web Policies: https://www.nlm.nih.gov/web_policies.html
+See https://www.ncbi.nlm.nih.gov/books/NBK569851/ for more information.
 
 )DELIM";
 
