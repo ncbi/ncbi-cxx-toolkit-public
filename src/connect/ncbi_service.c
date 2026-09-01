@@ -881,12 +881,14 @@ static struct SINTERNAL_Data* s_InternalMapper(const char** svc,
 
     assert(name  &&  *name  &&  url  &&  *url);
 
-    if (CORE_Once(&s_Once)) {
-        char        buf[80];
-        const char* str = ConnNetInfo_GetValueInternal(0, REG_CONN_INTERNAL_DISABLE,
-                                                       buf, sizeof(buf), 0);
-        if (str  &&  *str)
-            do_internal = !ConnNetInfo_Boolean(str);
+    while (do_internal < 0) {
+        if (CORE_Once(&s_Once)) {
+            char        buf[80];
+            const char* str = ConnNetInfo_GetValueInternal(0, REG_CONN_INTERNAL_DISABLE,
+                                                           buf, sizeof(buf), 0);
+            if (str  &&  *str)
+                do_internal = !ConnNetInfo_Boolean(str);
+        }
     }
     if (!do_internal)
         return 0;
