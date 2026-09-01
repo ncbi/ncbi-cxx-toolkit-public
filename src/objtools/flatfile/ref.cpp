@@ -35,7 +35,6 @@
 #include "ftacpp.hpp"
 
 #include <objects/biblio/Id_pat.hpp>
-#include <objects/biblio/Id_pat_.hpp>
 #include <objects/biblio/Auth_list.hpp>
 #include <objects/biblio/Affil.hpp>
 #include <objects/seq/Pubdesc.hpp>
@@ -220,7 +219,7 @@ static string clean_up(const char* str)
     return {};
 }
 
-static CRef<CPub> get_num(char* str)
+static CRef<CPub> get_num(string_view str)
 {
     int serial_num = NStr::StringToInt(str, NStr::fAllowTrailingSymbols);
 
@@ -1689,7 +1688,7 @@ static char* ExtractErratum(char* comm)
 }
 
 /**********************************************************/
-static void XMLGetXrefs(char* entry, const TXmlIndexList& xil, TQualVector& quals)
+static void XMLGetXrefs(const char* entry, const TXmlIndexList& xil, TQualVector& quals)
 {
     if (! entry || xil.empty())
         return;
@@ -1762,129 +1761,108 @@ Int4 fta_remark_is_er(const string& str)
 /**********************************************************/
 static CRef<CPubdesc> XMLRefs(ParserPtr pp, const DataBlk& dbp, bool& no_auth, bool& rej)
 {
-    char*     p;
-    char*     q;
-    bool      is_online;
-    TEntrezId pmid;
-
-    Int4 er;
-
     CRef<CPubdesc> desc;
 
     if (! pp || ! dbp.mBuf.ptr || ! dbp.hasData())
         return desc;
 
+    const auto& xil   = dbp.GetXmlData();
+    const char* entry = dbp.mBuf.ptr;
+
     desc.Reset(new CPubdesc);
 
-    p = StringSave(XMLFindTagValue(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_REFERENCE));
-    if (p && isdigit((int)*p) != 0) {
-        desc->SetPub().Set().push_back(get_num(p));
-    } else {
-        FtaErrPost(SEV_WARNING, ERR_REFERENCE_Illegalreference, "No reference number.");
+    {
+        auto p = XMLFindTagValue(entry, xil, INSDREFERENCE_REFERENCE);
+        if (p && ! p->empty() && isdigit(p->front())) {
+            desc->SetPub().Set().push_back(get_num(*p));
+        } else {
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_Illegalreference, "No reference number.");
+        }
     }
 
-    if (p)
-        MemFree(p);
-
-    p = StringSave(XMLFindTagValue(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_MEDLINE));
-    if (p) {
+    if (XMLFindTagValue(entry, xil, INSDREFERENCE_MEDLINE)) {
         rej = true;
-        MemFree(p);
         desc.Reset();
         return desc;
     }
 
-    pmid = ZERO_ENTREZ_ID;
-    p    = StringSave(XMLFindTagValue(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_PUBMED));
-    if (p) {
-        pmid = ENTREZ_ID_FROM(int, NStr::StringToInt(p, NStr::fAllowTrailingSymbols));
-        MemFree(p);
+    TEntrezId pmid = ZERO_ENTREZ_ID;
+    if (auto p = XMLFindTagValue(entry, xil, INSDREFERENCE_PUBMED)) {
+        pmid = ENTREZ_ID_FROM(int, NStr::StringToInt(*p, NStr::fAllowTrailingSymbols));
     }
 
     CRef<CAuth_list> auth_list;
 
-    p = StringSave(XMLConcatSubTags(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_AUTHORS, ','));
-    if (p) {
+    if (auto p = XMLConcatSubTags(entry, xil, INSDREFERENCE_AUTHORS, ',')) {
         if (false) {
-            q = StringRChr(p, '.');
-            if (! q || q[1] != '\0') {
-                string s = p;
-                s.append(".");
-                MemFree(p);
-                p = StringSave(s);
-                q = nullptr;
+            size_t q = p->rfind('.');
+            if (q == string::npos || (q + 1) != p->size()) {
+                *p += '.';
+                q = string::npos; // ?
             }
         }
-        for (q = p; *q == ' ' || *q == '.' || *q == ',';)
+        auto q = p->begin();
+        while (q < p->end() && (*q == ' ' || *q == '.' || *q == ','))
             q++;
-        if (*q != '\0') {
-            auto journal = XMLFindTagValue(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_JOURNAL);
-            char* r = StringChr(p, ',');
-            if (r && ! StringChr(r + 1, '.'))
-                *r = '|';
-            get_auth(p, (pp->source == Parser::ESource::EMBL) ? EMBL_REF : GB_REF, journal ? *journal : string_view(), auth_list);
+        if (q != p->end()) {
+            auto journal = XMLFindTagValue(entry, xil, INSDREFERENCE_JOURNAL);
+            size_t r = p->find(',');
+            if (r != string::npos && p->find('.', r + 1) == string::npos)
+                (*p)[r] = '|';
+            get_auth(*p, (pp->source == Parser::ESource::EMBL) ? EMBL_REF : GB_REF, journal ? *journal : string_view(), auth_list);
         }
-        MemFree(p);
     }
 
-    p = StringSave(XMLFindTagValue(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_CONSORTIUM));
-    if (p) {
-        for (q = p; *q == ' ' || *q == '.' || *q == ',';)
+    if (auto p = XMLFindTagValue(entry, xil, INSDREFERENCE_CONSORTIUM)) {
+        auto q = p->begin();
+        while (q < p->end() && (*q == ' ' || *q == '.' || *q == ','))
             q++;
-
-        if (*q != '\0')
-            get_auth_consortium(p, auth_list);
-
-        MemFree(p);
+        if (q != p->end())
+            get_auth_consortium(*p, auth_list);
     }
 
     if (auth_list.Empty() || ! auth_list->IsSetNames())
         no_auth = true;
 
-    p = StringSave(XMLFindTagValue(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_TITLE));
-
     CRef<CTitle::C_E> title_art(new CTitle::C_E);
-    if (p) {
-        if (! fta_StartsWith(p, "Direct Submission"sv) &&
-            *p != '\0' && *p != ';') {
-            string title = clean_up(p);
+    if (auto p = XMLFindTagValue(entry, xil, INSDREFERENCE_TITLE)) {
+        if (! p->starts_with("Direct Submission"sv) &&
+            ! p->empty() && p->front() != ';') {
+            string title = clean_up(p->c_str());
             if (! title.empty()) {
                 title_art->SetName(tata_save(title));
             }
         }
-        MemFree(p);
     }
 
-    is_online = false;
-    p         = StringSave(XMLFindTagValue(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_JOURNAL));
+    auto p = XMLFindTagValue(entry, xil, INSDREFERENCE_JOURNAL);
     if (! p) {
         FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "No JOURNAL line, reference dropped");
         desc.Reset();
         return desc;
     }
 
-    if (*p == '\0' || *p == ';') {
+    if (p->empty() || p->front() == ';') {
         FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "JOURNAL line is empty, reference dropped");
-        MemFree(p);
         desc.Reset();
         return desc;
     }
 
-    if (NStr::EqualNocase(p, 0, 18, "Online Publication"))
+    bool is_online = false;
+    if (NStr::StartsWith(*p, "Online Publication", NStr::eNocase))
         is_online = true;
 
-    if (char* r = StringSave(XMLFindTagValue(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_REMARK))) {
-        string comm = NStr::Sanitize(ExtractErratum(r));
-        MemFree(r);
+    if (auto r = XMLFindTagValue(entry, xil, INSDREFERENCE_REMARK)) {
+        string comm = NStr::Sanitize(ExtractErratum(r->data()));
         if (! is_online)
             normalize_comment(comm);
         desc->SetComment(comm);
     }
 
-    er = desc->IsSetComment() ? fta_remark_is_er(desc->GetComment()) : 0;
+    Int4 er = desc->IsSetComment() ? fta_remark_is_er(desc->GetComment()) : 0;
 
     CRef<CCit_art> cit_art;
-    if (pp->medserver == 1 && pmid > ZERO_ENTREZ_ID && (fta_StartsWith(p, "(er)"sv) || er > 0)) {
+    if (pp->medserver == 1 && pmid > ZERO_ENTREZ_ID && (p->starts_with("(er)"sv) || er > 0)) {
         cit_art = FetchPubPmId(pmid);
         if (cit_art.Empty())
             pmid = ZERO_ENTREZ_ID;
@@ -1896,13 +1874,13 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, const DataBlk& dbp, bool& no_auth, b
         desc->SetPub().Set().push_back(pub);
     }
 
-    CRef<CPub> pub_ref = journal(pp, p, p + StringLen(p), auth_list, title_art, false, cit_art, er);
-    MemFree(p);
+    CRef<CPub> pub_ref = journal(pp, p->data(), p->data() + p->size(), auth_list, title_art, false, cit_art, er);
+    p.reset();
 
     TQualVector xrefs;
-    for (const auto& xip : dbp.GetXmlData()) {
+    for (const auto& xip : xil) {
         if (xip.tag == INSDREFERENCE_XREF)
-            XMLGetXrefs(dbp.mBuf.ptr, xip.subtags, xrefs);
+            XMLGetXrefs(entry, xip.subtags, xrefs);
     }
 
     string doi;
