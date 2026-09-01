@@ -886,8 +886,7 @@ static struct SINTERNAL_Data* s_InternalMapper(const char** svc,
             char        buf[80];
             const char* str = ConnNetInfo_GetValueInternal(0, REG_CONN_INTERNAL_DISABLE,
                                                            buf, sizeof(buf), 0);
-            if (str  &&  *str)
-                do_internal = !ConnNetInfo_Boolean(str);
+            do_internal = !str  ||  !*str ? 1/*T*/ : !ConnNetInfo_Boolean(str);
         }
     }
     if (!do_internal)
