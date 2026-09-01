@@ -482,6 +482,7 @@ SItemTypeAndReason SItemTypeAndReason::Get(SPSG_Args& args, bool raw)
         case SPSG_Args::eProcessor:      return CPSG_ReplyItem::eProcessor;
         case SPSG_Args::eIpgInfo:        return CPSG_ReplyItem::eIpgInfo;
         case SPSG_Args::eAccVerHistory:  return CPSG_ReplyItem::eAccVerHistory;
+        case SPSG_Args::eReplyData:      return CPSG_ReplyItem::eEndOfReply; // CXX-14518 Phase 1: Suppress warning
         case SPSG_Args::eUnknownItem:
             if (!raw) break;
             args.SetValue("blob_id", args.GetValue("item_type"));
