@@ -416,10 +416,17 @@ static char* x_HostPort(const char* host, unsigned short aport)
     char*  hostport, port[16];
     size_t hostlen = strlen(host);
     size_t portlen = (size_t) sprintf(port, ":%hu", aport) + 1;
-    hostport = (char*) malloc(hostlen + portlen);
+    int/*bool*/ bare = !memchr(host, ':', hostlen);
+    hostport = (char*) malloc(hostlen + bare * 2 + portlen);
     if (hostport) {
-        memcpy(hostport,           host, hostlen);
-        memcpy(hostport + hostlen, port, portlen);
+        char* ptr = hostport;
+        if (!bare)
+            *ptr++ = '[';
+        memcpy(ptr, host, hostlen);
+        ptr += hostlen;
+        if (!bare)
+            *ptr++ = ']';
+        memcpy(ptr, port, portlen);
     }
     return hostport;
 }
