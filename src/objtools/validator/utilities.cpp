@@ -29,7 +29,7 @@
  *      Implementation of utility classes and functions.
  *
  */
- 
+
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
@@ -2128,27 +2128,26 @@ string InterpretSpecificHostResult(const string& host, const CT3Reply& reply, co
     return err_str;
 }
 
-
-bool IsCommon(const COrg_ref& org, const string& val)
+static bool s_IsCommonName(const CTaxon1_name& name)
 {
-    bool is_common = false;
-    if (org.IsSetCommon() && NStr::EqualNocase(val, org.GetCommon())) {
-        // common name, not genus
-        is_common = true;
-    } else if (org.IsSetOrgMod()) {
-        for (auto& it : org.GetOrgname().GetMod()) {
-            if (it->IsSetSubtype() &&
-                it->GetSubtype() == COrgMod::eSubtype_common &&
-                it->IsSetSubname() &&
-                NStr::EqualNocase(it->GetSubname(), val)) {
-                is_common = true;
-                break;
-            }
-        }
-    }
-    return is_common;
+    auto cde = name.GetCde();
+    return (cde == 7 || cde == 8); // 7 = genbank common name, 8 = common name
 }
 
+static bool s_IsCommonName(const string& val, CTaxon1& taxon1)
+{
+    if (val.empty()) {
+        return false;
+    }
+
+    list<CRef<CTaxon1_name>> names;
+    auto taxid = taxon1.SearchTaxIdByName(val, CTaxon1::eSearch_Exact, &names);
+
+    if (! names.empty()) {
+        return s_IsCommonName(*names.front());
+    }
+    return false;
+}
 
 bool IsLikelyTaxname(const string& val)
 {
@@ -2162,17 +2161,13 @@ bool IsLikelyTaxname(const string& val)
 
     CTaxon1 taxon1;
     taxon1.Init();
-    TTaxId taxid = taxon1.GetTaxIdByName(val.substr(0, pos));
-    if (taxid == ZERO_TAX_ID || taxid == INVALID_TAX_ID) {
+    if (s_IsCommonName(val, taxon1)) { // RW-2688 - check if the whole name is a common name
         return false;
     }
 
-    bool is_species = false;
-    bool is_uncultured = false;
-    string blast_name;
-
-    CConstRef<COrg_ref> org = taxon1.GetOrgRef(taxid, is_species, is_uncultured, blast_name);
-    if (org && IsCommon(*org, val.substr(0, pos))) {
+    list<CRef<CTaxon1_name>> names;
+    auto taxid = taxon1.SearchTaxIdByName(val.substr(0, pos), CTaxon1::eSearch_Exact, &names);
+    if (taxid == ZERO_TAX_ID || taxid == TAX_ID_CONST(-2) || names.empty() || s_IsCommonName(*names.front())) {
         return false;
     } else {
         return true;
@@ -2334,7 +2329,7 @@ MAKE_CONST_SET(sc_BypassCdsTransCheck, ct::tagStrCase,
 });
 
 MAKE_CONST_SET(sc_ForceCdsTransCheck, ct::tagStrCase,
-{ 
+{
     "artificial frameshift",
     "mismatches in translation"
 });
