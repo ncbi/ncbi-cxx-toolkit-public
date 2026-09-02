@@ -820,10 +820,9 @@ void CMakeClusterDBApp::x_BuildDatabase()
     if (args["with_cluster_metadata"]) {
         if (args["cluster_metadata_filename"]) {
             meta_filename = args["cluster_metadata_filename"].AsString();
-            cluster_metadata.reset(new CNcbiOfstream());
         }
         else {
-            meta_filename = out_dbname + ".meta.csv";
+            meta_filename = out_dbname + "-cluster-metadata.csv";
         }
         CFile(meta_filename).Remove();
         cluster_metadata.reset(new CNcbiOfstream(meta_filename.c_str()));
