@@ -8113,7 +8113,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSpecificHost)
     CLEAR_ERRORS
 
     // others
-    TestSpecificHostNoError("Racoon");
+    TestSpecificHostNoError("Racoon"); // currently no error for misspelled common names
     TestSpecificHostNoError("SNAKE");
     TestSpecificHostNoError("Snake");
     TestSpecificHostNoError("Turtle");
@@ -8121,7 +8121,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSpecificHost)
     TestSpecificHostNoError("Guinea pig"); 
     TestSpecificHostNoError("Canada goose");
     TestSpecificHostNoError("Peregrine falcon");
-    TestSpecificHostNoError("Racoon dog");
+    TestSpecificHostNoError("Racoon dog"); // currently no error for misspelled common names
     TestSpecificHostNoError("guinea fowl");
     TestSpecificHostNoError("sea urchin"); // RW-1364
 }
