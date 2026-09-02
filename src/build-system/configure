@@ -36982,6 +36982,7 @@ $as_echo "#define HAVE_LIBRDKAFKA 1" >>confdefs.h
 if test "$with_librdkafka" != no -a \
      -f "$LIBRDKAFKA_PATH/lib$bit64_sfx/librdkafka-static.a"; then
    LIBRDKAFKA_STATIC_LIBS="-L$LIBRDKAFKA_PATH/lib$bit64_sfx -lrdkafka-static"
+   LIBRDKAFKA_STATIC_LIBS="$LIBRDKAFKA_STATIC_LIBS -llz4"
    if test "x$favor_static_deps" = "xyes"; then
       LIBRDKAFKA_LIBS=$LIBRDKAFKA_STATIC_LIBS
    fi
@@ -37111,7 +37112,7 @@ if ${ncbi_cv_lib_cppkafka+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   CPPFLAGS="$BOOST_INCLUDE $LIBRDKAFKA_INCLUDE $CPPKAFKA_INCLUDE $orig_CPPFLAGS"
-       LIBS="$CPPKAFKA_LIBS  $orig_LIBS"
+       LIBS="$CPPKAFKA_LIBS $CURL_LIBS $SASL2_LIBS $OPENSSL_LIBS $ZSTD_LIBS $Z_LIBS $orig_LIBS"
        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <cppkafka/configuration.h>
