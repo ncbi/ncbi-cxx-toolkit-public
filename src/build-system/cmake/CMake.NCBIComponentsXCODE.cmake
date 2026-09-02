@@ -387,7 +387,7 @@ set(NCBI_COMPONENT_Sybase_FOUND NO)
 
 #############################################################################
 # PYTHON
-NCBI_define_Xcomponent(NAME PYTHON INTERFACELIB cpython::cpython LIB python${NCBI_ThirdParty_PYTHON_VERSION} INCPATH_SUFFIX python${NCBI_ThirdParty_PYTHON_VERSION})
+NCBI_define_Xcomponent(NAME PYTHON INTERFACELIB cpython::cpython LIB python${NCBI_ThirdParty_PYTHON_VERSION} INCPATH_SUFFIX include/python${NCBI_ThirdParty_PYTHON_VERSION})
 if(NCBI_COMPONENT_PYTHON_FOUND AND EXISTS ${NCBI_ThirdParty_XCODE_FRAMEWORKS})
     set(NCBI_COMPONENT_PYTHON_LIBS -Wl,-rpath,${NCBI_ThirdParty_XCODE_FRAMEWORKS} ${NCBI_COMPONENT_PYTHON_LIBS})
 endif()
