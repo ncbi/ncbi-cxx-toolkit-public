@@ -453,8 +453,7 @@ NCBIcomponent_report(SQLITE3)
 
 #############################################################################
 # BerkeleyDB
-#NCBI_define_Xcomponent(NAME BerkeleyDB INTERFACELIB libdb::libdb LIB db CHECK_INCLUDE db.h)
-NCBI_define_component(BerkeleyDB db)
+NCBI_define_Xcomponent(NAME BerkeleyDB INTERFACELIB libdb::libdb LIB db CHECK_INCLUDE db.h)
 if(NCBI_COMPONENT_BerkeleyDB_FOUND)
     set(HAVE_BERKELEY_DB 1)
     set(HAVE_BDB         1)
