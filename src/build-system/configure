@@ -21099,8 +21099,11 @@ $as_echo "#define HAVE_LIBCURL 1" >>confdefs.h
 
 if test -n "$CURL_LIBS"; then
    if test -x "$CURL_CONFIG"; then
-      CURL_STATIC_LIBS=`"$CURL_CONFIG" --static-libs`
-   elif test -f "$CURL_ARCH_PATH/lib/libcurl-static.a"; then
+      CURL_STATIC_LIBS=`"$CURL_CONFIG" --static-libs \
+                        | grep -v '@[A-Za-z0-9_]*@'`
+   fi
+   if test -z "$CURL_STATIC_LIBS" -a -f "$CURL_ARCH_PATH/lib/libcurl-static.a"
+   then
       # Speculative
       CURL_STATIC_LIBS="$CURL_LIBPATH -lcurl-static $OPENSSL_LIBS $Z_LIBS"
    fi
