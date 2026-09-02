@@ -9629,6 +9629,7 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(librdkafka, LIBRDKAFKA, rdkafka,
 if test "$with_librdkafka" != no -a \
      -f "$LIBRDKAFKA_PATH/lib$bit64_sfx/librdkafka-static.a"; then
    LIBRDKAFKA_STATIC_LIBS="-L$LIBRDKAFKA_PATH/lib$bit64_sfx -lrdkafka-static"
+   LIBRDKAFKA_STATIC_LIBS="$LIBRDKAFKA_STATIC_LIBS -llz4"
    if test "x$favor_static_deps" = "xyes"; then
       LIBRDKAFKA_LIBS=$LIBRDKAFKA_STATIC_LIBS
    fi
@@ -9652,7 +9653,9 @@ fi
 NCBI_CHECK_THIRD_PARTY_LIB(cppkafka,
   [AC_LANG_PROGRAM([[@%:@include <cppkafka/configuration.h>]],
       [[cppkafka::Configuration cfg; cfg.set("foo", "bar");]])],
-  [$LIBRDKAFKA_LIBS], [], [$BOOST_INCLUDE $LIBRDKAFKA_INCLUDE])
+  [$LIBRDKAFKA_LIBS],
+  [$CURL_LIBS $SASL2_LIBS $OPENSSL_LIBS $ZSTD_LIBS $Z_LIBS],
+  [$BOOST_INCLUDE $LIBRDKAFKA_INCLUDE])
 if test "$with_cppkafka" != no -a \
      -f "$CPPKAFKA_PATH/lib$bit64_sfx/libcppkafka-static.a"; then
    CPPKAFKA_STATIC_LIBS="-L$CPPKAFKA_PATH/lib$bit64_sfx -lcppkafka-static $LIBRDKAFKA_STATIC_LIBS"
