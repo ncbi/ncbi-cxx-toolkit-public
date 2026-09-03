@@ -18,7 +18,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         "AWS_SDK":    ["aws-sdk-cpp"],
         "BACKWARD":   ["backward-cpp"],
         "BerkeleyDB": ["libdb"],
-        "BOOST":      ["boost"],
+        "Boost":      ["boost"],
         "BZ2":        ["bzip2"],
         "CASSANDRA":  ["cassandra-cpp-driver"],
         "FASTCGI":    ["ncbi-fastcgi"],
