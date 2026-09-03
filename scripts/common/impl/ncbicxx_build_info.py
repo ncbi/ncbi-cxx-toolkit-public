@@ -1,5 +1,5 @@
 # $Id$
-import ast
+# import ast
 from datetime import date, datetime, timedelta, timezone
 try:
     from distutils.sysconfig import parse_makefile, expand_makefile_vars
@@ -11,9 +11,49 @@ import mmap
 import os
 import pwd
 import re
+import string
 import subprocess
 import time
 from warnings import warn
+
+hex_lengths = { 'x': 2, 'u': 4, 'U': 8 }
+def unescape_tc_prop_value(v_in):
+    v = ''
+    last_pos = 0
+    pos = v_in.find('\\', 0, -1)
+    while pos >= 0:
+        v = v + v_in[last_pos : pos]
+        last_pos = pos + 2
+        c = v_in[pos+1]
+        if c not in '01234567Uabfnrtuvx':
+            v = v + c
+        elif c == 'n':
+            v = v + '\n'
+        elif c == 't':
+            v = v + '\t'
+        elif c == 'r':
+            v = v + '\r'
+        elif c == 'a':
+            v = v + '\a'
+        elif c == 'f':
+            v = v + '\f'
+        elif c == 'v':
+            v = v + '\v'
+        elif c >= '0' and c <= '7':
+            n = ord(c) - ord('0')
+            c = v_in[last_pos]
+            while c >= '0' and c <= '7':
+                n = n * 8 + ord(c) - ord('0')
+                last_pos = last_pos + 1
+                c = v_in[last_pos]
+            v = v + chr(n)
+        else:
+            l = hex_lengths[c]
+            v = v + chr(int(v_in[last_pos : last_pos+l], 16))
+            last_pos = last_pos + l
+        pos = v_in.find('\\', last_pos, -1)
+    v = v + v_in[last_pos :]
+    return v
 
 class IrrelevantCommandError(Exception):
     pass
@@ -243,7 +283,7 @@ class Collector(object):
             fname = os.environ['TEAMCITY_BUILD_PROPERTIES_FILE']
             try:
                 with open(fname, 'r') as f:
-                    prop_re = re.compile(r'((?:(?![:=])\S|\\.)+)'
+                    prop_re = re.compile(r'([a-zA-Z0-9._-]+)'
                                          + r'(?:\s*[:=]\s*|\s+)(.*)')
                     for l in f:
                         l = l.lstrip()
@@ -256,9 +296,9 @@ class Collector(object):
                         if mi is None:
                             warn('Malformed line in ' + fname + ': ' + l)
                         else:
-                            k = ast.literal_eval("'''"+mi.group(1)+"'''")
-                            v = ast.literal_eval("'''"+mi.group(2)+"'''")
-                            props[k] = v
+                            # v = ast.literal_eval("'''"+mi.group(2)+"'''")
+                            v = unescape_tc_prop_value(mi.group(2))
+                            props[mi.group(1)] = v
             except Exception as e:
                 warn("Failed to open %s: %s" % (fname, e))
                 pass
