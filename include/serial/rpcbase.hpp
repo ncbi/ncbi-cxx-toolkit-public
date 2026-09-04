@@ -225,6 +225,9 @@ string CRPCClient<TRequest, TReply>::x_GetEndpoint(SConnNetInfo& net_info)
             return m_Service;
         }
     }
+    if (m_ServInfo->type == fSERV_Firewall) {
+        return m_Service;
+    }
 
     string ret = CSocketAPI::HostPortToString(m_ServInfo->addr,
                                               m_ServInfo->port);
