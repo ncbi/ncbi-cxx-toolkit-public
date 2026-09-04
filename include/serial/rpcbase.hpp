@@ -142,6 +142,12 @@ protected:
                                             void*       user_data,
                                             int         server_error);
 
+    // Callback for getting the next instance to use.
+    // 'user_data' must point to an instance of CRPCClient, whose own
+    // iterator's latest (cached) result it will consult in lieu of the
+    // passed blank-slate one.
+    static const SSERV_Info* sx_GetNextInfo(void* user_data, SERV_ITER iter);
+
     static bool sx_IsSpecial(const STimeout* timeout);
 
     const STimeout*          m_Timeout; ///< Cloned if not special.
@@ -197,6 +203,7 @@ void CRPCClient<TRequest, TReply>::x_FillConnNetInfo(SConnNetInfo& net_info,
     memset(x_extra, 0, sizeof(*x_extra));
     x_extra->data = this;
     x_extra->parse_header = sx_ParseHeader;
+    x_extra->get_next_info = sx_GetNextInfo;
     x_extra->flags = fHTTP_NoAutoRetry;
     const char* user_header = GetContentTypeHeader(GetFormat());
     if (user_header != NULL  &&  *user_header != '\0') {
@@ -393,6 +400,20 @@ CRPCClient<TRequest, TReply>::sx_ParseHeader(const char* http_header,
 
     // Always read response body - normal content or error.
     return eHTTP_HeaderContinue;
+}
+
+
+template<class TRequest, class TReply>
+inline
+const SSERV_Info*
+CRPCClient<TRequest, TReply>::sx_GetNextInfo(void* user_data, SERV_ITER iter)
+{
+    if (user_data == nullptr) { // Shouldn't happen
+        return SERV_GetNextInfo(iter);
+    }
+    auto* client = reinterpret_cast<CRPCClient*>(user_data);
+    _ASSERT(client);
+    return client->m_ServInfo;
 }
 
 
