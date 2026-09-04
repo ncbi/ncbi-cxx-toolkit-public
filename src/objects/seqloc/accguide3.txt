@@ -1604,7 +1604,7 @@ version  3 # of file format
 2+6  QA  gb_patent
 2+8  QA  gb_other_nuc
 2+10 QA  gb_other_nuc
-2+6  QB  gb_other_nuc
+2+6  QB  gb_dirsub
 2+8  QB  gb_other_nuc
 2+10 QB  gb_other_nuc
 2+6  QC  gb_other_nuc
