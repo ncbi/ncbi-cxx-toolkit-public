@@ -2956,7 +2956,7 @@ special3 6+9 embl_tpa_wgs_nuc
 : T-WANI L-EEC E-IYW Y-JCE G-HS U-LTC NQD-K N-P V Y-Z RF J M-N W SG R TP UR-S U
 : X-VB L Q-W WM-N Q OBA X-Y CQ-V DO-P EC-D H GS KF OO Q S X PA K-N QI-J SO Q TU
 : YM-N PJJ M-O KA-B L-M LZ-MA C OS-W QH K RR U WQ XC-I ZS QAT CJ L-N DB-C F
-: EA-B E-F
+: EA-B E-F XAAV BI CB DL EO FC H HH YARB E
 
 ### Thread 2
 # Some "EMBL" TPA nucleotide accessions are really third-party annotations.
