@@ -426,7 +426,8 @@ NCBIcomponent_report(VDB)
 # wxWidgets
 if(NOT NCBI_COMPONENT_wxWidgets_FOUND)
     set(_wx_ver 3.2)
-    NCBI_define_Xcomponent(NAME wxWidgets LIB
+#    NCBI_define_Xcomponent(NAME wxWidgets LIB
+    NCBI_define_component(wxWidgets
         wx_osx_cocoa_gl-${_wx_ver}
         wx_osx_cocoa_richtext-${_wx_ver}
         wx_osx_cocoa_aui-${_wx_ver}
