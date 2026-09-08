@@ -46,7 +46,7 @@ set(NCBI_ThirdParty_NCBI_C  ${NCBI_TOOLS_ROOT}/Lib/Ncbi/C/${NCBI_ThirdPartyCompi
 
 set(NCBI_ThirdParty_VDBROOT    //snowman/trace_software/vdb)
 set(NCBI_ThirdParty_SQLServer "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/180/SDK")
-set(NCBI_ThirdParty_PYTHON     ${NCBI_ThirdPartyAppsPath}/Python_3.11 CACHE PATH "PYTHON root")
+set(NCBI_ThirdParty_PYTHON     ${NCBI_ThirdPartyAppsPath}/Python_3.13 CACHE PATH "PYTHON root")
 set(NCBI_ThirdParty_Sybase     ${NCBI_ThirdPartyBasePath}/sybase/${NCBI_ThirdPartyCompiler}/15.5 CACHE PATH "Sybase root")
 set(NCBI_ThirdParty_SybaseLocalPath "" CACHE PATH "SybaseLocalPath")
 
@@ -568,10 +568,10 @@ NCBIcomponent_report(VDB)
 
 #############################################################################
 # PYTHON
-NCBI_define_VScomponent(NAME PYTHON PACKAGE cpython LIB python311 python3)
+NCBI_define_VScomponent(NAME PYTHON PACKAGE cpython LIB python313 python3)
 if(NCBI_COMPONENT_PYTHON_FOUND)
     set(NCBI_COMPONENT_PYTHON_BINPATH ${NCBI_ThirdParty_PYTHON})
-    set(NCBI_COMPONENT_PYTHON_VERSION 3.11)
+    set(NCBI_COMPONENT_PYTHON_VERSION 3.13)
 endif()
 NCBIcomponent_report(PYTHON)
 
