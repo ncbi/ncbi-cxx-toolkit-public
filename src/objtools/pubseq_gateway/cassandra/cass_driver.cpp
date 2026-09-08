@@ -173,7 +173,7 @@ BEGIN_SCOPE()
         return table_meta;
     }
 
-    inline CCassandraException::EErrCode GetErrorCodeByDriverRC(CassError rc)
+    CCassandraException::EErrCode GetErrorCodeByDriverRC(CassError rc)
     {
         if (rc == CASS_ERROR_SERVER_UNAVAILABLE
             || rc == CASS_ERROR_LIB_NO_HOSTS_AVAILABLE
@@ -192,7 +192,7 @@ BEGIN_SCOPE()
         return CCassandraException::eQueryFailed;
     }
 
-    inline string ProduceSyncTimeoutMessage(string message, unsigned int spent_ms, unsigned int timeout_ms)
+    string ProduceSyncTimeoutMessage(string message, unsigned int spent_ms, unsigned int timeout_ms)
     {
         if (timeout_ms > 0) {
             message.append(", timeout " + to_string(timeout_ms) + "ms (spent: " + to_string(spent_ms) + "ms)");
@@ -200,7 +200,7 @@ BEGIN_SCOPE()
         return message;
     }
 
-    inline string ProduceCassandraFutureErrorMessage(CassFuture * future)
+    string ProduceCassandraFutureErrorMessage(CassFuture * future)
     {
         const char *message_ptr{nullptr};
         size_t message_len{0};
@@ -252,6 +252,25 @@ BEGIN_SCOPE()
             message.append("; SQL: " + NStr::Quote(sql));
         }
         return message;
+    }
+
+    string GetSystemLocalString(CCassConnection& connection, string const& key, shared_ptr<string>& persistent_storage)
+    {
+        auto shared_value = atomic_load(&persistent_storage);
+        if (shared_value == nullptr || shared_value->empty()) {
+            auto query = connection.NewQuery();
+            query->SetSQL(std::format("SELECT {} FROM system.local", key), 0);
+            query->Query(CCassConsistency::kLocalOne, false, false);
+            if (query->NextRow() == ar_dataready) {
+                string value = query->FieldGetStrValue(0);
+                shared_value = make_shared<string>(value);
+                atomic_store(&persistent_storage, std::move(shared_value));
+                return value;
+            }
+        }
+        else {
+            return *shared_value;
+        }
     }
 END_SCOPE()
 
@@ -501,6 +520,7 @@ void CCassConnection::CloseSession()
         }
         m_session = nullptr;
         atomic_store(&m_datacenter, shared_ptr<string>());
+        atomic_store(&m_cluster_name, shared_ptr<string>());
     }
 }
 
@@ -557,6 +577,7 @@ void CCassConnection::Close()
         cass_cluster_free(m_cluster);
         m_cluster = nullptr;
         atomic_store(&m_datacenter, shared_ptr<string>());
+        atomic_store(&m_cluster_name, shared_ptr<string>());
     }
 }
 
@@ -883,26 +904,14 @@ vector<string> CCassConnection::GetLocalPeersAddressList(string const & datacent
     return result;
 }
 
+string CCassConnection::GetClusterName()
+{
+    return IsConnected() ? GetSystemLocalString(*this, "cluster_name", m_cluster_name) : "";
+}
+
 string CCassConnection::GetDatacenterName()
 {
-    if (IsConnected()) {
-        auto datacenter = atomic_load(&m_datacenter);
-        if (datacenter == nullptr || datacenter->empty()) {
-            auto query = NewQuery();
-            query->SetSQL("SELECT data_center FROM system.local", 0);
-            query->Query(CCassConsistency::kLocalOne, false, false);
-            if (query->NextRow() == ar_dataready) {
-                string dc = query->FieldGetStrValue(0);
-                datacenter = make_shared<string>(dc);
-                atomic_store(&m_datacenter, std::move(datacenter));
-                return dc;
-            }
-        }
-        else {
-            return *datacenter;
-        }
-    }
-    return "";
+    return IsConnected() ? GetSystemLocalString(*this, "data_center", m_datacenter) : "";
 }
 
 vector<string> CCassConnection::GetKeyspaces() const

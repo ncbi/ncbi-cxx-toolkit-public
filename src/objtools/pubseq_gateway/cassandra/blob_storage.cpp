@@ -342,6 +342,24 @@ optional<SSatInfoEntry> CSatInfoSchema::GetIPGKeyspace() const
     return m_IPGKeyspace;
 }
 
+multimap<string, int64_t> CSatInfoSchema::GetActiveStatementsCount() const
+{
+    set<CCassConnection*> connections;
+    connections.insert(m_DefaultConnection.get());
+    for (auto & entry : m_Service2Cluster) {
+        connections.insert(entry.second.get());
+    }
+
+    multimap<string, int64_t> active_statements;
+    for (CCassConnection* entry : connections) {
+        if (entry) {
+            string entry_name = std::format("{}::{}", entry->GetClusterName(), entry->GetDatacenterName());
+            active_statements.emplace(std::move(entry_name), entry->GetActiveStatements());
+        }
+    }
+    return active_statements;
+}
+
 shared_ptr<CCassConnection> CSatInfoSchema::x_GetConnectionByService(string const& service, string const& registry_section) const
 {
     auto itr = m_Service2Cluster.find(GetServiceKey(service, registry_section));
@@ -838,5 +856,10 @@ void CSatInfoSchemaProvider::x_SetRefreshErrorMessage(string const& message)
     atomic_store(&m_RefreshErrorMessage, std::move(msg));
 }
 
+multimap<string, int64_t> CSatInfoSchemaProvider::GetActiveStatementsCount() const
+{
+    auto p = GetSchema();
+    return p ? p->GetActiveStatementsCount() : multimap<string, int64_t>();
+}
 
 END_IDBLOB_SCOPE
