@@ -190,7 +190,7 @@ class CSatInfoSchemaProvider;
 
 class CSatInfoSchema final
 {
- public:
+public:
     friend class CSatInfoSchemaProvider;
 
     CSatInfoSchema() = default;
@@ -217,12 +217,20 @@ class CSatInfoSchema final
     /// Get max id value for existing blob sat
     int32_t GetMaxBlobKeyspaceSat() const;
 
+    /// Get current active statements count for each Cassandra connection
+    ///
+    /// @return
+    ///   multimap<ConnectedDatacenterName, ActiveStatementsCount>
+    ///
+    /// @for_tests, @for_monitoring, @thread_safe
+    multimap<string, int64_t> GetActiveStatementsCount() const;
+
     /// Print internal state of CSatInfoSchema
     ///
     /// @for_tests, @for_debug
     string ToString() const;
 
- private:
+private:
     shared_ptr<CCassConnection> x_GetConnectionByService(string const& service, string const& registry_section) const;
     shared_ptr<CCassConnection> x_GetConnectionByConnectionPoint(string const& connection_point) const;
 
@@ -281,7 +289,7 @@ class CSatInfoSchema final
 
 class CSatInfoSchemaProvider final
 {
- public:
+public:
 
     /// @param sat_info_keyspace
     ///   Name of Cassandra keyspace to use as a source of configuration
@@ -435,7 +443,14 @@ class CSatInfoSchemaProvider final
     /// @thread_safe
     string GetRefreshErrorMessage() const;
 
- private:
+    /// Get current active statements count for each Cassandra connection
+    ///
+    /// @return
+    ///   multimap<ConnectedDatacenterName, ActiveStatementsCount>
+    ///
+    /// @for_tests, @for_monitoring, @thread_safe
+    multimap<string, int64_t> GetActiveStatementsCount() const;
+private:
     shared_ptr<CCassConnection> x_GetSatInfoConnection() const;
     void x_SetRefreshErrorMessage(string const& message);
     optional<ESatInfoRefreshSchemaResult> x_PopulateNewSchema(

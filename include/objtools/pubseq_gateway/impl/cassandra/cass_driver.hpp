@@ -323,6 +323,7 @@ public:
     // So maybe there will be necessary to make second level of estimations based on available data
     vector<SCassSizeEstimate> GetSizeEstimates(string const& datacenter, string const& keyspace, string const& table);
     vector<string> GetLocalPeersAddressList(string const & datacenter, unsigned int timeout = 0);
+    string GetClusterName();
     string GetDatacenterName();
     static string NewTimeUUID();
     static void Perform(
@@ -341,6 +342,7 @@ private:
     string                          m_keyspace;
     // access through atomic_load/atomic_store
     shared_ptr<string>              m_datacenter;
+    shared_ptr<string>              m_cluster_name;
     CassCluster *                   m_cluster{nullptr};
     CassSession *                   m_session{nullptr};
     unsigned int                    m_ctimeoutms{0};

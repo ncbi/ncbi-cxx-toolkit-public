@@ -215,6 +215,24 @@ TEST_F(CSatInfoProviderTest, Basic) {
     // Connection should be inherited from previous schema version (no Cassandra reconnect)
     EXPECT_EQ(sat230.value().connection.get(), sat23.value().connection.get());
 
+    std::multimap<string, int64_t> expected_counts, active_statement_counts;
+    {
+        auto query = sat4.value().connection->NewQuery();
+        query->SetSQL("select * from system.size_estimates where table_name = 'blob_prop' ALLOW FILTERING", 0);
+        query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, true);
+        active_statement_counts = provider.GetActiveStatementsCount();
+        expected_counts = {{"IDSTORE_TEST2::BETHESDA", 0}, {"DD1xxCluster::DC1", 1}};
+        EXPECT_EQ(active_statement_counts, expected_counts);
+        while (!query->IsEOF()) {
+            if (query->NextRow() != ar_dataready) {
+                this_thread::sleep_for(chrono::milliseconds(1));
+            }
+        }
+        active_statement_counts = provider.GetSchema()->GetActiveStatementsCount();
+        expected_counts = {{"IDSTORE_TEST2::BETHESDA", 0}, {"DD1xxCluster::DC1", 0}};
+        EXPECT_EQ(active_statement_counts, expected_counts);
+    }
+
     //cout << provider.GetSchema()->ToString() << endl;
 }
 
