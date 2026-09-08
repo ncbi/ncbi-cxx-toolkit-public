@@ -22,6 +22,7 @@ internal/egene
 internal/eutils
 internal/gnomon
 internal/gpipe
+internal/ID/ctutils-ftds$
 internal/ID/utils$
 internal/ID/utils/wgs$
 internal/ID/utils/wgs/format$
