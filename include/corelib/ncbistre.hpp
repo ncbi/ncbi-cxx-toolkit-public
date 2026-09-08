@@ -390,53 +390,45 @@ public:
     CNcbiIfstream( ) {
     }
     explicit CNcbiIfstream(
-        const char *_Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::in,
-        int _Prot = (int)IOS_BASE::_Openprot
+        const char* _Filename,
+        IOS_BASE::openmode _Mode = IOS_BASE::in
     ) : IO_PREFIX::ifstream(
-            CNcbiFstreamNameConverter::Utf8ToWstring(_Filename).c_str(), _Mode, _Prot) {
+            CNcbiFstreamNameConverter::Utf8ToWstring(_Filename).c_str(), _Mode) {
     }
     explicit CNcbiIfstream(
         const string& _Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::in,
-        int _Prot = (int)IOS_BASE::_Openprot
-    ) : CNcbiIfstream(_Filename.c_str(), _Mode, _Prot) {
+        IOS_BASE::openmode _Mode = IOS_BASE::in
+    ) : CNcbiIfstream(_Filename.c_str(), _Mode) {
     }
     explicit CNcbiIfstream(
         const wchar_t *_Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::in,
-        int _Prot = (int)IOS_BASE::_Openprot
-    ) : IO_PREFIX::ifstream(_Filename,_Mode,_Prot) {
+        IOS_BASE::openmode _Mode = IOS_BASE::in
+    ) : IO_PREFIX::ifstream(_Filename,_Mode) {
     }
     explicit CNcbiIfstream(
         const wstring& _Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::in,
-        int _Prot = (int)IOS_BASE::_Openprot
-    ) : CNcbiIfstream(_Filename.c_str(),_Mode,_Prot) {
+        IOS_BASE::openmode _Mode = IOS_BASE::in
+    ) : CNcbiIfstream(_Filename.c_str(),_Mode) {
     }
  
     void open(
         const char *_Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::in,
-        int _Prot = (int)IOS_BASE::_Openprot) {
+        IOS_BASE::openmode _Mode = IOS_BASE::in) {
         IO_PREFIX::ifstream::open(
-            CNcbiFstreamNameConverter::Utf8ToWstring(_Filename).c_str(), _Mode, _Prot);
+            CNcbiFstreamNameConverter::Utf8ToWstring(_Filename).c_str(), _Mode);
     }
     void open(
         const string& _Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::in,
-        int _Prot = (int)IOS_BASE::_Openprot) {
-        CNcbiIfstream::open(_Filename.c_str(), _Mode, _Prot);
+        IOS_BASE::openmode _Mode = IOS_BASE::in) {
+        CNcbiIfstream::open(_Filename.c_str(), _Mode);
     }
     void open(const wchar_t *_Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::in,
-        int _Prot = (int)ios_base::_Openprot) {
-        IO_PREFIX::ifstream::open(_Filename,_Mode,_Prot);
+        IOS_BASE::openmode _Mode = IOS_BASE::in) {
+        IO_PREFIX::ifstream::open(_Filename,_Mode);
     }
     void open(const wstring& _Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::in,
-        int _Prot = (int)ios_base::_Openprot) {
-        CNcbiIfstream::open(_Filename.c_str(), _Mode, _Prot);
+        IOS_BASE::openmode _Mode = IOS_BASE::in) {
+        CNcbiIfstream::open(_Filename.c_str(), _Mode);
     }
 };
 #else
@@ -452,52 +444,44 @@ public:
     }
     explicit CNcbiOfstream(
         const char *_Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::out,
-        int _Prot = (int)IOS_BASE::_Openprot
+        IOS_BASE::openmode _Mode = IOS_BASE::out
     ) : IO_PREFIX::ofstream(
-            CNcbiFstreamNameConverter::Utf8ToWstring(_Filename).c_str(), _Mode, _Prot) {
+            CNcbiFstreamNameConverter::Utf8ToWstring(_Filename).c_str(), _Mode) {
     }
     explicit CNcbiOfstream(
         const string& _Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::out,
-        int _Prot = (int)IOS_BASE::_Openprot
-    ) : CNcbiOfstream(_Filename.c_str(), _Mode, _Prot) {
+        IOS_BASE::openmode _Mode = IOS_BASE::out
+    ) : CNcbiOfstream(_Filename.c_str(), _Mode) {
     }
     explicit CNcbiOfstream(
         const wchar_t *_Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::out,
-        int _Prot = (int)IOS_BASE::_Openprot
-    ) : IO_PREFIX::ofstream(_Filename,_Mode,_Prot) {
+        IOS_BASE::openmode _Mode = IOS_BASE::out
+    ) : IO_PREFIX::ofstream(_Filename,_Mode) {
     }
     explicit CNcbiOfstream(
         const wstring& _Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::out,
-        int _Prot = (int)IOS_BASE::_Openprot
-    ) : CNcbiOfstream(_Filename.c_str(),_Mode,_Prot) {
+        IOS_BASE::openmode _Mode = IOS_BASE::out
+    ) : CNcbiOfstream(_Filename.c_str(),_Mode) {
     }
  
     void open(
         const char *_Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::out,
-        int _Prot = (int)IOS_BASE::_Openprot) {
+        IOS_BASE::openmode _Mode = IOS_BASE::out) {
         IO_PREFIX::ofstream::open(
-            CNcbiFstreamNameConverter::Utf8ToWstring(_Filename).c_str(), _Mode, _Prot);
+            CNcbiFstreamNameConverter::Utf8ToWstring(_Filename).c_str(), _Mode);
     }
     void open(
         const string& _Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::out,
-        int _Prot = (int)IOS_BASE::_Openprot) {
-        CNcbiOfstream::open(_Filename.c_str(), _Mode, _Prot);
+        IOS_BASE::openmode _Mode = IOS_BASE::out) {
+        CNcbiOfstream::open(_Filename.c_str(), _Mode);
     }
     void open(const wchar_t *_Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::out,
-        int _Prot = (int)IOS_BASE::_Openprot) {
-        IO_PREFIX::ofstream::open(_Filename,_Mode,_Prot);
+        IOS_BASE::openmode _Mode = IOS_BASE::out) {
+        IO_PREFIX::ofstream::open(_Filename,_Mode);
     }
     void open(const wstring& _Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::out,
-        int _Prot = (int)IOS_BASE::_Openprot) {
-        CNcbiOfstream::open(_Filename.c_str(), _Mode, _Prot);
+        IOS_BASE::openmode _Mode = IOS_BASE::out) {
+        CNcbiOfstream::open(_Filename.c_str(), _Mode);
     }
 };
 #else
@@ -513,29 +497,25 @@ public:
     }
     explicit CNcbiFstream(
         const char *_Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::in | IOS_BASE::out,
-        int _Prot = (int)IOS_BASE::_Openprot
+        IOS_BASE::openmode _Mode = IOS_BASE::in | IOS_BASE::out
     ) : IO_PREFIX::fstream(
-            CNcbiFstreamNameConverter::Utf8ToWstring(_Filename).c_str(), _Mode, _Prot) {
+            CNcbiFstreamNameConverter::Utf8ToWstring(_Filename).c_str(), _Mode) {
     }
     explicit CNcbiFstream(
         const wchar_t *_Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::in | IOS_BASE::out,
-        int _Prot = (int)IOS_BASE::_Openprot
-    ) : IO_PREFIX::fstream(_Filename,_Mode,_Prot) {
+        IOS_BASE::openmode _Mode = IOS_BASE::in | IOS_BASE::out
+    ) : IO_PREFIX::fstream(_Filename,_Mode) {
     }
  
     void open(
         const char *_Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::in | IOS_BASE::out,
-        int _Prot = (int)IOS_BASE::_Openprot) {
+        IOS_BASE::openmode _Mode = IOS_BASE::in | IOS_BASE::out) {
         IO_PREFIX::fstream::open(
-            CNcbiFstreamNameConverter::Utf8ToWstring(_Filename).c_str(), _Mode, _Prot);
+            CNcbiFstreamNameConverter::Utf8ToWstring(_Filename).c_str(), _Mode);
     }
     void open(const wchar_t *_Filename,
-        IOS_BASE::openmode _Mode = IOS_BASE::in | IOS_BASE::out,
-        int _Prot = (int)ios_base::_Openprot) {
-        IO_PREFIX::fstream::open(_Filename,_Mode,_Prot);
+        IOS_BASE::openmode _Mode = IOS_BASE::in | IOS_BASE::out) {
+        IO_PREFIX::fstream::open(_Filename,_Mode);
     }
 };
 #else
