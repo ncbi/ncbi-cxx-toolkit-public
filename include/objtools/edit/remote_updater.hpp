@@ -63,21 +63,22 @@ BEGIN_SCOPE(edit)
 
 class CCachedTaxon3_impl;
 
-class NCBI_XOBJEDIT_EXPORT CRemoteUpdaterMessage: public CObjEditMessage
+class NCBI_XOBJEDIT_EXPORT CPubmedUpdaterMessage : public CObjEditMessage
 {
 public:
-    CRemoteUpdaterMessage(const string& msg, EPubmedError error)
-    : CObjEditMessage(msg, eDiag_Warning), m_error(error)
+    CPubmedUpdaterMessage(const string& msg, EPubmedError error) :
+        CObjEditMessage(msg, eDiag_Warning), m_error(error)
     {
     }
-    virtual CRemoteUpdaterMessage *Clone(void) const {
-        return new CRemoteUpdaterMessage(GetText(), m_error);
+    virtual CPubmedUpdaterMessage* Clone() const
+    {
+        return new CPubmedUpdaterMessage(GetText(), m_error);
     }
 
     EPubmedError m_error;
 };
 
-class NCBI_XOBJEDIT_EXPORT CRemoteUpdaterException: public CException
+class NCBI_XOBJEDIT_EXPORT CPubmedUpdaterException : public CException
 {
 public:
     using CException::CException;
@@ -179,6 +180,9 @@ private:
     std::mutex m_Mutex;
     int m_MaxMlaAttempts = 3;
 };
+
+using CRemoteUpdaterMessage   = CPubmedUpdaterMessage;
+using CRemoteUpdaterException = CPubmedUpdaterException;
 
 NCBI_DEPRECATED_CLASS NCBI_XOBJEDIT_EXPORT CRemoteUpdater
 {

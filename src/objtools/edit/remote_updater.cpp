@@ -120,10 +120,10 @@ CRef<CPub> s_GetPubFrompmid(CEUtilsUpdater* upd, TEntrezId id, int maxAttempts, 
         oss << "Pubmed error: " << errorVal;
         string msg = oss.str();
         if (pMessageListener) {
-            pMessageListener->PutMessage(CRemoteUpdaterMessage(msg, errorVal));
+            pMessageListener->PutMessage(CPubmedUpdaterMessage(msg, errorVal));
             break;
         } else {
-            NCBI_THROW(CRemoteUpdaterException, eUnknown, msg);
+            NCBI_THROW(CPubmedUpdaterException, eUnknown, msg);
         }
     }
     return result;

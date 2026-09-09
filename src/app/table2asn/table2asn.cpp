@@ -170,7 +170,7 @@ void CTable2AsnLogger::PutProgress(
 
 bool CTable2AsnLogger::PutMessage(const IObjtoolsMessage& message)
 {
-    auto edit = dynamic_cast<const edit::CRemoteUpdaterMessage*>(&message);
+    auto edit = dynamic_cast<const edit::CPubmedUpdaterMessage*>(&message);
     if (edit && (edit->m_error != edit::EPubmedError::citation_not_found)) {
         return false;
     }
