@@ -682,6 +682,16 @@
    fun:_Z28TcpOptionsFromEndpointConfigRKN17grpc_event_engine12experimental14EndpointConfigE
 }
 
+{
+   libunwind
+   Memcheck:Param
+   msync(start)
+   fun:msync
+   fun:validate_mem
+   ...
+   fun:_ULx86_64_step 
+}
+
 
 #===============================================================================
 # corelib
