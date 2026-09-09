@@ -160,7 +160,8 @@ endfunction()
 #############################################################################
 function(NCBI_internal_handle_VDB_rpath)
     get_property(_req GLOBAL PROPERTY NCBI_PTBPROP_REQUIRES_${NCBI_PROJECT})
-    if(VDB IN_LIST _req AND NOT "${NCBI_${NCBI_PROJECT}_TYPE}" STREQUAL "STATIC")
+    if(VDB IN_LIST _req  AND  NCBI_ThirdParty_VDB
+       AND  NOT "${NCBI_${NCBI_PROJECT}_TYPE}" STREQUAL "STATIC")
         get_filename_component(_fullver ${NCBI_ThirdParty_VDB} NAME)
         string(REPLACE "." ";" _ver ${_fullver})
         list(GET _ver 0 _major)
