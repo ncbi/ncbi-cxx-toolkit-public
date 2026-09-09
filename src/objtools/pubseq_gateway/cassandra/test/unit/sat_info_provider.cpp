@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 
 #include <optional>
+#include <thread>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -225,7 +226,7 @@ TEST_F(CSatInfoProviderTest, Basic) {
         EXPECT_EQ(active_statement_counts, expected_counts);
         while (!query->IsEOF()) {
             if (query->NextRow() != ar_dataready) {
-                this_thread::sleep_for(chrono::milliseconds(1));
+                std::this_thread::sleep_for(chrono::milliseconds(1));
             }
         }
         active_statement_counts = provider.GetSchema()->GetActiveStatementsCount();
