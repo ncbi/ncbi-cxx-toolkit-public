@@ -837,10 +837,13 @@ SPSG_Request::EStateResult SPSG_Request::StatePrefix(const char*& data, size_t& 
 SPSG_Request::EStateResult SPSG_Request::StateArgs(const char*& data, size_t& len)
 {
     // Accumulating args
-    while (*data != '\n') {
-        m_Buffer.args_buffer.push_back(*data++);
-        if (!--len) return eContinue;
-    }
+    const auto i = std::find(data, data + len, '\n');
+    m_Buffer.args_buffer.append(data, i);
+    len -= i - data;
+    data = i;
+
+    // Need more data
+    if (!len) return eContinue;
 
     ++data;
     --len;
