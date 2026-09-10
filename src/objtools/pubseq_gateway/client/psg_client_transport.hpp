@@ -1240,6 +1240,17 @@ private:
     SPSG_Servers::TTS& m_Servers;
 };
 
+struct SPSG_ServerSessions
+{
+    using TSession = SUvNgHttp2_Session<SPSG_IoSession>;
+
+    deque<TSession> sessions;
+    double current_rate = 0.0;
+
+    SPSG_Server& operator*() { _ASSERT(!sessions.empty()); return sessions.front().server; }
+    SPSG_Server* operator->() { return &operator*(); }
+};
+
 struct SPSG_IoImpl
 {
     SPSG_IoImpl(const SPSG_Params& params, SPSG_Servers::TTS& servers, SPSG_AsyncQueue& queue) :
@@ -1275,19 +1286,10 @@ private:
         io->OnQueue(handle);
     }
 
-    struct SServerSessions
-    {
-        deque<SUvNgHttp2_Session<SPSG_IoSession>> sessions;
-        double current_rate = 0.0;
-
-        SPSG_Server& operator*() { _ASSERT(!sessions.empty()); return sessions.front().server; }
-        SPSG_Server* operator->() { return &operator*(); }
-    };
-
     SPSG_Params m_Params;
     SPSG_Servers::TTS& m_Servers;
     SPSG_AsyncQueue& m_Queue;
-    deque<SServerSessions> m_Sessions;
+    deque<SPSG_ServerSessions> m_Sessions;
     pair<uniform_real_distribution<>, default_random_engine> m_Random;
 };
 
