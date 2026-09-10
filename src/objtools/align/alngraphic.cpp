@@ -1159,7 +1159,12 @@ void CAlnGraphic::x_FormatGraphOverview(CNcbiOstream & out)
                     score =(*iter2)->score;
                 }
                 if(m_View & (eAnchorLink | eAnchorLinkDynamic)){                    
-                    seqid = (*iter2)->gi == ZERO_GI ? (*iter2)->accession : NStr::NumericToString((*iter2)->gi);
+		    if((*iter2)->id->IsPrf()) {     
+                        seqid = CAlignFormatUtil::GetLabelForElemID((*iter2)->id);                            
+                    }
+                    else {
+                        seqid = (*iter2)->gi == ZERO_GI ? (*iter2)->accession : NStr::NumericToString((*iter2)->gi);
+                    }
                 }
                 oneAlign += s_MapBarTemplate(m_AlignGraphTemplates->graphSeq,
                                                 bar_length,  
