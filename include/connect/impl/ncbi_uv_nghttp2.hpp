@@ -409,6 +409,7 @@ struct NCBI_XXCONNECT2_EXPORT SNgHttp2_Session
     ssize_t Send(vector<char>& buffer);
     ssize_t Recv(const uint8_t* buffer, size_t size);
 
+    bool IsInitialized() const { return m_Session != nullptr; }
     uint32_t GetMaxStreams() const { return m_MaxStreams.first ? m_MaxStreams.first : m_MaxStreams.second; }
 
     void UpdateMaxStreams() {

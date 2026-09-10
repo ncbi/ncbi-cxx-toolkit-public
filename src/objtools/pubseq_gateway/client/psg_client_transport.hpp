@@ -846,7 +846,9 @@ struct SPSG_ThrottleParams
 
 struct SPSG_Throttling
 {
-    SPSG_Throttling(const SSocketAddress& address, SPSG_ThrottleParams p, uv_loop_t* l);
+    using TOnChange = function<void()>;
+
+    SPSG_Throttling(const SSocketAddress& address, SPSG_ThrottleParams p, uv_loop_t* l, TOnChange on_change);
 
     bool Active() const { return m_Active != eOff; }
     bool AddSuccess() { return AddResult(true); }
@@ -861,6 +863,7 @@ struct SPSG_Throttling
         EThrottling expected = eUntilDiscovery;
 
         if (m_Active.compare_exchange_strong(expected, eOff)) {
+            m_OnChange();
             ERR_POST(Warning << "Disabling throttling for server " << m_Address << " after wait and rediscovery");
         }
     }
@@ -893,9 +896,13 @@ private:
     {
         auto that = static_cast<SPSG_Throttling*>(handle->data);
         auto new_value = that->m_Stats.GetLock()->params.until_discovery ? eUntilDiscovery : eOff;
-        that->m_Active.store(new_value);
+        auto old_value = that->m_Active.exchange(new_value);
 
-        if (new_value == eOff) {
+        if ((old_value == eOff) != (new_value == eOff)) {
+            that->m_OnChange();
+        }
+
+        if ((old_value != eOff) && (new_value == eOff)) {
             ERR_POST(Warning << "Disabling throttling for server " << that->m_Address << " after wait");
         }
     }
@@ -903,8 +910,11 @@ private:
     const SSocketAddress& m_Address;
     SThreadSafe<SStats> m_Stats;
     atomic<EThrottling> m_Active;
+    TOnChange m_OnChange;
     SUv_Timer m_Timer;
     SUv_Async m_Signal;
+
+    friend struct SPSG_TestAccess;
 };
 
 struct SPSG_Server
@@ -915,13 +925,16 @@ struct SPSG_Server
     atomic_uint stats;
     SPSG_Throttling throttling;
 
-    SPSG_Server(SSocketAddress a, double r, int as, SPSG_ThrottleParams p, uv_loop_t* l) :
+    SPSG_Server(SSocketAddress a, double r, int as, SPSG_ThrottleParams p, uv_loop_t* l, SPSG_Throttling::TOnChange on_change) :
         address(std::move(a)),
         rate(r),
         available_streams(as),
         stats(0),
-        throttling(address, std::move(p), l)
+        throttling(address, std::move(p), l, std::move(on_change))
     {}
+
+    bool IsEligible() const { return (rate.load() > 0.0) && !throttling.Active(); }
+    bool CanAcceptRequests() const { return IsEligible() && (available_streams > 0); }
 };
 
 template <class TSession>
@@ -959,6 +972,8 @@ private:
 
 struct SPSG_IoSession : SUvNgHttp2_SessionBase
 {
+    enum EAllocationState { eAllocated, eDraining, eParked };
+
     SPSG_Server& server;
 
     template <class... TNgHttp2Cbs>
@@ -967,7 +982,14 @@ struct SPSG_IoSession : SUvNgHttp2_SessionBase
     bool CanProcessRequest(shared_ptr<SPSG_Request>& req) { return req->submitted_by.CanBe(GetInternalId()); }
     bool ProcessRequest(SPSG_TimedRequest timed_req, SPSG_Processor::TId processor_id, shared_ptr<SPSG_Request> req);
     void CheckRequestExpiration();
+
+    bool IsEmpty() const { return m_Requests.size() == 0; }
     bool IsFull() const { return m_Session.GetMaxStreams() <= m_Requests.size(); }
+    bool HasActiveTransport() const { return m_Session.IsInitialized(); }
+    bool CanBeParked() const { return IsEmpty() && !HasActiveTransport(); }
+
+    EAllocationState GetAllocationState() const { return m_AllocationState; }
+    bool SetAllocationState(EAllocationState new_allocation_state, size_t& allocated_session_count);
 
     void RemoveStream()
     {
@@ -978,11 +1000,13 @@ struct SPSG_IoSession : SUvNgHttp2_SessionBase
 
     void AddStreams(int v)
     {
+        const auto was_full = IsFull();
+
         if (auto before = server.available_streams.fetch_add(v); (before <= 0) && (before + v > 0) ) {
             PSG_IO_TRACE("Server '" << server.address << "' became available");
             m_Queue.queues.SignalAll();
 
-        } else if (IsFull()) {
+        } else if (was_full) {
             m_Queue.Signal();
         }
     }
@@ -1018,6 +1042,9 @@ private:
     array<SNgHttp2_Header<NGHTTP2_NV_FLAG_NO_COPY_NAME>, eSize> m_Headers;
     SPSG_AsyncQueue& m_Queue;
     SPSG_Requests<SPSG_IoSession> m_Requests;
+    EAllocationState m_AllocationState = eAllocated;
+
+    friend struct SPSG_TestAccess;
 };
 
 template <class TImpl>
@@ -1093,6 +1120,7 @@ struct SPSG_Servers : protected deque<SPSG_Server>
     using TBase::operator[];
 
     atomic_bool fail_requests;
+    atomic_uint64_t server_eligibility_generation = 0;
 
     SPSG_Servers() : fail_requests(false), m_Size(0) {}
 
@@ -1101,6 +1129,7 @@ struct SPSG_Servers : protected deque<SPSG_Server>
     {
         TBase::emplace_back(std::forward<TArgs>(args)...);
         ++m_Size;
+        ++server_eligibility_generation;
     }
 
     size_t size() const volatile { return m_Size; }
@@ -1269,14 +1298,15 @@ protected:
     void AfterExecute();
 
 private:
-    void CheckForNewServers(uv_async_t* handle)
+    bool CheckForServerEligibilityChanges()
     {
-        if (m_Servers->size() > m_Sessions.size()) {
-            AddNewServers(handle);
-        }
+        auto generation = m_Servers->server_eligibility_generation.load();
+        return generation == m_AppliedServerEligibilityGeneration ? false : ApplyServerEligibilityChanges(generation);
     }
 
-    void AddNewServers(uv_async_t* handle);
+    bool ApplyServerEligibilityChanges(uint64_t server_eligibility_generation);
+    void AddNewServers();
+
     void OnQueue(uv_async_t* handle);
     void CheckRequestExpiration();
     void FailRequests();
@@ -1287,11 +1317,19 @@ private:
         io->OnQueue(handle);
     }
 
+    using TSession = SPSG_ServerSessions::TSession;
+    TSession* ReuseOrCreateSession(SPSG_ServerSessions& server_sessions, uv_loop_t* loop, TSession* parked_session);
+    TSession* AcquireSession(SPSG_ServerSessions& server_sessions, uv_async_t* handle);
+
     SPSG_Params m_Params;
     SPSG_Servers::TTS& m_Servers;
     SPSG_AsyncQueue& m_Queue;
     deque<SPSG_ServerSessions> m_Sessions;
+    size_t m_AllocatedSessionCount = 0;
+    uint64_t m_AppliedServerEligibilityGeneration = 0;
     pair<uniform_real_distribution<>, default_random_engine> m_Random;
+
+    friend struct SPSG_TestAccess;
 };
 
 struct SPSG_DiscoveryImpl

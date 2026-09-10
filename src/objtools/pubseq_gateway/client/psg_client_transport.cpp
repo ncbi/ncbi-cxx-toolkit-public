@@ -60,9 +60,9 @@ PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, rd_buf_size,                   64 *
 PSG_PARAM_VALUE_DEF_MIN(size_t,         PSG, wr_buf_size,                   64 * 1024,          1024    );
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_concurrent_streams,        200,                10      );
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_concurrent_submits,        150,                1       );
-PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_sessions,                  1,                  1       );
+PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_sessions,                  3,                  1       );
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_concurrent_requests_per_server, 500,           100     );
-PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, num_io,                        1,                  1       );
+PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, num_io,                        2,                  1       );
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, reader_timeout,                12,                 1       );
 PSG_PARAM_VALUE_DEF_MIN(double,         PSG, rebalance_time,                10.0,               1.0     );
 PSG_PARAM_VALUE_DEF_MIN(size_t,         PSG, requests_per_io,               1,                  1       );
@@ -1233,6 +1233,29 @@ SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, const SPSG_Params& params, SPSG_A
 {
 }
 
+bool SPSG_IoSession::SetAllocationState(EAllocationState new_allocation_state, size_t& allocated_session_count)
+{
+    if (m_AllocationState == new_allocation_state) {
+        return false;
+    }
+
+    if ((m_AllocationState == eAllocated) != (new_allocation_state == eAllocated)) {
+        if (m_AllocationState == eAllocated) {
+            _ASSERT(allocated_session_count > 0);
+            --allocated_session_count;
+            PSG_IO_SESSION_TRACE(this << " released its I/O session slot for server '" << server.address << '\'');
+
+        } else {
+            _ASSERT(m_AllocationState != eDraining);
+            ++allocated_session_count;
+            PSG_IO_SESSION_TRACE(this << " acquired an I/O session slot for server '" << server.address << '\'');
+        }
+    }
+
+    m_AllocationState = new_allocation_state;
+    return true;
+}
+
 int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const uint8_t* data, size_t len)
 {
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " received: " << len);
@@ -1587,12 +1610,14 @@ SPSG_ThrottleParams::SPSG_ThrottleParams() :
 
 /** SPSG_Throttling */
 
-SPSG_Throttling::SPSG_Throttling(const SSocketAddress& address, SPSG_ThrottleParams p, uv_loop_t* l) :
+SPSG_Throttling::SPSG_Throttling(const SSocketAddress& address, SPSG_ThrottleParams p, uv_loop_t* l, TOnChange on_change) :
     m_Address(address),
     m_Stats(std::move(p)),
     m_Active(eOff),
+    m_OnChange(std::move(on_change)),
     m_Timer(this, s_OnTimer, Configured(), 0)
 {
+    _ASSERT(m_OnChange);
     m_Timer.Init(l);
     m_Signal.Init(this, l, s_OnSignal);
 }
@@ -1615,6 +1640,7 @@ bool SPSG_Throttling::Adjust(bool result)
 
     if (stats_locked->Adjust(m_Address, result)) {
         m_Active.store(eOnTimer);
+        m_OnChange();
 
         // We cannot start throttle timer from any thread (it's not thread-safe),
         // so we use async signal to start timer in the discovery thread
@@ -1701,9 +1727,8 @@ void SPSG_DiscoveryImpl::AfterExecute()
     }
 }
 
-void SPSG_IoImpl::AddNewServers(uv_async_t* handle)
+void SPSG_IoImpl::AddNewServers()
 {
-    // Add new session(s) if new server(s) have been added
     auto servers_locked = m_Servers.GetLock();
     auto& servers = *servers_locked;
 
@@ -1715,21 +1740,126 @@ void SPSG_IoImpl::AddNewServers(uv_async_t* handle)
 
     for (auto new_servers = servers_size - sessions_size; new_servers; --new_servers) {
         auto& server = servers[servers_size - new_servers];
-        auto& server_sessions = m_Sessions.emplace_back(server);
-        server_sessions.sessions.emplace_back(server, m_Params, m_Queue, handle->loop);
-        PSG_IO_TRACE("Session for server '" << server.address << "' was added");
+        m_Sessions.emplace_back(server);
+        PSG_IO_TRACE("Server '" << server.address << "' was added to the local pool");
     }
+}
+
+bool SPSG_IoImpl::ApplyServerEligibilityChanges(uint64_t server_eligibility_generation)
+{
+    if (m_Servers->size() > m_Sessions.size()) {
+        AddNewServers();
+    }
+
+    bool session_states_changed = false;
+
+    for (auto& server_sessions : m_Sessions) {
+        const auto should_drain = !server_sessions.server.IsEligible();
+        bool started_draining = false;
+
+        for (auto& session : server_sessions.sessions) {
+            if (should_drain) {
+                const auto new_allocation_state = session.CanBeParked() ? SPSG_IoSession::eParked : SPSG_IoSession::eDraining;
+                const auto was_draining = session.GetAllocationState() == SPSG_IoSession::eDraining;
+                session_states_changed |= session.SetAllocationState(new_allocation_state, m_AllocatedSessionCount);
+                started_draining |= !was_draining && (session.GetAllocationState() == SPSG_IoSession::eDraining);
+                continue;
+            }
+
+            if ((session.GetAllocationState() == SPSG_IoSession::eDraining) && session.CanBeParked()) {
+                session_states_changed |= session.SetAllocationState(SPSG_IoSession::eParked, m_AllocatedSessionCount);
+            }
+        }
+
+        if (started_draining) {
+            PSG_IO_TRACE("Server '" << server_sessions.server.address << "' started draining");
+        }
+    }
+
+    m_AppliedServerEligibilityGeneration = server_eligibility_generation;
+    return session_states_changed;
+}
+
+SPSG_IoImpl::TSession* SPSG_IoImpl::ReuseOrCreateSession(SPSG_ServerSessions& server_sessions, uv_loop_t* loop,
+        SPSG_IoImpl::TSession* parked_session)
+{
+    if (parked_session) {
+        parked_session->SetAllocationState(SPSG_IoSession::eAllocated, m_AllocatedSessionCount);
+        PSG_IO_SESSION_TRACE(parked_session << " was reused for server '" << server_sessions.server.address << '\'');
+        return parked_session;
+    }
+
+    auto& new_session = server_sessions.sessions.emplace_back(server_sessions.server, m_Params, m_Queue, loop);
+    ++m_AllocatedSessionCount;
+    PSG_IO_SESSION_TRACE(&new_session << " was added for server '" << server_sessions.server.address << '\'');
+    return &new_session;
+}
+
+SPSG_IoImpl::TSession* SPSG_IoImpl::AcquireSession(SPSG_ServerSessions& server_sessions, uv_async_t* handle)
+{
+    TSession* fallback_session = nullptr;
+
+    for (auto& s : server_sessions.sessions) {
+        if (s.IsFull()) {
+            continue;
+        }
+
+        switch (s.GetAllocationState()) {
+            case SPSG_IoSession::eAllocated:
+                return &s;
+            case SPSG_IoSession::eDraining:
+                break;
+            case SPSG_IoSession::eParked:
+                if (!fallback_session && s.CanBeParked()) {
+                    fallback_session = &s;
+                }
+                break;
+        }
+    }
+
+    if (m_AllocatedSessionCount < m_Params.max_sessions) {
+        return ReuseOrCreateSession(server_sessions, handle->loop, fallback_session);
+    }
+
+    for (auto& other_server_sessions : m_Sessions) {
+        if (&other_server_sessions == &server_sessions) {
+            continue;
+        }
+
+        if (!other_server_sessions.server.IsEligible()) {
+            continue;
+        }
+
+        for (auto& s : other_server_sessions.sessions) {
+            if ((s.GetAllocationState() != SPSG_IoSession::eAllocated) || !s.CanBeParked()) {
+                continue;
+            }
+
+            s.SetAllocationState(SPSG_IoSession::eParked, m_AllocatedSessionCount);
+            return ReuseOrCreateSession(server_sessions, handle->loop, fallback_session);
+        }
+    }
+
+    PSG_IO_TRACE("I/O session allocation limit reached for server '" << server_sessions.server.address << '\'');
+    return nullptr;
 }
 
 void SPSG_IoImpl::OnQueue(uv_async_t* handle)
 {
-    CheckForNewServers(handle);
+    CheckForServerEligibilityChanges();
     auto available_servers = 0;
+    auto available_rate_total = 0.0;
 
     for (auto& server_sessions : m_Sessions) {
         server_sessions.current_rate = server_sessions.server.rate.load();
 
+        if (!server_sessions.server.CanAcceptRequests()) {
+            server_sessions.current_rate = 0.0;
+            continue;
+        }
+
         if (server_sessions.current_rate) {
+            available_rate_total += server_sessions.current_rate;
             ++available_servers;
         }
     }
@@ -1742,6 +1872,10 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
     auto request_rate = 0.0;
     auto target_rate = 0.0;
     _DEBUG_ARG(string req_id);
+
+    if (available_rate_total > 0.0) {
+        d = uniform_real_distribution<>(0.0, available_rate_total);
+    }
 
     // Clang requires '&timed_req = timed_req, &processor_id = processor_id, &req = req'
     auto get_request = [&, &timed_req = timed_req, &processor_id = processor_id, &req = req]() {
@@ -1771,12 +1905,6 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
         }
     };
 
-    auto find_session = [&]() {
-        auto s = i->sessions.begin();
-        for (; (s != i->sessions.end()) && s->IsFull(); ++s);
-        return make_pair(s != i->sessions.end(), s);
-    };
-
     while (available_servers && remaining_submits) {
         // Try to get a request if needed
         if (!req && !get_request()) {
@@ -1798,9 +1926,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
             PSG_IO_TRACE("Server '" << server_sessions.server.address << "' is at request limit, ignoring");
             ignore_server();
 
-        // If all server sessions are full
-        } else if (auto [found, session] = find_session(); !found) {
-            PSG_IO_TRACE("Server '" << server_sessions.server.address << "' has no sessions available, ignoring");
+        } else if (auto session = AcquireSession(server_sessions, handle); !session) {
             ignore_server();
 
         // If this is a competitive stream, try a different server
@@ -1820,20 +1946,6 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
             PSG_IO_TRACE("Server '" << session->GetId() << "' got request '" << req_id << "' with rate = " << target_rate);
             --remaining_submits;
             ++server_sessions.server.stats;
-
-            // Add new session if needed and allowed to
-            if (session->IsFull() && (distance(session, server_sessions.sessions.end()) == 1)) {
-                const auto single_server_single_session = m_Sessions.size() == 1 && m_Params.max_sessions == 1;
-                const auto max_sessions = single_server_single_session ? 2u : m_Params.max_sessions;
-
-                if (server_sessions.sessions.size() >= max_sessions) {
-                    PSG_IO_TRACE("Server '" << server_sessions.server.address << "' reached session limit");
-                    ignore_server();
-                } else {
-                    server_sessions.sessions.emplace_back(server_sessions.server, m_Params, m_Queue, handle->loop);
-                    PSG_IO_TRACE("Additional session for server '" << server_sessions.server.address << "' was added");
-                }
-            }
         }
     }
 
@@ -1956,13 +2068,16 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
 
     auto servers_locked = m_Servers.GetLock();
     auto& servers = *servers_locked;
+    bool eligibility_changed = false;
 
     // Update existing servers
     for (auto& server : servers) {
         auto address_same = [&](CServiceDiscovery::TServer& s) { return s.first == server.address; };
         auto it = find_if(discovered.begin(), discovered.end(), address_same);
+        auto old_rate = server.rate.load();
 
         if ((it == discovered.end()) || (it->second <= numeric_limits<double>::epsilon())) {
+            eligibility_changed |= old_rate > 0.0;
             server.rate = 0.0;
             PSG_DISCOVERY_TRACE("Server '" << server.address << "' disabled in service '" << service_name << '\'');
 
@@ -1970,10 +2085,11 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
             server.throttling.Discovered();
             auto rate = it->second / rate_total;
 
-            if (server.rate != rate) {
+            if (old_rate != rate) {
+                eligibility_changed |= (old_rate > 0.0) != (rate > 0.0);
                 // This has to be before the rate change for the condition to work (uses old rate)
                 PSG_DISCOVERY_TRACE("Server '" << server.address <<
-                        (server.rate ? "' updated in service '" : "' enabled in service '" ) <<
+                        (old_rate ? "' updated in service '" : "' enabled in service '" ) <<
                         service_name << "' with rate = " << rate);
 
                 server.rate = rate;
@@ -1984,22 +2100,32 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
         }
     }
 
+    if (eligibility_changed) {
+        ++servers.server_eligibility_generation;
+    }
+
     // Add new servers
     for (auto& server : discovered) {
         if (server.second > numeric_limits<double>::epsilon()) {
             auto rate = server.second / rate_total;
-            servers.emplace_back(server.first, rate, m_Params.max_concurrent_requests_per_server, m_ThrottleParams, handle->loop);
+            auto l = [&] { ++servers.server_eligibility_generation; m_Queues.SignalAll(); };
+            servers.emplace_back(server.first, rate, m_Params.max_concurrent_requests_per_server, m_ThrottleParams, handle->loop, l);
+            eligibility_changed = true;
             _DEBUG_CODE(server.first.GetHostName();); // To avoid splitting the trace message below by gethostbyaddr
             PSG_DISCOVERY_TRACE("Server '" << server.first << "' added to service '" <<
                     service_name << "' with rate = " << rate);
         }
     }
 
-    m_Queues.SignalAll();
+    if (eligibility_changed) {
+        m_Queues.SignalAll();
+    }
 }
 
 void SPSG_IoImpl::OnTimer(uv_timer_t*)
 {
+    auto should_signal_queue = CheckForServerEligibilityChanges();
+
     if (m_Servers->fail_requests) {
         FailRequests();
     } else {
@@ -2007,9 +2133,38 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
     }
 
     for (auto& server_sessions : m_Sessions) {
+        bool had_draining_sessions = false;
+        bool has_draining_sessions = false;
+
         for (auto& session : server_sessions.sessions) {
+            had_draining_sessions |= session.GetAllocationState() == SPSG_IoSession::eDraining;
             session.CheckRequestExpiration();
+
+            if (session.GetAllocationState() != SPSG_IoSession::eDraining) {
+                continue;
+            }
+
+            if (!session.IsEmpty()) {
+                has_draining_sessions = true;
+                continue;
+            }
+
+            if (session.HasActiveTransport()) {
+                session.Reset("Server is draining", SUv_Tcp::eNormalClose);
+                should_signal_queue = true;
+                has_draining_sessions = true;
+            } else {
+                should_signal_queue |= session.SetAllocationState(SPSG_IoSession::eParked, m_AllocatedSessionCount);
+            }
         }
+
+        if (had_draining_sessions && !has_draining_sessions) {
+            PSG_IO_TRACE("Server '" << server_sessions.server.address << "' finished draining");
+        }
+    }
+
+    if (should_signal_queue) {
+        m_Queue.Signal();
     }
 }
 

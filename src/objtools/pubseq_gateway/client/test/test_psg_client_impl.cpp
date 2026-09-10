@@ -33,6 +33,7 @@
 
 #ifdef HAVE_PSG_CLIENT
 
+#include <corelib/ncbidiag.hpp>
 #include <corelib/test_boost.hpp>
 
 #include <algorithm>
@@ -1282,6 +1283,634 @@ BOOST_AUTO_TEST_CASE(ReplyCancelNotifiesItemWaiters)
     BOOST_CHECK(item_ts->GetLock()->state.GetStatus() == EPSG_Status::eError);
 }
 
+BOOST_AUTO_TEST_SUITE_END()
+
+struct STransportTestEnv
+{
+    SUv_Loop loop;
+    SPSG_Params params;
+    SPSG_AsyncQueues queues;
+    SPSG_AsyncQueue& queue;
+    SPSG_Servers::TTS servers;
+    uv_async_t handle = {};
+    atomic_int queue_signals = 0;
+    bool queue_initialized = false;
+
+    STransportTestEnv() : queue(queues.emplace_back(queues)) { handle.loop = &loop; }
+
+    ~STransportTestEnv()
+    {
+        if (queue_initialized) {
+            queue_initialized = false;
+            queue.Close();
+        }
+
+        auto servers_locked = servers.GetLock();
+
+        for (auto& server : *servers_locked) {
+            server.throttling.StartClose();
+        }
+
+        for (auto& server : *servers_locked) {
+            server.throttling.FinishClose();
+        }
+
+        loop.Run();
+    }
+
+    SPSG_Server& AddServer(const string& address, double rate, int available_streams = TPSG_MaxConcurrentRequestsPerServer::GetDefault())
+    {
+        auto servers_locked = servers.GetLock();
+        auto a = SSocketAddress::Parse(address, SSocketAddress::SHost::EName::eOriginal);
+        auto l = [&g = servers_locked->server_eligibility_generation, &i = queue_initialized, &q = queues] { ++g; if (i) q.SignalAll(); };
+        servers_locked->emplace_back(std::move(a), rate, available_streams, SPSG_ThrottleParams(), &loop, l);
+        return servers_locked->operator[](servers_locked->size() - 1);
+    }
+
+    void InitQueue()
+    {
+        if (queue_initialized) {
+            return;
+        }
+
+        queue.Init(&queue_signals, &loop, [](uv_async_t* handle) { ++*static_cast<atomic_int*>(handle->data); });
+        queue_initialized = true;
+    }
+
+    void DrainLoopNowait(unsigned times = 4)
+    {
+        for (unsigned i = 0; i < times; ++i) {
+            loop.Run(UV_RUN_NOWAIT);
+        }
+    }
+
+    shared_ptr<SPSG_Request> MakeRequest()
+    {
+        auto reply = make_shared<SPSG_Reply>("", params, make_shared<TPSG_Queue>());
+        return make_shared<SPSG_Request>(string(), reply, CDiagContext::GetRequestContext().Clone(), params);
+    }
+};
+
+BEGIN_NCBI_SCOPE
+
+struct SPSG_TestAccess
+{
+    static void CheckForServerEligibilityChanges(SPSG_IoImpl& io, uv_async_t* handle)
+    {
+        io.CheckForServerEligibilityChanges();
+    }
+
+    static void RunQueue(SPSG_IoImpl& io, uv_async_t* handle)
+    {
+        io.OnQueue(handle);
+    }
+
+    static void CreateSession(SPSG_IoImpl& io, size_t server_index, uv_async_t* handle, const char* reason)
+    {
+        auto& server_sessions = io.m_Sessions[server_index];
+        server_sessions.sessions.emplace_back(server_sessions.server, io.m_Params, io.m_Queue, handle->loop);
+        ++io.m_AllocatedSessionCount;
+    }
+
+    static size_t GetLocalSessionCount(const SPSG_IoImpl& io, size_t server_index)
+    {
+        return io.m_Sessions[server_index].sessions.size();
+    }
+
+    static size_t GetAllocatedSessionCount(const SPSG_IoImpl& io, size_t server_index)
+    {
+        return x_GetAllocatedSessionCount(io.m_Sessions[server_index]);
+    }
+
+    static bool HasDrainingSession(const SPSG_IoImpl& io, size_t server_index)
+    {
+        return x_HasDrainingSession(io.m_Sessions[server_index]);
+    }
+
+    static SPSG_IoSession& GetSession(SPSG_IoImpl& io, size_t server_index, size_t session_index)
+    {
+        return io.m_Sessions[server_index].sessions[session_index];
+    }
+
+    static void SetAllocationState(SPSG_IoImpl& io, SPSG_IoSession& session,
+            SPSG_IoSession::EAllocationState allocation_state)
+    {
+        session.SetAllocationState(allocation_state, io.m_AllocatedSessionCount);
+    }
+
+    static void SetThrottlingActive(SPSG_Server& server, bool value)
+    {
+        server.throttling.m_Active.store(value ? SPSG_Throttling::eOnTimer : SPSG_Throttling::eOff);
+    }
+
+    static void ConfigureThrottling(SPSG_Server& server, uint64_t period, unsigned max_failures, bool until_discovery = false)
+    {
+        auto stats_locked = server.throttling.m_Stats.GetLock();
+        const_cast<volatile uint64_t&>(stats_locked->params.period) = period;
+        stats_locked->params.max_failures = TPSG_ThrottleMaxFailures([max_failures](auto) { return max_failures; });
+        stats_locked->params.until_discovery = TPSG_ThrottleUntilDiscovery([until_discovery](auto) { return until_discovery; });
+        server.throttling.m_Timer.SetRepeat(period);
+    }
+
+    static size_t AcquireSessionIndex(SPSG_IoImpl& io, size_t server_index, uv_async_t* handle)
+    {
+        auto& server = io.m_Sessions[server_index];
+        auto session = io.AcquireSession(server, handle);
+
+        if (!session) {
+            return numeric_limits<size_t>::max();
+        }
+
+        for (size_t i = 0; i < server.sessions.size(); ++i) {
+            if (&server.sessions[i] == session) {
+                return i;
+            }
+        }
+
+        return numeric_limits<size_t>::max();
+    }
+
+    static void AddInFlightRequest(SPSG_IoSession& session, int32_t stream_id, SPSG_TimedRequest request)
+    {
+        session.m_Requests.emplace(stream_id, std::move(request));
+    }
+
+    static void FailRequest(SPSG_IoSession& session, shared_ptr<SPSG_Request> req)
+    {
+        CDiagCollectGuard suppress_expected_warning(eDiag_Error, eDiag_Warning);
+        session.Fail(0, std::move(req), SUvNgHttp2_Error("Test failure"));
+    }
+
+    static bool ActivateTransport(SPSG_IoSession& session)
+    {
+        vector<char> buffer;
+        return (session.m_Session.Send(buffer) >= 0) && session.HasActiveTransport();
+    }
+
+    static void ResetSession(SPSG_IoSession& session, STransportTestEnv& env)
+    {
+        if (!session.HasActiveTransport()) {
+            return;
+        }
+
+        session.Reset("Test cleanup", SUv_Tcp::eNormalClose);
+        env.DrainLoopNowait();
+    }
+
+    static void CompleteRequest(SPSG_IoSession& session, int32_t stream_id)
+    {
+        session.OnStreamClose(nullptr, stream_id, 0);
+    }
+
+    static void RunTimer(SPSG_IoImpl& io)
+    {
+        io.OnTimer(nullptr);
+    }
+
+    static void InvalidateServerEligibility(SPSG_IoImpl& io)
+    {
+        ++io.m_Servers->server_eligibility_generation;
+    }
+
+    static size_t x_GetAllocatedSessionCount(const SPSG_ServerSessions& server_sessions);
+    static bool x_HasDrainingSession(const SPSG_ServerSessions& server_sessions);
+};
+
+size_t SPSG_TestAccess::x_GetAllocatedSessionCount(const SPSG_ServerSessions& server_sessions)
+{
+    size_t count = 0;
+
+    for (const auto& session : server_sessions.sessions) {
+        if (session.GetAllocationState() == SPSG_IoSession::eAllocated) {
+            ++count;
+        }
+    }
+
+    return count;
+}
+
+bool SPSG_TestAccess::x_HasDrainingSession(const SPSG_ServerSessions& server_sessions)
+{
+    for (const auto& session : server_sessions.sessions) {
+        if (session.GetAllocationState() == SPSG_IoSession::eDraining) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+END_NCBI_SCOPE
+
+BOOST_AUTO_TEST_SUITE(PSG)
+BOOST_AUTO_TEST_SUITE(IoSessionAllocation)
+
+BOOST_AUTO_TEST_CASE(IdleQueueDoesNotCreateSessions)
+{
+    STransportTestEnv env;
+    env.AddServer("127.0.0.1:10021", 1.0);
+
+    SPSG_IoImpl io(env.params, env.servers, env.queue);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+    BOOST_REQUIRE_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 0), 0U);
+
+    SPSG_TestAccess::RunQueue(io, &env.handle);
+
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 0), 0U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 0U);
+}
+
+BOOST_AUTO_TEST_CASE(FullSessionSignalsQueueWhenStreamBecomesAvailable)
+{
+    STransportTestEnv env;
+    auto& server = env.AddServer("127.0.0.1:10003", 1.0);
+    env.InitQueue();
+
+    SUvNgHttp2_Session<SPSG_IoSession> session(server, env.params, env.queue, &env.loop);
+
+    for (int32_t stream_id = 1; !session.IsFull(); ++stream_id) {
+        SPSG_TestAccess::AddInFlightRequest(session, stream_id, SPSG_TimedRequest(env.MakeRequest()));
+    }
+
+    BOOST_REQUIRE_EQUAL(env.queue_signals.load(), 0);
+
+    session.AddStreams(1);
+    env.DrainLoopNowait();
+
+    BOOST_CHECK_EQUAL(env.queue_signals.load(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(UnchangedEligibilityDoesNotRebalanceParkableSessions)
+{
+    STransportTestEnv env;
+    env.AddServer("127.0.0.1:10035", 1.0);
+    env.AddServer("127.0.0.1:10036", 1.0);
+
+    SPSG_IoImpl io(env.params, env.servers, env.queue);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+    SPSG_TestAccess::CreateSession(io, 0, &env.handle, "first allocated session");
+    SPSG_TestAccess::CreateSession(io, 0, &env.handle, "second allocated session");
+
+    BOOST_REQUIRE_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 2U);
+    BOOST_REQUIRE_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 1), 0U);
+
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 2U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 1), 0U);
+}
+
+BOOST_AUTO_TEST_CASE(ParksIdleSessionToFreeSlotOnDemand)
+{
+    STransportTestEnv env;
+    env.AddServer("127.0.0.1:10027", 1.0);
+    env.AddServer("127.0.0.1:10028", 1.0);
+
+    SPSG_IoImpl io(env.params, env.servers, env.queue);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+    const auto max_sessions = env.params.max_sessions.Get();
+
+    for (unsigned i = 0; i < max_sessions; ++i) {
+        SPSG_TestAccess::CreateSession(io, 0, &env.handle, "allocated session");
+    }
+
+    BOOST_REQUIRE_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), max_sessions);
+    BOOST_REQUIRE_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 1), 0U);
+
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::AcquireSessionIndex(io, 1, &env.handle), size_t{0});
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 0), max_sessions);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 1), 1U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), max_sessions - 1);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 1), 1U);
+}
+
+BOOST_AUTO_TEST_CASE(DoesNotParkSessionWithActiveTransportToFreeSlot)
+{
+    STransportTestEnv env;
+    env.AddServer("127.0.0.1:10037", 1.0);
+    env.AddServer("127.0.0.1:10038", 1.0);
+
+    SPSG_IoImpl io(env.params, env.servers, env.queue);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+    const auto max_sessions = env.params.max_sessions.Get();
+
+    for (unsigned i = 0; i < max_sessions; ++i) {
+        SPSG_TestAccess::CreateSession(io, 0, &env.handle, "active allocated session");
+        auto& active_session = SPSG_TestAccess::GetSession(io, 0, i);
+        BOOST_REQUIRE(active_session.GetAllocationState() == SPSG_IoSession::eAllocated);
+        BOOST_REQUIRE(active_session.CanBeParked());
+        BOOST_REQUIRE(SPSG_TestAccess::ActivateTransport(active_session));
+        BOOST_REQUIRE(active_session.HasActiveTransport());
+    }
+
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::AcquireSessionIndex(io, 1, &env.handle), numeric_limits<size_t>::max());
+
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 0), max_sessions);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 1), 0U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), max_sessions);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 1), 0U);
+
+    for (unsigned i = 0; i < max_sessions; ++i) {
+        auto& active_session = SPSG_TestAccess::GetSession(io, 0, i);
+        BOOST_CHECK(active_session.GetAllocationState() == SPSG_IoSession::eAllocated);
+        BOOST_CHECK(!active_session.CanBeParked());
+        BOOST_CHECK(active_session.HasActiveTransport());
+        SPSG_TestAccess::ResetSession(active_session, env);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(ParksSessionWithoutActiveTransportToFreeSlot)
+{
+    STransportTestEnv env;
+    env.AddServer("127.0.0.1:10039", 1.0);
+    env.AddServer("127.0.0.1:10040", 1.0);
+
+    SPSG_IoImpl io(env.params, env.servers, env.queue);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+    const auto max_sessions = env.params.max_sessions.Get();
+
+    for (unsigned i = 0; i < max_sessions; ++i) {
+        SPSG_TestAccess::CreateSession(io, 0, &env.handle, "inactive allocated session");
+    }
+
+    auto& reclaimable_session = SPSG_TestAccess::GetSession(io, 0, 0);
+    BOOST_REQUIRE(reclaimable_session.GetAllocationState() == SPSG_IoSession::eAllocated);
+    BOOST_REQUIRE(reclaimable_session.CanBeParked());
+    BOOST_REQUIRE(!reclaimable_session.HasActiveTransport());
+
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::AcquireSessionIndex(io, 1, &env.handle), size_t{0});
+
+    BOOST_CHECK(reclaimable_session.GetAllocationState() == SPSG_IoSession::eParked);
+    BOOST_CHECK(!reclaimable_session.HasActiveTransport());
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 0), max_sessions);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 1), 1U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), max_sessions - 1);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 1), 1U);
+}
+
+BOOST_AUTO_TEST_CASE(ReenabledServerKeepsBusySessionDrainingUntilCompletion)
+{
+    STransportTestEnv env;
+    auto& first = env.AddServer("127.0.0.1:10011", 1.0);
+    env.AddServer("127.0.0.1:10012", 1.0);
+    env.InitQueue();
+
+    SPSG_IoImpl io(env.params, env.servers, env.queue);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+    SPSG_TestAccess::CreateSession(io, 0, &env.handle, "Test");
+
+    auto& session = SPSG_TestAccess::GetSession(io, 0, 0);
+    SPSG_TestAccess::AddInFlightRequest(session, 1, SPSG_TimedRequest(env.MakeRequest()));
+
+    first.rate = 0.0;
+    SPSG_TestAccess::InvalidateServerEligibility(io);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+
+    BOOST_REQUIRE(SPSG_TestAccess::HasDrainingSession(io, 0));
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 0U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 1), 0U);
+
+    first.rate = 1.0;
+    SPSG_TestAccess::InvalidateServerEligibility(io);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+
+    BOOST_CHECK(SPSG_TestAccess::HasDrainingSession(io, 0));
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 0U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 1), 0U);
+
+    SPSG_TestAccess::CompleteRequest(session, 1);
+    SPSG_TestAccess::RunTimer(io);
+    env.DrainLoopNowait();
+    SPSG_TestAccess::RunTimer(io);
+
+    BOOST_CHECK(!SPSG_TestAccess::HasDrainingSession(io, 0));
+}
+
+BOOST_AUTO_TEST_CASE(ReenabledServerKeepsParkedSessionUnallocatedUntilNeeded)
+{
+    STransportTestEnv env;
+    auto& first = env.AddServer("127.0.0.1:10022", 1.0);
+    env.AddServer("127.0.0.1:10023", 1.0);
+    env.InitQueue();
+
+    SPSG_IoImpl io(env.params, env.servers, env.queue);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+    SPSG_TestAccess::CreateSession(io, 0, &env.handle, "Test");
+
+    auto& session = SPSG_TestAccess::GetSession(io, 0, 0);
+    SPSG_TestAccess::AddInFlightRequest(session, 1, SPSG_TimedRequest(env.MakeRequest()));
+
+    first.rate = 0.0;
+    SPSG_TestAccess::InvalidateServerEligibility(io);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+    BOOST_REQUIRE(SPSG_TestAccess::HasDrainingSession(io, 0));
+    BOOST_REQUIRE_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 0U);
+
+    SPSG_TestAccess::CompleteRequest(session, 1);
+    SPSG_TestAccess::RunTimer(io);
+    env.DrainLoopNowait();
+    SPSG_TestAccess::RunTimer(io);
+
+    BOOST_REQUIRE(!SPSG_TestAccess::HasDrainingSession(io, 0));
+    BOOST_REQUIRE_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 0), 1U);
+    BOOST_REQUIRE_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 0U);
+
+    first.rate = 1.0;
+    SPSG_TestAccess::InvalidateServerEligibility(io);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+
+    BOOST_CHECK(!SPSG_TestAccess::HasDrainingSession(io, 0));
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 0), 1U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 0U);
+}
+
+BOOST_AUTO_TEST_CASE(ReenabledServerReusesParkedSessionWhenNeeded)
+{
+    STransportTestEnv env;
+    auto& first = env.AddServer("127.0.0.1:10024", 1.0);
+    env.AddServer("127.0.0.1:10025", 1.0);
+
+    SPSG_IoImpl io(env.params, env.servers, env.queue);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+    SPSG_TestAccess::CreateSession(io, 0, &env.handle, "Test");
+
+    BOOST_REQUIRE_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 0), 1U);
+    BOOST_REQUIRE_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 1U);
+
+    first.rate = 0.0;
+    SPSG_TestAccess::InvalidateServerEligibility(io);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+
+    BOOST_REQUIRE(!SPSG_TestAccess::HasDrainingSession(io, 0));
+    BOOST_REQUIRE_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 0U);
+
+    first.rate = 1.0;
+    SPSG_TestAccess::InvalidateServerEligibility(io);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::AcquireSessionIndex(io, 0, &env.handle), size_t{0});
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 0), 1U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 1U);
+}
+
+BOOST_AUTO_TEST_CASE(IneligibleServerMarksBusySessionDraining)
+{
+    STransportTestEnv env;
+    auto& server = env.AddServer("127.0.0.1:10013", 1.0);
+
+    SPSG_IoImpl io(env.params, env.servers, env.queue);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+    SPSG_TestAccess::CreateSession(io, 0, &env.handle, "Test");
+    auto& session = SPSG_TestAccess::GetSession(io, 0, 0);
+    SPSG_TestAccess::AddInFlightRequest(session, 1, SPSG_TimedRequest(env.MakeRequest()));
+
+    server.rate = 0.0;
+    SPSG_TestAccess::InvalidateServerEligibility(io);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+
+    BOOST_CHECK(SPSG_TestAccess::HasDrainingSession(io, 0));
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 0U);
+}
+
+BOOST_AUTO_TEST_CASE(ThrottledServerParksIdleSessionAndFreesSlot)
+{
+    STransportTestEnv env;
+    auto& first = env.AddServer("127.0.0.1:10019", 1.0);
+    env.AddServer("127.0.0.1:10020", 1.0);
+
+    SPSG_IoImpl io(env.params, env.servers, env.queue);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+    SPSG_TestAccess::CreateSession(io, 0, &env.handle, "Test");
+
+    SPSG_TestAccess::SetThrottlingActive(first, true);
+    SPSG_TestAccess::InvalidateServerEligibility(io);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+
+    BOOST_CHECK(!SPSG_TestAccess::HasDrainingSession(io, 0));
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 0U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::AcquireSessionIndex(io, 1, &env.handle), size_t{0});
+}
+
+BOOST_AUTO_TEST_CASE(RequestFailureInvalidatesEligibilityWhenThrottlingActivates)
+{
+    STransportTestEnv env;
+    auto& first = env.AddServer("127.0.0.1:10041", 1.0);
+    env.AddServer("127.0.0.1:10042", 1.0);
+    env.InitQueue();
+
+    SPSG_IoImpl io(env.params, env.servers, env.queue);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+    SPSG_TestAccess::CreateSession(io, 0, &env.handle, "Test");
+    SPSG_TestAccess::ConfigureThrottling(first, 60000, 1, true);
+
+    auto& session = SPSG_TestAccess::GetSession(io, 0, 0);
+    BOOST_REQUIRE_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 1U);
+    BOOST_REQUIRE_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 1), 0U);
+    BOOST_REQUIRE_EQUAL(env.queue_signals.load(), 0);
+
+    SPSG_TestAccess::FailRequest(session, env.MakeRequest());
+    env.DrainLoopNowait();
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+
+    BOOST_CHECK_LT(0, env.queue_signals.load());
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 0U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::AcquireSessionIndex(io, 1, &env.handle), size_t{0});
+}
+
+BOOST_AUTO_TEST_CASE(ReenabledServerReusesSessionAfterDrainCompletes)
+{
+    STransportTestEnv env;
+    auto& first = env.AddServer("127.0.0.1:10014", 1.0);
+    env.AddServer("127.0.0.1:10015", 0.0);
+    env.InitQueue();
+
+    SPSG_IoImpl io(env.params, env.servers, env.queue);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+    SPSG_TestAccess::CreateSession(io, 0, &env.handle, "Test");
+
+    auto& session = SPSG_TestAccess::GetSession(io, 0, 0);
+    SPSG_TestAccess::AddInFlightRequest(session, 1, SPSG_TimedRequest(env.MakeRequest()));
+
+    first.rate = 0.0;
+    SPSG_TestAccess::InvalidateServerEligibility(io);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+    BOOST_REQUIRE(SPSG_TestAccess::HasDrainingSession(io, 0));
+
+    SPSG_TestAccess::CompleteRequest(session, 1);
+    SPSG_TestAccess::RunTimer(io);
+    env.DrainLoopNowait();
+    SPSG_TestAccess::RunTimer(io);
+
+    BOOST_REQUIRE(!SPSG_TestAccess::HasDrainingSession(io, 0));
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 0U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 0), 1U);
+
+    first.rate = 1.0;
+    SPSG_TestAccess::InvalidateServerEligibility(io);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 0U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::AcquireSessionIndex(io, 0, &env.handle), size_t{0});
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 1U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 0), 1U);
+}
+
+BOOST_AUTO_TEST_CASE(PrefersAllocatedSessionOverParkedSession)
+{
+    STransportTestEnv env;
+    env.AddServer("127.0.0.1:10016", 1.0);
+
+    SPSG_IoImpl io(env.params, env.servers, env.queue);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+    SPSG_TestAccess::CreateSession(io, 0, &env.handle, "parked session");
+    SPSG_TestAccess::CreateSession(io, 0, &env.handle, "allocated session");
+
+    auto& parked_session = SPSG_TestAccess::GetSession(io, 0, 0);
+    auto& allocated_session = SPSG_TestAccess::GetSession(io, 0, 1);
+    SPSG_TestAccess::SetAllocationState(io, parked_session, SPSG_IoSession::eParked);
+    SPSG_TestAccess::SetAllocationState(io, allocated_session, SPSG_IoSession::eAllocated);
+
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 1U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::AcquireSessionIndex(io, 0, &env.handle), size_t{1});
+}
+
+BOOST_AUTO_TEST_CASE(OnQueueAppliesEligibilityChangesOnlyAfterInvalidation)
+{
+    STransportTestEnv env;
+    auto& first = env.AddServer("127.0.0.1:10017", 1.0);
+    env.AddServer("127.0.0.1:10018", 1.0);
+
+    SPSG_IoImpl io(env.params, env.servers, env.queue);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+    SPSG_TestAccess::CreateSession(io, 0, &env.handle, "allocated session");
+
+    BOOST_REQUIRE_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 1U);
+    BOOST_REQUIRE_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 1), 0U);
+
+    first.rate = 0.0;
+    SPSG_TestAccess::RunQueue(io, &env.handle);
+
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 0), 1U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 1), 0U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 1U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 1), 0U);
+
+    SPSG_TestAccess::InvalidateServerEligibility(io);
+    SPSG_TestAccess::RunQueue(io, &env.handle);
+
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 0), 1U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 0), 0U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 1), 0U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 1), 0U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::AcquireSessionIndex(io, 1, &env.handle), size_t{0});
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetLocalSessionCount(io, 1), 1U);
+    BOOST_CHECK_EQUAL(SPSG_TestAccess::GetAllocatedSessionCount(io, 1), 1U);
+
+    SPSG_TestAccess::GetSession(io, 1, 0).Shutdown();
+    env.DrainLoopNowait();
+}
+
+BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif

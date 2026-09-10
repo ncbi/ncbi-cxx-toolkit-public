@@ -184,7 +184,7 @@ void s_InitPsgOptions(CArgDescriptions& arg_desc, bool parallel)
 {
     arg_desc.AddOptionalKey("service", "SERVICE", "PSG service name or host:port pair", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("io-threads", "THREADS_NUM", "Number of I/O threads", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
-    arg_desc.AddOptionalKey("max-sessions", "MAX_SESSIONS", "Maximum number of sessions per server per I/O thread", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
+    arg_desc.AddOptionalKey("max-sessions", "MAX_SESSIONS", "Soft maximum number of sessions across the server pool per I/O thread", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
     arg_desc.AddOptionalKey("max-queue-load", "MAX_QUEUE_LOAD", "Maximum queue load", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
     arg_desc.AddOptionalKey("requests-per-io", "REQUESTS_NUM", "Number of requests to submit consecutively per I/O thread", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
     arg_desc.AddOptionalKey("max-streams", "REQUESTS_NUM", "Maximum number of concurrent streams per I/O thread", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
