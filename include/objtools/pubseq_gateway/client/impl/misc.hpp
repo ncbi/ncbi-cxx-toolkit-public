@@ -49,7 +49,7 @@ BEGIN_NCBI_SCOPE
 template <class TValue>
 struct CPSG_WaitingQueue
 {
-    CPSG_WaitingQueue() : m_Stopped(false) {}
+    CPSG_WaitingQueue() : m_Stopped(eActive) {}
 
     void NotifyOne() { m_Queue.GetLock()->second++; m_Queue.NotifyOne(); }
 
@@ -88,20 +88,23 @@ struct CPSG_WaitingQueue
         return false;
     }
 
-    enum EStop { eDrain, eClear };
+    enum EStop { eActive, eDrain, eClear };
+    using TStopped = atomic<EStop>;
     void Stop(EStop stop)
     {
-        m_Stopped.store(true);
+        _ASSERT(stop != eActive);
+        auto expected = eActive;
+        while (!m_Stopped.compare_exchange_weak(expected, stop)) if (expected >= stop) break;
         if (stop == eClear) m_Queue.GetLock()->first.clear();
         m_Queue.NotifyAll();
     }
 
-    const atomic_bool& Stopped() const { return m_Stopped; }
+    const TStopped& Stopped() const { return m_Stopped; }
     bool Empty() const { return m_Stopped && m_Queue.GetLock()->first.empty(); }
 
 private:
     SSyncThreadSafe<pair<deque<TValue>, int>> m_Queue;
-    atomic_bool m_Stopped;
+    TStopped m_Stopped;
 };
 
 class CPSG_Misc

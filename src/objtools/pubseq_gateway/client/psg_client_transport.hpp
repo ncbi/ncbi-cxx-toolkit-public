@@ -773,7 +773,7 @@ struct SPSG_AsyncQueues : deque<SPSG_AsyncQueue>
 {
     SPSG_AsyncQueues();
 
-    bool AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline);
+    bool AddRequest(shared_ptr<SPSG_Request> req, const TPSG_Queue::TStopped& stopped, const CDeadline& deadline);
     void SignalAll() { for (auto& queue : *this) queue.Signal(); }
 
     void Increase(size_t amount)

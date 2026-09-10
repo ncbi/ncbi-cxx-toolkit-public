@@ -1448,7 +1448,7 @@ SPSG_AsyncQueues::SPSG_AsyncQueues() :
 {
 }
 
-bool SPSG_AsyncQueues::AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline)
+bool SPSG_AsyncQueues::AddRequest(shared_ptr<SPSG_Request> req, const TPSG_Queue::TStopped& stopped, const CDeadline& deadline)
 {
     if (auto suspend_threshold = m_MaxQueueLoad.Get()) {
         if (m_Pending >= suspend_threshold) {
