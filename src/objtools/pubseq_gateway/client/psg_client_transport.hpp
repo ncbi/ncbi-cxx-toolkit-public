@@ -567,8 +567,12 @@ struct SPSG_Reply
 
     void SetComplete();
     void SetFailed(string message, SState::SStatus status = EPSG_Status::eError);
+    void Cancel(const string& message);
     optional<SItem::TTS*> GetNextItem(CDeadline deadline);
     void Reset();
+
+private:
+    bool CompleteItems(const string& message, SState::SStatus status);
 };
 
 struct SPSG_Retries

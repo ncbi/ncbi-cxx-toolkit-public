@@ -762,17 +762,15 @@ void SPSG_Reply::SItem::Reset()
     state.Reset();
 }
 
-void SPSG_Reply::SetComplete()
+bool SPSG_Reply::CompleteItems(const string& message, SState::SStatus status)
 {
-    // If it were 'more' (instead of 'less'), items would not be in progress then
-    const auto message = "Protocol error: received less than expected";
     bool missing = false;
 
     if (auto items_locked = items.GetLock()) {
         for (auto& item : *items_locked) {
             if (auto item_locked = item.GetLock()) {
                 if (auto& state = item_locked->state; state.InProgress()) {
-                    state.AddError(message);
+                    state.AddError(message, status);
                     state.SetComplete();
                 } else {
                     continue;
@@ -783,6 +781,15 @@ void SPSG_Reply::SetComplete()
             item.NotifyOne();
         }
     }
+
+    return missing;
+}
+
+void SPSG_Reply::SetComplete()
+{
+    // If it were 'more' (instead of 'less'), items would not be in progress then
+    const auto message = "Protocol error: received less than expected";
+    const bool missing = CompleteItems(message, EPSG_Status::eError);
 
     if (auto reply_item_locked = reply_item.GetLock()) {
         if (missing || reply_item_locked->expected.Cmp<greater>(reply_item_locked->received)) {
@@ -798,20 +805,7 @@ void SPSG_Reply::SetComplete()
 
 void SPSG_Reply::SetFailed(string message, SState::SStatus status)
 {
-    if (auto items_locked = items.GetLock()) {
-        for (auto& item : *items_locked) {
-            if (auto item_locked = item.GetLock()) {
-                if (auto& state = item_locked->state; state.InProgress()) {
-                    state.AddError(message);
-                    state.SetComplete();
-                } else {
-                   continue;
-                }
-            }
-
-            item.NotifyOne();
-        }
-    }
+    CompleteItems(message, EPSG_Status::eError);
 
     if (auto reply_item_locked = reply_item.GetLock()) {
         auto& state = reply_item_locked->state;
@@ -821,6 +815,22 @@ void SPSG_Reply::SetFailed(string message, SState::SStatus status)
 
     reply_item.NotifyOne();
     queue->NotifyOne();
+}
+
+void SPSG_Reply::Cancel(const string& message)
+{
+    CompleteItems(message, EPSG_Status::eCanceled);
+
+    if (auto reply_item_locked = reply_item.GetLock()) {
+        auto& state = reply_item_locked->state;
+
+        if (state.InProgress()) {
+            state.AddError(message, EPSG_Status::eCanceled);
+            state.SetComplete();
+        }
+    }
+
+    reply_item.NotifyOne();
 }
 
 optional<SPSG_Reply::SItem::TTS*> SPSG_Reply::GetNextItem(CDeadline deadline)

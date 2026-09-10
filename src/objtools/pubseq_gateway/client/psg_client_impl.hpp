@@ -70,7 +70,7 @@ struct SPSG_RStream : private SPSG_BlobReader, public CRStream
     template <class... TArgs>
     SPSG_RStream(TArgs&&... args) :
         SPSG_BlobReader(std::forward<TArgs>(args)...),
-        CRStream(this, size(), data())
+        CRStream(this, size(), data(), CRWStreambuf::fNoStatusLog)
     {}
 };
 
@@ -124,6 +124,7 @@ struct CPSG_Queue::SImpl
     shared_ptr<CPSG_Reply> GetNextReply(CDeadline deadline);
     shared_ptr<CPSG_Reply> SendRequestAndGetReply(shared_ptr<CPSG_Request> request, CDeadline deadline);
 
+    const auto& Stopped() const { return m_Queue->Stopped(); }
     void Stop(bool reset);
     bool WaitForEvents(CDeadline deadline);
     bool IsEmpty() const { _ASSERT(m_Queue); return m_Queue->Empty(); }

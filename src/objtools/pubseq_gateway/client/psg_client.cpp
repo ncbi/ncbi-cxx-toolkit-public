@@ -160,6 +160,10 @@ ERW_Result SPSG_BlobReader::PendingCount(size_t* count)
 
 bool SPSG_BlobReader::CheckForNewChunks(SPSG_Reply::SItem& src)
 {
+    if (!src.state.InProgress() && src.state.GetStatus() != EPSG_Status::eSuccess) {
+        return false;
+    }
+
     auto& chunks = src.chunks;
 
     if (m_Data.size() < chunks.size()) m_Data.resize(chunks.size());
@@ -1606,6 +1610,7 @@ bool CPSG_EventLoop::RunOnce(CDeadline deadline)
     }
 
     _ASSERT(m_Impl);
+    const auto cleared = m_Impl->Stopped() == TPSG_Queue::eClear;
     auto& queues = m_Impl->GetQueues();
 
     while (auto reply = GetNextReply(CDeadline::eNoWait)) {
@@ -1617,6 +1622,11 @@ bool CPSG_EventLoop::RunOnce(CDeadline deadline)
         auto& reply = i->first;
         auto& items = i->second;
         bool end_of_reply = false;
+
+        if (cleared) {
+            static const string kMessage = "Reply canceled by event loop reset";
+            get_reply_impl(reply).Cancel(kMessage);
+        }
 
         while (auto item = reply->GetNextItem(CDeadline::eNoWait)) {
             if (item->GetType() == CPSG_ReplyItem::eEndOfReply) {

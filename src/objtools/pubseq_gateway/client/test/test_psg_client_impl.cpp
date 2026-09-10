@@ -38,6 +38,7 @@
 #include <algorithm>
 #include <barrier>
 #include <deque>
+#include <future>
 #include <thread>
 #include <random>
 
@@ -46,6 +47,7 @@
 USING_NCBI_SCOPE;
 
 const char kAllowedChars[] = "0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+constexpr int kExpectedTerminalError = -2;
 
 struct SRandom
 {
@@ -447,13 +449,38 @@ void SFixture::MtReading()
         vector<char> received(kSizeMax);
         auto expected = src.first.data();
         size_t expected_to_read = src.first.size();
+        const auto expect_terminal_error = any_of(src.second.begin(), src.second.end(), [](const auto& message) {
+            return eDiag_Error <= message.severity && message.severity <= eDiag_Fatal;
+        });
         CDeadline deadline(kReadingDeadline, 0);
+
+        auto check_messages = [&] {
+            const auto& src_messages = src.second;
+            size_t messages = 0;
+
+            while (auto message = dst.GetLock()->state.GetMessage(eDiag_Trace)) {
+                ++messages;
+                auto it = find(src_messages.begin(), src_messages.end(), message);
+                BOOST_CHECK_MESSAGE_MT_SAFE(it != src_messages.end(), "Received message does not match expected");
+            }
+
+            BOOST_CHECK_MESSAGE_MT_SAFE(messages >= src_messages.size(), "Received less messages than expected");
+            BOOST_CHECK_MESSAGE_MT_SAFE(messages <= src_messages.size(), "Received more messages than expected");
+        };
 
         while (!deadline.IsExpired()) {
             size_t read = 0;
             auto reading_result = read_impl(r, received.data(), received.size(), expected_to_read, &read);
 
-            if (reading_result < 0) return;
+            if (reading_result < 0) {
+                if (reading_result != kExpectedTerminalError || !expect_terminal_error) {
+                    BOOST_ERROR_MT_SAFE("Reader stopped unexpectedly");
+                }
+                if (reading_result == kExpectedTerminalError) {
+                    check_messages();
+                }
+                return;
+            }
 
             BOOST_REQUIRE_MESSAGE_MT_SAFE(read <= expected_to_read, "Received more data than expected");
             BOOST_REQUIRE_MESSAGE_MT_SAFE(equal(&received[0], &received[read], expected), "Received data does not match expected");
@@ -462,17 +489,11 @@ void SFixture::MtReading()
             expected_to_read -= read;
 
             if (reading_result == 0) {
-                const auto& src_messages = src.second;
-                size_t messages = 0;
-
-                while (auto message = dst.GetLock()->state.GetMessage(eDiag_Trace)) {
-                    ++messages;
-                    auto it = find(src_messages.begin(), src_messages.end(), message);
-                    BOOST_REQUIRE_MESSAGE_MT_SAFE(it != src_messages.end(), "Received message does not match expected");
+                if (expect_terminal_error) {
+                    BOOST_ERROR_MT_SAFE("Reader reached EOF without the expected terminal error");
                 }
 
-                BOOST_REQUIRE_MESSAGE_MT_SAFE(messages >= src_messages.size(), "Received less messages than expected");
-                BOOST_REQUIRE_MESSAGE_MT_SAFE(messages <= src_messages.size(), "Received more messages than expected");
+                check_messages();
                 break;
             }
 
@@ -595,9 +616,15 @@ BOOST_AUTO_TEST_CASE(Request)
     }
 }
 
+bool s_IsExpectedCompletedError(SPSG_Reply::SItem::TTS& dst)
+{
+    auto dst_locked = dst.GetLock();
+    return !dst_locked->state.InProgress() && dst_locked->state.GetStatus() == EPSG_Status::eError;
+}
+
 struct SBlobReader
 {
-    SBlobReader(SPSG_Reply::SItem::TTS& dst) : reader(dst) {}
+    SBlobReader(SPSG_Reply::SItem::TTS& dst) : reader(dst), m_Dst(dst) {}
 
     int operator()(SRandom& r, char* buf, size_t buf_size, size_t expected, size_t* read)
     {
@@ -606,6 +633,7 @@ struct SBlobReader
 
         auto pending_result = reader.PendingCount(read);
 
+        if (pending_result == eRW_Error && s_IsExpectedCompletedError(m_Dst)) return kExpectedTerminalError;
         BOOST_REQUIRE_MESSAGE_MT_SAFE((pending_result == eRW_Success) || (pending_result == eRW_Eof), "PendingCount() failed");
         BOOST_REQUIRE_MESSAGE_MT_SAFE(*read <= expected, "Pending data is more than expected");
 
@@ -626,6 +654,7 @@ struct SBlobReader
 
         if (reading_result == eRW_Eof)     return 0;
         if (reading_result == eRW_Success) return 1;
+        if (reading_result == eRW_Error && s_IsExpectedCompletedError(m_Dst)) return kExpectedTerminalError;
 
         BOOST_ERROR_MT_SAFE("Read() failed: " << g_RW_ResultToString(reading_result));
         return -1;
@@ -633,6 +662,7 @@ struct SBlobReader
 
 private:
     SPSG_BlobReader reader;
+    SPSG_Reply::SItem::TTS& m_Dst;
 };
 
 BOOST_AUTO_TEST_CASE(BlobReader)
@@ -648,24 +678,31 @@ BOOST_AUTO_TEST_CASE(BlobReader)
 
 struct SStreamReadsome
 {
-    SStreamReadsome(SPSG_Reply::SItem::TTS& dst) : is(dst) {}
+    SStreamReadsome(SPSG_Reply::SItem::TTS& dst) : is(dst), m_Dst(dst) {}
 
-    int operator()(SRandom& r, char* buf, size_t buf_size, size_t, size_t* read)
+    int operator()(SRandom& r, char* buf, size_t buf_size, size_t expected, size_t* read)
     {
         auto to_read = r.Get(1, buf_size);
         *read = is.readsome(buf, to_read);
 
         if (*read) {
             return 1;
+        } else if (s_IsExpectedCompletedError(m_Dst)) {
+            return kExpectedTerminalError;
         } else if (is.eof()) {
             return 0;
-        } else {
+        } else if (is.fail()) {
             return -1;
+        } else if (!m_Dst.GetLock()->state.InProgress() && expected == 0) {
+            return 0;
+        } else {
+            return 1;
         }
     }
 
 private:
     SPSG_RStream is;
+    SPSG_Reply::SItem::TTS& m_Dst;
 };
 
 BOOST_AUTO_TEST_CASE(StreamReadsome)
@@ -675,17 +712,20 @@ BOOST_AUTO_TEST_CASE(StreamReadsome)
 
 struct SStreamRead
 {
-    SStreamRead(SPSG_Reply::SItem::TTS& dst) : is(dst) {}
+    SStreamRead(SPSG_Reply::SItem::TTS& dst) : is(dst), m_Dst(dst) {}
 
     int operator()(SRandom& r, char* buf, size_t buf_size, size_t, size_t* read)
     {
         auto to_read = r.Get(1, buf_size);
+        const auto good = static_cast<bool>(is.read(buf, to_read));
 
-        if (is.read(buf, to_read)) {
-            *read = is.gcount();
+        *read = is.gcount();
+
+        if (good || *read) {
             return 1;
+        } else if (s_IsExpectedCompletedError(m_Dst)) {
+            return kExpectedTerminalError;
         } else if (is.eof()) {
-            *read = is.gcount();
             return 0;
         } else {
             return -1;
@@ -694,6 +734,7 @@ struct SStreamRead
 
 private:
     SPSG_RStream is;
+    SPSG_Reply::SItem::TTS& m_Dst;
 };
 
 BOOST_AUTO_TEST_CASE(StreamRead)
@@ -1169,6 +1210,76 @@ BOOST_AUTO_TEST_CASE(Args)
     // Test with SPSG_ArgsCUrlArgsImpl
     SPSG_ArgsImpl::Set(true);
     s_TestArgsImpl("CUrlArgsImpl");
+}
+
+BOOST_AUTO_TEST_CASE(BlobReaderTreatsCanceledItemAsError)
+{
+    SPSG_Reply::SItem::TTS item_ts;
+
+    {
+        auto item_locked = item_ts.GetLock();
+        item_locked->state.AddError("Reply canceled by blob reader test", EPSG_Status::eCanceled);
+        item_locked->state.SetComplete();
+    }
+
+    SPSG_BlobReader reader(item_ts, {});
+    size_t pending = numeric_limits<size_t>::max();
+    size_t read = numeric_limits<size_t>::max();
+    char c = '\0';
+
+    BOOST_CHECK(reader.PendingCount(&pending) == eRW_Error);
+    BOOST_CHECK_EQUAL(pending, static_cast<size_t>(0));
+    BOOST_CHECK(reader.Read(&c, 1, &read) == eRW_Error);
+    BOOST_CHECK_EQUAL(read, static_cast<size_t>(0));
+}
+
+BOOST_AUTO_TEST_CASE(ReplyCancelNotifiesItemWaiters)
+{
+    auto internal_reply = make_shared<SPSG_Reply>("", SPSG_Params{}, make_shared<TPSG_Queue>());
+
+    SPSG_Reply::SItem::TTS* item_ts = nullptr;
+
+    if (auto items_locked = internal_reply->items.GetLock()) {
+        items_locked->emplace_back();
+        item_ts = &items_locked->back();
+    }
+
+    BOOST_REQUIRE(internal_reply);
+    BOOST_REQUIRE(item_ts);
+
+    {
+        auto item_locked = item_ts->GetLock();
+        item_locked->state.AddError("Error preceding cancellation");
+    }
+
+    auto wait_started = make_shared<promise<void>>();
+    auto wait_started_future = wait_started->get_future();
+
+    auto wait_future = async(launch::async, [item_ts, wait_started]
+    {
+        auto item_locked = item_ts->GetLock();
+        wait_started->set_value();
+        return item_ts->WaitUntil(item_locked, CDeadline(1, 0), [&] {
+            return !item_locked->state.InProgress();
+        });
+    });
+
+    BOOST_REQUIRE_MESSAGE(wait_started_future.wait_for(chrono::seconds(1)) == future_status::ready,
+        "Item waiter did not start");
+
+    // WaitUntil() atomically releases the item lock while starting to wait.
+    // Acquiring the same lock here proves that the worker reached that point.
+    {
+        auto item_locked = item_ts->GetLock();
+    }
+
+    internal_reply->Cancel("Reply canceled by test");
+
+    BOOST_REQUIRE_MESSAGE(wait_future.wait_for(chrono::milliseconds(100)) == future_status::ready,
+        "Cancel() did not notify the item waiter promptly");
+    BOOST_CHECK(wait_future.get());
+    BOOST_CHECK(internal_reply->reply_item.GetLock()->state.GetStatus() == EPSG_Status::eCanceled);
+    BOOST_CHECK(item_ts->GetLock()->state.GetStatus() == EPSG_Status::eError);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
