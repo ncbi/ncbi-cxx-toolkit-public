@@ -1715,7 +1715,8 @@ void SPSG_IoImpl::AddNewServers(uv_async_t* handle)
 
     for (auto new_servers = servers_size - sessions_size; new_servers; --new_servers) {
         auto& server = servers[servers_size - new_servers];
-        m_Sessions.emplace_back().sessions.emplace_back(server, m_Params, m_Queue, handle->loop);
+        auto& server_sessions = m_Sessions.emplace_back(server);
+        server_sessions.sessions.emplace_back(server, m_Params, m_Queue, handle->loop);
         PSG_IO_TRACE("Session for server '" << server.address << "' was added");
     }
 }
@@ -1726,7 +1727,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
     auto available_servers = 0;
 
     for (auto& server_sessions : m_Sessions) {
-        server_sessions.current_rate = server_sessions->rate.load();
+        server_sessions.current_rate = server_sessions.server.rate.load();
 
         if (server_sessions.current_rate) {
             ++available_servers;
@@ -1788,18 +1789,18 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
         auto& server_sessions = *i;
 
         // If throttling has been activated (possibly in a different thread)
-        if (server_sessions->throttling.Active()) {
-            PSG_IO_TRACE("Server '" << server_sessions->address << "' is throttled, ignoring");
+        if (server_sessions.server.throttling.Active()) {
+            PSG_IO_TRACE("Server '" << server_sessions.server.address << "' is throttled, ignoring");
             ignore_server();
 
         // If server has reached its limit (possibly in a different thread)
-        } else if (server_sessions->available_streams <= 0) {
-            PSG_IO_TRACE("Server '" << server_sessions->address << "' is at request limit, ignoring");
+        } else if (server_sessions.server.available_streams <= 0) {
+            PSG_IO_TRACE("Server '" << server_sessions.server.address << "' is at request limit, ignoring");
             ignore_server();
 
         // If all server sessions are full
         } else if (auto [found, session] = find_session(); !found) {
-            PSG_IO_TRACE("Server '" << server_sessions->address << "' has no sessions available, ignoring");
+            PSG_IO_TRACE("Server '" << server_sessions.server.address << "' has no sessions available, ignoring");
             ignore_server();
 
         // If this is a competitive stream, try a different server
@@ -1818,7 +1819,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
         } else {
             PSG_IO_TRACE("Server '" << session->GetId() << "' got request '" << req_id << "' with rate = " << target_rate);
             --remaining_submits;
-            ++server_sessions->stats;
+            ++server_sessions.server.stats;
 
             // Add new session if needed and allowed to
             if (session->IsFull() && (distance(session, server_sessions.sessions.end()) == 1)) {
@@ -1826,11 +1827,11 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
                 const auto max_sessions = single_server_single_session ? 2u : m_Params.max_sessions;
 
                 if (server_sessions.sessions.size() >= max_sessions) {
-                    PSG_IO_TRACE("Server '" << server_sessions->address << "' reached session limit");
+                    PSG_IO_TRACE("Server '" << server_sessions.server.address << "' reached session limit");
                     ignore_server();
                 } else {
-                    server_sessions.sessions.emplace_back(*server_sessions, m_Params, m_Queue, handle->loop);
-                    PSG_IO_TRACE("Additional session for server '" << server_sessions->address << "' was added");
+                    server_sessions.sessions.emplace_back(server_sessions.server, m_Params, m_Queue, handle->loop);
+                    PSG_IO_TRACE("Additional session for server '" << server_sessions.server.address << "' was added");
                 }
             }
         }

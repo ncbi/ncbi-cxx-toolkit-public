@@ -1246,11 +1246,11 @@ struct SPSG_ServerSessions
 {
     using TSession = SUvNgHttp2_Session<SPSG_IoSession>;
 
+    explicit SPSG_ServerSessions(SPSG_Server& s) : server(s) {}
+
+    SPSG_Server& server;
     deque<TSession> sessions;
     double current_rate = 0.0;
-
-    SPSG_Server& operator*() { _ASSERT(!sessions.empty()); return sessions.front().server; }
-    SPSG_Server* operator->() { return &operator*(); }
 };
 
 struct SPSG_IoImpl
