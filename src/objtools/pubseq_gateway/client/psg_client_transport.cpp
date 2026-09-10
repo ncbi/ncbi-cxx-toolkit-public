@@ -267,7 +267,7 @@ template <>
 struct SPSG_StatsCounters::SGroup<SPSG_StatsCounters::eRequest>
 {
     using type = CPSG_Request::EType;
-    static constexpr size_t size = CPSG_Request::eChunk + 1;
+    static constexpr size_t size = CPSG_Request::eAccVerHistory + 1;
     static constexpr auto prefix = "\trequest\ttype=";
 
     static constexpr array<type, size> values = {
@@ -276,6 +276,8 @@ struct SPSG_StatsCounters::SGroup<SPSG_StatsCounters::eRequest>
         CPSG_Request::eBlob,
         CPSG_Request::eNamedAnnotInfo,
         CPSG_Request::eChunk,
+        CPSG_Request::eIpgResolve,
+        CPSG_Request::eAccVerHistory,
     };
 
     static const char* ValueName(type value)
