@@ -493,7 +493,7 @@ void SFixture::MtReading()
 
             } else if (auto reader = readers.find(item_ts); reader == readers.end()) {
                 auto item_locked = item_ts->GetLock();
-                auto blob_id = string(item_locked->args.GetValue("blob_id"));
+                auto blob_id = item_locked->args.GetValue<string>("blob_id");
                 auto src_blob = src_blobs.find(blob_id);
 
                 BOOST_REQUIRE_MESSAGE_MT_SAFE(src_blob != src_blobs.end(), "Unknown blob received");
@@ -567,7 +567,7 @@ BOOST_AUTO_TEST_CASE(Request)
         BOOST_REQUIRE_MESSAGE(!expected.Cmp<less>(received), "Expected is less than received");
 
         auto& chunks = item.chunks;
-        auto blob_id = string(item.args.GetValue("blob_id"));
+        auto blob_id = item.args.GetValue<string>("blob_id");
 
         auto src_blob = src_blobs.find(blob_id);
 
@@ -833,7 +833,7 @@ BOOST_AUTO_TEST_CASE(SyncThreadSafe)
     const auto kThreads = 10;
     SRandom r;
     SSyncThreadSafe<bool> sts;
-    atomic_int notified = 0;
+    atomic_size_t notified = 0;
 
     auto thread_impl = [&](barrier<>& b) {
         [[maybe_unused]] auto u = b.arrive();
@@ -912,6 +912,209 @@ BOOST_AUTO_TEST_CASE(WaitingQueue)
         BOOST_CHECK_EQUAL_MT_SAFE(to_send.exchange(0), 0);
         BOOST_CHECK_EQUAL_MT_SAFE(to_receive.exchange(0), 0);
     }
+}
+
+void s_TestArgsImpl(const char* impl_name)
+{
+    // Test basic GetValue
+    {
+        SPSG_Args args("key1=value1&key2=value2&empty_key=&key3=value3");
+
+        BOOST_CHECK_MESSAGE(args.GetValue("key1") == "value1"sv, impl_name << ": GetValue key1");
+        BOOST_CHECK_MESSAGE(args.GetValue("key2") == "value2"sv, impl_name << ": GetValue key2");
+        BOOST_CHECK_MESSAGE(args.GetValue("key3") == "value3"sv, impl_name << ": GetValue key3");
+        BOOST_CHECK_MESSAGE(args.GetValue("empty_key") == ""sv, impl_name << ": GetValue empty_key");
+        BOOST_CHECK_MESSAGE(args.GetValue("nonexistent") == ""sv, impl_name << ": GetValue nonexistent");
+    }
+
+    // Test URL decoding
+    {
+        SPSG_Args args("encoded=%2F%3D%26&space=%20&plus=a%2Bb");
+
+        BOOST_CHECK_MESSAGE(args.GetValue("encoded") == "/=&"sv, impl_name << ": URL decode special chars");
+        BOOST_CHECK_MESSAGE(args.GetValue("space") == " "sv, impl_name << ": URL decode space");
+        BOOST_CHECK_MESSAGE(args.GetValue("plus") == "a+b"sv, impl_name << ": URL decode plus sign");
+    }
+
+    // Test GetValue
+    {
+        SPSG_Args args("str_key=string_value&empty=");
+
+        BOOST_CHECK_EQUAL(args.GetValue("str_key"), string("string_value"));
+        BOOST_CHECK_EQUAL(args.GetValue("empty"), string(""));
+        BOOST_CHECK_EQUAL(args.GetValue("missing"), string(""));
+    }
+
+    // Test GetValue with various types
+    {
+        SPSG_Args args("int_val=42&negative=-123&zero=0&double_val=3.14&large=9876543210&empty=&invalid=abc");
+
+        // Basic integer types
+        BOOST_CHECK_MESSAGE(args.GetValue<int>("int_val") == 42, impl_name << ": GetValue int");
+        BOOST_CHECK_MESSAGE(args.GetValue<int>("negative") == -123, impl_name << ": GetValue negative");
+        BOOST_CHECK_MESSAGE(args.GetValue<int>("zero") == 0, impl_name << ": GetValue zero");
+        BOOST_CHECK_MESSAGE(args.GetValue<size_t>("int_val") == 42, impl_name << ": GetValue size_t");
+        BOOST_CHECK_MESSAGE(args.GetValue<Int8>("large") == 9876543210, impl_name << ": GetValue Int8");
+
+        // Double
+        BOOST_CHECK_CLOSE(args.GetValue<double>("double_val"), 3.14, 0.001);
+
+        // Empty/missing returns default (0)
+        BOOST_CHECK_MESSAGE(args.GetValue<int>("empty") == 0, impl_name << ": GetValue empty");
+        BOOST_CHECK_MESSAGE(args.GetValue<int>("missing") == 0, impl_name << ": GetValue missing");
+        auto invalid = args.GetValue<int, nothrow>("invalid");
+        BOOST_CHECK_MESSAGE(invalid == 0, impl_name << ": GetValue invalid");
+
+        // Optional types
+        BOOST_CHECK_MESSAGE(args.GetValue<optional<int>>("int_val") == 42, impl_name << ": GetValue optional<int>");
+        BOOST_CHECK_MESSAGE(!args.GetValue<optional<int>>("empty").has_value(), impl_name << ": GetValue optional empty");
+        BOOST_CHECK_MESSAGE(!args.GetValue<optional<int>>("missing").has_value(), impl_name << ": GetValue optional missing");
+        auto optional_invalid = args.GetValue<optional<int>, nothrow>("invalid");
+        BOOST_CHECK_MESSAGE(!optional_invalid.has_value(), impl_name << ": GetValue optional invalid");
+
+        // CNullable types
+        BOOST_CHECK_MESSAGE(!args.GetValue<CNullable<int>>("int_val").IsNull(), impl_name << ": GetValue CNullable has value");
+        BOOST_CHECK_MESSAGE(args.GetValue<CNullable<int>>("int_val") == 42, impl_name << ": GetValue CNullable<int>");
+        BOOST_CHECK_MESSAGE(args.GetValue<CNullable<int>>("empty").IsNull(), impl_name << ": GetValue CNullable empty");
+        BOOST_CHECK_MESSAGE(args.GetValue<CNullable<int>>("missing").IsNull(), impl_name << ": GetValue CNullable missing");
+    }
+
+    // Test GetValue<EValue> for item_type
+    {
+        SPSG_Args args_blob("item_type=blob&chunk_type=data");
+        BOOST_CHECK_MESSAGE(args_blob.GetValue<SPSG_Args::eItemType>().first == SPSG_Args::eBlob, impl_name << ": item_type blob");
+        BOOST_CHECK_MESSAGE(args_blob.GetValue<SPSG_Args::eItemType>().second == "blob"sv, impl_name << ": item_type blob string");
+
+        SPSG_Args args_bioseq("item_type=bioseq_info");
+        BOOST_CHECK_MESSAGE(args_bioseq.GetValue<SPSG_Args::eItemType>().first == SPSG_Args::eBioseqInfo, impl_name << ": item_type bioseq_info");
+
+        SPSG_Args args_reply("item_type=reply");
+        BOOST_CHECK_MESSAGE(args_reply.GetValue<SPSG_Args::eItemType>().first == SPSG_Args::eReply, impl_name << ": item_type reply");
+
+        SPSG_Args args_empty("");
+        BOOST_CHECK_MESSAGE(args_empty.GetValue<SPSG_Args::eItemType>().first == SPSG_Args::eReply, impl_name << ": item_type empty defaults to reply");
+
+        SPSG_Args args_unknown("item_type=unknown_type");
+        BOOST_CHECK_MESSAGE(args_unknown.GetValue<SPSG_Args::eItemType>().first == SPSG_Args::eUnknownItem, impl_name << ": item_type unknown");
+    }
+
+    // Test GetValue<EValue> for chunk_type
+    {
+        SPSG_Args args_data("chunk_type=data");
+        BOOST_CHECK_MESSAGE(args_data.GetValue<SPSG_Args::eChunkType>().first == SPSG_Args::eData, impl_name << ": chunk_type data");
+
+        SPSG_Args args_meta("chunk_type=meta");
+        BOOST_CHECK_MESSAGE(args_meta.GetValue<SPSG_Args::eChunkType>().first == SPSG_Args::eMeta, impl_name << ": chunk_type meta");
+
+        SPSG_Args args_message("chunk_type=message");
+        BOOST_CHECK_MESSAGE(args_message.GetValue<SPSG_Args::eChunkType>().first == SPSG_Args::eMessage, impl_name << ": chunk_type message");
+
+        SPSG_Args args_data_meta("chunk_type=data_and_meta");
+        BOOST_CHECK_MESSAGE(args_data_meta.GetValue<SPSG_Args::eChunkType>().first == SPSG_Args::eDataAndMeta, impl_name << ": chunk_type data_and_meta");
+
+        SPSG_Args args_unknown("chunk_type=unknown");
+        BOOST_CHECK_MESSAGE(args_unknown.GetValue<SPSG_Args::eChunkType>().first == SPSG_Args::eUnknownChunk, impl_name << ": chunk_type unknown");
+    }
+
+    // Test GetValue<EValue> for blob_id
+    {
+        SPSG_Args args("blob_id=123.456.789&other=value");
+        BOOST_CHECK_MESSAGE(args.GetValue<SPSG_Args::eBlobId>() == "123.456.789"sv, impl_name << ": blob_id");
+
+        SPSG_Args args_encoded("blob_id=id%2Fwith%2Fslashes");
+        BOOST_CHECK_MESSAGE(args_encoded.GetValue<SPSG_Args::eBlobId>() == "id/with/slashes"sv, impl_name << ": blob_id URL decoded");
+    }
+
+    // Test GetValue<EValue> for id2_chunk
+    {
+        SPSG_Args args("id2_chunk=42&id2_info=some_info");
+        BOOST_CHECK_MESSAGE(!args.GetValue<SPSG_Args::eId2Chunk>().empty(), impl_name << ": id2_chunk has value");
+        auto id2_chunk = args.GetValue<SPSG_Args::eId2Chunk, int>();
+        BOOST_CHECK_MESSAGE(id2_chunk == 42, impl_name << ": id2_chunk value");
+
+        SPSG_Args args_empty("id2_info=some_info");
+        BOOST_CHECK_MESSAGE(args_empty.GetValue<SPSG_Args::eId2Chunk>().empty(), impl_name << ": id2_chunk empty");
+    }
+
+    // Test ConvertToRaw
+    {
+        const string original = "item_type=unknown_item&chunk_type=data&blob_id=old_blob_id&id2_chunk=7&item_id=1";
+        SPSG_Args args(original);
+
+        const auto item_type = args.GetValue<SPSG_Args::eItemType>();
+        BOOST_CHECK_MESSAGE(item_type.first == SPSG_Args::eUnknownItem, impl_name << ": cached item_type before ConvertToRaw");
+        BOOST_CHECK_MESSAGE(args.GetValue<SPSG_Args::eChunkType>().first == SPSG_Args::eData, impl_name << ": cached chunk_type before ConvertToRaw");
+        BOOST_CHECK_MESSAGE(args.GetValue<SPSG_Args::eBlobId>() == "old_blob_id"sv, impl_name << ": cached blob_id before ConvertToRaw");
+        BOOST_CHECK_MESSAGE(args.GetValue<SPSG_Args::eId2Chunk>() == "7"sv, impl_name << ": cached id2_chunk before ConvertToRaw");
+
+        args.ConvertToRaw(item_type.second, 12345);
+
+        BOOST_CHECK_MESSAGE(args.GetValue<SPSG_Args::eItemType>().second == "unknown_item"sv, impl_name << ": ConvertToRaw refreshes cached item_type");
+        BOOST_CHECK_MESSAGE(args.GetValue<SPSG_Args::eChunkType>().first == SPSG_Args::eData, impl_name << ": ConvertToRaw refreshes cached chunk_type");
+        BOOST_CHECK_MESSAGE(args.GetValue<SPSG_Args::eBlobId>() == "unknown_item"sv, impl_name << ": ConvertToRaw refreshes cached blob_id");
+        BOOST_CHECK_MESSAGE(args.GetValue<SPSG_Args::eId2Chunk>() == "7"sv, impl_name << ": ConvertToRaw refreshes cached id2_chunk");
+        BOOST_CHECK_MESSAGE(args.GetValue("last_modified") == "12345"sv, impl_name << ": ConvertToRaw sets last_modified");
+
+        ostringstream os;
+        os << args;
+        BOOST_CHECK_MESSAGE(os.str() == original, impl_name << ": ConvertToRaw preserves original output");
+    }
+
+    // Test output stream operator
+    {
+        SPSG_Args args("key1=value1&key2=value2");
+        ostringstream os;
+        os << args;
+        string output = os.str();
+        BOOST_CHECK_MESSAGE(output.find("key1=value1") != string::npos, impl_name << ": output contains key1=value1");
+        BOOST_CHECK_MESSAGE(output.find("key2=value2") != string::npos, impl_name << ": output contains key2=value2");
+    }
+
+    // Test all item_type values
+    {
+        vector<pair<SPSG_Args::EItemType, string_view>> item_types{
+            { SPSG_Args::eBioseqInfo,    "bioseq_info"sv      },
+            { SPSG_Args::eBlobProp,      "blob_prop"sv        },
+            { SPSG_Args::eBlob,          "blob"sv             },
+            { SPSG_Args::eReply,         "reply"sv            },
+            { SPSG_Args::eBioseqNa,      "bioseq_na"sv        },
+            { SPSG_Args::eNaStatus,      "na_status"sv        },
+            { SPSG_Args::ePublicComment, "public_comment"sv   },
+            { SPSG_Args::eProcessor,     "processor"sv        },
+            { SPSG_Args::eIpgInfo,       "ipg_info"sv         },
+            { SPSG_Args::eAccVerHistory, "acc_ver_history"sv  },
+        };
+
+        for (const auto& item : item_types) {
+            string query = string("item_type=") + item.second;
+            SPSG_Args args(query);
+            BOOST_CHECK_MESSAGE(args.GetValue<SPSG_Args::eItemType>().first == item.first,
+                impl_name << ": item_type " << item.second);
+        }
+    }
+
+    // Test all chunk_type values
+    {
+        vector<pair<SPSG_Args::EChunkType, string_view>> chunk_types{
+            { SPSG_Args::eMeta,           "meta"sv             },
+            { SPSG_Args::eData,           "data"sv             },
+            { SPSG_Args::eMessage,        "message"sv          },
+            { SPSG_Args::eDataAndMeta,    "data_and_meta"sv    },
+            { SPSG_Args::eMessageAndMeta, "message_and_meta"sv },
+        };
+
+        for (const auto& chunk : chunk_types) {
+            string query = string("chunk_type=") + chunk.second;
+            SPSG_Args args(query);
+            BOOST_CHECK_MESSAGE(args.GetValue<SPSG_Args::eChunkType>().first == chunk.first,
+                impl_name << ": chunk_type " << chunk.second);
+        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(Args)
+{
+    s_TestArgsImpl("CUrlArgsImpl");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

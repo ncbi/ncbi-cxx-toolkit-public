@@ -220,7 +220,7 @@ void SDebugPrintout::Print(const SPSG_Args& args, const SPSG_Chunk& chunk)
 {
     ostringstream os;
 
-    os << args.GetQueryString(CUrlArgs::eAmp_Char) << '\n';
+    os << args << '\n';
 
     if ((m_Params.debug_printout == EPSG_DebugPrintout::eAll) ||
             (args.GetValue<SPSG_Args::eItemType>().first != SPSG_Args::eBlob) || (args.GetValue<SPSG_Args::eChunkType>().first != SPSG_Args::eData)) {
@@ -852,8 +852,7 @@ SPSG_Request::EStateResult SPSG_Request::StateArgs(const char*& data, size_t& le
 
     SPSG_Args args(m_Buffer.args_buffer);
 
-    const auto& size_str = args.GetValue("size");
-    const auto size = size_str.empty() ? 0ul : NStr::StringToNumeric<size_t>(size_str);
+    const auto size = args.GetValue<size_t, nothrow>("size");
 
     m_Buffer.args = std::move(args);
 
@@ -904,11 +903,6 @@ EDiagSev s_GetSeverity(string_view severity)
     return eDiag_Error;
 }
 
-auto s_GetCode(string_view code)
-{
-    return code.empty() ? optional<int>{} : optional<int>{NStr::StringToNumeric<int>(code, NStr::fConvErr_NoThrow)};
-}
-
 SPSG_Request::EStateResult SPSG_Request::Add()
 {
     auto context_guard = context.Set();
@@ -940,7 +934,7 @@ SPSG_Request::EStateResult SPSG_Request::Add()
             }
         }
 
-        auto item_id = string(args.GetValue("item_id"));
+        auto item_id = args.GetValue<string>("item_id");
         auto& item_by_id = m_ItemsByID[item_id];
         bool to_create = !item_by_id;
 
@@ -983,7 +977,7 @@ SPSG_Request::EStateResult SPSG_Request::Add()
 
 int SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args)
 {
-    auto get_status = [&]() { return NStr::StringToInt(args.GetValue("status"), NStr::fConvErr_NoThrow); };
+    auto get_status = [&]() { return args.GetValue<int, nothrow>("status"); };
     auto can_retry_503 = [&](auto s, auto m) { return (s == CRequestStatus::e503_ServiceUnavailable) && Retry(m); };
 
     ++item.received;
@@ -993,11 +987,9 @@ int SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& 
     int rv = eSuccess;
 
     if (chunk_type.first & SPSG_Args::eMeta) {
-        auto n_chunks = args.GetValue("n_chunks");
+        const auto expected = args.GetValue<size_t, nothrow>("n_chunks");
 
-        if (!n_chunks.empty()) {
-            auto expected = NStr::StringToNumeric<size_t>(n_chunks);
-
+        if (expected) {
             if (item.expected.Cmp<not_equal_to>(expected)) {
                 item.state.AddError("Protocol error: contradicting n_chunks");
                 rv |= fNotifyItem;
@@ -1032,7 +1024,7 @@ int SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& 
 
     if (chunk_type.first & SPSG_Args::eMessage) {
         auto severity = s_GetSeverity(args.GetValue("severity"));
-        auto code = s_GetCode(args.GetValue("code"));
+        auto code = args.GetValue<optional<int>, nothrow>("code");
 
         if (severity <= eDiag_Warning) {
             item.state.AddMessage(std::move(chunk), severity, code);
@@ -1048,8 +1040,7 @@ int SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& 
         if (auto stats = reply->stats.lock()) stats->IncCounter(SPSG_Stats::eMessage, severity);
 
     } else if (chunk_type.first & SPSG_Args::eData) {
-        auto blob_chunk = args.GetValue("blob_chunk");
-        auto index = blob_chunk.empty() ? 0 : NStr::StringToNumeric<size_t>(blob_chunk);
+        auto index = args.GetValue<size_t, nothrow>("blob_chunk");
 
         if (item_type == SPSG_Args::eBlob) {
             if (!index) {

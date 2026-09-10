@@ -80,7 +80,53 @@ inline uint64_t SecondsToMs(double seconds)
     return seconds > 0.0 ? static_cast<uint64_t>(seconds * milli::den) : 0;
 }
 
-struct SPSG_ArgsBase : CUrlArgs
+struct IPSG_ArgsImpl
+{
+    virtual ~IPSG_ArgsImpl() = default;
+
+    virtual string_view GetValue(string_view name) const = 0;
+    virtual void ConvertToRaw(string_view item_type, Int8 last_modified) = 0;
+};
+
+struct SPSG_ArgsCUrlArgsImpl : IPSG_ArgsImpl, private CUrlArgs
+{
+    using CUrlArgs::CUrlArgs;
+
+    string_view GetValue(string_view name) const override
+    {
+        bool not_used;
+        return CUrlArgs::GetValue(string(name), &not_used);
+    }
+
+    void ConvertToRaw(string_view item_type, Int8 last_modified) override
+    {
+        SetValue("blob_id", string(item_type));
+        SetValue("last_modified", to_string(last_modified));
+    }
+};
+
+struct SPSG_ArgsImpl
+{
+private:
+    using TPtr = unique_ptr<IPSG_ArgsImpl>;
+
+    static TPtr Create(const string& buffer)
+    {
+        return make_unique<SPSG_ArgsCUrlArgsImpl>(buffer);
+    }
+
+public:
+    SPSG_ArgsImpl() = default;
+    SPSG_ArgsImpl(const string& buffer) : m_Ptr(Create(buffer)) {}
+
+    const auto* operator->() const { _ASSERT(m_Ptr); return m_Ptr.get(); }
+          auto* operator->()       { _ASSERT(m_Ptr); return m_Ptr.get(); }
+
+private:
+    TPtr m_Ptr;
+};
+
+struct SPSG_ArgsBase
 {
     enum EValue {
         eItemType,
@@ -113,16 +159,39 @@ struct SPSG_ArgsBase : CUrlArgs
         eMessageAndMeta  = eMessage  | eMeta,
     };
 
-    using CUrlArgs::CUrlArgs;
+    SPSG_ArgsBase() = default;
+    SPSG_ArgsBase(string buffer) : m_Original(std::move(buffer)), m_Impl(m_Original) {}
 
-    string_view GetValue(const string& name) const
-    {
-        bool not_used;
-        return CUrlArgs::GetValue(name, &not_used);
-    }
+    string_view GetValue(string_view name) const { return m_Impl->GetValue(name); }
 
 protected:
+    void ConvertToRaw(string_view item_type, Int8 last_modified) { m_Impl->ConvertToRaw(item_type, last_modified); }
+
+    struct S2NThrow {};
+    static inline constexpr S2NThrow kS2NThrow{};
+
+    template <auto P, auto F = NStr::fConvErr_NoThrow | NStr::fConvErr_NoErrMessage>
+    static auto S2NFlags() { return is_same_v<remove_cv_t<decltype(P)>, nothrow_t> ? F : 0; }
+
+    template <typename T, class TR, auto P>
+    struct S2NOpt { TR operator()(string_view v) { T r{}; return !v.empty() && NStr::StringToNumeric<T>(v, &r, S2NFlags<P>()) ? TR{r} : TR{}; } };
+
+    template <typename T, auto P>
+    struct S2N { T operator()(string_view v) { return !v.empty() ? NStr::StringToNumeric<T>(v, S2NFlags<P>()) : T{}; } };
+
+    template <typename T, auto P>
+    struct S2N<optional<T>, P> : S2NOpt<T, optional<T>, P> {};
+
+    template <typename T, auto P>
+    struct S2N<CNullable<T>, P> : S2NOpt<T, CNullable<T>, P> {};
+
     template <EValue value> struct SArg;
+
+private:
+    string m_Original;
+    SPSG_ArgsImpl m_Impl;
+
+    friend ostream& operator<<(ostream& os, const SPSG_ArgsBase& args) { return os << args.m_Original; }
 };
 
 template <>
@@ -170,13 +239,30 @@ struct SPSG_Args : SPSG_ArgsBase
         return cached.has_value() ? cached.value() : cached.emplace(TArg::Get(GetValue(TArg::name)));
     }
 
+    template <EValue value, typename TType, auto TPolicy = kS2NThrow>
+    auto GetValue() const { return S2N<TType, TPolicy>()(GetValue<value>()); }
+
+    template <typename TType, auto TPolicy = kS2NThrow>
+    auto GetValue(string_view name) const { return S2N<TType, TPolicy>()(GetValue(name)); }
+
+    void ConvertToRaw(string_view item_type, Int8 last_modified)
+    {
+        // SPSG_ArgsBase::ConvertToRaw might invalidate some cached values, so the cache has to be reset
+        m_Cached = TCached{};
+        SPSG_ArgsBase::ConvertToRaw(item_type, last_modified);
+    }
+
 private:
     // Cannot use std::optional template directly;
     // Otherwise, different values would have same types and get<type>(tuple) above would not work
     template <EValue value> struct SValue : std::optional<typename SArg<value>::TType> {};
 
-    mutable tuple<SValue<eItemType>, SValue<eChunkType>, SValue<eBlobId>, SValue<eId2Chunk>> m_Cached;
+    using TCached = tuple<SValue<eItemType>, SValue<eChunkType>, SValue<eBlobId>, SValue<eId2Chunk>>;
+    mutable TCached m_Cached;
 };
+
+template <>
+inline auto SPSG_Args::GetValue<string>(string_view name) const { return string(GetValue(name)); }
 
 template <typename TValue>
 struct SPSG_Nullable : protected CNullable<TValue>

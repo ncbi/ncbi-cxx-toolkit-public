@@ -284,23 +284,16 @@ bool SDataId::HasBlobId<SDataId::eChunkIdPriority>() const
 template <>
 unique_ptr<CPSG_BlobId> SDataId::x_Get<CPSG_BlobId>() const
 {
-    CPSG_BlobId::TLastModified last_modified;
     const auto& blob_id = m_Args.GetValue<SPSG_Args::eBlobId>();
-    const auto& last_modified_str = m_Args.GetValue("last_modified");
-
-    if (last_modified_str.empty()) {
-        return make_unique<CPSG_BlobId>(string(blob_id));
-    }
-
-    last_modified = NStr::StringToNumeric<Int8>(last_modified_str);
+    auto last_modified = m_Args.GetValue<CPSG_BlobId::TLastModified>("last_modified");
     return make_unique<CPSG_BlobId>(string(blob_id), std::move(last_modified));
 }
 
 template <>
 unique_ptr<CPSG_ChunkId> SDataId::x_Get<CPSG_ChunkId>() const
 {
-    auto id2_chunk = NStr::StringToNumeric<int>(m_Args.GetValue<SPSG_Args::eId2Chunk>());
-    return make_unique<CPSG_ChunkId>(id2_chunk, string(m_Args.GetValue("id2_info")));
+    auto id2_chunk = m_Args.GetValue<SPSG_Args::eId2Chunk, int>();
+    return make_unique<CPSG_ChunkId>(id2_chunk, m_Args.GetValue<string>("id2_info"));
 }
 
 template <class TRequestedId, class TAllowedId>
@@ -311,8 +304,7 @@ unique_ptr<TRequestedId> SDataId::Get() const
     }
     catch (...) {
         NCBI_THROW_FMT(CPSG_Exception, eServerError,
-                "Both blob_id[+last_modified] and id2_chunk+id2_info pairs are missing/corrupted in server response: " <<
-                m_Args.GetQueryString(CUrlArgs::eAmp_Char));
+                "Both blob_id[+last_modified] and id2_chunk+id2_info pairs are missing/corrupted in server response: " << m_Args);
     }
 }
 
@@ -355,20 +347,11 @@ CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, c
     return blob_data.release();
 }
 
-CPSG_SkippedBlob::TSeconds s_GetSeconds(const SPSG_Args& args, const string& name)
-{
-    const auto& value = args.GetValue(name);
-
-    // Do not use ternary operator below, 'null' will be become '0.0' otherwise
-    if (value.empty()) return null;
-    return NStr::StringToNumeric<double>(value);
-}
-
 CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(CPSG_SkippedBlob::EReason reason, const SPSG_Args& args, shared_ptr<SPSG_Stats>& stats)
 {
     auto id = SDataId::Get<SDataId::eChunkIdPriority>(args);
-    auto sent_seconds_ago = s_GetSeconds(args, "sent_seconds_ago");
-    auto time_until_resend = s_GetSeconds(args, "time_until_resend");
+    auto sent_seconds_ago = args.GetValue<CPSG_SkippedBlob::TSeconds>("sent_seconds_ago");
+    auto time_until_resend = args.GetValue<CPSG_SkippedBlob::TSeconds>("time_until_resend");
 
     if (stats) {
         stats->IncCounter(SPSG_Stats::eSkippedBlob, reason);
@@ -412,7 +395,7 @@ CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, S
             case CPSG_ReplyItem::eSkippedBlob:      return CreateImpl(reason, args, stats);
             case CPSG_ReplyItem::eBioseqInfo:       return CreateImpl(new CPSG_BioseqInfo, chunks);
             case CPSG_ReplyItem::eBlobInfo:         return CreateImpl(new CPSG_BlobInfo(SDataId::Get(args)), chunks);
-            case CPSG_ReplyItem::eNamedAnnotInfo:   return CreateImpl(new CPSG_NamedAnnotInfo(string(args.GetValue("na"))), chunks);
+            case CPSG_ReplyItem::eNamedAnnotInfo:   return CreateImpl(new CPSG_NamedAnnotInfo(args.GetValue<string>("na")), chunks);
             case CPSG_ReplyItem::eNamedAnnotStatus: return CreateImpl(new CPSG_NamedAnnotStatus, chunks);
             case CPSG_ReplyItem::ePublicComment:    return new CPSG_PublicComment(SDataId::Get(args), chunks.empty() ? string() : chunks.front());
             case CPSG_ReplyItem::eProcessor:        return new CPSG_Processor(s_GetProgressStatus(args));
@@ -485,8 +468,7 @@ SItemTypeAndReason SItemTypeAndReason::Get(SPSG_Args& args, bool raw)
         case SPSG_Args::eReplyData:      return CPSG_ReplyItem::eEndOfReply; // CXX-14518 Phase 1: Suppress warning
         case SPSG_Args::eUnknownItem:
             if (!raw) break;
-            args.SetValue("blob_id", string(args.GetValue("item_type")));
-            args.SetValue("last_modified", to_string(raw_last_modified));
+            args.ConvertToRaw(item_type.second, raw_last_modified);
             return CPSG_ReplyItem::eBlobData;
     }
 
