@@ -294,6 +294,9 @@ typedef NCBI_PARAM_TYPE(PSG, no_servers_retry_delay) TPSG_NoServersRetryDelay;
 NCBI_PARAM_DECL(unsigned, PSG, max_queue_load);
 using TPSG_MaxQueueLoad = PSG_PARAM_VALUE_TYPE(PSG, max_queue_load);
 
+NCBI_PARAM_DECL(bool, PSG, use_curl_args);
+using TPSG_UseCUrlArgs = PSG_PARAM_VALUE_TYPE(PSG, use_curl_args);
+
 NCBI_PARAM_DECL(string, PSG, service);
 using TPSG_Service = NCBI_PARAM_TYPE(PSG, service);
 

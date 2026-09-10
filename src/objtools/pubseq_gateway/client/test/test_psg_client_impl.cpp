@@ -936,6 +936,42 @@ void s_TestArgsImpl(const char* impl_name)
         BOOST_CHECK_MESSAGE(args.GetValue("plus") == "a+b"sv, impl_name << ": URL decode plus sign");
     }
 
+    // Test case-insensitive argument names
+    {
+        SPSG_Args args("MiXeD_Key=value");
+
+        BOOST_CHECK_MESSAGE(args.GetValue("mixed_key") == "value"sv,
+                impl_name << ": case-insensitive argument name");
+    }
+
+    // Test valueless segments match CUrlArgs behavior
+    {
+        SPSG_Args args("foo&bar=baz&empty=");
+
+        BOOST_CHECK_MESSAGE(args.GetValue("foo") == ""sv, impl_name << ": valueless segment yields empty string");
+        BOOST_CHECK_MESSAGE(args.GetValue("bar") == "baz"sv, impl_name << ": mixed valueless and keyed segments");
+        BOOST_CHECK_MESSAGE(args.GetValue("empty") == ""sv, impl_name << ": explicit empty value");
+    }
+
+    // Test malformed trailing segment without '='
+    {
+        SPSG_Args args("foo=bar&baz");
+
+        BOOST_CHECK_MESSAGE(args.GetValue("foo") == "bar"sv, impl_name << ": keyed segment before trailing valueless");
+        BOOST_CHECK_MESSAGE(args.GetValue("baz") == ""sv, impl_name << ": trailing valueless segment yields empty string");
+    }
+
+    // Test empty-name segments do not hide following arguments
+    {
+        SPSG_Args args_leading("&key=value");
+        SPSG_Args args_repeated("first=1&&second=2");
+        SPSG_Args args_empty_name("=ignored&key=value");
+
+        BOOST_CHECK_MESSAGE(args_leading.GetValue("key") == "value"sv, impl_name << ": leading empty segment is ignored");
+        BOOST_CHECK_MESSAGE(args_repeated.GetValue("second") == "2"sv, impl_name << ": repeated separator is ignored");
+        BOOST_CHECK_MESSAGE(args_empty_name.GetValue("key") == "value"sv, impl_name << ": empty-name segment is ignored");
+    }
+
     // Test GetValue
     {
         SPSG_Args args("str_key=string_value&empty=");
@@ -1060,6 +1096,18 @@ void s_TestArgsImpl(const char* impl_name)
         BOOST_CHECK_MESSAGE(os.str() == original, impl_name << ": ConvertToRaw preserves original output");
     }
 
+    // Test ConvertToRaw overrides existing values
+    {
+        SPSG_Args args("blob_id=old_blob_id&last_modified=1");
+
+        args.ConvertToRaw("new_blob_id", 12345);
+
+        BOOST_CHECK_MESSAGE(args.GetValue<SPSG_Args::eBlobId>() == "new_blob_id"sv,
+                impl_name << ": ConvertToRaw overrides blob_id");
+        BOOST_CHECK_MESSAGE(args.GetValue("last_modified") == "12345"sv,
+                impl_name << ": ConvertToRaw overrides last_modified");
+    }
+
     // Test output stream operator
     {
         SPSG_Args args("key1=value1&key2=value2");
@@ -1114,6 +1162,12 @@ void s_TestArgsImpl(const char* impl_name)
 
 BOOST_AUTO_TEST_CASE(Args)
 {
+    // Test with SPSG_ArgsVectorImpl
+    SPSG_ArgsImpl::Set(false);
+    s_TestArgsImpl("VectorImpl");
+
+    // Test with SPSG_ArgsCUrlArgsImpl
+    SPSG_ArgsImpl::Set(true);
     s_TestArgsImpl("CUrlArgsImpl");
 }
 

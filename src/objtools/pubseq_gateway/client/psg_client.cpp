@@ -534,6 +534,8 @@ shared_ptr<CPSG_Queue::SImpl::CService::TMap> CPSG_Queue::SImpl::CService::GetMa
     if (!rv) {
         rv = make_shared<TMap>();
         sm_Instance.second = rv;
+
+        SPSG_ArgsImpl::Set(TPSG_UseCUrlArgs::GetDefault());
     }
 
     return rv;

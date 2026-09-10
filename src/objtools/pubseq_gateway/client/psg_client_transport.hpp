@@ -88,6 +88,18 @@ struct IPSG_ArgsImpl
     virtual void ConvertToRaw(string_view item_type, Int8 last_modified) = 0;
 };
 
+struct SPSG_ArgsVectorImpl : IPSG_ArgsImpl
+{
+    SPSG_ArgsVectorImpl() = default;
+    SPSG_ArgsVectorImpl(const string& buffer);
+
+    string_view GetValue(string_view name) const override;
+    void ConvertToRaw(string_view item_type, Int8 last_modified) override;
+
+private:
+    vector<char> m_Parsed;
+};
+
 struct SPSG_ArgsCUrlArgsImpl : IPSG_ArgsImpl, private CUrlArgs
 {
     using CUrlArgs::CUrlArgs;
@@ -107,12 +119,21 @@ struct SPSG_ArgsCUrlArgsImpl : IPSG_ArgsImpl, private CUrlArgs
 
 struct SPSG_ArgsImpl
 {
+    static void Set(bool use_curl_args)
+    {
+        m_UseCUrlArgs = use_curl_args;
+    }
+
 private:
     using TPtr = unique_ptr<IPSG_ArgsImpl>;
 
     static TPtr Create(const string& buffer)
     {
-        return make_unique<SPSG_ArgsCUrlArgsImpl>(buffer);
+        if (m_UseCUrlArgs) {
+            return make_unique<SPSG_ArgsCUrlArgsImpl>(buffer);
+        } else {
+            return make_unique<SPSG_ArgsVectorImpl>(buffer);
+        }
     }
 
 public:
@@ -124,6 +145,8 @@ public:
 
 private:
     TPtr m_Ptr;
+
+    inline static bool m_UseCUrlArgs = false;
 };
 
 struct SPSG_ArgsBase

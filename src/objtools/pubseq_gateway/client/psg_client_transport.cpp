@@ -80,6 +80,7 @@ NCBI_PARAM_DEF(bool,     PSG, fail_on_unknown_chunks, false);
 NCBI_PARAM_DEF(bool,     PSG, https,                  false);
 NCBI_PARAM_DEF(double,   PSG, no_servers_retry_delay, 1.0);
 NCBI_PARAM_DEF(unsigned, PSG, max_queue_load,         30000);
+NCBI_PARAM_DEF(bool,     PSG, use_curl_args,          false);
 NCBI_PARAM_DEF(bool,     PSG, stats,                  false);
 NCBI_PARAM_DEF(double,   PSG, stats_period,           0.0);
 NCBI_PARAM_DEF_EX(string,   PSG, service,               "PSG2",             eParam_Default,     NCBI_PSG_SERVICE);
@@ -117,6 +118,93 @@ NCBI_PARAM_ENUM_ARRAY(EPSG_PsgClientMode, PSG, internal_psg_client_mode)
     { "performance", EPSG_PsgClientMode::ePerformance },
 };
 NCBI_PARAM_ENUM_DEF(EPSG_PsgClientMode, PSG, internal_psg_client_mode, EPSG_PsgClientMode::eOff);
+
+// Copies buffer, preserves key/value pairing, URL decodes names and values in place
+SPSG_ArgsVectorImpl::SPSG_ArgsVectorImpl(const string& buffer)
+{
+    m_Parsed.reserve(buffer.size() + 1);
+
+    for (const char *i = buffer.data(), *e = i + buffer.size(); i < e; ) {
+        auto arg_end = find(i, e, '&');
+        auto key_end = find(i, arg_end, '=');
+
+        if (key_end != i) {
+            m_Parsed.insert(m_Parsed.end(), i, key_end);
+            m_Parsed.push_back('\0');
+
+            if (key_end == arg_end) {
+                m_Parsed.push_back('\0');
+            } else {
+                m_Parsed.insert(m_Parsed.end(), key_end + 1, arg_end);
+                m_Parsed.push_back('\0');
+            }
+        }
+
+        i = arg_end == e ? e : arg_end + 1;
+    }
+
+    if (m_Parsed.empty()) {
+        m_Parsed.push_back('\0');
+    }
+
+    m_Parsed.resize(NStr::URLDecodeInPlace(m_Parsed.data(), m_Parsed.size()));
+    _ASSERT(!m_Parsed.empty() && m_Parsed.back() == '\0');
+}
+
+string_view SPSG_ArgsVectorImpl::GetValue(string_view name) const
+{
+    auto i = m_Parsed.data();
+    const auto e = i + m_Parsed.size();
+
+    while (i < e) {
+        auto ke = find(i, e, '\0');
+
+        if (ke == e) {
+            break;
+        }
+
+        string_view key(i, ke - i);
+
+        // No more keys
+        if (key.empty()) {
+            return key;
+        }
+
+        i = ke + 1;
+        auto ve = find(i, e, '\0');
+
+        if (ve == e) {
+            return {};
+        }
+
+        // Found
+        if (NStr::EqualNocase(key, name)) {
+            return string_view(i, ve - i);
+        }
+
+        i = ve + 1;
+    }
+
+    return {};
+}
+
+void SPSG_ArgsVectorImpl::ConvertToRaw(string_view item_type, Int8 last_modified)
+{
+    auto last_modified_str = to_string(last_modified);
+    const auto values = { "blob_id"sv, item_type, "last_modified"sv, string_view(last_modified_str) };
+    const auto total_size = accumulate(values.begin(), values.end(), m_Parsed.size(),
+            [](size_t size, string_view value) { return size + value.size() + 1; });
+    vector<char> new_parsed;
+    new_parsed.reserve(total_size);
+
+    for (auto value : values) {
+        new_parsed.insert(new_parsed.end(), value.data(), value.data() + value.size());
+        new_parsed.push_back('\0');
+    }
+
+    new_parsed.insert(new_parsed.end(), m_Parsed.begin(), m_Parsed.end());
+    m_Parsed = std::move(new_parsed);
+}
 
 SPSG_ArgsBase::SArg<SPSG_ArgsBase::eItemType>::TType SPSG_ArgsBase::SArg<SPSG_ArgsBase::eItemType>::Get(string_view value)
 {
