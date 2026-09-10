@@ -493,7 +493,7 @@ void SFixture::MtReading()
 
             } else if (auto reader = readers.find(item_ts); reader == readers.end()) {
                 auto item_locked = item_ts->GetLock();
-                auto blob_id = item_locked->args.GetValue("blob_id");
+                auto blob_id = string(item_locked->args.GetValue("blob_id"));
                 auto src_blob = src_blobs.find(blob_id);
 
                 BOOST_REQUIRE_MESSAGE_MT_SAFE(src_blob != src_blobs.end(), "Unknown blob received");
@@ -567,7 +567,7 @@ BOOST_AUTO_TEST_CASE(Request)
         BOOST_REQUIRE_MESSAGE(!expected.Cmp<less>(received), "Expected is less than received");
 
         auto& chunks = item.chunks;
-        auto blob_id = item.args.GetValue("blob_id");
+        auto blob_id = string(item.args.GetValue("blob_id"));
 
         auto src_blob = src_blobs.find(blob_id);
 

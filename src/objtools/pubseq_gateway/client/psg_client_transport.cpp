@@ -118,31 +118,31 @@ NCBI_PARAM_ENUM_ARRAY(EPSG_PsgClientMode, PSG, internal_psg_client_mode)
 };
 NCBI_PARAM_ENUM_DEF(EPSG_PsgClientMode, PSG, internal_psg_client_mode, EPSG_PsgClientMode::eOff);
 
-SPSG_ArgsBase::SArg<SPSG_ArgsBase::eItemType>::TType SPSG_ArgsBase::SArg<SPSG_ArgsBase::eItemType>::Get(const string& value)
+SPSG_ArgsBase::SArg<SPSG_ArgsBase::eItemType>::TType SPSG_ArgsBase::SArg<SPSG_ArgsBase::eItemType>::Get(string_view value)
 {
-    if (value == "bioseq_info")     return { SPSG_ArgsBase::eBioseqInfo,     cref(value) };
-    if (value == "blob_prop")       return { SPSG_ArgsBase::eBlobProp,       cref(value) };
-    if (value == "blob")            return { SPSG_ArgsBase::eBlob,           cref(value) };
-    if (value == "reply")           return { SPSG_ArgsBase::eReply,          cref(value) };
-    if (value == "bioseq_na")       return { SPSG_ArgsBase::eBioseqNa,       cref(value) };
-    if (value == "na_status")       return { SPSG_ArgsBase::eNaStatus,       cref(value) };
-    if (value == "public_comment")  return { SPSG_ArgsBase::ePublicComment,  cref(value) };
-    if (value == "processor")       return { SPSG_ArgsBase::eProcessor,      cref(value) };
-    if (value == "ipg_info")        return { SPSG_ArgsBase::eIpgInfo,        cref(value) };
-    if (value == "acc_ver_history") return { SPSG_ArgsBase::eAccVerHistory,  cref(value) };
-    if (value == "reply_data")      return { SPSG_ArgsBase::eReplyData,      cref(value) };
-    if (value.empty())              return { SPSG_ArgsBase::eReply,          cref(value) };
-    return { SPSG_ArgsBase::eUnknownItem, cref(value) };
+    if (value == "bioseq_info"sv)       return { SPSG_ArgsBase::eBioseqInfo,     value };
+    if (value == "blob_prop"sv)         return { SPSG_ArgsBase::eBlobProp,       value };
+    if (value == "blob"sv)              return { SPSG_ArgsBase::eBlob,           value };
+    if (value == "reply"sv)             return { SPSG_ArgsBase::eReply,          value };
+    if (value == "bioseq_na"sv)         return { SPSG_ArgsBase::eBioseqNa,       value };
+    if (value == "na_status"sv)         return { SPSG_ArgsBase::eNaStatus,       value };
+    if (value == "public_comment"sv)    return { SPSG_ArgsBase::ePublicComment,  value };
+    if (value == "processor"sv)         return { SPSG_ArgsBase::eProcessor,      value };
+    if (value == "ipg_info"sv)          return { SPSG_ArgsBase::eIpgInfo,        value };
+    if (value == "acc_ver_history"sv)   return { SPSG_ArgsBase::eAccVerHistory,  value };
+    if (value == "reply_data"sv)        return { SPSG_ArgsBase::eReplyData,      value };
+    if (value.empty())                  return { SPSG_ArgsBase::eReply,          value };
+    return { SPSG_ArgsBase::eUnknownItem, value };
 };
 
-SPSG_ArgsBase::SArg<SPSG_ArgsBase::eChunkType>::TType SPSG_ArgsBase::SArg<SPSG_ArgsBase::eChunkType>::Get(const string& value)
+SPSG_ArgsBase::SArg<SPSG_ArgsBase::eChunkType>::TType SPSG_ArgsBase::SArg<SPSG_ArgsBase::eChunkType>::Get(string_view value)
 {
-    if (value == "meta")              return { SPSG_ArgsBase::eMeta,            cref(value) };
-    if (value == "data")              return { SPSG_ArgsBase::eData,            cref(value) };
-    if (value == "message")           return { SPSG_ArgsBase::eMessage,         cref(value) };
-    if (value == "data_and_meta")     return { SPSG_ArgsBase::eDataAndMeta,     cref(value) };
-    if (value == "message_and_meta")  return { SPSG_ArgsBase::eMessageAndMeta,  cref(value) };
-    return { SPSG_ArgsBase::eUnknownChunk, cref(value) };
+    if (value == "meta"sv)              return { SPSG_ArgsBase::eMeta,            value };
+    if (value == "data"sv)              return { SPSG_ArgsBase::eData,            value };
+    if (value == "message"sv)           return { SPSG_ArgsBase::eMessage,         value };
+    if (value == "data_and_meta"sv)     return { SPSG_ArgsBase::eDataAndMeta,     value };
+    if (value == "message_and_meta"sv)  return { SPSG_ArgsBase::eMessageAndMeta,  value };
+    return { SPSG_ArgsBase::eUnknownChunk, value };
 };
 
 string SPSG_Env::GetCookie(const string& name) const
@@ -853,7 +853,7 @@ SPSG_Request::EStateResult SPSG_Request::StateArgs(const char*& data, size_t& le
     SPSG_Args args(m_Buffer.args_buffer);
 
     const auto& size_str = args.GetValue("size");
-    const auto size = size_str.empty() ? 0ul : stoul(size_str);
+    const auto size = size_str.empty() ? 0ul : NStr::StringToNumeric<size_t>(size_str);
 
     m_Buffer.args = std::move(args);
 
@@ -890,23 +890,23 @@ SPSG_Request::EStateResult SPSG_Request::StateData(const char*& data, size_t& le
     return eContinue;
 }
 
-EDiagSev s_GetSeverity(const string& severity)
+EDiagSev s_GetSeverity(string_view severity)
 {
-    if (severity == "error")        return eDiag_Error;
-    if (severity == "warning")      return eDiag_Warning;
-    if (severity == "info")         return eDiag_Info;
-    if (severity == "trace")        return eDiag_Trace;
-    if (severity == "fatal")        return eDiag_Fatal;
-    if (severity == "critical")     return eDiag_Critical;
+    if (severity == "error"sv)      return eDiag_Error;
+    if (severity == "warning"sv)    return eDiag_Warning;
+    if (severity == "info"sv)       return eDiag_Info;
+    if (severity == "trace"sv)      return eDiag_Trace;
+    if (severity == "fatal"sv)      return eDiag_Fatal;
+    if (severity == "critical"sv)   return eDiag_Critical;
 
     // Should not happen
     _TROUBLE;
     return eDiag_Error;
 }
 
-auto s_GetCode(const string& code)
+auto s_GetCode(string_view code)
 {
-    return code.empty() ? optional<int>{} : atoi(code.c_str());
+    return code.empty() ? optional<int>{} : optional<int>{NStr::StringToNumeric<int>(code, NStr::fConvErr_NoThrow)};
 }
 
 SPSG_Request::EStateResult SPSG_Request::Add()
@@ -940,7 +940,7 @@ SPSG_Request::EStateResult SPSG_Request::Add()
             }
         }
 
-        auto item_id = args.GetValue("item_id");
+        auto item_id = string(args.GetValue("item_id"));
         auto& item_by_id = m_ItemsByID[item_id];
         bool to_create = !item_by_id;
 
@@ -996,7 +996,7 @@ int SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& 
         auto n_chunks = args.GetValue("n_chunks");
 
         if (!n_chunks.empty()) {
-            auto expected = stoul(n_chunks);
+            auto expected = NStr::StringToNumeric<size_t>(n_chunks);
 
             if (item.expected.Cmp<not_equal_to>(expected)) {
                 item.state.AddError("Protocol error: contradicting n_chunks");
@@ -1021,7 +1021,7 @@ int SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& 
         static atomic_bool reported(false);
 
         if (!reported.exchange(true)) {
-            ERR_POST("Received unknown chunk type: " << chunk_type.second.get());
+            ERR_POST("Received unknown chunk type: " << chunk_type.second);
         }
 
         if (TPSG_FailOnUnknownChunks::GetDefault()) {
@@ -1049,7 +1049,7 @@ int SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& 
 
     } else if (chunk_type.first & SPSG_Args::eData) {
         auto blob_chunk = args.GetValue("blob_chunk");
-        auto index = blob_chunk.empty() ? 0 : stoul(blob_chunk);
+        auto index = blob_chunk.empty() ? 0 : NStr::StringToNumeric<size_t>(blob_chunk);
 
         if (item_type == SPSG_Args::eBlob) {
             if (!index) {
@@ -1057,7 +1057,7 @@ int SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& 
             }
 
             if (auto stats = reply->stats.lock()) {
-                auto has_blob_id = !args.GetValue<SPSG_Args::eBlobId>().get().empty();
+                auto has_blob_id = !args.GetValue<SPSG_Args::eBlobId>().empty();
                 stats->AddData(has_blob_id, SPSG_Stats::eReceived, chunk.size());
             }
         }

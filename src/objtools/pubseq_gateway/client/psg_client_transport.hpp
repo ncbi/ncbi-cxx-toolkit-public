@@ -115,7 +115,7 @@ struct SPSG_ArgsBase : CUrlArgs
 
     using CUrlArgs::CUrlArgs;
 
-    const string& GetValue(const string& name) const
+    string_view GetValue(const string& name) const
     {
         bool not_used;
         return CUrlArgs::GetValue(name, &not_used);
@@ -128,33 +128,33 @@ protected:
 template <>
 struct SPSG_ArgsBase::SArg<SPSG_ArgsBase::eItemType>
 {
-    using TType = pair<SPSG_ArgsBase::EItemType, reference_wrapper<const string>>;
+    using TType = pair<SPSG_ArgsBase::EItemType, string_view>;
     static constexpr auto name = "item_type";
-    static TType Get(const string& value);
+    static TType Get(string_view value);
 };
 
 template <>
 struct SPSG_ArgsBase::SArg<SPSG_ArgsBase::eChunkType>
 {
-    using TType = pair<SPSG_ArgsBase::EChunkType, reference_wrapper<const string>>;
+    using TType = pair<SPSG_ArgsBase::EChunkType, string_view>;
     static constexpr auto name = "chunk_type";
-    static TType Get(const string& value);
+    static TType Get(string_view value);
 };
 
 template <>
 struct SPSG_ArgsBase::SArg<SPSG_ArgsBase::eBlobId>
 {
-    using TType = reference_wrapper<const string>;
+    using TType = string_view;
     static constexpr auto name = "blob_id";
-    static TType Get(const string& value) { return value; }
+    static TType Get(string_view value) { return value; }
 };
 
 template <>
 struct SPSG_ArgsBase::SArg<SPSG_ArgsBase::eId2Chunk>
 {
-    using TType = reference_wrapper<const string>;
+    using TType = string_view;
     static constexpr auto name = "id2_chunk";
-    static TType Get(const string& value) { return value; }
+    static TType Get(string_view value) { return value; }
 };
 
 struct SPSG_Args : SPSG_ArgsBase

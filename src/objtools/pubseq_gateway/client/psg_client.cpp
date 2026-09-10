@@ -258,7 +258,7 @@ struct SDataId
     SDataId(const SPSG_Args& args) : m_Args(args) {}
 
     template <ETypePriority = eBlobIdPriority>
-    bool HasBlobId() const { return !m_Args.GetValue<SPSG_Args::eBlobId>().get().empty(); }
+    bool HasBlobId() const { return !m_Args.GetValue<SPSG_Args::eBlobId>().empty(); }
 
     template <ETypePriority type_priority = eBlobIdPriority>
     static unique_ptr<CPSG_DataId> Get(SDataId data_id);
@@ -278,7 +278,7 @@ private:
 template <>
 bool SDataId::HasBlobId<SDataId::eChunkIdPriority>() const
 {
-    return m_Args.GetValue<SPSG_Args::eId2Chunk>().get().empty();
+    return m_Args.GetValue<SPSG_Args::eId2Chunk>().empty();
 }
 
 template <>
@@ -289,18 +289,18 @@ unique_ptr<CPSG_BlobId> SDataId::x_Get<CPSG_BlobId>() const
     const auto& last_modified_str = m_Args.GetValue("last_modified");
 
     if (last_modified_str.empty()) {
-        return make_unique<CPSG_BlobId>(blob_id);
+        return make_unique<CPSG_BlobId>(string(blob_id));
     }
 
     last_modified = NStr::StringToNumeric<Int8>(last_modified_str);
-    return make_unique<CPSG_BlobId>(blob_id, std::move(last_modified));
+    return make_unique<CPSG_BlobId>(string(blob_id), std::move(last_modified));
 }
 
 template <>
 unique_ptr<CPSG_ChunkId> SDataId::x_Get<CPSG_ChunkId>() const
 {
-    auto id2_chunk = NStr::StringToNumeric<int>(m_Args.GetValue<SPSG_Args::eId2Chunk>().get());
-    return make_unique<CPSG_ChunkId>(id2_chunk, m_Args.GetValue("id2_info"));
+    auto id2_chunk = NStr::StringToNumeric<int>(m_Args.GetValue<SPSG_Args::eId2Chunk>());
+    return make_unique<CPSG_ChunkId>(id2_chunk, string(m_Args.GetValue("id2_info")));
 }
 
 template <class TRequestedId, class TAllowedId>
@@ -384,14 +384,14 @@ CPSG_Processor::EProgressStatus s_GetProgressStatus(const SPSG_Args& args)
 {
     const auto& progress = args.GetValue("progress");
 
-    if (progress == "start")      return CPSG_Processor::eStart;
-    if (progress == "done")       return CPSG_Processor::eDone;
-    if (progress == "not_found")  return CPSG_Processor::eNotFound;
-    if (progress == "canceled")   return CPSG_Processor::eCanceled;
-    if (progress == "timeout")    return CPSG_Processor::eTimeout;
-    if (progress == "error")      return CPSG_Processor::eError;
-    if (progress == "unauthorized")     return CPSG_Processor::eUnauthorized;
-    if (progress == "inprogress")       return CPSG_Processor::eInProgress;
+    if (progress == "start"sv)          return CPSG_Processor::eStart;
+    if (progress == "done"sv)           return CPSG_Processor::eDone;
+    if (progress == "not_found"sv)      return CPSG_Processor::eNotFound;
+    if (progress == "canceled"sv)       return CPSG_Processor::eCanceled;
+    if (progress == "timeout"sv)        return CPSG_Processor::eTimeout;
+    if (progress == "error"sv)          return CPSG_Processor::eError;
+    if (progress == "unauthorized"sv)   return CPSG_Processor::eUnauthorized;
+    if (progress == "inprogress"sv)     return CPSG_Processor::eInProgress;
 
     // Should not happen, new server?
     return CPSG_Processor::eUnknown;
@@ -412,7 +412,7 @@ CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, S
             case CPSG_ReplyItem::eSkippedBlob:      return CreateImpl(reason, args, stats);
             case CPSG_ReplyItem::eBioseqInfo:       return CreateImpl(new CPSG_BioseqInfo, chunks);
             case CPSG_ReplyItem::eBlobInfo:         return CreateImpl(new CPSG_BlobInfo(SDataId::Get(args)), chunks);
-            case CPSG_ReplyItem::eNamedAnnotInfo:   return CreateImpl(new CPSG_NamedAnnotInfo(args.GetValue("na")), chunks);
+            case CPSG_ReplyItem::eNamedAnnotInfo:   return CreateImpl(new CPSG_NamedAnnotInfo(string(args.GetValue("na"))), chunks);
             case CPSG_ReplyItem::eNamedAnnotStatus: return CreateImpl(new CPSG_NamedAnnotStatus, chunks);
             case CPSG_ReplyItem::ePublicComment:    return new CPSG_PublicComment(SDataId::Get(args), chunks.empty() ? string() : chunks.front());
             case CPSG_ReplyItem::eProcessor:        return new CPSG_Processor(s_GetProgressStatus(args));
@@ -453,13 +453,13 @@ SItemTypeAndReason SItemTypeAndReason::GetIfBlob(const SPSG_Args& args)
     if (reason.empty()) {
         return CPSG_ReplyItem::eBlobData;
 
-    } else if (reason == "excluded") {
+    } else if (reason == "excluded"sv) {
         return { CPSG_ReplyItem::eSkippedBlob, CPSG_SkippedBlob::eExcluded };
 
-    } else if (reason == "inprogress") {
+    } else if (reason == "inprogress"sv) {
         return { CPSG_ReplyItem::eSkippedBlob, CPSG_SkippedBlob::eInProgress };
 
-    } else if (reason == "sent") {
+    } else if (reason == "sent"sv) {
         return { CPSG_ReplyItem::eSkippedBlob, CPSG_SkippedBlob::eSent };
 
     } else {
@@ -485,19 +485,19 @@ SItemTypeAndReason SItemTypeAndReason::Get(SPSG_Args& args, bool raw)
         case SPSG_Args::eReplyData:      return CPSG_ReplyItem::eEndOfReply; // CXX-14518 Phase 1: Suppress warning
         case SPSG_Args::eUnknownItem:
             if (!raw) break;
-            args.SetValue("blob_id", args.GetValue("item_type"));
+            args.SetValue("blob_id", string(args.GetValue("item_type")));
             args.SetValue("last_modified", to_string(raw_last_modified));
             return CPSG_ReplyItem::eBlobData;
     }
 
     if (TPSG_FailOnUnknownItems::GetDefault()) {
-        NCBI_THROW_FMT(CPSG_Exception, eServerError, "Received unknown item type: " << item_type.second.get());
+        NCBI_THROW_FMT(CPSG_Exception, eServerError, "Received unknown item type: " << item_type.second);
     }
 
     static atomic_bool reported(false);
 
     if (!reported.exchange(true)) {
-        ERR_POST("Received unknown item type: " << item_type.second.get());
+        ERR_POST("Received unknown item type: " << item_type.second);
     }
 
     return CPSG_ReplyItem::eEndOfReply;
