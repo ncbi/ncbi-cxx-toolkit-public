@@ -711,7 +711,7 @@ const SPSG_UserArgs& SPSG_UserArgsBuilder::s_GetIniArgs()
 
 
 CPSG_Queue::SImpl::SImpl(const string& service) :
-    queue(make_shared<TPSG_Queue>()),
+    m_Queue(make_shared<TPSG_Queue>()),
     m_Service(service.empty() ? TPSG_Service::GetDefault() : service)
 {
 }
@@ -941,7 +941,7 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG
 {
     const array<size_t, CPSG_Request::eAccVerHistory + 1> kWeights = {10, 3, 7, 10, 7, 200, 40};
 
-    _ASSERT(queue);
+    _ASSERT(m_Queue);
 
     if (!r) {
         NCBI_THROW(CPSG_Exception, eParameterMissing, "request cannot be empty");
@@ -958,7 +958,7 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG
     const auto raw = (type == CPSG_Request::eBlob) && !dynamic_pointer_cast<const CPSG_Request_Blob>(user_request);
 
     _ASSERT(type < kWeights.size());
-    auto reply = make_shared<SPSG_Reply>(std::move(request_id), params, queue, stats, raw, kWeights[type]);
+    auto reply = make_shared<SPSG_Reply>(std::move(request_id), params, m_Queue, stats, raw, kWeights[type]);
     const auto request_flags = r->m_Flags.IsNull() ? m_RequestFlags : r->m_Flags.GetValue();
     auto abs_path_ref = x_GetAbsPathRef(user_request, request_flags, raw);
     const auto& request_context = user_request->m_RequestContext;
@@ -967,7 +967,7 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG
 
     auto request = make_shared<SPSG_Request>(std::move(abs_path_ref), reply, request_context->Clone(), params);
 
-    if (ioc.queues.AddRequest(request, queue->Stopped(), deadline)) {
+    if (ioc.queues.AddRequest(request, m_Queue->Stopped(), deadline)) {
         if (stats) stats->IncCounter(SPSG_Stats::eRequest, type);
         shared_ptr<CPSG_Reply> user_reply(new CPSG_Reply);
         user_reply->m_Impl->reply = std::move(reply);
@@ -981,10 +981,10 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG
 
 bool CPSG_Queue::SImpl::SendRequest(shared_ptr<CPSG_Request> request, CDeadline deadline)
 {
-    _ASSERT(queue);
+    _ASSERT(m_Queue);
 
     if (auto user_reply = SendRequestAndGetReply(std::move(request), std::move(deadline))) {
-        queue->Push(std::move(user_reply));
+        m_Queue->Push(std::move(user_reply));
         return true;
     }
 
@@ -993,8 +993,8 @@ bool CPSG_Queue::SImpl::SendRequest(shared_ptr<CPSG_Request> request, CDeadline 
 
 bool CPSG_Queue::SImpl::WaitForEvents(CDeadline deadline)
 {
-    _ASSERT(queue);
-    return queue->WaitForEvents(deadline);
+    _ASSERT(m_Queue);
+    return m_Queue->WaitForEvents(deadline);
 }
 
 SPSG_Reply::SState::SStatus s_GetStatus(SPSG_Reply::SItem::TTS& ts, const CDeadline& deadline)
@@ -1489,13 +1489,18 @@ bool CPSG_Queue::SendRequest(shared_ptr<CPSG_Request> request, CDeadline deadlin
     return m_Impl->SendRequest(std::move(request), std::move(deadline));
 }
 
+shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::GetNextReply(CDeadline deadline)
+{
+    _ASSERT(m_Queue);
+    shared_ptr<CPSG_Reply> rv;
+    m_Queue->Pop(rv, deadline);
+    return rv;
+}
+
 shared_ptr<CPSG_Reply> CPSG_Queue::GetNextReply(CDeadline deadline)
 {
     _ASSERT(m_Impl);
-    _ASSERT(m_Impl->queue);
-    shared_ptr<CPSG_Reply> rv;
-    m_Impl->queue->Pop(rv, deadline);
-    return rv;
+    return m_Impl->GetNextReply(std::move(deadline));
 }
 
 shared_ptr<CPSG_Reply> CPSG_Queue::SendRequestAndGetReply(shared_ptr<CPSG_Request> request, CDeadline deadline)
@@ -1504,12 +1509,17 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SendRequestAndGetReply(shared_ptr<CPSG_Reques
     return m_Impl->SendRequestAndGetReply(std::move(request), std::move(deadline));
 }
 
+void CPSG_Queue::SImpl::Stop(bool reset)
+{
+    _ASSERT(m_Queue);
+    m_Queue->Stop(reset ? m_Queue->eClear : m_Queue->eDrain);
+    GetQueues().Stop();
+}
+
 void CPSG_Queue::Stop()
 {
     _ASSERT(m_Impl);
-    _ASSERT(m_Impl->queue);
-    m_Impl->queue->Stop(m_Impl->queue->eDrain);
-    m_Impl->GetQueues().Stop();
+    m_Impl->Stop(false);
 }
 
 bool CPSG_Queue::WaitForEvents(CDeadline deadline)
@@ -1521,16 +1531,13 @@ bool CPSG_Queue::WaitForEvents(CDeadline deadline)
 void CPSG_Queue::Reset()
 {
     _ASSERT(m_Impl);
-    _ASSERT(m_Impl->queue);
-    m_Impl->queue->Stop(m_Impl->queue->eClear);
-    m_Impl->GetQueues().Stop();
+    m_Impl->Stop(true);
 }
 
 bool CPSG_Queue::IsEmpty() const
 {
     _ASSERT(m_Impl);
-    _ASSERT(m_Impl->queue);
-    return m_Impl->queue->Empty();
+    return m_Impl->IsEmpty();
 }
 
 bool CPSG_Queue::RejectsRequests() const

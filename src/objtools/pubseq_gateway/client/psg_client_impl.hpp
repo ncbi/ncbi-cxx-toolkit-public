@@ -118,13 +118,15 @@ private:
 
 struct CPSG_Queue::SImpl
 {
-    shared_ptr<TPSG_Queue> queue;
-
     SImpl(const string& service);
 
     bool SendRequest(shared_ptr<CPSG_Request> request, CDeadline deadline);
+    shared_ptr<CPSG_Reply> GetNextReply(CDeadline deadline);
     shared_ptr<CPSG_Reply> SendRequestAndGetReply(shared_ptr<CPSG_Request> request, CDeadline deadline);
+
+    void Stop(bool reset);
     bool WaitForEvents(CDeadline deadline);
+    bool IsEmpty() const { _ASSERT(m_Queue); return m_Queue->Empty(); }
     auto& GetQueues() { return m_Service.ioc.queues; }
 
     bool RejectsRequests() const { return m_Service.ioc.RejectsRequests(); }
@@ -154,6 +156,7 @@ private:
 
     string x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_request, const CPSG_Request::TFlags& flags, bool raw);
 
+    shared_ptr<TPSG_Queue> m_Queue;
     CService m_Service;
     CPSG_Request::TFlags m_RequestFlags = CPSG_Request::eDefaultFlags;
     SThreadSafe<SPSG_UserArgsBuilder> m_UserArgsBuilder;
