@@ -1722,6 +1722,7 @@ void SPSG_IoImpl::AddNewServers(uv_async_t* handle)
 
 void SPSG_IoImpl::OnQueue(uv_async_t* handle)
 {
+    CheckForNewServers(handle);
     auto available_servers = 0;
 
     for (auto& server_sessions : m_Sessions) {
@@ -1821,8 +1822,8 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
 
             // Add new session if needed and allowed to
             if (session->IsFull() && (distance(session, server_sessions.sessions.end()) == 1)) {
-                const auto single_server_single_session = m_Sessions.size() == 1 && TPSG_MaxSessions::GetDefault() == 1;
-                const auto max_sessions = single_server_single_session ? 2 : TPSG_MaxSessions::GetDefault();
+                const auto single_server_single_session = m_Sessions.size() == 1 && m_Params.max_sessions == 1;
+                const auto max_sessions = single_server_single_session ? 2u : m_Params.max_sessions;
 
                 if (server_sessions.sessions.size() >= max_sessions) {
                     PSG_IO_TRACE("Server '" << server_sessions->address << "' reached session limit");

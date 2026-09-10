@@ -238,7 +238,7 @@ PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, max_concurrent_submits);
 using TPSG_MaxConcurrentSubmits = PSG_PARAM_VALUE_TYPE(PSG, max_concurrent_submits);
 
 PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, max_sessions);
-using TPSG_MaxSessions = PSG_PARAM_TYPE(PSG, max_sessions);
+using TPSG_MaxSessions = PSG_PARAM_VALUE_TYPE(PSG, max_sessions);
 
 PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, max_concurrent_requests_per_server);
 using TPSG_MaxConcurrentRequestsPerServer = PSG_PARAM_VALUE_TYPE(PSG, max_concurrent_requests_per_server);

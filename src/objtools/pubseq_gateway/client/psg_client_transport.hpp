@@ -322,6 +322,7 @@ struct SPSG_Params
 {
     TPSG_DebugPrintout debug_printout;
     TPSG_MaxConcurrentSubmits max_concurrent_submits;
+    TPSG_MaxSessions max_sessions;
     TPSG_MaxConcurrentRequestsPerServer max_concurrent_requests_per_server;
     TPSG_IoTimerPeriod io_timer_period;
     const unsigned request_timeout;
@@ -339,6 +340,7 @@ struct SPSG_Params
     SPSG_Params(SPSG_Env env = {}) :
         debug_printout(TPSG_DebugPrintout::eGetDefault),
         max_concurrent_submits(TPSG_MaxConcurrentSubmits::eGetDefault),
+        max_sessions(TPSG_MaxSessions::eGetDefault),
         max_concurrent_requests_per_server(TPSG_MaxConcurrentRequestsPerServer::eGetDefault),
         io_timer_period(TPSG_IoTimerPeriod::eGetDefault),
         request_timeout(s_GetRequestTimeout(io_timer_period)),
@@ -1282,7 +1284,6 @@ private:
     static void s_OnQueue(uv_async_t* handle)
     {
         SPSG_IoImpl* io = static_cast<SPSG_IoImpl*>(handle->data);
-        io->CheckForNewServers(handle);
         io->OnQueue(handle);
     }
 
