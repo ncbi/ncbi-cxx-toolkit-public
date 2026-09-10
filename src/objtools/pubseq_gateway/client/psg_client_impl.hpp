@@ -55,7 +55,7 @@ struct SPSG_BlobReader : IReader, protected array<char, 64 * 1024>
     ERW_Result PendingCount(size_t* count);
 
 private:
-    void CheckForNewChunks(vector<SPSG_Chunk>& chunks);
+    bool CheckForNewChunks(SPSG_Reply::SItem& src);
     ERW_Result x_Read(SPSG_Reply::SItem& src, void* buf, size_t count, size_t* bytes_read);
 
     SPSG_Reply::SItem::TTS& m_Src;

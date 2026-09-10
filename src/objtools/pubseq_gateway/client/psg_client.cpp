@@ -82,7 +82,9 @@ ERW_Result SPSG_BlobReader::x_Read(SPSG_Reply::SItem& src, void* buf, size_t cou
 
     *bytes_read = 0;
 
-    CheckForNewChunks(src.chunks);
+    if (!CheckForNewChunks(src)) {
+        return eRW_Error;
+    }
 
     for (; m_Chunk < m_Data.size(); ++m_Chunk) {
         auto& data = m_Data[m_Chunk];
@@ -136,7 +138,9 @@ ERW_Result SPSG_BlobReader::PendingCount(size_t* count)
     *count = 0;
 
     if (auto src_locked = m_Src.GetLock()) {
-        CheckForNewChunks(src_locked->chunks);
+        if (!CheckForNewChunks(*src_locked)) {
+            return eRW_Error;
+        }
     }
 
     auto k = m_Index;
@@ -154,8 +158,10 @@ ERW_Result SPSG_BlobReader::PendingCount(size_t* count)
     return eRW_Success;
 }
 
-void SPSG_BlobReader::CheckForNewChunks(vector<SPSG_Chunk>& chunks)
+bool SPSG_BlobReader::CheckForNewChunks(SPSG_Reply::SItem& src)
 {
+    auto& chunks = src.chunks;
+
     if (m_Data.size() < chunks.size()) m_Data.resize(chunks.size());
 
     for (size_t i = 0; i < chunks.size(); ++i) {
@@ -164,6 +170,8 @@ void SPSG_BlobReader::CheckForNewChunks(vector<SPSG_Chunk>& chunks)
             if (auto stats = m_Stats.second.lock()) stats->AddData(m_Stats.first, SPSG_Stats::eRead, size);
         }
     }
+
+    return true;
 }
 
 
