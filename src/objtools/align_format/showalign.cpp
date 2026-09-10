@@ -3732,7 +3732,7 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
 			alnDispParams = x_FillAlnDispParams(bsp_handle);
 			string alnDefLine = x_MapDefLine(alnDispParams,isFirst,false,false,seqLength);
             m_CurrAlnID_Lbl = (alnDispParams->gi != ZERO_GI) ?
-                NStr::NumericToString(alnDispParams->gi) : CAlignFormatUtil::GetLabel(alnDispParams->seqID);
+                NStr::NumericToString(alnDispParams->gi) : CAlignFormatUtil::GetLabelForElemID(alnDispParams->seqID);
 
             if (m_UseLongSeqIds || alnDispParams->seqID->IsLocal()) {
                 m_CurrAlnAccession = alnDispParams->seqID->AsFastaString();
@@ -3762,7 +3762,7 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
                         const CSeq_id& aln_id = m_AV->GetSeqId(1);
                         TGi alnGi;
                         CRef<CSeq_id> dispId = CAlignFormatUtil::GetDisplayIds(bsp_handle,aln_id,use_this_seqid,&alnGi);
-                        m_CurrAlnID_Lbl = (alnGi == ZERO_GI) ? CAlignFormatUtil::GetLabel(dispId) :  NStr::NumericToString(alnGi);
+                        m_CurrAlnID_Lbl = (alnGi == ZERO_GI) ? CAlignFormatUtil::GetLabelForElemID(dispId) :  NStr::NumericToString(alnGi);
                         if(alnGi == ZERO_GI) {
                             dispId->GetLabel(&m_CurrAlnID_DbLbl, CSeq_id::eContent);
                         }

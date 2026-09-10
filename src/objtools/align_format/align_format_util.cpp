@@ -916,6 +916,18 @@ string CAlignFormatUtil::GetGnlID(const CDbtag& dtg)
    return retval;
 }
 
+
+string CAlignFormatUtil::GetLabelForElemID(CConstRef<CSeq_id> id,bool with_version)
+{
+    string idStr = CAlignFormatUtil::GetLabel(id,with_version);    
+    if(id->IsPrf()) {     
+        idStr = NStr::Replace(idStr,":","_");
+        idStr = NStr::Replace(idStr,"=","_");    
+    }
+    return idStr;    
+}
+
+
 string CAlignFormatUtil::GetLabel(CConstRef<CSeq_id> id,bool with_version)
 {
     string retval = "";

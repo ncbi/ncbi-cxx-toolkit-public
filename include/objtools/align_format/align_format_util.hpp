@@ -558,6 +558,8 @@ public:
     ///@param id CSeqId: to build label from
     ///@param with_version bool: include version to the label
     static string GetLabel(CConstRef<objects::CSeq_id> id, bool with_version = false);
+
+    static string GetLabelForElemID(CConstRef<objects::CSeq_id> id, bool with_version = false);
     
     ///format evalue and bit_score 
     ///@param evalue: e value

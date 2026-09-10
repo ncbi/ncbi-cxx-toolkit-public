@@ -1889,7 +1889,7 @@ string CShowBlastDefline::x_FormatDeflineTableHeaderText(void)
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"score_hd1",kMax,m_MaxScoreLen);        
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"total_hd1",kTotal,m_MaxTotalScoreLen);
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"querycov_hd1",kQueryCov,m_MaxQueryCoverLen);
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"evalue_hd1",string("  ") + kE + "  ", static_cast<unsigned int>(m_MaxEvalueLen));
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"evalue_hd1",string("  ") + kE + "  ",m_MaxEvalueLen);    
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"percident_hd1",kPerc,kMaxPercentIdentityLen);
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acclen_hd1",kAccAbbr,kMaxDispNumberLength);        
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acc_hd1"," ",kMaxAccLength);        
@@ -1989,18 +1989,18 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     string deflId,deflFrmID,deflFastaSeq,deflAccs,deflFastaDwnld;
     if(sdl->gi == ZERO_GI) {
         sdl->id->GetLabel(& deflId, CSeq_id::eContent);
-        deflFrmID =  CAlignFormatUtil::GetLabel(sdl->id);//Just accession without db part like GNOMON: or ti:
-	deflFastaDwnld = deflFastaSeq = NStr::TruncateSpaces(sdl->alnIDFasta);
+        deflFrmID =  CAlignFormatUtil::GetLabelForElemID(sdl->id);//Just accession without db part like GNOMON: or ti:        
+	    deflFastaDwnld = deflFastaSeq = NStr::TruncateSpaces(sdl->alnIDFasta);
         deflAccs = sdl->id->AsFastaString();
     }
     else {
         deflFrmID = deflId = NStr::NumericToString(sdl->gi);
-	deflFastaDwnld = "gi|" + NStr::NumericToString(sdl->gi);
+	    deflFastaDwnld = "gi|" + NStr::NumericToString(sdl->gi);
         deflFastaSeq = NStr::TruncateSpaces(sdl->alnIDFasta);
         sdl->id->GetLabel(&deflAccs, CSeq_id::eContent);
     }     
-    string combinedSeqID = CAlignFormatUtil::GetBareId(*sdl->id); // for pir|, prf| will hav pri|acc| for others just acc
-
+    string combinedSeqID = (*sdl->id).IsPir() ? (*sdl->id).AsFastaString() : (*sdl->id).GetSeqIdString(true); // for pir| will hav pri|acc| for others just acc
+    
     SSeqDBTaxInfo taxInfo;
     x_GetTaxonomyInfoForTaxID(sdl, taxInfo);    
     defLine = CAlignFormatUtil::MapTemplate(defLine,"common_name",taxInfo.common_name);
@@ -2149,7 +2149,7 @@ void CShowBlastDefline::x_InitFormattingInfo(SScoreInfo* sci)
                 string deflId,deflFrmID,deflFastaSeq,deflAccs;
                 if(sdl->gi == ZERO_GI) {
                     sdl->id->GetLabel(& deflId, CSeq_id::eContent);
-                    deflFrmID =  CAlignFormatUtil::GetLabel(sdl->id);//Just accession without db part like GNOMON: or ti:
+                    deflFrmID =  CAlignFormatUtil::GetLabelForElemID(sdl->id);//Just accession without db part like GNOMON: or ti:        
                     deflFastaSeq = NStr::TruncateSpaces(sdl->alnIDFasta);
                     deflAccs = sdl->id->AsFastaString();
                 }
