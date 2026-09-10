@@ -87,7 +87,7 @@ struct SPerformance {};
 struct SJsonCheck {};
 
 void s_InitPsgOptions(CArgDescriptions& arg_desc, bool parallel);
-void s_SetPsgDefaults(const CArgs& args, bool parallel);
+void s_SetPsgDefaults(const CArgs& args);
 
 CPsgClientApp::CPsgClientApp() :
     m_Commands({
@@ -138,7 +138,7 @@ int CPsgClientApp::Run()
     for (const auto& command : m_Commands) {
         if (command.name == name) {
             if (~command.flags & SCommand::fNoApi) {
-                s_SetPsgDefaults(args, command.flags & SCommand::fParallel);
+                s_SetPsgDefaults(args);
             }
 
             return command.run(this, args);
@@ -336,15 +336,13 @@ void CPsgClientApp::s_InitRequest<SJsonCheck>(CArgDescriptions& arg_desc)
     arg_desc.AddFlag("single-doc", "Treat input as a single JSON document (instead of one per line)");
 }
 
-void s_SetPsgDefaults(const CArgs& args, bool parallel)
+void s_SetPsgDefaults(const CArgs& args)
 {
     TPSG_UserRequestIds::SetDefault(true);
 
     if (args["io-threads"].HasValue()) {
         auto io_threads = args["io-threads"].AsInteger();
         TPSG_NumIo::SetDefault(io_threads);
-    } else if (parallel) {
-        TPSG_NumIo::SetImplicitDefault(4);
     }
 
     if (args["max-sessions"].HasValue()) {
@@ -360,8 +358,6 @@ void s_SetPsgDefaults(const CArgs& args, bool parallel)
     if (args["requests-per-io"].HasValue()) {
         auto requests_per_io = args["requests-per-io"].AsInteger();
         TPSG_RequestsPerIo::SetDefault(requests_per_io);
-    } else if (parallel) {
-        TPSG_RequestsPerIo::SetImplicitDefault(4);
     }
 
     if (args["max-streams"].HasValue()) {
