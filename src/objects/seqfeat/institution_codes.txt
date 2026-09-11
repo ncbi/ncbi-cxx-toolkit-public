@@ -9573,6 +9573,7 @@ ZMMU:Herps	s	Zoological Museum, Moscow Lomonosov State University, Ampibia and R
 ZMMU:Insects	s	Zoological Museum, Moscow Lomonosov State University, Insects Collection			
 ZMMU:Invertebrates	s	Zoological Museum, Moscow Lomonosov State University, Invertebrates Collection			
 ZMMU:Mamm	s	Zoological Museum, Moscow Lomonosov State University, Mammal Collection			
+ZMMU:WS	s	White Sea Branch of Zoological Museum of Moscow State University			
 ZMNH	s	Zhejiang Museum of Natural History			
 ZMO	s	Zoology Museum, Oxford University			
 ZMS	s	Zentralmuseum Senckenberg (SENCKENBERG world of biodiversity)			
