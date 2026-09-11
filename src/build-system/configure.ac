@@ -181,6 +181,8 @@ AC_ARG_WITH(bundles,
    [ --with-bundles          build bundles in addition to dylibs on Mac OS X])
 AC_ARG_WITH(bin-release,
    [ --with-bin-release      build executables suitable for public release])
+AC_ARG_WITH(static-deps,
+   [ --with-static-deps      prefer static third-party library builds]) 
 AC_ARG_WITH(mt,
    [ --without-mt            support only single-threaded operation])
 AC_ARG_WITH(openmp,
@@ -744,8 +746,8 @@ m4_define([AS_MESSAGE_LOG_FD], [])
 x_with_list="\
 debug max-debug max-debug=thread symbols optimization sse42 \
 profiling code-coverage tcheck dll static static-exe \
-plugin-auto-load bundles bin-release mt 64 exe runpath hard-runpath \
-lfs limited-linker skew-guard openmp \
+plugin-auto-load bundles bin-release static-deps mt 64 exe \
+runpath hard-runpath lfs limited-linker skew-guard openmp \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
@@ -915,8 +917,8 @@ elif test "$with_jni" = "yes" ; then
 fi
 
 if test "$with_bin_release" = "yes" ; then
-   favor_static_deps=yes
    # Default some other options accordingly
+   : ${with_static_deps=yes}
    : ${with_ncbi_public=yes}
    : ${with_libdw=no}
    : ${with_ncbicrypt=no}
@@ -925,9 +927,8 @@ if test "$with_bin_release" = "yes" ; then
    : ${with_sse42=no}
    AC_DEFINE(NCBI_BIN_RELEASE, 1,
              [Define to 1 when building binaries for public release.])
-else
-   favor_static_deps=no
 fi
+favor_static_deps=${with_static_deps-no}
 
 case "$with_strip:$with_symbols" in
    yes:yes )

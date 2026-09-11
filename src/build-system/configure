@@ -1312,6 +1312,7 @@ with_static_exe
 with_plugin_auto_load
 with_bundles
 with_bin_release
+with_static_deps
 with_mt
 with_openmp
 with_64
@@ -2021,8 +2022,8 @@ esac
 x_with_list="\
 debug max-debug max-debug=thread symbols optimization sse42 \
 profiling code-coverage tcheck dll static static-exe \
-plugin-auto-load bundles bin-release mt 64 exe runpath hard-runpath \
-lfs limited-linker skew-guard openmp \
+plugin-auto-load bundles bin-release static-deps mt 64 exe \
+runpath hard-runpath lfs limited-linker skew-guard openmp \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
@@ -2273,6 +2274,7 @@ Optional Packages:
  --with-plugin-auto-load always enable the plugin manager by default
  --with-bundles          build bundles in addition to dylibs on Mac OS X
  --with-bin-release      build executables suitable for public release
+ --with-static-deps      prefer static third-party library builds
  --without-mt            support only single-threaded operation
  --with-openmp           enable OpenMP extensions for all projects
  --with-64               compile to 64-bit code
@@ -4718,6 +4720,12 @@ if test "${with_bin_release+set}" = set; then :
 fi
 
 
+# Check whether --with-static-deps was given.
+if test "${with_static_deps+set}" = set; then :
+  withval=$with_static_deps;
+fi
+
+
 # Check whether --with-mt was given.
 if test "${with_mt+set}" = set; then :
   withval=$with_mt;
@@ -6416,8 +6424,8 @@ elif test "$with_jni" = "yes" ; then
 fi
 
 if test "$with_bin_release" = "yes" ; then
-   favor_static_deps=yes
    # Default some other options accordingly
+   : ${with_static_deps=yes}
    : ${with_ncbi_public=yes}
    : ${with_libdw=no}
    : ${with_ncbicrypt=no}
@@ -6427,9 +6435,8 @@ if test "$with_bin_release" = "yes" ; then
 
 $as_echo "#define NCBI_BIN_RELEASE 1" >>confdefs.h
 
-else
-   favor_static_deps=no
 fi
+favor_static_deps=${with_static_deps-no}
 
 case "$with_strip:$with_symbols" in
    yes:yes )
