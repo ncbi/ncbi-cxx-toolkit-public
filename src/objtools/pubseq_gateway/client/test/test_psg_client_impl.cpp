@@ -1365,11 +1365,12 @@ struct SPSG_TestAccess
         io.OnQueue(handle);
     }
 
-    static void CreateSession(SPSG_IoImpl& io, size_t server_index, uv_async_t* handle, const char* reason)
+    static SPSG_IoSession& CreateSession(SPSG_IoImpl& io, size_t server_index, uv_async_t* handle, const char* reason)
     {
         auto& server_sessions = io.m_Sessions[server_index];
-        server_sessions.sessions.emplace_back(server_sessions.server, io.m_Params, io.m_Queue, handle->loop);
-        ++io.m_AllocatedSessionCount;
+        auto* session = io.ReuseOrCreateSession(server_sessions, handle->loop, nullptr);
+        BOOST_REQUIRE_MESSAGE(session, reason);
+        return *session;
     }
 
     static size_t GetLocalSessionCount(const SPSG_IoImpl& io, size_t server_index)
@@ -1523,10 +1524,12 @@ BOOST_AUTO_TEST_CASE(IdleQueueDoesNotCreateSessions)
 BOOST_AUTO_TEST_CASE(FullSessionSignalsQueueWhenStreamBecomesAvailable)
 {
     STransportTestEnv env;
-    auto& server = env.AddServer("127.0.0.1:10003", 1.0);
+    env.AddServer("127.0.0.1:10003", 1.0);
     env.InitQueue();
 
-    SUvNgHttp2_Session<SPSG_IoSession> session(server, env.params, env.queue, &env.loop);
+    SPSG_IoImpl io(env.params, env.servers, env.queue);
+    SPSG_TestAccess::CheckForServerEligibilityChanges(io, &env.handle);
+    auto& session = SPSG_TestAccess::CreateSession(io, 0, &env.handle, "session for stream availability test");
 
     for (int32_t stream_id = 1; !session.IsFull(); ++stream_id) {
         SPSG_TestAccess::AddInFlightRequest(session, stream_id, SPSG_TimedRequest(env.MakeRequest()));
