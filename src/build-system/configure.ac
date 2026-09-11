@@ -5013,9 +5013,6 @@ if test -n "$ZSTD_LIBS" -a \( -f "$ZSTD_PATH/lib$bit64_sfx/libzstd-static.a" \
 else
    ZSTD_STATIC_LIBS=$ZSTD_LIBS
 fi
-if test "x$favor_static_deps" = xyes; then
-   ZSTD_LIBS=$ZSTD_STATIC_LIBS
-fi
 
 case "$with_pcre" in
    no       ) ;;
@@ -5416,9 +5413,6 @@ if test -n "$CURL_LIBS"; then
       CURL_STATIC_LIBS="$CURL_LIBPATH -lcurl-static $OPENSSL_LIBS $Z_LIBS"
    fi
    : ${CURL_STATIC_LIBS:=$CURL_LIBS}
-   if test "x$favor_static_deps" = "xyes"; then
-      CURL_LIBS=$CURL_STATIC_LIBS
-   fi
 fi
 
 
@@ -5805,9 +5799,6 @@ if test "$with_bdb" != "no" ; then
    fi
    if test -f "${BERKELEYDB_LIBPATH}/libdb-static.a"; then
       BERKELEYDB_STATIC_LIBS="-L${BERKELEYDB_LIBPATH} -ldb-static"
-      if test "x$favor_static_deps" = "xyes"; then
-         BERKELEYDB_LIBS=$BERKELEYDB_STATIC_LIBS
-      fi
    else
       BERKELEYDB_STATIC_LIBS=${BERKELEYDB_LIBS}
    fi
@@ -6334,9 +6325,6 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    BOOST_REGEX_LIBS=-lboost_regex${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_regex$BOOST_STATIC_TAG.a"; then
        BOOST_REGEX_STATIC_LIBS=-lboost_regex$BOOST_STATIC_TAG
-       if test "x$favor_static_deps" = "xyes"; then
-           BOOST_REGEX_LIBS=$BOOST_REGEX_STATIC_LIBS
-       fi
    else
        BOOST_REGEX_STATIC_LIBS=$BOOST_REGEX_LIBS
    fi
@@ -6374,9 +6362,6 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    BOOST_SYSTEM_LIBS=-lboost_system${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_system$BOOST_STATIC_TAG.a"; then
        BOOST_SYSTEM_STATIC_LIBS=-lboost_system$BOOST_STATIC_TAG
-       if test "x$favor_static_deps" = "xyes"; then
-           BOOST_SYSTEM_LIBS=$BOOST_SYSTEM_STATIC_LIBS
-       fi
    else
        BOOST_SYSTEM_STATIC_LIBS=$BOOST_SYSTEM_LIBS
    fi
@@ -6395,9 +6380,6 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    boost_chrono_lib=-lboost_chrono${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_chrono$BOOST_STATIC_TAG.a"; then
        boost_chrono_static_lib=-lboost_chrono$BOOST_STATIC_TAG
-       if test "x$favor_static_deps" = "xyes"; then
-           boost_chrono_lib=$boost_chrono_static_lib
-       fi
    else
        boost_chrono_static_lib=$boost_chrono_lib
    fi
@@ -6416,9 +6398,6 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    boost_fs_lib=-lboost_filesystem${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_filesystem$BOOST_STATIC_TAG.a"; then
        boost_fs_static_lib=-lboost_filesystem$BOOST_STATIC_TAG
-       if test "x$favor_static_deps" = "xyes"; then
-           boost_fs_lib=$boost_fs_static_lib
-       fi
    else
        boost_fs_static_lib=$boost_fs_lib
    fi
@@ -6437,9 +6416,6 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    BOOST_IOSTREAMS_LIBS=-lboost_iostreams${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_iostreams$BOOST_STATIC_TAG.a"; then
        BOOST_IOSTREAMS_STATIC_LIBS=-lboost_iostreams$BOOST_STATIC_TAG
-       if test "x$favor_static_deps" = "xyes"; then
-           BOOST_IOSTREAMS_LIBS=$BOOST_IOSTREAMS_STATIC_LIBS
-       fi
    else
        BOOST_IOSTREAMS_STATIC_LIBS=$BOOST_IOSTREAMS_LIBS
    fi
@@ -6456,9 +6432,6 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    BOOST_PROGRAM_OPTIONS_LIBS=-lboost_program_options${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_program_options$BOOST_STATIC_TAG.a"; then
        BOOST_PROGRAM_OPTIONS_STATIC_LIBS=-lboost_program_options$BOOST_STATIC_TAG
-       if test "x$favor_static_deps" = "xyes"; then
-           BOOST_PROGRAM_OPTIONS_LIBS=$BOOST_PROGRAM_OPTIONS_STATIC_LIBS
-       fi
    else
        BOOST_PROGRAM_OPTIONS_STATIC_LIBS=$BOOST_PROGRAM_OPTIONS_LIBS
    fi
@@ -6476,9 +6449,6 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    BOOST_SERIALIZATION_LIBS=-lboost_serialization${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_serialization$BOOST_STATIC_TAG.a"; then
        BOOST_SERIALIZATION_STATIC_LIBS=-lboost_serialization$BOOST_STATIC_TAG
-       if test "x$favor_static_deps" = "xyes"; then
-           BOOST_SERIALIZATION_LIBS=$BOOST_SERIALIZATION_STATIC_LIBS
-       fi
    else
        BOOST_SERIALIZATION_STATIC_LIBS=$BOOST_SERIALIZATION_LIBS
    fi
@@ -6568,9 +6538,6 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    BOOST_THREAD_LIBS="-lboost_thread${BOOST_TAG} $BOOST_SYSTEM_LIBS"
    if test -f "$BOOST_LIBPATH_/libboost_thread$BOOST_STATIC_TAG.a"; then
        BOOST_THREAD_STATIC_LIBS="-lboost_thread$BOOST_STATIC_TAG $BOOST_SYSTEM_STATIC_LIBS"
-       if test "x$favor_static_deps" = "xyes"; then
-           BOOST_THREAD_LIBS=$BOOST_THREAD_STATIC_LIBS
-       fi
    else
        BOOST_THREAD_STATIC_LIBS=$BOOST_THREAD_LIBS
    fi
@@ -7018,9 +6985,6 @@ else
           fi
           : ${GLEW_STATIC_LIBS=$GLEW_LIBDIR/libGLEW-static.a}
           test -f "$GLEW_STATIC_LIBS"  ||  GLEW_STATIC_LIBS=$GLEW_LIBS
-          if test "x$favor_static_deps" = "xyes"; then
-             GLEW_LIBS=$GLEW_STATIC_LIBS
-          fi
       fi
    fi
 fi
@@ -7205,11 +7169,6 @@ else
       TIFF_INCLUDE=$WXWIDGETS_INCLUDE
    fi
    AC_DEFINE(HAVE_WXWIDGETS, 1, [Define to 1 if wxWidgets is available.])
-   if test "x$favor_static_deps" = "xyes"; then
-      WXWIDGETS_LIBS=$WXWIDGETS_STATIC_LIBS
-      WXWIDGETS_GL_LIBS=$WXWIDGETS_GL_STATIC_LIBS
-      WXWIDGETS_MEDIA_LIBS=$WXWIDGETS_MEDIA_STATIC_LIBS
-   fi
 fi
 
 
@@ -7569,9 +7528,6 @@ else
    ICU_SEARCHPATH=`$ICU_CONFIG --ldflags-searchpath | sed -e "$no_usr_lib"`
    ICU_STATIC_LIBS=`$ICU_CONFIG --ldflags-libsonly | sed -e 's/-licu/-lsicu/g'`
    ICU_STATIC_LIBS="$ICU_SEARCHPATH $ICU_STATIC_LIBS"
-   if test "x$favor_static_deps" = "xyes"; then
-      ICU_LIBS=$ICU_STATIC_LIBS
-   fi
    AC_DEFINE(HAVE_ICU, 1, [Define to 1 if ICU libraries are available.])
 fi
 
@@ -7679,9 +7635,6 @@ AC_SUBST(LIBXML_LIBS)
 
 if test -f "${LIBXML_LIBPATH_}/libxml2-static.a"; then
    LIBXML_STATIC_LIBS="-L${LIBXML_LIBPATH_} -lxml2-static $ICONV_LIBS"
-   if test "x$favor_static_deps" = "xyes"; then
-      LIBXML_LIBS=$LIBXML_STATIC_LIBS
-   fi
 else
    LIBXML_STATIC_LIBS=${LIBXML_LIBS}
 fi
@@ -7694,9 +7647,6 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(libxslt, LIBXSLT, xslt,
 # XXX - they might be in different directories in some setups
 if test -f "${LIBXML_LIBPATH_}/libxslt-static.a"; then
    LIBXSLT_STATIC_LIBS="-L${LIBXML_LIBPATH_} -lxslt-static"
-   if test "x$favor_static_deps" = "xyes"; then
-      LIBXSLT_LIBS=$LIBXSLT_STATIC_LIBS
-   fi
 else
    LIBXSLT_STATIC_LIBS=${LIBXSLT_LIBS}
 fi
@@ -7718,9 +7668,6 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(libexslt, LIBEXSLT, exslt,
 # XXX - they might be in different directories in some setups
 if test -f "${LIBXML_LIBPATH_}/libexslt-static.a"; then
    LIBEXSLT_STATIC_LIBS="-L${LIBXML_LIBPATH_} -lexslt-static $GCRYPT_LIBS"
-   if test "x$favor_static_deps" = "xyes"; then
-      LIBEXSLT_LIBS=$LIBEXSLT_STATIC_LIBS
-   fi
 else
    LIBEXSLT_STATIC_LIBS=${LIBEXSLT_LIBS}
 fi
@@ -7770,9 +7717,6 @@ if test "$with_xerces" != no; then
    if test $ncbi_cv_lib_xerces_c = yes; then
       if test -f "$XERCES_LIBPATH/libxerces-c-static.a"; then
          XERCES_STATIC_LIBS="-L$XERCES_LIBPATH -lxerces-c-static $CURL_LIBS"
-         if test "x$favor_static_deps" = "xyes"; then
-            XERCES_LIBS=$XERCES_STATIC_LIBS
-         fi
       else
          XERCES_STATIC_LIBS=$XERCES_LIBS
       fi
@@ -7953,9 +7897,6 @@ else
 fi
 if test -n "$SQLITE3_LIBS" -a -f "$SQLITE3_LIBDIR/libsqlite3-static.a"; then
    SQLITE3_STATIC_LIBS="-L$SQLITE3_LIBDIR -lsqlite3-static"
-   if test "x$favor_static_deps" = "xyes"; then
-      SQLITE3_LIBS=$SQLITE3_STATIC_LIBS
-   fi
 else
    SQLITE3_STATIC_LIBS=$SQLITE3_LIBS
 fi
@@ -8078,6 +8019,7 @@ if test "$with_vdb" != "no" ; then
             [ncbi_cv_lib_ncbi_vdb=yes], [ncbi_cv_lib_ncbi_vdb=no]))
       if test "$ncbi_cv_lib_ncbi_vdb" = yes; then
          NCBI_PACKAGE(VDB)
+         VDB_DLLS=$VDB_LIBS
          if test -f "$VDB_LIBDIR/libncbi-vdb-static.a"; then
             VDB_STATIC_LIBS="-L$VDB_LIBDIR -lncbi-vdb-static $vdb_static_deps"
             if test "$with_static_vdb" = yes; then
@@ -8390,9 +8332,6 @@ if test "$with_gl2ps" != "no"; then
 fi
 if test -n "$GL2PS_LIBS" -a -f "$GL2PS_PATH/lib/libgl2ps-static.a"; then
    GL2PS_STATIC_LIBS="-L$GL2PS_PATH/lib -lgl2ps-static"
-   if test "x$favor_static_deps" = "xyes"; then
-      GL2PS_LIBS=$GL2PS_STATIC_LIBS
-   fi
 else
    GL2PS_STATIC_LIBS=$GL2PS_LIBS
 fi
@@ -8596,10 +8535,12 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(avro, AVRO, avrocpp,
    [$BOOST_INCLUDE])
 if test -n "$AVRO_LIBS"; then
    if test -f "$AVRO_PATH/lib/libavrocpp_s.a"; then
-      AVRO_STATIC_LIBS="$AVRO_LIBPATH -lavrocpp_s $BOOST_LIBPATH $BOOST_FILESYSTEM_LIBS $BOOST_SYSTEM_LIBS $BOOST_PROGRAM_OPTIONS_LIBS $BOOST_IOSTREAMS_LIBS $RT_LIBS $Z_LIBS $BZ2_LIBS"
-      if test "x$favor_static_deps" = "xyes"; then
-         AVRO_LIBS=$AVRO_STATIC_LIBS
-      fi
+      AVRO_STATIC_LIBS="$AVRO_LIBPATH -lavrocpp_s $BOOST_LIBPATH"
+      AVRO_STATIC_LIBS="$AVRO_STATIC_LIBS $BOOST_FILESYSTEM_STATIC_LIBS"
+      AVRO_STATIC_LIBS="$AVRO_STATIC_LIBS $BOOST_SYSTEM_STATIC_LIBS"
+      AVRO_STATIC_LIBS="$AVRO_STATIC_LIBS $BOOST_PROGRAM_OPTIONS_STATIC_LIBS"
+      AVRO_STATIC_LIBS="$AVRO_STATIC_LIBS $BOOST_IOSTREAMS_STATIC_LIBS"
+      AVRO_STATIC_LIBS="$AVRO_STATIC_LIBS $RT_LIBS $Z_LIBS $BZ2_LIBS"
    else
       AVRO_STATIC_LIBS=$AVRO_LIBS
    fi
@@ -8669,9 +8610,6 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(mongodb, MONGODB, mongoclient,
 # libraries might not be by default.
 if test -n "$MONGODB_LIBS"; then
    MONGODB_STATIC_LIBS="$MONGODB_LIBPATH -lmongoclient $BOOST_LIBPATH $boost_fs_static_lib $BOOST_REGEX_STATIC_LIBS $BOOST_THREAD_STATIC_LIBS $OPENSSL_LIBS $SASL2_LIBS"
-   if test "x$favor_static_deps" = "xyes"; then
-      MONGODB_LIBS=$MONGODB_STATIC_LIBS
-   fi
 else
    MONGODB_STATIC_LIBS=
 fi
@@ -8724,9 +8662,6 @@ if test -n "$MONGODB3_LIBS"; then
       zsed="s@ -lzstd @ $ZSTD_LIBS @; s/^ //; s/ $//"
       MONGODB3_LIBS=`echo " $MONGODB3_LIBS " | sed -e "$zsed"`
       MONGODB3_STATIC_LIBS=`echo " $MONGODB3_STATIC_LIBS " | sed -e "$zsed"`
-   fi
-   if test "x$favor_static_deps" = "xyes"; then
-      MONGODB3_LIBS=$MONGODB3_STATIC_LIBS
    fi
 fi
 
@@ -8820,9 +8755,6 @@ NCBI_CHECK_THIRD_PARTY_LIB(gmock,
 if test -n "$GMOCK_LIBS"; then
    if test -f "$GMOCK_LIBDIR/libgmock-static.a"; then
       GMOCK_STATIC_LIBS="-L$GMOCK_LIBDIR -lgmock-static -lgtest-static"
-      if test "x$favor_static_deps" = "xyes"; then
-         GMOCK_LIBS=$GMOCK_STATIC_LIBS
-      fi
    else
       GMOCK_STATIC_LIBS=$GMOCK_LIBS
    fi
@@ -8878,9 +8810,6 @@ if test -z "$LMDB_LIBS"; then
 fi
 if test "$with_lmdb" != no -a -f "$LMDB_PATH/lib/liblmdb-static.a"; then
     LMDB_STATIC_LIBS="-L$LMDB_PATH/lib -llmdb-static"
-    if test "x$favor_static_deps" = "xyes"; then
-       LMDB_LIBS=$LMDB_STATIC_LIBS
-    fi
 else
     LMDB_STATIC_LIBS=$LMDB_LIBS
 fi
@@ -8910,9 +8839,6 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(libuv, LIBUV, uv,
       [[uv_mutex_t m; return uv_mutex_init(&m);]])])
 if test "$with_libuv" != no -a -f "$LIBUV_LIBDIR/libuv-static.a"; then
     LIBUV_STATIC_LIBS="-L$LIBUV_LIBDIR -luv-static"
-    if test "x$favor_static_deps" = "xyes"; then
-       LIBUV_LIBS=$LIBUV_STATIC_LIBS
-    fi
 else
     LIBUV_STATIC_LIBS=$LIBUV_LIBS
 fi
@@ -8994,9 +8920,6 @@ NCBI_CHECK_THIRD_PARTY_LIB(cassandra,
 if test "$with_cassandra" != no -a \
      -f "$CASSANDRA_PATH/lib/libcassandra_static.a"; then
     CASSANDRA_STATIC_LIBS="-L$CASSANDRA_PATH/lib -lcassandra_static $LIBUV_STATIC_LIBS $KRB5_LIBS"
-    if test "x$favor_static_deps" = "xyes"; then
-       CASSANDRA_LIBS=$CASSANDRA_STATIC_LIBS
-    fi
 else
     CASSANDRA_STATIC_LIBS=$CASSANDRA_LIBS
 fi
@@ -9020,9 +8943,6 @@ NCBI_CHECK_THIRD_PARTY_LIB(nghttp2,
 if test "$with_nghttp2" != no -a \
      -f "$NGHTTP2_LIBDIR/libnghttp2-static.a"; then
    NGHTTP2_STATIC_LIBS="-L$NGHTTP2_LIBDIR -lnghttp2-static"
-   if test "x$favor_static_deps" = "xyes"; then
-      NGHTTP2_LIBS=$NGHTTP2_STATIC_LIBS
-   fi
 else
    NGHTTP2_STATIC_LIBS=$NGHTTP2_LIBS
 fi
@@ -9043,9 +8963,6 @@ NCBI_CHECK_THIRD_PARTY_LIB(h2o,
 if test "$with_h2o" != no -a \
      -f "$H2O_PATH/lib/libh2o-static.a"; then
     H2O_STATIC_LIBS="-L$H2O_PATH/lib -lh2o-static $LIBUV_STATIC_LIBS $OPENSSL_LIBS $Z_LIBS"
-    if test "x$favor_static_deps" = "xyes"; then
-       H2O_LIBS=$H2O_STATIC_LIBS
-    fi
 else
     H2O_STATIC_LIBS=$H2O_LIBS
 fi
@@ -9083,9 +9000,6 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(libxlsxwriter, LIBXLSXWRITER, xlsxwriter,
 if test "$with_libxlsxwriter" != no -a \
      -f "$LIBXLSXWRITER_PATH/lib/libxlsxwriter-static.a"; then
     LIBXLSXWRITER_STATIC_LIBS="-L$LIBXLSXWRITER_PATH/lib -lxlsxwriter-static"
-    if test "x$favor_static_deps" = "xyes"; then
-       LIBXLSXWRITER_LIBS=$LIBXLSXWRITER_STATIC_LIBS
-    fi
 else
     LIBXLSXWRITER_STATIC_LIBS=$LIBXLSXWRITER_LIBS
 fi
@@ -9221,9 +9135,6 @@ if test -n "$PROTOBUF_LIBS"; then
                ;;
          esac
       done
-      if test "x$favor_static_deps" = "xyes"; then
-         PROTOBUF_LIBS=$PROTOBUF_STATIC_LIBS
-      fi
    else
       PROTOBUF_STATIC_LIBS=$PROTOBUF_LIBS
    fi
@@ -9417,11 +9328,6 @@ if test -n "$GRPC_LIBS"; then
       done
       GRPC_REFLECTION_STATIC_LIBS=`echo "$GRPC_REFLECTION_LIBS" \
          | sed -e 's/_reflection/&-static/'`
-      if test "x$favor_static_deps" = "xyes"; then
-         GRPC_LIBS=$GRPC_STATIC_LIBS
-         GRPC_REFLECTION_LIBS=$GRPC_REFLECTION_STATIC_LIBS
-         GRPC_UNSECURE_LIBS=$GRPC_UNSECURE_STATIC_LIBS
-      fi
    else
       GRPC_STATIC_LIBS=$GRPC_LIBS
       GRPC_REFLECTION_STATIC_LIBS=$GRPC_REFLECTION_LIBS
@@ -9491,9 +9397,6 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(aws_sdk, AWS_SDK, aws-cpp-sdk-s3,
 if test "$with_aws_sdk" != no -a \
      -f "$AWS_SDK_LIBDIR/libaws-cpp-sdk-s3-static.a"; then
     AWS_SDK_STATIC_LIBS="-L$AWS_SDK_LIBDIR -laws-cpp-sdk-s3-static -laws-cpp-sdk-ec2-static -laws-cpp-sdk-core-static $AWS_SDK_STATIC_LDEP"
-    if test "x$favor_static_deps" = "xyes"; then
-       AWS_SDK_LIBS=$AWS_SDK_STATIC_LIBS
-    fi
 else
     AWS_SDK_STATIC_LIBS=$AWS_SDK_LIBS
 fi
@@ -9514,9 +9417,6 @@ NCBI_CHECK_THIRD_PARTY_LIB(crc32c,
 if test "$with_crc32c" != no \
    -a -f "$CRC32C_PATH/lib/libcrc32c-static.a"; then
    CRC32C_STATIC_LIBS="-L$CRC32C_PATH/lib -lcrc32c-static"
-   if test "x$favor_static_deps" = "xyes"; then
-      CRC32C_LIBS=$CRC32C_STATIC_LIBS
-   fi
 fi
 
 
@@ -9526,9 +9426,6 @@ NCBI_CHECK_THIRD_PARTY_LIB(hiredis,
 if test "$with_hiredis" != no \
       -a -f "$HIREDIS_PATH/lib/libhiredis-static.a"; then
     HIREDIS_STATIC_LIBS="-L$HIREDIS_PATH/lib -lhiredis-static"
-    if test "x$favor_static_deps" = "xyes"; then
-        HIREDIS_LIBS=$HIREDIS_STATIC_LIBS
-    fi
 else
     HIREDIS_STATIC_LIBS=$HIREDIS_LIBS
 fi
@@ -9609,9 +9506,6 @@ done
 if test "$with_apache_arrow" != no -a \
      -f "$APACHE_ARROW_LIBDIR/libparquet-static.a"; then
     APACHE_ARROW_STATIC_LIBS="-L$APACHE_ARROW_LIBDIR -lparquet-static -larrow-static -larrow_bundled_dependencies-static $THRIFT_STATIC_LIBS $BZ2_LIBS $Z_LIBS -lzstd"
-    if test "x$favor_static_deps" = "xyes"; then
-        APACHE_ARROW_LIBS=$APACHE_ARROW_STATIC_LIBS
-    fi
 else
     APACHE_ARROW_STATIC_LIBS=$APACHE_ARROW_LIBS
 fi
@@ -9633,9 +9527,6 @@ if test "$with_librdkafka" != no -a \
      -f "$LIBRDKAFKA_PATH/lib$bit64_sfx/librdkafka-static.a"; then
    LIBRDKAFKA_STATIC_LIBS="-L$LIBRDKAFKA_PATH/lib$bit64_sfx -lrdkafka-static"
    LIBRDKAFKA_STATIC_LIBS="$LIBRDKAFKA_STATIC_LIBS -llz4"
-   if test "x$favor_static_deps" = "xyes"; then
-      LIBRDKAFKA_LIBS=$LIBRDKAFKA_STATIC_LIBS
-   fi
 else
    LIBRDKAFKA_STATIC_LIBS=$LIBRDKAFKA_LIBS
 fi
@@ -9709,9 +9600,6 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(yaml_cpp, YAML_CPP, yaml-cpp,
 if test "$with_yaml_cpp" != no -a -f "$YAML_CPP_PATH/lib/libyaml-cpp-static.a"
 then
    YAML_CPP_STATIC_LIBS="-L$YAML_CPP_PATH/lib -lyaml-cpp-static"
-   if test "x$favor_static_deps" = "xyes"; then
-      YAML_CPP_LIBS=$YAML_CPP_STATIC_LIBS
-   fi
 else
    YAML_CPP_STATIC_LIBS=$YAML_CPP_LIBS
 fi
@@ -9732,9 +9620,6 @@ NCBI_CHECK_THIRD_PARTY_LIB(opentracing,
 if test "$with_opentracing" != no \
    -a -f "$OPENTRACING_PATH/lib/libopentracing-static.a"; then
    OPENTRACING_STATIC_LIBS="-L$OPENTRACING_PATH/lib -lopentracing-static"
-   if test "x$favor_static_deps" = "xyes"; then
-      OPENTRACING_LIBS=$OPENTRACING_STATIC_LIBS
-   fi
 else
    OPENTRACING_STATIC_LIBS=$OPENTRACING_LIBS
 fi
@@ -9828,9 +9713,6 @@ if test "$with_opentelemetry" != no \
         ot_extra_sed='; s/\(-lopentelemetry_proto[[^ ]]*\)-static/\1/g'
    OPENTELEMETRY_STATIC_LIBS=`echo "$OPENTELEMETRY_LIBS" \
        | sed -e "s/ -l[[^ ]]*/&-static/g$ot_extra_sed"`
-   if test "x$favor_static_deps" = "xyes"; then
-      OPENTELEMETRY_LIBS=$OPENTELEMETRY_STATIC_LIBS
-   fi
 else
    OPENTELEMETRY_STATIC_LIBS=$OPENTELEMETRY_LIBS
 fi
@@ -9894,9 +9776,6 @@ else
    fi
    if test -f "$TBB_LIBDIR/libtbb-static.a"; then
       TBB_STATIC_LIBS="${TBB_LIBS% }-static"
-      if test "x$favor_static_deps" = "xyes"; then
-         TBB_LIBS=$TBB_STATIC_LIBS
-      fi
    else
       TBB_STATIC_LIBS=$TBB_LIBS
    fi
@@ -9923,6 +9802,20 @@ AC_CHECK_HEADERS([ips4o.hpp],
    [NCBI_PACKAGE(IPS4O); IPS4O_LIBS=$TBB_LIBS; IPS4O_STATIC_LIBS=$TBB_STATIC_LIBS],
    [IPS4O_INCLUDE=; NCBI_MISSING_PACKAGE(ips4o)])
 
+m4_foreach(X, [ZSTD, CURL, BERKELEYDB, BERKELEYDB_CXX, BOOST_REGEX,
+               BOOST_SYSTEM, BOOST_CHRONO, BOOST_FILESYSTEM, BOOST_IOSTREAMS,
+               BOOST_PROGRAM_OPTIONS, BOOST_SERIALIZATION, BOOST_THREAD,
+               GLEW, WXWIDGETS, WXWIDGETS_GL, WXWIDGETS_MEDIA, ICU, SABLOT,
+               LIBXML, LIBXSLT, LIBEXSLT, XERCES, SQLITE3, NGS, GL2PS, AVRO,
+               MONGODB, MONGODB3, GMOCK, LMDB, LIBUV, CASSANDRA, NGHTTP2, H2O,
+               LIBXLSXWRITER, PROTOBUF, GRPC, GRPC_REFLECTION, GRPC_UNSECURE,
+               AWS_SDK, CRC32C, HIREDIS, APACHE_ARROW, LIBRDKAFKA, CPPKAFKA,
+               YAML_CPP, OPENTRACING, JAEGER, OPENTELEMETRY, TBB, IPS4O],
+   [X[_DLLS]=$X[_LIBS]
+    if test "x$favor_static_deps" = "xyes"; then
+       X[_LIBS]=$X[_STATIC_LIBS]
+    fi
+    AC_SUBST(X[_DLLS])])
 
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
@@ -10585,6 +10478,7 @@ AC_SUBST(sssutils)
 AC_SUBST(VDB_INCLUDE)
 AC_SUBST(VDB_LIBS)
 AC_SUBST(VDB_STATIC_LIBS)
+AC_SUBST(VDB_DLLS)
 AC_SUBST(bamread)
 AC_SUBST(sraread)
 AC_SUBST(ncbi_id2proc_snp)
