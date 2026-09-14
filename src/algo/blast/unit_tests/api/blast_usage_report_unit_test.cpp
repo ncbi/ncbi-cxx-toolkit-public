@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbireg.hpp>
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/api/blast_usage_report.hpp>
 #include <algo/blast/api/blast_exception.hpp>
@@ -47,49 +48,80 @@ USING_SCOPE(blast);
 
 BOOST_AUTO_TEST_SUITE(BLAST_USAGE_REPORT)
 
+static const string kNcbiConfigOverridesEnv("NCBI_CONFIG_OVERRIDES");
+
+
+static void s_WriteFile(const string& path, const string& contents)
+{
+    CNcbiOfstream out(path.c_str(), IOS_BASE::out | IOS_BASE::trunc |
+                      IOS_BASE::binary);
+    BOOST_REQUIRE(out.is_open());
+    out << contents;
+    out.close();
+    BOOST_REQUIRE(out.good());
+}
+
+
+static string s_GetRegistryValue(CMemoryRegistry& registry,
+                                 const string& section,
+                                 const string& name)
+{
+    BOOST_REQUIRE(registry.HasEntry(section, name, IRegistry::fPersistent));
+    return registry.Get(section, name, IRegistry::fPersistent);
+}
+
+
+static size_t s_CountOccurrences(const string& text, const string& pattern)
+{
+    size_t count = 0;
+    string::size_type pos = text.find(pattern);
+    while (pos != NPOS) {
+        ++count;
+        pos = text.find(pattern, pos + pattern.size());
+    }
+    return count;
+}
+
+
+static void s_CheckInherits(const string& inherits,
+                            const vector<string>& expected)
+{
+    ITERATE(vector<string>, iter, expected) {
+        BOOST_REQUIRE_NE(inherits.find(*iter), string::npos);
+    }
+}
+
+
 class CBlastPhoneHomeTestFixture {
 public:
-    CBlastPhoneHomeTestFixture() : m_IniFilePath(kEmptyStr) { Backup();}
+    CBlastPhoneHomeTestFixture()
+        : m_NcbiEnvFound(false), m_NcbiConfigOverridesFound(false)
+    {
+        Backup();
+    }
+    ~CBlastPhoneHomeTestFixture() { Restore(); }
     static constexpr string_view backup_ext = ".unit_test_backup";
 
     void Backup() {
-        const string home = CDir::GetHome();
-        string path = CDirEntry::MakePath(home, ".blast-usage-report.ini");
-        CFile optInFile (path);
-        if (optInFile.Exists()){
-            string backup = path + backup_ext;
-            if (optInFile.Copy(backup, CFile::fCF_Overwrite | CFile::fCF_PreserveAll)) {
-                m_IniFilePath = path;
-                if (!CDirEntry(path).RemoveEntry()) {
-                    ERR_POST(Warning << "Failed to remove backup file: " << backup );
-                }
-            }
-            else {
-                NCBI_THROW(CBlastException, eSystem , "Failed to backup blast usage ini file");
-            }
-
+        CDir home(CDir::GetHome());
+        if (!home.Exists() && !home.CreatePath()) {
+            NCBI_THROW(CBlastException, eSystem,
+                       "Failed to create test home " + home.GetPath());
         }
+        x_BackupFile(CBlastPhoneHomePolicy::GetLocalNcbiConfigFilePath());
         x_BackupConfigs();
     }
 
+    void BackupFile(const string& path) { x_BackupFile(path); }
+
     void Restore() {
-        if (m_IniFilePath != kEmptyStr) {
-            string backup = m_IniFilePath + backup_ext;
-            CFile backupFile (backup);
-            if (backupFile.Copy(m_IniFilePath, CFile::fCF_Overwrite | CFile::fCF_PreserveAll)) {
-                m_IniFilePath = kEmptyStr;
-                if (!CDirEntry(backup).RemoveEntry()) {
-                    ERR_POST(Warning << "Failed to remove backup file: " << backup );
-                }
-            }
-            else {
-                NCBI_THROW(CBlastException, eSystem , "Failed to restore blast usage ini file");
-            }
+        ITERATE(vector<SFileBackup>, iter, m_FileBackup) {
+            x_RestoreFile(*iter);
         }
+        m_FileBackup.clear();
         x_RestoreConfigs();
     }
 
-    ~CBlastPhoneHomeTestFixture() { Restore(); }
 
 private:
     enum class Config_type {
@@ -106,17 +138,86 @@ private:
         const string value;
     };
 
+    struct SFileBackup {
+        SFileBackup(const string& p, bool e):path(p), existed(e){}
+        const string path;
+        const bool existed;
+    };
+
     void x_BackupConfigs();
     void x_RestoreConfigs();
-    string m_IniFilePath;
+    void x_BackupFile(const string& path);
+    void x_RestoreFile(const SFileBackup& backup);
+    vector<SFileBackup> m_FileBackup;
     vector<SConfig> m_ConfigBackup;
+    bool m_NcbiEnvFound;
+    bool m_NcbiConfigOverridesFound;
+    string m_NcbiEnvValue;
+    string m_NcbiConfigOverridesValue;
 
 };
+
+void CBlastPhoneHomeTestFixture::x_BackupFile(const string& path)
+{
+    const string backup = path + string(backup_ext);
+    if (CFile(backup).Exists()) {
+        CDirEntry(backup).RemoveEntry();
+    }
+
+    CFile config_file(path);
+    if (config_file.Exists()) {
+        if (!config_file.Copy(backup,
+                              CFile::fCF_Overwrite |
+                              CFile::fCF_PreserveAll)) {
+            NCBI_THROW(CBlastException, eSystem,
+                       "Failed to backup " + path);
+        }
+        if (!CDirEntry(path).RemoveEntry()) {
+            NCBI_THROW(CBlastException, eSystem,
+                       "Failed to remove " + path);
+        }
+        m_FileBackup.push_back(SFileBackup(path, true));
+    }
+    else {
+        m_FileBackup.push_back(SFileBackup(path, false));
+    }
+}
+
+void CBlastPhoneHomeTestFixture::x_RestoreFile(const SFileBackup& backup)
+{
+    const string backup_path = backup.path + string(backup_ext);
+    if (backup.existed) {
+        CFile backup_file(backup_path);
+        if (backup_file.Exists() &&
+            !backup_file.Copy(backup.path,
+                              CFile::fCF_Overwrite |
+                              CFile::fCF_PreserveAll)) {
+            NCBI_THROW(CBlastException, eSystem,
+                       "Failed to restore " + backup.path);
+        }
+        if (CFile(backup_path).Exists() &&
+            !CDirEntry(backup_path).RemoveEntry()) {
+            ERR_POST(Warning << "Failed to remove backup file: "
+                     << backup_path);
+        }
+    }
+    else if (CFile(backup.path).Exists() &&
+             !CDirEntry(backup.path).RemoveEntry()) {
+        ERR_POST(Warning << "Failed to remove test file: " << backup.path);
+    }
+}
 
 void CBlastPhoneHomeTestFixture::x_BackupConfigs()
 {
     _ASSERT(m_ConfigBackup.size() == 0);
     CNcbiEnvironment env;
+    m_NcbiEnvValue = env.Get(CBlastPhoneHomePolicy::kNcbiEnv,
+                             &m_NcbiEnvFound);
+    env.Unset(CBlastPhoneHomePolicy::kNcbiEnv);
+    m_NcbiConfigOverridesValue = env.Get(kNcbiConfigOverridesEnv,
+                                         &m_NcbiConfigOverridesFound);
+    env.Unset(kNcbiConfigOverridesEnv);
+
     string do_not_track_env = env.Get(CBlastPhoneHomePolicy::kDoNotTrackEnv);
     if(!do_not_track_env.empty()){
         SConfig c(Config_type::e_DoNotTrack, do_not_track_env);
@@ -135,7 +236,6 @@ void CBlastPhoneHomeTestFixture::x_BackupConfigs()
         m_ConfigBackup.push_back(c);
         env.Unset(CBlastPhoneHomePolicy::kBlastUsageReportEnv);
     }
-
     CNcbiIstrstream empty_stream(kEmptyStr);
     CRef<CNcbiRegistry> registry(new CNcbiRegistry(empty_stream, IRegistry::fWithNcbirc));
     if (registry->HasEntry(CBlastPhoneHomePolicy::kNCBIUsageReportRegistry, CBlastPhoneHomePolicy::kNCBIUsageReportRegistryParam)) {
@@ -154,8 +254,8 @@ void CBlastPhoneHomeTestFixture::x_BackupConfigs()
 
 void CBlastPhoneHomeTestFixture::x_RestoreConfigs()
 {
+    CNcbiEnvironment env;
     if(m_ConfigBackup.size()> 0) {
-        CNcbiEnvironment env;
         CNcbiIstrstream empty_stream(kEmptyStr);
         CRef<CNcbiRegistry> registry(new CNcbiRegistry(empty_stream, IRegistry::fWithNcbirc));
         for(size_t i=0; i < m_ConfigBackup.size(); i++) {
@@ -181,6 +281,19 @@ void CBlastPhoneHomeTestFixture::x_RestoreConfigs()
                     break;
             }
         }
+    }
+
+    if (m_NcbiEnvFound) {
+        env.Set(CBlastPhoneHomePolicy::kNcbiEnv, m_NcbiEnvValue);
+    }
+    else {
+        env.Unset(CBlastPhoneHomePolicy::kNcbiEnv);
+    }
+    if (m_NcbiConfigOverridesFound) {
+        env.Set(kNcbiConfigOverridesEnv, m_NcbiConfigOverridesValue);
+    }
+    else {
+        env.Unset(kNcbiConfigOverridesEnv);
     }
 }
 
@@ -216,78 +329,332 @@ BOOST_FIXTURE_TEST_CASE(Blast_usage_report_timeout, CBlastPhoneHomeTestFixture)
 
 BOOST_FIXTURE_TEST_CASE(Check_usage_configurations, CBlastPhoneHomeTestFixture)
 {
-    CBlastPhoneHomePolicy policy;
+    const string config_path =
+        CDirEntry::MakePath(CDir::GetHome(),
+                            "blast_usage_report_policy.ini");
+    BackupFile(config_path);
+
+    CBlastPhoneHomePolicy policy(config_path);
     policy.Restore();
 
     // Default is disable
     BOOST_REQUIRE_EQUAL(policy.IsEnabled(), false);
 
     CNcbiEnvironment env;
-    // The present of Do_NOT_TRACK env means disable usage report
-    env.Set(CBlastPhoneHomePolicy::kDoNotTrackEnv, NStr::BoolToString(false));
-    BOOST_REQUIRE_EQUAL(policy.IsEnabled(), false);
+    // DO_NOT_TRACK=true disables usage report.
     env.Set(CBlastPhoneHomePolicy::kDoNotTrackEnv, NStr::BoolToString(true));
-    policy.CheckBlastUsageConfigurations();
-    policy.UpdatePhoneHomeStatus();
+    policy.Restore();
     BOOST_REQUIRE_EQUAL(policy.IsEnabled(), false);
 
-    // DO_NOT_TRACK has higher priority
+    // DO_NOT_TRACK with an invalid value silently means do not track.
+    env.Set(CBlastPhoneHomePolicy::kDoNotTrackEnv, "dummy");
     env.Set(CBlastPhoneHomePolicy::kUsageReportEnv, NStr::BoolToString(true));
-    policy.CheckBlastUsageConfigurations();
-    policy.UpdatePhoneHomeStatus();
+    policy.Restore();
     env.Unset(CBlastPhoneHomePolicy::kDoNotTrackEnv);
     BOOST_REQUIRE_EQUAL(policy.IsEnabled(), false);
 
     // NCBI_USAGE_REPORT_ENABLED (TRUE)
-    policy.CheckBlastUsageConfigurations();
-    policy.UpdatePhoneHomeStatus();
+    policy.Restore();
     BOOST_REQUIRE_EQUAL(policy.IsEnabled(), true);
 
     env.Set(CBlastPhoneHomePolicy::kBlastUsageReportEnv, NStr::BoolToString(false));
-    policy.CheckBlastUsageConfigurations();
-    policy.UpdatePhoneHomeStatus();
+    policy.Restore();
     env.Unset(CBlastPhoneHomePolicy::kUsageReportEnv);
     BOOST_REQUIRE_EQUAL(policy.IsEnabled(), true);
 
     // BLAST_USAGE_REPORT (FALSE)
-    policy.CheckBlastUsageConfigurations();
-    policy.UpdatePhoneHomeStatus();
+    policy.Restore();
     env.Unset(CBlastPhoneHomePolicy::kBlastUsageReportEnv);
     BOOST_REQUIRE_EQUAL(policy.IsEnabled(), false);
-
-    policy.CheckBlastUsageConfigurations();
-    policy.UpdatePhoneHomeStatus();
-
-    CMetaRegistry::SEntry sentry = CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-    CRef<IRWRegistry> registry = sentry.registry;
-    registry->SetValue(CBlastPhoneHomePolicy::kBlastUsageReportRegistry ,
-                       CBlastPhoneHomePolicy::kBlastUsageReportRegistryParam,
-                       true, IRegistry::fOverride | IRegistry::fPersistent);
-    policy.CheckBlastUsageConfigurations();
-    policy.UpdatePhoneHomeStatus();
-    registry->Unset(CBlastPhoneHomePolicy::kBlastUsageReportRegistry,
-                    CBlastPhoneHomePolicy::kBlastUsageReportRegistryParam);
+    policy.SetUserUsageReportPreference(true);
     BOOST_REQUIRE_EQUAL(policy.IsEnabled(), true);
 
+}
+
+BOOST_FIXTURE_TEST_CASE(Save_usage_configuration_to_ncbirc,
+                        CBlastPhoneHomeTestFixture)
+{
+    CNcbiEnvironment env;
+    const string ncbi_dir = CDirEntry::MakePath(CDir::GetHome(), "ncbi_env");
+    env.Set(CBlastPhoneHomePolicy::kNcbiEnv, ncbi_dir);
+    const string config_path =
+        CDirEntry::MakePath(CDir::GetHome(),
+                            "blast_usage_report_save.ini");
+    BackupFile(config_path);
+
+    CBlastPhoneHomePolicy policy(config_path);
+    policy.SetUserUsageReportPreference(false);
+
+    BOOST_REQUIRE(CFile(config_path).Exists());
+
+    CMemoryRegistry registry;
+    CBlastPhoneHomePolicy::ReadRegistryFile(config_path, registry);
+    const vector<string> expected_inherits =
+        CBlastPhoneHomePolicy::GetDefaultNcbiInherits();
+    const string inherits =
+        s_GetRegistryValue(registry,
+                           CBlastPhoneHomePolicy::kNcbiRegistrySection,
+                           CBlastPhoneHomePolicy::kNcbiInheritsParam);
+    s_CheckInherits(inherits, expected_inherits);
+    BOOST_REQUIRE_EQUAL(s_GetRegistryValue
+                            (registry,
+                             CBlastPhoneHomePolicy::kBlastUsageReportRegistry,
+                             CBlastPhoneHomePolicy::kBlastUsageReportKey),
+                        "false");
+
+    CBlastPhoneHomePolicy restored(config_path);
+    restored.Restore();
+    BOOST_REQUIRE(restored.HasUserUsageReportPreference());
+}
+
+BOOST_FIXTURE_TEST_CASE(Save_creates_missing_parent_directory,
+                        CBlastPhoneHomeTestFixture)
+{
+    const string config_dir = CDirEntry::GetTmpNameEx
+        (CDir::GetHome(), "blast_usage_report_missing_parent_",
+         CDirEntry::eTmpFileGetName);
+    const string config_path =
+        CDirEntry::MakePath(config_dir,
+                            CBlastPhoneHomePolicy::GetLocalNcbiConfigFileName());
+    BackupFile(config_path);
+
+    BOOST_REQUIRE(!CDir(config_dir).Exists());
+
+    CBlastPhoneHomePolicy policy(config_path);
+    policy.SetUserUsageReportPreference(false);
+
+    BOOST_REQUIRE(CDir(config_dir).Exists());
+    BOOST_REQUIRE(CFile(config_path).Exists());
+
+    CMemoryRegistry registry;
+    CBlastPhoneHomePolicy::ReadRegistryFile(config_path, registry);
+    BOOST_REQUIRE_EQUAL(s_GetRegistryValue
+                            (registry,
+                             CBlastPhoneHomePolicy::kBlastUsageReportRegistry,
+                             CBlastPhoneHomePolicy::kBlastUsageReportKey),
+                        "false");
+
+    BOOST_REQUIRE(CDir(config_dir).Remove());
+}
+
+BOOST_FIXTURE_TEST_CASE(Check_inheritance_configuration_parameters,
+                        CBlastPhoneHomeTestFixture)
+{
+    const string config_path =
+        CDirEntry::MakePath(CDir::GetHome(),
+                            "blast_usage_report_inherit_params.ini");
+    BackupFile(config_path);
+
+    vector<string> expected_inherits;
+    expected_inherits.push_back
+        ("-" + CDirEntry::MakePath("$" + CBlastPhoneHomePolicy::kNcbiEnv,
+             CBlastPhoneHomePolicy::GetLocalNcbiConfigFileName()));
+#if defined(NCBI_OS_MSWIN)
+    CNcbiEnvironment env;
+    const string system_root = env.Get("SYSTEMROOT");
+    if (!system_root.empty()) {
+        expected_inherits.push_back
+            ("-" + CDirEntry::MakePath
+                (system_root,
+                 CBlastPhoneHomePolicy::GetLocalNcbiConfigFileName()));
+    }
+#else
+    expected_inherits.push_back
+        ("-" + CDirEntry::MakePath("/etc", CNcbiRegistry::sm_SysRegName));
+#endif
+
+    const vector<string> default_inherits =
+        CBlastPhoneHomePolicy::GetDefaultNcbiInherits();
+    BOOST_REQUIRE_EQUAL_COLLECTIONS(default_inherits.begin(),
+                                    default_inherits.end(),
+                                    expected_inherits.begin(),
+                                    expected_inherits.end());
+
+    CBlastPhoneHomePolicy policy(config_path);
+    policy.SetUserUsageReportPreference(false);
+
+    CMemoryRegistry registry;
+    CBlastPhoneHomePolicy::ReadRegistryFile(config_path, registry);
+    BOOST_REQUIRE(registry.HasEntry
+                      (CBlastPhoneHomePolicy::kNcbiRegistrySection,
+                       CBlastPhoneHomePolicy::kNcbiInheritsParam,
+                       IRegistry::fPersistent));
+
+    const string inherits =
+        s_GetRegistryValue(registry,
+                           CBlastPhoneHomePolicy::kNcbiRegistrySection,
+                           CBlastPhoneHomePolicy::kNcbiInheritsParam);
+    BOOST_REQUIRE_EQUAL(s_CountOccurrences(inherits, ","),
+                        expected_inherits.empty() ? size_t(0) :
+                        expected_inherits.size() - 1);
+    ITERATE(vector<string>, iter, expected_inherits) {
+        BOOST_REQUIRE(NStr::StartsWith(*iter, "-"));
+        BOOST_REQUIRE_EQUAL(s_CountOccurrences(inherits, *iter), size_t(1));
+    }
+}
+
+BOOST_FIXTURE_TEST_CASE(Save_does_not_duplicate_default_inherits,
+                        CBlastPhoneHomeTestFixture)
+{
+    const string config_path =
+        CDirEntry::MakePath(CDir::GetHome(),
+                            "blast_usage_report_default_inherits.ini");
+    BackupFile(config_path);
+
+    const vector<string> expected_inherits =
+        CBlastPhoneHomePolicy::GetDefaultNcbiInherits();
+    string inherits;
+    ITERATE(vector<string>, iter, expected_inherits) {
+        if (!inherits.empty()) {
+            inherits += ", ";
+        }
+        inherits += *iter;
+    }
+
+    s_WriteFile(config_path,
+                string("[") +
+                CBlastPhoneHomePolicy::kNcbiRegistrySection + "]\n" +
+                CBlastPhoneHomePolicy::kNcbiInheritsParam + "=" +
+                inherits + "\n");
+
+    CBlastPhoneHomePolicy policy(config_path);
+    policy.SetUserUsageReportPreference(false);
+
+    CMemoryRegistry registry;
+    CBlastPhoneHomePolicy::ReadRegistryFile(config_path, registry);
+    inherits =
+        s_GetRegistryValue(registry,
+                           CBlastPhoneHomePolicy::kNcbiRegistrySection,
+                           CBlastPhoneHomePolicy::kNcbiInheritsParam);
+    ITERATE(vector<string>, iter, expected_inherits) {
+        BOOST_REQUIRE_EQUAL(s_CountOccurrences(inherits, *iter), size_t(1));
+    }
+}
+
+BOOST_FIXTURE_TEST_CASE(Environment_override_preserves_user_preference,
+                        CBlastPhoneHomeTestFixture)
+{
+    const string config_path =
+        CDirEntry::MakePath(CDir::GetHome(),
+                            "blast_usage_report_env_override.ini");
+    BackupFile(config_path);
+
+    CBlastPhoneHomePolicy policy(config_path);
+    policy.SetUserUsageReportPreference(true);
+
+    CNcbiEnvironment env;
+    env.Set(CBlastPhoneHomePolicy::kBlastUsageReportEnv,
+            NStr::BoolToString(false));
+    policy.Restore();
+    BOOST_REQUIRE(!policy.IsEnabled());
+
+    CMemoryRegistry registry;
+    CBlastPhoneHomePolicy::ReadRegistryFile(config_path, registry);
+    BOOST_REQUIRE_EQUAL(s_GetRegistryValue
+                            (registry,
+                             CBlastPhoneHomePolicy::kBlastUsageReportRegistry,
+                             CBlastPhoneHomePolicy::kBlastUsageReportKey),
+                        "true");
+
+    env.Unset(CBlastPhoneHomePolicy::kBlastUsageReportEnv);
+    policy.Restore();
+    BOOST_REQUIRE(policy.IsEnabled());
+
+    CMemoryRegistry updated_registry;
+    CBlastPhoneHomePolicy::ReadRegistryFile(config_path, updated_registry);
+    BOOST_REQUIRE_EQUAL(s_GetRegistryValue
+                            (updated_registry,
+                             CBlastPhoneHomePolicy::kBlastUsageReportRegistry,
+                             CBlastPhoneHomePolicy::kBlastUsageReportKey),
+                        "true");
+}
+
+BOOST_FIXTURE_TEST_CASE(Save_preserves_existing_ncbirc,
+                        CBlastPhoneHomeTestFixture)
+{
+    const string config_path =
+        CDirEntry::MakePath(CDir::GetHome(),
+                            "blast_usage_report_preserve.ini");
+    BackupFile(config_path);
+    const string custom_inherit =
+        CBlastPhoneHomePolicy::MakeOptionalNcbiInheritPath
+            ("/custom", CNcbiRegistry::sm_SysRegName);
+    s_WriteFile(config_path,
+                string("[") +
+                CBlastPhoneHomePolicy::kNcbiRegistrySection + "]\n" +
+                CBlastPhoneHomePolicy::kNcbiInheritsParam + "=" +
+                custom_inherit + "\n"
+                "Other=true\n"
+                "\n"
+                "[" + CBlastPhoneHomePolicy::kBlastUsageReportRegistry + "]\n"
+                "BLASTDB=/tmp/blastdb\n"
+                "\n"
+                "[OTHER]\n"
+                "Value=1\n");
+
+    CBlastPhoneHomePolicy policy(config_path);
+    policy.SetUserUsageReportPreference(true);
+
+    CMemoryRegistry registry;
+    CBlastPhoneHomePolicy::ReadRegistryFile(config_path, registry);
+    const vector<string> expected_inherits =
+        CBlastPhoneHomePolicy::GetDefaultNcbiInherits();
+    string inherits =
+        s_GetRegistryValue(registry,
+                           CBlastPhoneHomePolicy::kNcbiRegistrySection,
+                           CBlastPhoneHomePolicy::kNcbiInheritsParam);
+    BOOST_REQUIRE_EQUAL(s_GetRegistryValue
+                            (registry,
+                             CBlastPhoneHomePolicy::kNcbiRegistrySection,
+                             "Other"),
+                        "true");
+    BOOST_REQUIRE_EQUAL(s_GetRegistryValue
+                            (registry,
+                             CBlastPhoneHomePolicy::kBlastUsageReportRegistry,
+                             "BLASTDB"),
+                        "/tmp/blastdb");
+    BOOST_REQUIRE_EQUAL(s_GetRegistryValue(registry, "OTHER", "Value"),
+                        "1");
+    BOOST_REQUIRE_EQUAL(s_GetRegistryValue
+                            (registry,
+                             CBlastPhoneHomePolicy::kBlastUsageReportRegistry,
+                             CBlastPhoneHomePolicy::kBlastUsageReportKey),
+                        "true");
+    BOOST_REQUIRE_NE(inherits.find(custom_inherit), string::npos);
+    s_CheckInherits(inherits, expected_inherits);
+    policy.SetUserUsageReportPreference(false);
+    CMemoryRegistry updated_registry;
+    CBlastPhoneHomePolicy::ReadRegistryFile(config_path, updated_registry);
+    inherits =
+        s_GetRegistryValue(updated_registry,
+                           CBlastPhoneHomePolicy::kNcbiRegistrySection,
+                           CBlastPhoneHomePolicy::kNcbiInheritsParam);
+    BOOST_REQUIRE_EQUAL(s_GetRegistryValue
+                            (updated_registry,
+                             CBlastPhoneHomePolicy::kBlastUsageReportRegistry,
+                             CBlastPhoneHomePolicy::kBlastUsageReportKey),
+                        "false");
+    ITERATE(vector<string>, iter, expected_inherits) {
+        BOOST_REQUIRE_EQUAL(s_CountOccurrences(inherits, *iter), size_t(1));
+    }
 }
 
 BOOST_FIXTURE_TEST_CASE(Check_usage_status_report, CBlastPhoneHomeTestFixture)
 {
     const string enable = "TRUE";
-    const string disable = "FALSE";
+    const string config_path =
+        CDirEntry::MakePath(CDir::GetHome(),
+                            "blast_usage_report_status.ini");
+    BackupFile(config_path);
 
-    CMetaRegistry::SEntry sentry = CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-    CRef<IRWRegistry> registry = sentry.registry;
-    registry->SetValue(CBlastPhoneHomePolicy::kNCBIUsageReportRegistry ,
-                       CBlastPhoneHomePolicy::kNCBIUsageReportRegistryParam,
-                       true, IRegistry::fOverride | IRegistry::fPersistent);
-
-    CBlastPhoneHomePolicy phone_home;
-    phone_home.Restore();
+    CBlastPhoneHomePolicy phone_home(config_path);
+    phone_home.SetUserUsageReportPreference(false);
     string status_report = phone_home.PhoneHomeStatusReport();
-    registry->Unset(CBlastPhoneHomePolicy::kNCBIUsageReportRegistry ,
-                    CBlastPhoneHomePolicy::kNCBIUsageReportRegistryParam);
-    BOOST_REQUIRE_NE(status_report.find(CBlastPhoneHomePolicy::kNCBIUsageReportRegistry), string::npos);
+    BOOST_REQUIRE_NE(status_report.find("Local NCBI config file"),
+                     string::npos);
+    BOOST_REQUIRE_NE(status_report.find
+        (CBlastPhoneHomePolicy::kBlastUsageReportRegistryParam),
+        string::npos);
 
     CNcbiEnvironment env;
     env.Set(CBlastPhoneHomePolicy::kBlastUsageReportEnv, enable);
@@ -296,6 +663,98 @@ BOOST_FIXTURE_TEST_CASE(Check_usage_status_report, CBlastPhoneHomeTestFixture)
     BOOST_REQUIRE_NE(status_report.find(CBlastPhoneHomePolicy::kBlastUsageReportEnv), string::npos);
 
 }
+
+BOOST_FIXTURE_TEST_CASE(Check_invalid_usage_configurations,
+                        CBlastPhoneHomeTestFixture)
+{
+    const string config_path =
+        CDirEntry::MakePath(CDir::GetHome(),
+                            "blast_usage_report_invalid.ini");
+    BackupFile(config_path);
+
+    CNcbiEnvironment env;
+    env.Set(kNcbiConfigOverridesEnv, config_path);
+
+    s_WriteFile(config_path,
+                string("[") +
+                CBlastPhoneHomePolicy::kNCBIUsageReportRegistry + "]\n"
+                "Enable=dummy\n");
+
+    CBlastPhoneHomePolicy policy(config_path);
+    policy.Restore();
+    BOOST_REQUIRE(!policy.IsUsageConfigured());
+    BOOST_REQUIRE(!policy.HasUserUsageReportPreference());
+    BOOST_REQUIRE(!policy.IsEnabled());
+
+    s_WriteFile(config_path,
+                string("[") +
+                CBlastPhoneHomePolicy::kNCBIUsageReportRegistry + "]\n" +
+                CBlastPhoneHomePolicy::kNCBIUsageReportRegistryParam +
+                "=dummy\n");
+    policy.Restore();
+    BOOST_REQUIRE(!policy.IsUsageConfigured());
+    BOOST_REQUIRE(!policy.HasUserUsageReportPreference());
+    BOOST_REQUIRE(!policy.IsEnabled());
+
+    s_WriteFile(config_path,
+                string("[") +
+                CBlastPhoneHomePolicy::kBlastUsageReportRegistry + "]\n" +
+                CBlastPhoneHomePolicy::kBlastUsageReportRegistryParam +
+                "=Nevermind\n");
+    policy.Restore();
+    BOOST_REQUIRE(!policy.IsUsageConfigured());
+    BOOST_REQUIRE(!policy.HasUserUsageReportPreference());
+    BOOST_REQUIRE(!policy.IsEnabled());
+
+    env.Unset(kNcbiConfigOverridesEnv);
+}
+
+BOOST_FIXTURE_TEST_CASE(Check_inherited_ncbi_configuration_hierarchy,
+                        CBlastPhoneHomeTestFixture)
+{
+    const string inherited_path =
+        CDirEntry::MakePath(CDir::GetHome(),
+                            "blast_usage_report_unit_test.ini");
+    const string config_path =
+        CDirEntry::MakePath(CDir::GetHome(),
+                            "blast_usage_report_inherits.ini");
+    BackupFile(inherited_path);
+    BackupFile(config_path);
+
+    s_WriteFile(inherited_path,
+                string("[") +
+                CBlastPhoneHomePolicy::kBlastUsageReportRegistry + "]\n" +
+                CBlastPhoneHomePolicy::kBlastUsageReportKey + "=False\n");
+
+    s_WriteFile(config_path,
+                string("[") +
+                CBlastPhoneHomePolicy::kNcbiRegistrySection + "]\n" +
+                CBlastPhoneHomePolicy::kNcbiInheritsParam + "=" +
+                inherited_path + "\n\n"
+                "[" + CBlastPhoneHomePolicy::kNCBIUsageReportRegistry + "]\n" +
+                CBlastPhoneHomePolicy::kNCBIUsageReportRegistryParam +
+                "=TRUE\n");
+
+    CNcbiEnvironment env;
+    env.Set(kNcbiConfigOverridesEnv, config_path);
+
+    CBlastPhoneHomePolicy policy(config_path);
+    policy.Restore();
+    BOOST_REQUIRE(policy.IsEnabled());
+    const string status_report = policy.PhoneHomeStatusReport();
+    BOOST_REQUIRE_NE(status_report.find
+        ("[" + CBlastPhoneHomePolicy::kNCBIUsageReportRegistry + "] " +
+         CBlastPhoneHomePolicy::kNCBIUsageReportRegistryParam),
+        string::npos);
+    BOOST_REQUIRE_NE(status_report.find
+        ("[" + CBlastPhoneHomePolicy::kBlastUsageReportRegistry + "] " +
+         CBlastPhoneHomePolicy::kBlastUsageReportRegistryParam),
+        string::npos);
+    BOOST_REQUIRE_NE(status_report.find("true*"), string::npos);
+    BOOST_REQUIRE_NE(status_report.find("false"), string::npos);
+    env.Unset(kNcbiConfigOverridesEnv);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* SKIP_DOXYGEN_PROCESSING */
