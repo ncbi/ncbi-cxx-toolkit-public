@@ -56,7 +56,6 @@ static int/*bool*/ x_NcbiIsIPv4(const TNCBI_IPv6Addr* addr, int/*bool*/ compat)
     /* RFC 4291 2.1, 3
        NB: 2.5.5.1 and 2.5.5.2 - both obsoleted by RFC 6052 2.1 */
     unsigned short word;
-    unsigned int   temp;
     if (memcchr(addr->octet, 0, 10 * sizeof(addr->octet[0])))
         return 0/*false*/;
     memcpy(&word, &addr->octet[10], sizeof(word));
@@ -65,8 +64,7 @@ static int/*bool*/ x_NcbiIsIPv4(const TNCBI_IPv6Addr* addr, int/*bool*/ compat)
     if (word != 0x0000  ||  !compat)
         return 0/*false*/;
     /* IPv4-compatible IPv6 */
-    memcpy(&temp, &addr->octet[12], sizeof(temp));
-    return SOCK_NetToHostLong(temp) & 0xFF000000 ? 1/*true*/ : 0/*false*/;
+    return addr->octet[12]/* 0xFF000000 IPv4? */ ? 1/*true*/ : 0/*false*/;
 }
 
 
@@ -148,7 +146,7 @@ extern TNCBI_IPv6Addr* NcbiIPv4ToIPv6(TNCBI_IPv6Addr* addr,
         return 0/*failure*/;
     if (pfxlen == 0) {
         static const size_t word = sizeof(unsigned short);
-        /* creates IPv6 mapped */
+        /* creates mapped IPv4 */
         memset(addr, 0, sizeof(*addr) - (word + size));
         memset(addr->octet + (5 << 1), '\xFF', word);
         pfxlen  = 96;
@@ -185,8 +183,7 @@ extern TNCBI_IPv6Addr* NcbiIPv4ToIPv6(TNCBI_IPv6Addr* addr,
 
 /* Parse "str" as an IPv4 address, and return 0 if failed, otherwise a pointer
  * to the first non-parsed char (which is neither a digit nor a dot) and "dst"
- * updated with the just read IPv4 address in network byte order.
- */
+ * updated with the just read IPv4 address in network byte order. */
 static const char* x_StringToIPv4(unsigned int* dst,
                                   const char* str, size_t len)
 {
@@ -205,7 +202,7 @@ static const char* x_StringToIPv4(unsigned int* dst,
                 return 0/*leading "0" in octet*/;
             val = (unsigned int)(*ptr * 10 + (c - '0'));
             if (val > 255)
-                return 0;
+                return 0/*value too large*/;
             *ptr = (unsigned char) val;
             if (!was_digit) {
                 ++octets;
@@ -213,15 +210,15 @@ static const char* x_StringToIPv4(unsigned int* dst,
                 was_digit = 1/*true*/;
             }
         } else if (c == '.') {
-            if (!was_digit  ||  octets >= 4)
-                return 0;
+            if (!was_digit  ||  octets == 4)
+                return 0/*badly placed dots*/;
             was_digit = 0/*false*/;
             *++ptr = 0;
         } else
             break;
     }
     if (octets != 4)
-        return 0/*failure*/;
+        return 0/*two few octets*/;
 
     *dst = tmp;
     return str + n;
@@ -234,11 +231,40 @@ static char* x_IPv4ToString(char* buf, size_t bufsize, const void* src)
     unsigned char* ptr = (unsigned char*) src;
     size_t len
         = (size_t) sprintf(tmp, "%u.%u.%u.%u", ptr[0], ptr[1], ptr[2], ptr[3]);
-    return len < bufsize ? (char*) memcpy(buf, tmp, len + 1/*EOS*/) + len : 0;
+    return len < bufsize ? (char*) memcpy(buf, tmp, len + 1/*'\0'*/) + len : 0;
 }
 
 
-/* Returns ptr past read (0 on error) */
+/* NB: this routine converts no more than a 16-bit hexadecimal value at once */
+static unsigned short x_HexWord(const char* str, size_t len, const char** end)
+{
+    assert(0 < len  &&  (len < 5  ||  (len == 5  &&  !isxdigit((unsigned char) str[4]))));
+    assert(isxdigit((unsigned char)(*str)));
+    unsigned short val = 0; 
+    do {
+        char c = *str;
+        if      ('0' <= c  &&  c <= '9')
+            c -= '0';
+        else if ('A' <= c  &&  c <= 'F')
+            c -= 'A' - 0xA;
+        else if ('a' <= c  &&  c <= 'f')
+            c -= 'a' - 0xA;
+        else {
+            /* only the last char can be non-hex */
+            assert(len == 1);
+            break;
+        }
+        assert(0 <= c  &&  c <= 0xF);
+        val <<= 4;
+        val  |= c;
+        ++str;
+    } while (--len);
+    *end = str;
+    return val;
+}
+
+
+/* Returns a pointer past the address read and parsed or 0 on error */
 static const char* x_StringToIPv6(TNCBI_IPv6Addr* addr,
                                   const char* str, size_t len)
 {
@@ -248,6 +274,7 @@ static const char* x_StringToIPv6(TNCBI_IPv6Addr* addr,
         size_t      len;
     } token[sizeof(addr->octet) / sizeof(word) + 1];
     size_t maxt = sizeof(token) / sizeof(token[0]) - 1, t, n;
+    const char* str_end;
     TNCBI_IPv6Addr temp;
     unsigned char* dst;
     int/*bool*/ ipv4;
@@ -258,6 +285,7 @@ static const char* x_StringToIPv6(TNCBI_IPv6Addr* addr,
         return 0/*failure*/;
     gap = 0;
     ipv4 = 0/*false*/;
+    str_end = str + len;
     token[t = 0].ptr = str + n;
     do {
         assert(t <= maxt);
@@ -288,13 +316,17 @@ static const char* x_StringToIPv6(TNCBI_IPv6Addr* addr,
             if (token[t].len) {
                 if (str[n] == '.') {
                     if (t <= maxt - sizeof(ip) / sizeof(word)) {
+                        size_t x_len = token[t].len + (len - n);
                         const char* end
-                            = x_StringToIPv4(&ip,
-                                             token[t].ptr,
-                                             token[t].len + (len - n));
-                        if (end  &&  *end != ':'
-                            &&  t <= (maxt -= sizeof(ip) / sizeof(word))) {
+                            = x_StringToIPv4(&ip, token[t].ptr, x_len);
+                        assert(str_end == token[t].ptr + x_len);
+                        assert(!end  ||  end == str_end
+                               ||  (end < str_end
+                                    &&  *end != '.'
+                                    &&  !isdigit((unsigned char)(*end))));
+                        if (end  &&  (end == str_end  ||  *end != ':')) {
                             token[t].len = (size_t)(end - token[t].ptr);
+                            maxt -= sizeof(ip) / sizeof(word);
                             ipv4 = 1/*true*/;
                             break;
                         }
@@ -302,35 +334,31 @@ static const char* x_StringToIPv6(TNCBI_IPv6Addr* addr,
                     return 0/*failure*/;
                 }
                 if (++t > maxt)
-                    return 0/*failure*/;
+                    return 0/*too many groups*/;
             }
             break;
         }
     } while (++n <= len);
 
-    assert(t <= maxt);
+    assert(0 < t  &&  t <= maxt);
     if (t < maxt  &&  !gap)
         return 0/*failure*/;
 
     dst = temp.octet;
     for (n = 0;  n < t;  ++n) {
         assert(token[n].len);
-        if (*token[n].ptr != ':') {
-            char* end;
-            long  val;
+        assert(str <= token[n].ptr  &&  token[n].ptr + token[n].len <= str_end);
+        if (token[n].ptr[0] != ':') {
+            const char* end;
             assert(isxdigit((unsigned char) token[n].ptr[0]));
-            errno = 0;
-            val = strtol(token[n].ptr, &end, 16);
-            if (errno  ||  (val ^ (val & 0xFFFF)))
+            word = SOCK_HostToNetShort(x_HexWord(token[n].ptr, token[n].len, &end));
+            if ((end < str_end  &&  *end == ':') ^ (n != t - !ipv4))
                 return 0/*failure*/;
-            assert(end == token[n].ptr + token[n].len - (*end == ':'));
-            if (*end == ':'  &&  n == t - !ipv4)
-                return 0/*failure*/;
-            word = SOCK_HostToNetShort((unsigned short) val);
             memcpy(dst, &word, sizeof(word));
             dst += sizeof(word);
         } else {
-            gap = (maxt - t) * sizeof(word) + sizeof(word);
+            assert(token[n].len == 1);
+            gap = (maxt - t + 1) * sizeof(word);
             memset(dst, 0, gap);
             dst += gap;
         }
@@ -396,7 +424,7 @@ static char* x_IPv6ToString(char* buf, size_t bufsize,
         unsigned int ip;
         n = sizeof(addr->octet) - sizeof(ip);
         memcpy(&ip, addr->octet + n, sizeof(ip));
-        SOCK_ntoa(ip, ipv4, sizeof(ipv4));
+        verify(SOCK_ntoa(ip, ipv4, sizeof(ipv4)) == 0);
         n /= sizeof(word);
     } else {
         n = sizeof(addr->octet) / sizeof(word);
@@ -554,10 +582,10 @@ static const char* x_DNSToIPv4(unsigned int* addr,
                                const char* str, size_t len)
 {
     unsigned char* dst = (unsigned char*) addr + sizeof(*addr);
-    CORE_DEBUG_ARG(const char* end = str + len;)
+    CORE_DEBUG_ARG(const char* str_end = str + len;)
     size_t n;
 
-    assert(*end == '.'
+    assert(*str_end == '.'
            &&  7/*"x.x.x.x"*/ <= len  &&  len <= 15/*xxx.xxx.xxx.xxx*/);
 
     for (n = 0;  n < sizeof(*addr);  ++n) {
@@ -572,7 +600,7 @@ static const char* x_DNSToIPv4(unsigned int* addr,
             return 0/*failure*/;
         }
         *--dst = (unsigned char) d;
-        assert(e <= end);
+        assert(e <= str_end);
         str = ++e;
     }
     return --str;
@@ -584,20 +612,21 @@ static const char* x_DNSToIPv6(TNCBI_IPv6Addr* addr,
                                const char* str, size_t len)
 {
     unsigned char* dst = addr->octet + sizeof(addr->octet) - 1;
-    CORE_DEBUG_ARG(const char* end = str + len;)
+    CORE_DEBUG_ARG(const char* str_end = str + len;)
     size_t n;
 
-    assert(*end == '.'  &&  len == 4 * sizeof(addr->octet) - 1);
+    assert(*str_end == '.'  &&  len == 4 * sizeof(addr->octet) - 1);
 
     for (n = 0;  n < 2 * sizeof(addr->octet);  ++n) {
         static const char xdigits[] = "0123456789abcdef";
         int c = tolower((unsigned char)(*str));
         unsigned char val;
         const char*   ptr ;
-        assert(c  &&  str < end);
+        assert(c  &&  str < str_end);
         if (*++str != '.'  ||  !(ptr = strchr(xdigits, c)))
             return 0/*failure*/;
         val = (unsigned char)(ptr - xdigits);
+        assert(0 <= val  &&  val <= 0xF);
         if (n & 1) {
             val   <<= 4;
             *dst-- |= val;
@@ -612,17 +641,18 @@ static const char* x_DNSToIPv6(TNCBI_IPv6Addr* addr,
 #ifdef __GNUC__
 inline
 #endif /*__GNUC__*/
-static int/*bool*/ x_OkDNSEnd(const char* end)
+static int/*bool*/ x_OkDNSEnd(const char* end, size_t len)
 {
+    assert(len);
+    /* the continuation is... */
     if (isalnum((unsigned char) end[0]))
         return 0/*F*/;
-    if (end[0] != '.')
+    if (len == 1  ||  !(end[0] == '.'  ||  end[0] == '-'))
         return 1/*T*/;
+    /* '.' or '-' followed by... */
     if (isalnum((unsigned char) end[1]))
         return 0/*F*/;
-    if (end[1] != '.')
-        return 1/*T*/;
-    return 0/*F*/;
+    return 1/*T*/;
 }
 
 
@@ -641,8 +671,8 @@ static const char* s_StringToAddr(TNCBI_IPv6Addr* addr,
      * -- all that while IPv4 literal suffix is longer than that of IPv6. */
     static const size_t kMaxDnsLen = 4 * sizeof(addr->octet) + NCBI_IPV6_DNS_SIZE;
     static const size_t kMinDnsLen = 7 + NCBI_IPV4_DNS_SIZE;
+    const char *tmp, *str_end;
     unsigned int ipv4;
-    const char* tmp;
     size_t n;
 
     assert(how);
@@ -666,6 +696,7 @@ static const char* s_StringToAddr(TNCBI_IPv6Addr* addr,
     }
     if (!(len = n))
         return 0/*failure*/;
+    str_end = str + n;
 
     /* these are static assert()s, actually */
     assert(kMinDnsLen   <= kMaxDnsLen);
@@ -681,22 +712,24 @@ static const char* s_StringToAddr(TNCBI_IPv6Addr* addr,
                 const char*    end;
                 TNCBI_IPv6Addr temp;
                 assert(len - n >= m);
-                /* CORE_TRACEF(("%.*s %.*s", (int) n, str, (int)(len - n), tmp)); */
+                CORE_TRACEF(("%.*s %.*s", (int) n, str, (int)(len - n), tmp));
                 if (m >= NCBI_IPV4_DNS_SIZE
                     &&  7/*"x.x.x.x"*/ <= n  &&  n <= 15/*xxx.xxx.xxx.xxx*/
-                    &&  x_OkDNSEnd(end = tmp + NCBI_IPV4_DNS_SIZE)
+                    &&  ((end = tmp + NCBI_IPV4_DNS_SIZE) == str_end
+                         ||  (assert(end < str_end), x_OkDNSEnd(end, (size_t)(str_end - end))))
                     &&  strncasecmp(tmp + 1, kIPv4DNS.sfx, NCBI_IPV4_DNS_SIZE - 1) == 0
                     &&  x_DNSToIPv4(&ipv4, str, n) == tmp) {
                     NcbiIPv4ToIPv6(addr, ipv4, 0);
-                    return &end[!(*end != '.')];
+                    return end < str_end ? &end[!(*end != '.')] : str_end;
                 }
                 if (m >= NCBI_IPV6_DNS_SIZE
                     &&  n == 4 * sizeof(temp.octet) - 1
-                    &&  x_OkDNSEnd(end = tmp + NCBI_IPV6_DNS_SIZE)
+                    &&  ((end = tmp + NCBI_IPV6_DNS_SIZE) == str_end
+                          ||  (assert(end < str_end), x_OkDNSEnd(end, (size_t)(str_end - end))))
                     &&  strncasecmp(tmp + 1, kIPv6DNS.sfx, NCBI_IPV6_DNS_SIZE - 1) == 0
                     &&  x_DNSToIPv6(&temp, str, n) == tmp) {
                     *addr = temp;
-                    return &end[!(*end != '.')];
+                    return end < str_end ? &end[!(*end != '.')] : str_end;
                 }
             }
             --tmp;
@@ -750,7 +783,7 @@ extern int/*bool*/ NcbiIsInIPv6Network(const TNCBI_IPv6Addr* base,
     if (!base  ||  !addr)
         return 0/*false*/;
 
-    if (bits > (sizeof(base->octet) << 3))
+    if (bits > sizeof(base->octet) * 8)
         return 0/*false*/;
 
     for (n = 0;  n < sizeof(addr->octet);  ++n) {

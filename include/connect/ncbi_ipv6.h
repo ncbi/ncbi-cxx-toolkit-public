@@ -30,7 +30,7 @@
  *
  * File Description:
  * @file ncbi_ipv6.h
- *   IPv6 addressing support
+ *   IPv4 and IPv6 address conversion and manipulation support
  *
  */
 
@@ -44,12 +44,14 @@ extern "C" {
 
 
 typedef struct {
-    unsigned char octet[16];  /* assume no alignment */
+    unsigned char octet[16];  /* no alignment assumed */
 } TNCBI_IPv6Addr;
 
 
-/** Return non-zero if the address is empty (either as NULL or IPv6 or IPv4);
-*   return zero otherwise.
+/** Test whether an address is empty, including a NULL pointer, an all-zero IPv6
+ *  address, or an all-zero IPv4 address.
+ * @return
+ *  Non-zero if the address is empty; zero otherwise.
  * @sa
  *  NcbiIsIPv4
  */
@@ -57,9 +59,12 @@ extern NCBI_XCONNECT_EXPORT
 int/*bool*/ NcbiIsEmptyIPv6(const TNCBI_IPv6Addr* addr);
 
 
-/** Return non-zero(true) if the address is a true IPv4 address (a mapped IPv4
- *  address), which is equivalent of calling NcbiIsIPv4Ex(addr, 0);
- *  return zero(false) otherwise (including for NULL).
+/** Test whether the address is an IPv4-mapped IPv6 address.
+ *
+ *  This is equivalent to calling NcbiIsIPv4Ex(addr, 0).
+ * @return
+ *  Non-zero (true) if the address is IPv4-mapped; zero (false) otherwise,
+ *  including when "addr" is NULL.
  * @sa
  *  NcbiIsIPv4Ex, NcbiIPv4ToIPv6, NcbiIPv6ToIPv4
  */
@@ -67,13 +72,15 @@ extern NCBI_XCONNECT_EXPORT
 int/*bool*/  NcbiIsIPv4    (const TNCBI_IPv6Addr* addr);
 
 
-/** Return non-zero(true) if the address is either a mapped IPv4 address or
- *  (optionally) an IPv4-compatible IPv6 address;
- *  return zero(false) otherwise (including for NULL).
+/** Test whether the address is an IPv4-mapped IPv6 address or, when requested,
+ *  an IPv4-compatible IPv6 address.
  * @param compat
- *  non-zero causes IPv4-compatible IPv6 addresses to pass the test
+ *  If non-zero, accept IPv4-compatible IPv6 addresses as IPv4 addresses.
+ * @return
+ *  Non-zero (true) if the address is accepted as IPv4; zero (false) otherwise,
+ *  including when "addr" is NULL.
  * @note
- *  NcbiIsIPv4Ex(addr, 0) is equivalent to NcbiIsIPv4(addr)
+ *  NcbiIsIPv4Ex(addr, 0) is equivalent to NcbiIsIPv4(addr).
  * @sa
  *  NcbiIsIPv4, NcbiIPv4ToIPv6, NcbiIPv6ToIPv4
  */
@@ -81,14 +88,16 @@ extern NCBI_XCONNECT_EXPORT
 int/*bool*/  NcbiIsIPv4Ex  (const TNCBI_IPv6Addr* addr, int/*bool*/ compat);
 
 
-/** Extract and return a network byte order IPv4 embedded address from an IPv6
- *  address, using the specified prefix length (RFC6052).  Return INADDR_NONE
- *  (-1 = 255.255.255.255) when the specified prefix length is not valid.  A
- *  special case (and the most anticipated common use-case) is to use prefix
- *  length 0, which checks that the passed IPv6 address is actually a mapped or
- *  compatible IPv4 address, then extracts it using the prefix length of 96.
- *  Return 0 if the extraction cannot be made (not an IPv4 mapped/compatible
- *  address).
+/** Extract an embedded IPv4 address from an IPv6 address using the specified
+ *  prefix length, as defined by RFC 6052, in network byte order.
+ *
+ *  A prefix length of 0 is a special case intended for the common operation of
+ *  extracting an IPv4 address from an IPv4-mapped or IPv4-compatible IPv6
+ *  address; in that case, a prefix length of 96 is used.
+ * @return
+ *  The extracted IPv4 address; INADDR_NONE (-1, or 255.255.255.255) if "addr"
+ *  is NULL or "pfxlen" is invalid; or 0 if the address is neither IPv4-mapped
+ *  nor IPv4-compatible when "pfxlen" is 0.
  * @sa
  *  NcbiIsIPv4, NcbiIPv4ToIPv6
  */
@@ -96,12 +105,15 @@ extern NCBI_XCONNECT_EXPORT
 unsigned int NcbiIPv6ToIPv4(const TNCBI_IPv6Addr* addr, size_t pfxlen);
 
 
-/** Embed a passed network byte order IPv4 address into an IPv6 address using
- *  the specified prefix length (RFC6052).  Return NULL when the specified
- *  prefix length is not valid, else return "addr".  A special case (and the
- *  most anticipated common use-case) is to use prefix length 0, which first
- *  clears the passed IPv6 address, then embeds the IPv4 address as a mapped
- *  address using the prefix length of 96.
+/** Embed the supplied network-byte-order IPv4 address in an IPv6 address using
+ *  the specified prefix length, as defined by RFC 6052.
+ *
+ *  A prefix length of 0 is a special case intended for the common operation of
+ *  creating an IPv4-mapped IPv6 address: "addr" is first cleared, and the IPv4
+ *  address is then embedded as an IPv4-mapped address using a prefix length of
+ *  96.
+ * @return
+ *  "addr" on success, or NULL if "addr" is NULL or "pfxlen" is invalid.
  * @sa
  *  NcbiIsIPv4, NcbiIPv6ToIPv4
  */
@@ -110,31 +122,47 @@ TNCBI_IPv6Addr* NcbiIPv4ToIPv6(TNCBI_IPv6Addr* addr,
                                unsigned int ipv4, size_t pfxlen);
 
 
-/** Convert into a network byte order IPv4 address, the first "len" (or
- *  "strlen(str)" if "len" is 0) bytes of "str" from a full-quad decimal
- *  notation.  Return a non-zero string pointer to the first non-converted
- *  character (which is neither a digit nor a dot);  return 0 if conversion
- *  failed and no IPv4 address had been found.
+/** Convert the first "len" bytes of "str" from dotted-decimal IPv4 notation to
+ *  an IPv4 address in network byte order.  If "len" is 0, use strlen(str).
+ * @return
+ *  On success: A non-NULL pointer to the first character not consumed, either
+ *  "str + len" or the first character that is neither a digit nor a dot.
+ *  On failure: NULL, including when either "addr" or "str" is NULL.
  * @note
- *  This call skips all leading whitespace before conversion begins.
+ *  Leading whitespace is skipped before conversion begins.
  * @note
- *  Unlike SOCK_gethostbyname[Ex], this call can handle "0.0.0.0" correctly.
+ *  No input beyond the first '\0' is considered.  When "len" is non-zero, no
+ *  character beyond the specified range is inspected.  If "str + len" is
+ *  returned, all requested characters were accepted; "str[len]" may still be a
+ *  digit or dot and, if inspected, that character could otherwise cause the
+ *  conversion to fail.
+ * @note
+ *  Unlike SOCK_gethostbyname[Ex], this function correctly handles "0.0.0.0".
  * @sa
- *  NcbiIPToAddr, NcbiIPv4ToIPv6, NcbiStringToAddr,
- *  SOCK_StringToHostPort, SOCK_gethostbyname[Ex]
+ *  NcbiIPToAddr, NcbiIPv4ToIPv6, NcbiStringToAddr, SOCK_StringToHostPort,
+ *  SOCK_gethostbyname[Ex]
  */
 extern NCBI_XCONNECT_EXPORT
 const char*  NcbiStringToIPv4(unsigned int* addr,
                               const char* str, size_t len);
 
 
-/** Convert into an IPv6 address, the first "len" (or "strlen(str)" if "len" is
- *  0) bytes of "str" from a hexadecimal colon-separated notation (including
- *  full-quad trailing IPv4).  Return a non-zero string pointer to the first
- *  non-converted character (which is neither a hex-digit, nor a colon, nor a
- *  dot);  return 0 if conversion failed and no IPv6 address had been found.
+/** Convert the first "len" bytes of "str" from colon-separated hexadecimal IPv6
+ *  notation to an IPv6 address.  If "len" is 0, use strlen(str).  An IPv6
+ *  address may include a trailing dotted-decimal IPv4 address.
+ * @return
+ *  On success: A non-NULL pointer to the first character not consumed, either
+ *  "str + len" or the first character that is neither a hexadecimal digit, a
+ *  colon, nor a dot.
+ *  On failure: NULL, including when either "addr" or "str" is NULL.
  * @note
- *  This call skips all leading whitespace before conversion begins.
+ *  Leading whitespace is skipped before conversion begins.
+ * @note
+ *  No input beyond the first '\0' is considered.  When "len" is non-zero, no
+ *  character beyond the specified range is inspected.  If "str + len" is
+ *  returned, all requested characters were accepted; "str[len]" may still be a
+ *  hexadecimal digit, colon, or dot and, if inspected, that character could
+ *  otherwise cause the conversion to fail.
  * @sa
  *  NcbiIPToAddr, NcbiStringToAddr
  */
@@ -143,27 +171,54 @@ const char*  NcbiStringToIPv6(TNCBI_IPv6Addr* addr,
                               const char* str, size_t len);
 
 
-/** Convert into an IPv6 address, the first "len" (or "strlen(str)" if "len" is
- *  0) bytes of "str" from either a full-quad decimal IPv4 or a hexadecimal
- *  colon-separated IPv6.  Return a non-zero string pointer to the first
- *  non-converted character (which is neither a [hex-]digit, nor a colon, nor a
- *  dot);  return 0 if no conversion can be made.
+/** Convert the first "len" bytes of "str" from either dotted-decimal IPv4 or
+ *  colon-separated hexadecimal IPv6 notation to an IPv6 address.  If "len" is
+ *  0, use strlen(str).
+ * @return
+ *  On success: A non-NULL pointer to the first character not consumed, either
+ *  "str + len" or the first character that is neither a hexadecimal digit, a
+ *  colon, nor a dot.
+ *  On failure: NULL, including when either "addr" or "str" is NULL.
  * @note
- *  This call skips all leading whitespace before conversion begins.
+ *  Leading whitespace is skipped before conversion begins.
+ * @note
+ *  No input beyond the first '\0' is considered.  When "len" is non-zero, no
+ *  character beyond the specified range is inspected.  If "str + len" is
+ *  returned, all requested characters were accepted; "str[len]" may still be a
+ *  hexadecimal digit, colon, or dot and, if inspected, that character could
+ *  otherwise cause the conversion to fail.
+ * @note
+ *  An IPv4 address is accepted and represented as a valid IPv4-mapped IPv6
+ *  address.
  * @sa
- *  NcbiStringToIPv4, NcbiStringToIPv6, NcbiStingToAddr, NcbiAddrToString
+ *  NcbiStringToIPv4, NcbiStringToIPv6, NcbiStringToAddr, NcbiAddrToString
  */
 extern NCBI_XCONNECT_EXPORT
 const char*  NcbiIPToAddr(TNCBI_IPv6Addr* addr,
                           const char* str, size_t len);
 
 
-/** Convert into an IPv6 address, the first "len" (or "strlen(str)" if "len" is
- *  0) bytes of "str", which can be either an .in-addr.arpa- or an
- *  .in6.arpa-domain names.  Return a non-zero string pointer to the first
- *  non-converted character;  return 0 if no conversion can be made.
+/** Convert the first "len" bytes of "str" from a reverse-DNS IPv4 or IPv6
+ *  domain name to an IPv6 address.  If "len" is 0, use strlen(str).
+ *
+ *  The input may be an in-addr.arpa name for a complete IPv4 address or an
+ *  ip6.arpa name for a complete IPv6 address, optionally followed by one dot.
+ *  Within the inspected range, an alphanumeric continuation, or a '-' or '.'
+ *  followed by an alphanumeric character, makes the name ambiguous and causes
+ *  conversion to fail.  Otherwise, parsing stops at the first unconsumed
+ *  character, leaving any extra input for the caller; for example, a second
+ *  trailing dot will be returned.
+ * @return
+ *  On success: A non-NULL pointer to the first character not consumed.
+ *  On failure: NULL, including when either "addr" or "str" is NULL.
  * @note
- *  This call skips all leading whitespace before conversion begins.
+ *  Leading whitespace is skipped before conversion begins.
+ * @note
+ *  No input beyond the first '\0' is considered.  When "len" is non-zero, no
+ *  character beyond the specified range is inspected.  If "str + len" is
+ *  returned, all requested characters were accepted; "str[len]" may still make
+ *  the extended input invalid and, if inspected, that character could otherwise
+ *  cause the conversion to fail.
  * @sa
  *  NcbiAddrToDNS, NcbiStringToAddr
  */
@@ -172,14 +227,26 @@ const char*  NcbiDNSIPToAddr(TNCBI_IPv6Addr* addr,
                              const char* str, size_t len);
 
 
-/** Convert into an IPv6 address, the first "len" (or "strlen(str)" if "len" is
- *  0) bytes of "str", which can be either of a full-quad decimal IPv4, a
- *  hexadecimal colon-separated IPv6, an .in-addr.arpa- or an .in6.arpa-domain
- *  names.  Return a non-zero string pointer to the first non-converted
- *  character (which is neither a [hex-]digit, nor a colon, nor a dot);  return
- *  0 if no conversion can be made.
+/** Convert the first "len" bytes of "str" to an IPv6 address.  If "len" is 0,
+ *  use strlen(str).  The input may be dotted-decimal IPv4, colon-separated
+ *  hexadecimal IPv6, an in-addr.arpa name for a complete IPv4 address, or an
+ *  ip6.arpa name for a complete IPv6 address.
+ *
+ *  For reverse-DNS input, an alphanumeric continuation, or a '-' or '.'
+ *  followed by an alphanumeric character, makes the name ambiguous and causes
+ *  conversion to fail; otherwise, parsing may stop after one trailing dot and
+ *  leave the next character unconsumed.
+ * @return
+ *  On success: A non-NULL pointer to the first character not consumed.
+ *  On failure: NULL, including when either "addr" or "str" is NULL.
  * @note
- *  This call skips all leading whitespace before conversion begins.
+ *  Leading whitespace is skipped before conversion begins.
+ * @note
+ *  No input beyond the first '\0' is considered.  When "len" is non-zero, no
+ *  character beyond the specified range is inspected.  If "str + len" is
+ *  returned, all requested characters were accepted; "str[len]" may still make
+ *  the extended input invalid and, if inspected, that character could otherwise
+ *  cause the conversion to fail.
  * @sa
  *  NcbiAddrToString, NcbiAddrToDNS
  */
@@ -188,14 +255,14 @@ const char*  NcbiStringToAddr(TNCBI_IPv6Addr* addr,
                               const char* str, size_t len);
 
 
-/** Convert a network byte order IPv4 into a full-quad text form and store the
- *  result in the "buf" of size "bufsize".  Return non-zero string address
- *  past the stored result, or 0 when the conversion failed for buffer being
- *  too small.
- *  In either case, if "buf" is non-NULL and "bufsize" is at least one, "buf"
- *  gets '\0'-terminated:  in case of an error (NULL return) this results in
- *  an empty string at "buf", and in case of a non-NULL return value the
- *  returned pointer points to the terminating '\0' byte.
+/** Convert a network-byte-order IPv4 address to dotted-decimal text and store
+ *  the result in "buf", whose size is "bufsize".
+ *
+ *  If "buf" is non-NULL and "bufsize" is at least 1, it is always \0-terminated
+ *  and contains an empty string on failure.
+ * @return
+ *  A pointer to the terminating '\0' on success, or NULL if "buf" is NULL or
+ *  the result does not fit in "buf".
  * @sa
  *  NcbiStringToIPv4, SOCK_ntoa, SOCK_HostPortToString
  */
@@ -204,14 +271,14 @@ char*        NcbiIPv4ToString(char* buf, size_t bufsize,
                               unsigned int addr);
 
 
-/** Convert an IPv6 address into a hex colon-separated text form and store the
- *  result in the "buf" of size "bufsize".  Return non-zero string address
- *  past the stored result, or 0 when the conversion failed for buffer being
- *  too small.
- *  In either case, if "buf" is non-NULL and "bufsize" is at least one, "buf"
- *  gets '\0'-terminated:  in case of an error (NULL return) this results in
- *  an empty string at "buf", and in case of a non-NULL return value the
- *  returned pointer points to the terminating '\0' byte.
+/** Convert an IPv6 address to colon-separated hexadecimal text and store the
+ *  result in "buf", whose size is "bufsize".
+ *
+ *  If "buf" is non-NULL and "bufsize" is at least 1, it is always \0-terminated
+ *  and contains an empty string on failure.
+ * @return
+ *  A pointer to the terminating '\0' on success, or NULL if either "addr" or
+ *  "buf" is NULL, or if the result does not fit in "buf".
  * @sa
  *  NcbiStringToIPv6, NcbiStringToAddr, NcbiAddrToString
  */
@@ -220,15 +287,16 @@ char*        NcbiIPv6ToString(char* buf, size_t bufsize,
                               const TNCBI_IPv6Addr* addr);
 
 
-/** Convert an IPv6 address into either a full-quad text IPv4 (for IPv4-mapped
- *  IPv6 addresses) or a hex colon-separated text form (for all other), and
- *  store the result in the "buf" of size "bufsize".  Return non-zero string
- *  address past the stored result, or 0 when the conversion failed for buffer
- *  being too small.
- *  In either case, if "buf" is non-NULL and "bufsize" is at least one, "buf"
- *  gets '\0'-terminated:  in case of an error (NULL return) this results in
- *  an empty string at "buf", and in case of a non-NULL return value the
- *  returned pointer points to the terminating '\0' byte.
+/** Convert an IPv6 address to text and store the result in "buf", whose size is
+ *  "bufsize".  IPv4-mapped IPv6 addresses are rendered in dotted-decimal IPv4
+ *  notation; all other addresses are rendered in colon-separated hexadecimal
+ *  IPv6 notation.
+ *
+ *  If "buf" is non-NULL and "bufsize" is at least 1, it is always \0-terminated
+ *  and contains an empty string on failure.
+ * @return
+ *  A pointer to the terminating '\0' on success, or NULL if either "addr" or
+ *  "buf" is NULL, or if the result does not fit in "buf".
  * @sa
  *  NcbiStringToAddr, NcbiAddrToDNS, SOCK_ntoa, SOCK_HostPortToString
  */
@@ -237,14 +305,15 @@ char*        NcbiAddrToString(char* buf, size_t bufsize,
                               const TNCBI_IPv6Addr* addr);
 
 
-/** Convert an IPv6 address into either .in-addr.arpa domain (for IPv4-mapped
- *  IPv6 addresses) or .ip6.arpa domain (for all other), and store the result
- *  in the "buf" of size "bufsize".  Return non-zero string address past the
- *  stored result, or 0 when the conversion failed for buffer being too small.
- *  In either case, if "buf" is non-NULL and "bufsize" is at least one, "buf"
- *  gets '\0'-terminated:  in case of an error (NULL return) this results in
- *  an empty string at "buf", and in case of a non-NULL return value the
- *  returned pointer points to the terminating '\0' byte.
+/** Convert an IPv6 address to a reverse-DNS domain name and store the result in
+ *  "buf", whose size is "bufsize".  IPv4-mapped IPv6 addresses are rendered as
+ *  in-addr.arpa names; all other addresses are rendered as ip6.arpa names.
+ *
+ *  If "buf" is non-NULL and "bufsize" is at least 1, it is always \0-terminated
+ *  and contains an empty string on failure.
+ * @return
+ *  A pointer to the terminating '\0' on success, or NULL if either "addr" or
+ *  "buf" is NULL, or if the result does not fit in "buf".
  * @sa
  *  NcbiAddrToString, NcbiDNSIPToAddr
  */
@@ -253,11 +322,14 @@ const char*  NcbiAddrToDNS(char* buf, size_t bufsize,
                            const TNCBI_IPv6Addr* addr);
 
 
-/** Return non-zero(true) if "addr" belongs to the network specified as CIDR
- *  "base/bits";  return a zero(false) otherwise.
- * @note "base" is not checked to contain all zero bits beyond "bits" (as it
- *  should), but if it does not then the return value will always be a
- *  zero(false).
+/** Test whether "addr" belongs to CIDR network "base/bits".
+ * @return
+ *  Non-zero (true) if "addr" belongs to the network; zero (false) otherwise,
+ *  including when either "base" or "addr" is NULL.
+ * @note
+ *  "base" is not explicitly checked for zero bits beyond the first "bits", as
+ *  required for a canonical network address.  If any of those bits are set, the
+ *  result is always false.
  * @sa
  *  NcbiIPv6Subnet
  */
@@ -267,10 +339,12 @@ int/*bool*/  NcbiIsInIPv6Network(const TNCBI_IPv6Addr* base,
                                  const TNCBI_IPv6Addr* addr);
 
 
-/** Retain first "bits" in a given "addr", resetting all remaining bits to 0.
- *  Return non-zero(true) if the resultant "addr" is non-empty;  return a
- *  zero(false) otherwise.
- * @note "addr" remains unmodified for "bits" larger than 127.
+/** Retain the first "bits" bits of "addr" and clear all remaining bits.
+ * @return
+ *  Non-zero (true) if the resulting address is non-empty; zero (false)
+ *  otherwise, including when "addr" is NULL.
+ * @note
+ *  "addr" remains unmodified when "bits" is greater than 127.
  * @sa
  *  NcbiIsEmptyIPv6, NcbiIsInIPv6Network, NcbiIPv6Suffix, NcbiIPv4Subnet
  */
@@ -279,10 +353,12 @@ int/*bool*/  NcbiIPv6Subnet(TNCBI_IPv6Addr* addr,
                             unsigned int    bits);
 
 
-/** Retain last "bits" in a given "addr", resetting all remaining bits to 0.
- *  Return non-zero(true) if the resultant "addr" is non-empty;  return a
- *  zero(false) otherwise.
- * @note "addr" remains unmodified for "bits" larger than 127.
+/** Retain the last "bits" bits of "addr" and clear all remaining bits.
+ * @return
+ *  Non-zero (true) if the resulting address is non-empty; zero (false)
+ *  otherwise, including when "addr" is NULL.
+ * @note
+ *  "addr" remains unmodified when "bits" is greater than 127.
  * @sa
  *  NcbiIsEmptyIPv6, NcbiIPv6Subnet, NcbiIPv4Suffix
  */
@@ -291,10 +367,16 @@ int/*bool*/  NcbiIPv6Suffix(TNCBI_IPv6Addr* addr,
                             unsigned int    bits);
 
 
-/** Same as NcbiIPv6Subnet() but operates on "addr", which is IPv4.
- *  Return non-zero(true) if the resultant "addr" is a non-empty IPv4;
- *  return a zero(false) otherwise (empty or non-IPv4).
- * @note "addr" remains unmodified for "bits" larger than 31.
+/** Retain the first "bits" bits of an IPv4 "addr" and clear the rest.  A
+ *  non-NULL IPv4 input is stored as IPv4-mapped; a non-IPv4 input is cleared to
+ *  IPv4-mapped 0.0.0.0.
+ * @return
+ *  Non-zero (true) if the resulting IPv4-mapped address is non-empty; zero
+ *  (false) otherwise, including when "addr" is NULL.
+ * @note
+ *  When "bits" is greater than 31, the IPv4 address bits of a valid IPv4 input
+ *  remain unchanged; an IPv4-compatible input is still converted to IPv4-mapped
+ *  form.
  * @sa
  *  NcbiIsIPv4Ex, NcbiIPv6Subnet
  */
@@ -303,10 +385,16 @@ int/*bool*/  NcbiIPv4Subnet(TNCBI_IPv6Addr* addr,
                             unsigned int    bits);
 
 
-/** Same as NcbiIPv6Suffix() but operates on "addr", which is IPv4.
- *  Return non-zero(true) if the resultant "addr" is a non-empty IPv4;
- *  return a zero(false) otherwise (empty or non-IPv4).
- * @note "addr" remains unmodified for "bits" larger than 31.
+/** Retain the last "bits" bits of an IPv4 "addr" and clear the rest.
+ *  A non-NULL IPv4 input is stored as IPv4-mapped; a non-IPv4 input is
+ *  cleared to IPv4-mapped 0.0.0.0.
+ * @return
+ *  Non-zero (true) if the resulting IPv4-mapped address is non-empty; zero
+ *  (false) otherwise, including when "addr" is NULL.
+ * @note
+ *  When "bits" is greater than 31, the IPv4 address bits of a valid IPv4 input
+ *  remain unchanged; an IPv4-compatible input is still converted to IPv4-mapped
+ *  form.
  * @sa
  *  NcbiIsIPv4Ex, NcbiIPv6Suffix
  */
