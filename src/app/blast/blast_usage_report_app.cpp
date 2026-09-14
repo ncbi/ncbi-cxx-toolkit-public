@@ -114,16 +114,14 @@ int CBlastUsageReportApp::Run(void)
     try {
 
         if (args[kArgOn]){
-		    m_PhoneHomePolicy.CheckBlastUsageConfigurations();
-		    m_PhoneHomePolicy.EnableOptIn(true);
+		    m_PhoneHomePolicy.SetUserUsageReportPreference(true);
 		    if (m_PhoneHomePolicy.IsEnabled() != true) {
 		        ERR_POST(Warning << "Existing usage configuration override opt-in selection.\n"
 		                            "Please run status option for more information.");
             }
         }
         else if (args[kArgOff]){
-		    m_PhoneHomePolicy.CheckBlastUsageConfigurations();
-		    m_PhoneHomePolicy.EnableOptIn(false);
+		    m_PhoneHomePolicy.SetUserUsageReportPreference(false);
 		    if (m_PhoneHomePolicy.IsEnabled() != false) {
 		        ERR_POST(Warning << "Existing usage configuration override opt-in selection.\n"
 		                            "Please run status option for more information.");
@@ -131,9 +129,7 @@ int CBlastUsageReportApp::Run(void)
         }
         else if (args[kArgPrivacyMsg]){
             CNcbiOstream& out = args[kArgOutput].AsOutputFile();
-            std::streambuf* old = std::cerr.rdbuf(out.rdbuf());
-            m_PhoneHomePolicy.Print();
-            std::cerr.rdbuf(old);
+            out << m_PhoneHomePolicy;
         }
         else if (args[kArgStatus]){
             CNcbiOstream& out = args[kArgOutput].AsOutputFile();

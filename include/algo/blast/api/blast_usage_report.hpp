@@ -37,8 +37,12 @@
 #include <connect/ncbi_usage_report.hpp>
 #include <algo/blast/core/blast_export.h>
 #include <corelib/phone_home_policy.hpp>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
+
+class CMemoryRegistry;
+
 BEGIN_SCOPE(blast)
 
 class NCBI_XBLAST_EXPORT CBlastPhoneHomePolicy : public IPhoneHomePolicy
@@ -47,42 +51,33 @@ public:
     /// Constructor
     /// Check phone home configurations
     CBlastPhoneHomePolicy();
+    explicit CBlastPhoneHomePolicy(const string& config_file_path);
 
     /// Destructor
-    ~CBlastPhoneHomePolicy() = default;
+    ~CBlastPhoneHomePolicy() override = default;
 
     /// Apply policy for an application.
     void Apply(CNcbiApplicationAPI* ) override {}
 
-    /// Print a message about collecting data, disablig telemetry and privacy policies.
-    void Print();
+    /// Print a message about collecting data, disabling telemetry and
+    /// privacy policies.
+    void Print() override;
 
-    /// Save policy configuration to opt-in file
+    /// Save policy configuration to the user's NCBI config file
     void Save();
 
-    /// Restore policy configuration.
-    void Restore();
+    /// Resolve the effective policy from environment, registry, and user
+    /// configuration.
+    void Restore() override;
 
     /// Automatically called from the destructor.
     void Finish() {}
 
-    /// @return true if OptInFile exists
-    bool OptInFileExists() const { return m_OptInFileFound; }
+    /// @return true if the user's NCBI config file contains the BLAST
+    /// usage reporting setting
+    bool HasUserUsageReportPreference() const { return m_UserNcbiConfigFileFound; }
 
-    /// Determine if OptInFile exists, update opt-in status if found
-    /// @return TRUE if opt-in file is found
-    bool CheckOptInFileConfiguration();
-
-    /// Check for usage params in env and registry
-    /// @return TRUE if usage setting is found
-    bool CheckBlastUsageConfigurations();
-
-    /// Set usage status based on usage config and ranking priority
-    /// Call after config check or config change functions
-    /// @return TRUE if usage report enabled
-    bool UpdatePhoneHomeStatus();
-
-    /// Check if any usage config (exclude opt-in) exisits
+    /// Check if any usage config (exclude opt-in) exists
     bool IsUsageConfigured() const {
         return (m_DoNotTrackEnv.configured ||
             m_NCBIUsageReportEnv.configured ||
@@ -91,14 +86,18 @@ public:
             m_BlastUsageReportRegistry.configured);
     }
 
-    /// Usage agreement opt-in/opt-out
+    /// Set the user's BLAST usage-report preference in the NCBI config file.
     /// @input TRUE to enable, FALSE to disable
-    void EnableOptIn(bool enable);
+    void SetUserUsageReportPreference(bool enable);
 
     string PhoneHomeStatusReport();
 
+    static const string kNcbiRegistrySection;
+    static const string kNcbiInheritsParam;
+    static const string kNcbiEnv;
     static const string kDoNotTrackEnv;
     static const string kUsageReportEnv;
+    static const string kBlastUsageReportKey;
     static const string kBlastUsageReportEnv;
     static const string kNCBIUsageReportRegistry;
     static const string kNCBIUsageReportRegistryParam;
@@ -106,13 +105,20 @@ public:
     static const string kBlastUsageReportRegistryParam;
     static const string kPrivacyNotice;
 
+    static string GetLocalNcbiConfigFileName();
+    static string GetLocalNcbiConfigFilePath();
+    static string MakeOptionalNcbiInheritPath(const string& dir,
+                                              const string& file_name);
+    static vector<string> GetDefaultNcbiInherits();
+    static void ReadRegistryFile(const string& path,
+                                 CMemoryRegistry& registry);
+
 private:
 
-    static const string kConfigFileName;
-    static const string kOptInStr;
-
+    /// One possible usage-report configuration source.
+    /// configured means a value was present and valid; enabled is that value;
+    /// selected marks the source that wins after priority resolution.
     struct SUsageConfig {
-        SUsageConfig(): configured(false), enabled(false), override(false) {}
         void Set(bool b) {
             configured = true;
             enabled = b;
@@ -120,11 +126,11 @@ private:
         void Reset() {
             configured = false;
             enabled = false;
-            override = false;
+            selected = false;
         }
-        bool configured;
-        bool enabled;
-        bool override;
+        bool configured = false; ///< Source supplied a valid boolean value.
+        bool enabled = false;    ///< The source's boolean value.
+        bool selected = false;   ///< This source determines the final state.
     };
 
     SUsageConfig m_DoNotTrackEnv;
@@ -132,10 +138,26 @@ private:
     SUsageConfig m_BlastUsageReportEnv;
     SUsageConfig m_NCBIUsageReportRegistry;
     SUsageConfig m_BlastUsageReportRegistry;
-    SUsageConfig m_OptInFile;
+    SUsageConfig m_UserNcbiConfigFile;
 
-    string m_ConfigFilePath;
-    bool m_OptInFileFound;
+    string m_UserNcbiConfigFilePath;
+    bool m_UserNcbiConfigFileFound;
+
+    /// Read the local BLAST usage reporting setting saved by Save().
+    /// Does not change the file.
+    /// @return TRUE if the local opt-in configuration is found
+    bool CheckOptInFileConfiguration();
+
+    /// Check for usage params in the environment and Toolkit registry.
+    /// ResolveUsageReportPolicy() combines this with CheckOptInFileConfiguration(); explicit
+    /// environment and registry settings take precedence over the local opt-in.
+    /// @return TRUE if usage setting is found
+    bool CheckBlastUsageConfigurations();
+
+    /// Set usage status based on usage config and ranking priority
+    /// Call after config check or config change functions
+    /// @return TRUE if usage report enabled
+    bool UpdatePhoneHomeStatus();
 
     /// Helper function to format usage configuration
     /// @param string stream  output for formatted string
@@ -162,6 +184,10 @@ private:
     /// @return false for invalid input, CStringException handled and warning message posted
     bool x_ValidateStringToBool(const string & input, bool & output, const string & usage_type);
 };
+
+NCBI_XBLAST_EXPORT
+CNcbiOstream& operator<<(CNcbiOstream& out,
+                         const CBlastPhoneHomePolicy& policy);
 
 
 

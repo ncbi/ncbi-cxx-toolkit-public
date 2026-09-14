@@ -16,5 +16,8 @@ LIBS = $(BLAST_THIRD_PARTY_LIBS) $(GENBANK_THIRD_PARTY_LIBS) \
 
 REQUIRES = objects -Cygwin
 
+CHECK_COPY = blast_usage_report_check.py
+
 CHECK_CMD = blast_usage_report -privacy_msg /CHECK_NAME=blast_usage_report_privacy
 CHECK_CMD = blast_usage_report -status /CHECK_NAME=blast_usage_report_status
+CHECK_CMD = python3 blast_usage_report_check.py /CHECK_NAME=blast_usage_report_roundtrip
