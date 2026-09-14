@@ -281,11 +281,11 @@ typedef struct TRIGGER_tag* TRIGGER;  /* trigger: handle, opaque             */
  *  one will have no result.
  * @note
  *  Usually, SOCK API does not require an explicit initialization -- as it is
- *  guaranteed to initialize itself automagically, in one of API functions,
+ *  guaranteed to initialize itself automatically, in one of API functions,
  *  when necessary.  Yet, see the "Multi Thread safety" remark above.
  * @note
  *  This call, when used for the very first time in the application, enqueues
- *  SOCK_ShutdownAPI() to be called upon application exit on plaftorms that
+ *  SOCK_ShutdownAPI() to be called upon application exit on platforms that
  *  provide this functionality.  In any case, the application can opt for
  *  explicit SOCK_ShutdownAPI() call when it is done with all sockets.
  * @sa
@@ -317,7 +317,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ShutdownAPI(void);
 extern NCBI_XCONNECT_EXPORT size_t SOCK_OSHandleSize(void);
 
 
-/** By default (on UNIX platforms) the SOCK API functions automagically call
+/** By default (on UNIX platforms) the SOCK API functions automatically call
  * "signal(SIGPIPE, SIG_IGN)" on initialization.  To prohibit this feature you
  * must call SOCK_AllowSigPipeAPI() before you call any other function from the
  * SOCK API.
@@ -325,18 +325,16 @@ extern NCBI_XCONNECT_EXPORT size_t SOCK_OSHandleSize(void);
 extern NCBI_XCONNECT_EXPORT void SOCK_AllowSigPipeAPI(void);
 
 
-/** Select IPv6 as the underlying IP protocol.
-* @param ipv6
-*  eOn sets IPv6 throughout; eOff sets IPv4 throughout; eDefault allows both
-* @return
-*  Previous value of the IP selection
-* @note
-*  IPv4-specific functions (such as name resolution to IPv4 addresses) fail
-*  when IPv6 is selected;  and conversely, IPv6-specific functions fail when
-*  IPv4 is selected.  Default is to allow both (depending on the addresses),
-*  but both IP versions are only fully functional on a dual-stack OS (which
-*  has both IPv4 and IPv6 interfaces configured and running).
-*/
+/** Select the underlying IP protocol.
+ * @param ipv6
+ *  eOn selects IPv6;  eOff selects IPv4;  eDefault allows both.
+ * @return
+ *  Previous IP selection.
+ * @note
+ *  IPv4-specific functions fail when IPv6 is selected, and IPv6-specific
+ *  functions fail when IPv4 is selected.  Using both versions with eDefault
+ *  requires dual-stack support from the host OS.
+ */
 extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetIPv6API(ESwitch ipv6);
 
 
@@ -355,9 +353,9 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetIPv6API(ESwitch ipv6);
  * returned from the hook, will get converted to eIO_Unknown;  and other codes
  * will get passed through to the caller "as is".
  * @warning
- *   Although returning eIO_Interrupt may be helpful to prevent the upper-lever
+ *   Although returning eIO_Interrupt may be helpful to prevent the upper-level
  *   connection (CONN) layer from processing further I/O on this communication
- *   channel, it may also be just an undesireable side-effect -- so it should
+ *   channel, it may also be just an undesirable side-effect -- so it should
  *   be used with caution.
  * @note
  *   When the hook is not installed, all the actions described above are
@@ -417,7 +415,7 @@ typedef enum {
 
 /** This is a helper call that can improve I/O performance (ignored for MSVC).
  * @param api
- *  [in]  Default behavior is to wait for I/O such a way that accomodates the
+ *  [in]  Default behavior is to wait for I/O such a way that accommodates the
  *  requested sockets accordingly.  There is a known limitation of the select()
  *  API that requires all sockets to have numeric values of their low-level I/O
  *  handles less than (as little as) 1024, but works faster than the poll() API
@@ -594,7 +592,16 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Create6
  );
 
 
-/** Same as LSOCK_CreateEx6(,,,, eOff) */
+/** Same as LSOCK_CreateEx6() with "ipv6" set to eOff.
+ * @param port
+ *  [in]  port to listen on, or 0 to choose an available port
+ * @param backlog
+ *  [in]  maximum number of pending connections
+ * @param lsock
+ *  [out] created listening socket
+ * @param flags
+ *  [in]  socket flags
+ */
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateEx
 (unsigned short port,
  unsigned short backlog,
@@ -603,7 +610,14 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateEx
  );
 
 
-/** Same as LSOCK_Create6(,,, eOff) or LSOCK_CreateEx(,,, eDefault) */
+/** Same as LSOCK_Create6() with "ipv6" set to eOff.
+ * @param port
+ *  [in]  port to listen on, or 0 to choose an available port
+ * @param backlog
+ *  [in]  maximum number of pending connections
+ * @param lsock
+ *  [out] created listening socket
+ */
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Create
 (unsigned short port,
  unsigned short backlog,
@@ -622,7 +636,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Create
  *  [in]  properties for the accepted socket to have
  * @note
  *  The provided "timeout" is for this Accept() only.  To set I/O timeout on
- *  the resulted socket use SOCK_SetTimeout();
+ *  the resulting socket use SOCK_SetTimeout();
  *  all I/O timeouts are infinite by default.
  * @sa
  *  SOCK_Create, SOCK_Close, TSOCK_Flags
@@ -635,8 +649,14 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_AcceptEx
  );
 
 
-/** [SERVER-side]  Accept connection from a client.
- * Same as LSOCK_AcceptEx(.,.,.,fSOCK_LogDefault)
+/** [SERVER-side]  Accept a connection from a client.  Same as
+ * LSOCK_AcceptEx() with "flags" set to fSOCK_LogDefault.
+ * @param lsock
+ *  [in]  listening socket
+ * @param timeout
+ *  [in]  accept timeout, or NULL for infinite
+ * @param sock
+ *  [out] accepted socket
  * @sa
  *  LSOCK_AcceptEx
  */
@@ -650,7 +670,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Accept
 /** [SERVER-side]  Close the listening socket, destroy relevant internal data.
  * @param lsock
  *  [in]  listening socket handle to close
- * The call invalidates the handle, so its further is not allowed.
+ * The call invalidates the handle, so it must not be used afterward.
  * @sa
  *  LSOCK_Create
  */
@@ -678,11 +698,18 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_GetOSHandleEx
 (LSOCK      lsock,
  void*      handle_buf,
  size_t     handle_size,
- EOwnership owndership
+ EOwnership ownership
  );
 
 
-/** Same as LSOCK_GetOSHandleEx(lsock, handle_buf, handle_size, eNoOwnership).
+/** Get the native OS handle without taking ownership.  Same as
+ * LSOCK_GetOSHandleEx() with "ownership" set to eNoOwnership.
+ * @param lsock
+ *  [in]  listening socket
+ * @param handle_buf
+ *  [out] buffer for the native handle
+ * @param handle_size
+ *  [in]  exact native handle size
  * @sa
  *  LSOCK_GetOSHandleEx
  */
@@ -711,7 +738,18 @@ extern NCBI_XCONNECT_EXPORT unsigned short LSOCK_GetPort
  );
 
 
-/* @sa SOCK_GetPeerAddress */
+/** Get the IPv4 address and port on which a listening socket is bound.
+ * @param lsock
+ *  [in] listening socket handle
+ * @param host
+ *  [out] IPv4 address, or NULL if not needed
+ * @param port
+ *  [out] port, or NULL if not needed
+ * @param byte_order
+ *  [in] byte order for returned address and port
+ * @sa
+ *  SOCK_GetPeerAddress
+ */
 extern NCBI_XCONNECT_EXPORT void LSOCK_GetListeningAddress
 (LSOCK           lsock,
  unsigned int*   host,
@@ -720,7 +758,18 @@ extern NCBI_XCONNECT_EXPORT void LSOCK_GetListeningAddress
  );
 
 
-/* @sa SOCK_GetPeerAddress6 */
+/** Get the IP address and port on which a listening socket is bound.
+ * @param lsock
+ *  [in] listening socket handle
+ * @param addr
+ *  [out] IPv4 or IPv6 address, or NULL if not needed
+ * @param port
+ *  [out] port, or NULL if not needed
+ * @param byte_order
+ *  [in] byte order for returned port
+ * @sa
+ *  SOCK_GetPeerAddress6
+ */
 extern NCBI_XCONNECT_EXPORT void LSOCK_GetListeningAddress6
 (LSOCK           lsock,
  TNCBI_IPv6Addr* addr,
@@ -729,7 +778,20 @@ extern NCBI_XCONNECT_EXPORT void LSOCK_GetListeningAddress6
  );
 
 
-/* @sa SOCK_GetPeerAddressStringEx */
+/** Format the address on which a listening socket is bound.
+ * @param lsock
+ *  [in] listening socket handle
+ * @param buf
+ *  [out] destination buffer
+ * @param bufsize
+ *  [in] size of "buf"
+ * @param format
+ *  [in] address components to include
+ * @return
+ *  "buf" on success;  NULL on error
+ * @sa
+ *  SOCK_GetPeerAddressStringEx
+ */
 extern NCBI_XCONNECT_EXPORT char* LSOCK_GetListeningAddressStringEx
 (LSOCK               lsock,
  char*               buf,
@@ -738,7 +800,15 @@ extern NCBI_XCONNECT_EXPORT char* LSOCK_GetListeningAddressStringEx
  );
 
 
-/** Equivalent to LSOCK_GetListeningAddressStringEx(.,.,.,eSAF_Full) */
+/** Format the full address on which a listening socket is bound.  Same as
+ * LSOCK_GetListeningAddressStringEx() with "format" set to eSAF_Full.
+ * @param lsock
+ *  [in]  listening socket
+ * @param buf
+ *  [out] destination buffer
+ * @param bufsize
+ *  [in]  size of "buf"
+ */
 extern NCBI_XCONNECT_EXPORT char* LSOCK_GetListeningAddressString
 (LSOCK  lsock,
  char*  buf,
@@ -829,25 +899,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  * Any pending output will have been flushed (if switching secure / insecure
  * contexts;  otherwise, it will have simply migrated to the created SOCK), and
  * any pending input still in the original SOCK will migrate to the new socket
- * object returned.  If this behavior is undesireable, one can use
+ * object returned.  If this behavior is undesirable, one can use
  * SOCK_GetOSHandleEx() on the original socket, taking the ownership of the
  * underlying OS handle, and then create a SOCK on top of the bare "handle",
  * specifying its (non-zero) "handle_size".
- * @warning
- *  It is not recommended to use this call on not fully connected sockets
- *  (either bare OS handle or SOCK) in native MS-Windows builds (e.g. Cygwin is
- *  okay).
- * @note
- *  SOCK_Close[Ex]() on the resultant socket will not close the underlying OS
- *  handle if fSOCK_KeepOnClose is set in "flags".
- * @note
- *  (SOCK_IsClientSide() | SOCK_IsServerSide()) can be used to determine if the
- *  original SOCK was stripped off the underlying handle:  the expression would
- *  evaluate to 0(false) iff the SOCK object does no longer have the OS handle.
- * @warning
- *  If a new SOCK is being built from an existing SOCK, then it is assumed that
- *  the underlying OS handle's properies have not been modified outside that
- *  old SOCK object (as all system calls to adjust the handle will be skipped).
  * @param handle
  *  [in]  OS-dependent "handle" or SOCK to be converted
  * @param handle_size
@@ -861,10 +916,24 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  * @param flags
  *  [in]  additional socket requirements
  * @return
- *  Return eIO_Success on success;  otherwise: eIO_InvalidArg if the "handle"
- *  does not refer to an open socket [but e.g. to a normal file or a pipe];
- *  eIO_Closed when the original socket is not connected;  other error codes
- *  in case of other errors.
+ *  eIO_Success on success;  eIO_InvalidArg if "handle" does not refer to an
+ *  open socket [but e.g. to a normal file or a pipe];  eIO_Closed when the
+ *  original socket is not connected;  another error code otherwise.
+ * @warning
+ *  It is not recommended to use this call on not fully connected sockets
+ *  (either bare OS handle or SOCK) in native MS-Windows builds (e.g. Cygwin is
+ *  okay).
+ * @note
+ *  SOCK_Close[Ex]() on the resultant socket will not close the underlying OS
+ *  handle if fSOCK_KeepOnClose is set in "flags".
+ * @note
+ *  (SOCK_IsClientSide() | SOCK_IsServerSide()) can be used to determine if the
+ *  original SOCK was stripped off the underlying handle:  the expression would
+ *  evaluate to 0(false) iff the SOCK object no longer has the OS handle.
+ * @warning
+ *  If a new SOCK is being built from an existing SOCK, then it is assumed that
+ *  the underlying OS handle's properties have not been modified outside that
+ *  old SOCK object (as all system calls to adjust the handle will be skipped).
  * @sa
  *  SOCK_GetOSHandleEx, SOCK_CreateOnTop, SOCK_Reconnect, SOCK_Close
  */
@@ -967,6 +1036,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Shutdown
  *  SOCK_Create, SOCK_CreateOnTop, DSOCK_Create, SOCK_SetTimeout, SOCK_CloseEx
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Close(SOCK sock);
+/** Destroy "s", closing it first if necessary.  Equivalent to SOCK_Close(s). */
 #define SOCK_Destroy(s)  SOCK_Close(s)
 
 
@@ -1023,7 +1093,14 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_GetOSHandleEx
  );
 
 
-/** Same as SOCK_GetOSHandleEx(sock, handle_buf, handle_size, eNoOwnership).
+/** Get the native OS handle without taking ownership.  Same as
+ * SOCK_GetOSHandleEx() with "ownership" set to eNoOwnership.
+ * @param sock
+ *  [in]  socket
+ * @param handle_buf
+ *  [out] buffer for the native handle
+ * @param handle_size
+ *  [in]  exact native handle size
  * @sa
  *  SOCK_GetOSHandleEx
  */
@@ -1035,11 +1112,12 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_GetOSHandle
 
 
 /** Close socket OS handle (ungracefully aborting the connection if necessary).
- * The call retries repeatedly if interrupted by a singal (so no eIO_Interrupt
- * should be expected).  Return eIO_Success when the handle has been closed
- * successfully, eIO_Closed if the handle has been passed already closed,
- * eIO_InvalidArg if passed arguments are not valid, eIO_Unknown if the
- * handle cannot be closed (per an error returned by the system, see errno).
+ * The call retries if interrupted by a signal, so eIO_Interrupt is never
+ * returned.
+ * @return
+ *  eIO_Success if the handle was closed;  eIO_Closed if it was already closed;
+ *  eIO_InvalidArg for invalid arguments;  eIO_Unknown if the system cannot
+ *  close the handle (see errno).
  * @warning
  *  Using this call on a handle that belongs to an active [LD]SOCK object is
  *  undefined.
@@ -1100,48 +1178,40 @@ typedef struct {
 } SSOCK_Poll;
 
 
-/** Block until at least one of the sockets enlisted in "polls" array
- * (of size "n") becomes available for requested operation (SSOCK_Poll::event),
- * or until timeout expires (wait indefinitely if timeout is passed as NULL).
- *
- * @note To lower overhead, use SOCK_Wait() to wait for I/O on a single socket.
- *
- * Return eIO_Success if at least one socket was found ready;  eIO_Timeout
- * if timeout expired;  eIO_Unknown if underlying system call(s) failed.
- *
- * @note  NULL sockets (without any verification for the contents of
- *        the "event" field) as well as non-NULL sockets with eIO_Open
- *        requested in their "event" do not get polled (yet the corresponding
- *        "revent" gets updated to indicate eIO_Open, for no I/O event ready);
- * @note  For a socket found not ready for an operation, eIO_Open gets returned
- *        in its "revent";  for a failing / closed socket -- eIO_Close;
- * @note  This call may return eIO_InvalidArg if:
- *        - parameters to the call are incomplete / inconsistent;
- *        - a non-NULL socket polled with a bad "event" (e.g. eIO_Close).
- *        With this return code, the caller cannot rely on "revent" fields in
- *        the "polls" array as they might not have been updated properly.
- * @note  If either both "n" and "polls" are NULL, or all sockets in the
- *        "polls" array are either NULL or without any events requested
- *        (eIO_Open), then the returned status is either:
- *        - eIO_Timeout (after the specified amount of time was spent idle), or
- *        - eIO_Interrupt (if a signal came while the waiting was in progress).
- * @note  For datagram sockets, the readiness for reading is determined by the
- *        message data latched since the last message receive call,
- *        DSOCK_RecvMsg().
- * @note  This call allows the intermixture of stream, datagram, and listening
- *        sockets (cast to SOCK), as well as triggers (also cast to SOCK), but
- *        for the sake of readability, it is recommended to use POLLABLE_Poll()
- *        in such circumstances.
- * @note  This call may cause some socket I/O in those sockets marked for
- *        read-on-write and those with pending connection or output data.
+/** Block until at least one socket in "polls" becomes ready for the requested
+ * operation (SSOCK_Poll::event), or until the timeout expires.  A NULL timeout
+ * waits indefinitely.
  * @param n
- *  [in]  # of SSOCK_Poll elems in "polls"
+ *  [in]  # of SSOCK_Poll elements in "polls"
  * @param polls[]
  *  [in|out] array of query/result structures
  * @param timeout
  *  [in]  max time to wait (infinite if NULL)
  * @param n_ready
  *  [out] # of ready sockets  (may be NULL)
+ * @return
+ *  eIO_Success if at least one socket is ready;  eIO_Timeout if the timeout
+ *  expires;  eIO_Unknown if an underlying system call fails.
+ * @note  To lower overhead, use SOCK_Wait() to wait for I/O on a single socket.
+ * @note  NULL sockets (without any verification for the contents of "event")
+ *        and non-NULL sockets with eIO_Open requested are not polled.  Their
+ *        corresponding "revent" is set to eIO_Open when no I/O event is ready.
+ * @note  For a socket not ready for an operation, "revent" is eIO_Open;  for a
+ *        failing or closed socket, it is eIO_Close.
+ * @note  This call may return eIO_InvalidArg if the parameters are incomplete
+ *        or inconsistent, or if a non-NULL socket has a bad "event" (e.g.
+ *        eIO_Close).  In this case, the caller cannot rely on "revent" fields
+ *        in "polls" because they may not have been updated properly.
+ * @note  If both "n" and "polls" are NULL, or all sockets in "polls" are NULL
+ *        or request no event (eIO_Open), the status is eIO_Timeout after the
+ *        specified idle time or eIO_Interrupt if a signal interrupts the wait.
+ * @note  For datagram sockets, read readiness is determined by message data
+ *        latched since the last DSOCK_RecvMsg().
+ * @note  This call allows stream, datagram, and listening sockets (cast to
+ *        SOCK), and triggers (also cast to SOCK).  For readability, use
+ *        POLLABLE_Poll() for such mixtures.
+ * @note  This call may cause I/O in sockets marked for read-on-write and in
+ *        sockets with pending connection or output data.
  * @sa
  *  SOCK_Wait, POLLABLE_Poll
  */
@@ -1219,7 +1289,7 @@ extern NCBI_XCONNECT_EXPORT const STimeout* SOCK_GetTimeout
  * of read bytes BEFORE checking the return status, which merely advises as to
  * whether it is okay to read again.
  *
- * As a special case, "buf" may passed as NULL:
+ * As a special case, "buf" may be passed as NULL:
  *   eIO_ReadPeek      -- read up to "size" bytes and store them in internal
  *                        buffer;
  *   eIO_Read[Persist] -- discard up to "size" bytes from internal buffer
@@ -1443,7 +1513,7 @@ extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetLocalPortEx
 
 /** Get local port of the socket.
  * The returned port number is also cached within "sock" so any further
- * inquires for the local port do not cause any system calls to occur.
+ * queries for the local port do not cause any system calls to occur.
  * The call is exactly equivalent to SOCK_GetLocalPortEx(sock, 0, byte_order).
  * @param sock
  *  [in]  socket handle
@@ -1547,7 +1617,15 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_GetPeerAddressStringEx
  );
 
 
-/** Equivalent to SOCK_GetPeerAddressStringEx(.,.,.,eSAF_Full) */
+/** Format the socket peer's full address.  Same as
+ * SOCK_GetPeerAddressStringEx() with "format" set to eSAF_Full.
+ * @param sock
+ *  [in]  socket
+ * @param buf
+ *  [out] destination buffer
+ * @param bufsize
+ *  [in]  size of "buf"
+ */
 extern NCBI_XCONNECT_EXPORT char* SOCK_GetPeerAddressString
 (SOCK   sock,
  char*  buf,
@@ -1556,7 +1634,7 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_GetPeerAddressString
 
 
 /** By default, sockets will not try to read data from inside SOCK_Write().
- * If you want to automagically upread the data (and cache it in the internal
+ * If you want to automatically upread the data (and cache it in the internal
  * socket buffer) when the write operation is not immediately available,
  * call this func with "on_off" == eOn.
  * Pass "on_off" as eDefault to get current setting.
@@ -1590,7 +1668,7 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReadOnWrite
 
 /** Control OS-defined send strategy by disabling/enabling the TCP Nagle
  * algorithm (which is on by default) that packs multiple requests into a
- * single packet and thus transfers the data in fewer transactions, miminizing
+ * single packet and thus transfers the data in fewer transactions, minimizing
  * the network traffic and generally bursting the throughput.  However, some
  * applications may find it useful to disable this default behavior for the
  * sake of their performance increase (like in case of short transactions
@@ -1644,13 +1722,13 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetCork
  *
  *  SOCK_Write() writes data into an internal message buffer, appending new
  *  data as they come with each SOCK_Write().  When the message is complete,
- *  SOCK_SendMsg() should be called (optionally with an additional last,
+ *  DSOCK_SendMsg() should be called (optionally with an additional last,
  *  or the only [if no SOCK_Write() preceded the call] message fragment)
- *  to actually send the message down the wire.  If successful, SOCK_SendMsg()
+ *  to actually send the message down the wire.  If successful, DSOCK_SendMsg()
  *  clears the internal buffer, and the process may repeat.  If unsuccessful,
- *  SOCK_SendMsg() can be repeated with restiction that no additional data are
+ *  DSOCK_SendMsg() can be repeated with restriction that no additional data are
  *  provided in the call.  This way, the entire message will be attempted to
- *  be sent again.  On the other hand, if after any SOCK_SendMsg() new data
+ *  be sent again.  On the other hand, if after any DSOCK_SendMsg() new data
  *  are added [regardless of whether previous data were successfully sent
  *  or not], all previously written [and kept in the internal send buffer]
  *  data get dropped and replaced with the new data.
@@ -1658,7 +1736,7 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetCork
  *  DSOCK_WaitMsg() can be used to learn whether there is a new message
  *  available for read by DSOCK_RecvMsg() immediately.
  *
- *  SOCK_RecvMsg() receives the message into an internal receive buffer,
+ *  DSOCK_RecvMsg() receives the message into an internal receive buffer,
  *  and optionally can return the initial datagram fragment via provided
  *  buffer [this initial fragment is then stripped from what remains unread
  *  in the internal buffer].  Optimized version can supply a maximal message
@@ -1669,7 +1747,7 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetCork
  *  when all data have been taken out.  SOCK_Wait() returns eIO_Success while
  *  there are data in the internal message buffer that SOCK_Read() can read.
  *
- *  SOCK_WipeMsg() can be used to clear the internal message buffers in
+ *  DSOCK_WipeMsg() can be used to clear the internal message buffers in
  *  either eIO_Read or eIO_Write directions, meaning receive and send
  *  buffers correspondingly.
  */
@@ -1695,7 +1773,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Create
  );
 
 
-/** Assosiate a datagram socket with a local port.
+/** Associate a datagram socket with a local port.
  * All other attempts to use the same port will result in eIO_Closed (for "port
  * busy") unless SOCK_SetReuseAddress() is called, which then allows multiple
  * sockets to bind to the same port, and receive messages, in undefined order,
@@ -1781,7 +1859,23 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_RecvMsg6
  );
 
 
-/** Same as DSOCK_RecvMsg6() but only suitable for IPv4 sender address */
+/** Receive a datagram and return an IPv4 sender address.  Same as the
+ * immediately preceding DSOCK_RecvMsg6(), but only for IPv4 senders.
+ * @param sock
+ *  [in]  datagram socket
+ * @param buf
+ *  [out] destination buffer, or NULL
+ * @param bufsize
+ *  [in]  size of "buf"
+ * @param maxmsglen
+ *  [in]  maximum expected message length, or 0 for any allowed size
+ * @param msglen
+ *  [out] actual message size, or NULL
+ * @param sender_addr
+ *  [out] sender IPv4 address, or NULL
+ * @param sender_port
+ *  [out] sender port in host byte order, or NULL
+ */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_RecvMsg
 (SOCK            sock,
  void*           buf,
@@ -1816,7 +1910,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SendMsg
  );
 
 
-/** Clear message froma datagram socket.
+/** Clear message from a datagram socket.
  * @param sock
  *  [in]  SOCK from DSOCK_Create[Ex]()
  * @param direction
@@ -1913,7 +2007,7 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReuseAddressAPI
 
 
 /** Control reuse of socket addresses on per-socket basis
- * Note: only a boolean parameter value is can be used here.
+ * Note: only a Boolean parameter value can be used here.
  * @param sock
  *  [in]  socket handle
  * @param on_off
@@ -1993,6 +2087,9 @@ typedef struct {
 typedef void (*FSOCK_ErrHook)(const SSOCK_ErrInfo* info,
                               void*                data);
 
+/** Install or remove the global socket error hook.  A NULL "hook" removes it.
+ * "data" is passed to the hook when it is invoked.
+ */
 extern NCBI_XCONNECT_EXPORT
 void SOCK_SetErrHookAPI(FSOCK_ErrHook hook,
                         void*         data);
@@ -2078,7 +2175,7 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetPosition
  *  [in]  either eIO_Read or eIO_Write
  * @return
  *  Count of bytes actually read or written through this socket in the current
- *  session. For datagram sockets the count applies for the last message only;
+ *  session.  For datagram sockets the count applies for the last message only;
  *  for stream sockets it counts only since last accept or connect event.
  */
 extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetCount
@@ -2148,15 +2245,35 @@ extern NCBI_XCONNECT_EXPORT EIO_Status POLLABLE_Poll
 extern NCBI_XCONNECT_EXPORT ESOCK_Type POLLABLE_What(POLLABLE);
 
 
-/** Conversion utilities from handles to POLLABLEs, and back.
+/** Convert a trigger handle to a pollable handle.
  * @return
- *  Return 0 if conversion cannot be made; otherwise the converted handle.
+ *  Converted handle, or NULL on failure.
  */
 extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromTRIGGER(TRIGGER);
+/** Convert a listening socket to a pollable handle.
+ * @return
+ *  Converted handle, or NULL on failure.
+ */
 extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromLSOCK  (LSOCK);
+/** Convert a socket handle to a pollable handle.
+ * @return
+ *  Converted handle, or NULL on failure.
+ */
 extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromSOCK   (SOCK);
+/** Convert a pollable handle to a trigger.
+ * @return
+ *  Converted handle, or NULL on failure.
+ */
 extern NCBI_XCONNECT_EXPORT TRIGGER  POLLABLE_ToTRIGGER(POLLABLE);
+/** Convert a pollable handle to a listening socket.
+ * @return
+ *  Converted handle, or NULL on failure.
+ */
 extern NCBI_XCONNECT_EXPORT LSOCK    POLLABLE_ToLSOCK  (POLLABLE);
+/** Convert a pollable handle to a socket.
+ * @return
+ *  Converted handle, or NULL on failure.
+ */
 extern NCBI_XCONNECT_EXPORT SOCK     POLLABLE_ToSOCK   (POLLABLE);
 
 
@@ -2169,7 +2286,7 @@ extern NCBI_XCONNECT_EXPORT SOCK     POLLABLE_ToSOCK   (POLLABLE);
  * @param addr
  *  [in]  must be in the network byte-order
  * @param buf
- *  [out] to be filled by smth. like "123.45.67.89\0"
+ *  [out] buffer for a string such as "123.45.67.89\0"
  * @param bufsize
  *  [in]  max # of bytes to put into "buf" (including the terminating '\0')
  * @return
@@ -2224,15 +2341,16 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_isip6
 
 
 /** Check whether a given string represents a valid bare IP address.
-* @param host
-*  [in]  '\0'-terminated string to check against being a bare address
-* @return
-*  Non-zero (true) if given string is an IPv4 or IPv6 address, zero (false) otherwise.
-* @note
-*  Equivalent to "SOCK_isip(host) || SOCK_isip6(host)".
-* @sa
-*  SOCK_isip, SOCK_isip6
-*/
+ * @param host
+ *  [in]  '\0'-terminated string to check against being a bare address
+ * @return
+ *  Non-zero (true) if the string is an IPv4 or IPv6 address;  zero (false)
+ *  otherwise.
+ * @note
+ *  Equivalent to "SOCK_isip(host) || SOCK_isip6(host)".
+ * @sa
+ *  SOCK_isip, SOCK_isip6
+ */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsAddress
 (const char* host
 );
@@ -2246,6 +2364,7 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_HostToNetLong
 (unsigned int value
  );
 
+/** Convert a 32-bit value from network to host byte order. */
 #define SOCK_NetToHostLong SOCK_HostToNetLong
 
 /** See man for the BSDisms, htonl() and htons().
@@ -2256,16 +2375,24 @@ extern NCBI_XCONNECT_EXPORT unsigned short SOCK_HostToNetShort
 (unsigned short value
  );
 
+/** Convert a 16-bit value from network to host byte order. */
 #define SOCK_NetToHostShort SOCK_HostToNetShort
 
 
-/* Deprecated:  Use SOCK_{Host|Net}To{Net|Host}{Long|Short}() instead */
+/** Convert a 32-bit value from host to network byte order.  Deprecated; use
+ * SOCK_HostToNetLong() instead.
+ */
 extern NCBI_XCONNECT_EXPORT NCBI_SOCK_DEPRECATED
 unsigned int   SOCK_htonl(unsigned int);
+/** Deprecated network-to-host 32-bit conversion; use SOCK_NetToHostLong(). */
 #define        SOCK_ntohl SOCK_htonl
 
+/** Convert a 16-bit value from host to network byte order.  Deprecated; use
+ * SOCK_HostToNetShort() instead.
+ */
 extern NCBI_XCONNECT_EXPORT NCBI_SOCK_DEPRECATED
 unsigned short SOCK_htons(unsigned short);
+/** Deprecated network-to-host 16-bit conversion; use SOCK_NetToHostShort(). */
 #define        SOCK_ntohs SOCK_htons
 
 
@@ -2289,7 +2416,9 @@ extern NCBI_XCONNECT_EXPORT int SOCK_gethostnameEx
  );
 
 
-/** Same as SOCK_gethostnameEx(,,<current API data logging>)
+/** Same as the immediately preceding SOCK_gethostnameEx(), with
+ * fSOCK_LogDefault passed as its "log" argument, thereby using the current
+ * API data logging setting.
  * @sa
  *  SOCK_gethostnameEx, SOCK_gethostbyaddrEx, SOCK_SetDataLoggingAPI
  */
@@ -2322,7 +2451,9 @@ extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_gethostbynameEx6
  );
 
 
-/** Same as SOCK_gethostbynameEx6(,,<current API data logging>)
+/** Same as the immediately preceding SOCK_gethostbynameEx6(), with
+ * fSOCK_LogDefault passed as its "log" argument, thereby using the current
+ * API data logging setting.
  * @sa
  *  SOCK_gethostbynameEx6, SOCK_SetDataLoggingAPI
  */
@@ -2354,7 +2485,9 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_gethostbynameEx
  );
 
 
-/** Same as SOCK_gethostbynameEx(,<current API data logging>)
+/** Same as the immediately preceding SOCK_gethostbynameEx(), with
+ * fSOCK_LogDefault passed as its "log" argument, thereby using the current
+ * API data logging setting.
  * @sa
  *  SOCK_gethostbynameEx, SOCK_SetDataLoggingAPI
  */
@@ -2389,9 +2522,17 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddrEx6
  );
 
 
-/** Same as SOCK_gethostbyaddrEx6(,,<current API data logging>)
+/** Same as the immediately preceding SOCK_gethostbyaddrEx6(), with
+ * fSOCK_LogDefault passed as its "log" argument, thereby using the current
+ * API data logging setting.
+ * @param addr
+ *  [in]  address in network byte order;  NULL or empty means local host
+ * @param buf
+ *  [out] destination buffer
+ * @param buflen
+ *  [in]  size of "buf"
  * @sa
- *  SOCK_gethostbyaddrEx6, SOCK_gethostnameEx6, SOCK_SetDataLoggingAPI
+ *  SOCK_gethostbyaddrEx6, SOCK_SetDataLoggingAPI
  */
 extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddr6
 (const TNCBI_IPv6Addr* addr,
@@ -2426,9 +2567,17 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddrEx
  );
 
 
-/** Same as SOCK_gethostbyaddrEx(,,<current API data logging>)
+/** Same as the immediately preceding SOCK_gethostbyaddrEx(), with
+ * fSOCK_LogDefault passed as its "log" argument, thereby using the current
+ * API data logging setting.
+ * @param addr
+ *  [in]  IPv4 address in network byte order;  0 means local host
+ * @param buf
+ *  [out] destination buffer
+ * @param buflen
+ *  [in]  size of "buf"
  * @sa
- *  SOCK_gethostbyaddrEx, SOCK_gethostnameEx, SOCK_SetDataLoggingAPI
+ *  SOCK_gethostbyaddrEx, SOCK_SetDataLoggingAPI
  */
 extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddr
 (unsigned int addr,
@@ -2470,16 +2619,16 @@ extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_GetLoopbackAddress6
  );
 
 
-/** Get IPv4 loopback address.
-* @return
-*  Loopback address (in network byte order)
-*/
+/** Get the IPv4 loopback address.
+ * @return
+ *  Loopback address in network byte order.
+ */
 extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLoopbackAddress(void);
 
 
-/** Check whether an address is a loopback one.
- * Return non-zero (true) if the IPv4 address (in network byte order) given
- * in the agrument, is a loopback one;  zero otherwise.
+/** Check whether an IPv4 address is a loopback address.
+ * @return
+ *  Non-zero (true) if "ip" is a loopback address;  zero otherwise.
  * @sa
  *  SOCK_IsLoopbackAddress6
  */
@@ -2488,12 +2637,12 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsLoopbackAddress
  );
 
 
-/** Check whether an address is a loopback one.
-* Return non-zero (true) if the the address given in the agrument,
-* is a loopback one;  zero otherwise.
-* @sa
-*  SOCK_IsLoopbackAddress
-*/
+/** Check whether an address is a loopback address.
+ * @return
+ *  Non-zero (true) if "addr" is a loopback address;  zero otherwise.
+ * @sa
+ *  SOCK_IsLoopbackAddress
+ */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsLoopbackAddress6
 (const TNCBI_IPv6Addr* addr
 );
@@ -2517,7 +2666,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsLoopbackAddress6
  * @note  "0.0.0.0" for the host part gets the host returned as 0 as well.
  * @note  'host' gets returned in network byte order, unlike 'port', which
  *        always comes out in host (native) byte order.
- * @note  ":0" is accepted to denote no-host:zero-port.  
+ * @note  ":0" is accepted to denote no-host:zero-port.
  * @sa
  *   SOCK_HostPortToString, SOCK_isip, SOCK_gethostbyname
  */
@@ -2528,11 +2677,16 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort
  );
 
 
-/* Same as SOCK_StringToHostPort() but also accepts a bare IPv6 address in the
- * "host" part of the string.  However, if the IPv6 address is followed by a
- * port (zero or not), then the address _must_ be enclosed in square brackets.
+/** Parse "[host][:port]" with IPv4 or IPv6 support.  If an IPv6 address is
+ * followed by a port, the address must be enclosed in square brackets.
+ * @param str
+ *  [in]  string to parse;  must not be NULL
+ * @param addr
+ *  [out] parsed address, or NULL if not needed
+ * @param port
+ *  [out] parsed port in host byte order, or NULL if not needed
  * @sa
- *   SOCK_StringToHostPort, SOCK_HostPortToString6
+ *  SOCK_StringToHostPort, SOCK_HostPortToString6
  */
 extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort6
 (const char*     str,
@@ -2566,15 +2720,20 @@ extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToString
  size_t         bufsize
  );
 
-/** IPv6-aware version of SOCK_HostPortToString, which can handle both
- * IPv4 and IPv6.  IPv6 address, which is followed by a port, gets
- * enclosed into square brackets.  No brackets are used for IPv4 or
- * for IPv6 address, which is not followed by a port ("port"==0).
- * An empty IPv6 "addr" with zero "port" gets output as "::" if API
- * was not set to IPv4-only mode.  Otherwise, the result is ":0".
- * NULL "addr" suppresses the host part output, unconditionally.
+/** Format an IPv4 or IPv6 address and optional port.  IPv6 addresses followed
+ * by a port are enclosed in square brackets.  An empty IPv6 "addr" with zero
+ * "port" becomes "::" unless the API is IPv4-only;  then the result is ":0".
+ * NULL "addr" suppresses the host part unconditionally.
+ * @param addr
+ *  [in]  IPv4 or IPv6 address, or NULL to suppress the host part
+ * @param port
+ *  [in]  port in host byte order, or 0 to suppress it
+ * @param buf
+ *  [out] destination buffer
+ * @param bufsize
+ *  [in]  size of "buf"
  * @sa
- *   SOCK_HostPortToString, SOCK_StringToHostPort6
+ *  SOCK_HostPortToString, SOCK_StringToHostPort6
  */
 extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToString6
 (const TNCBI_IPv6Addr* addr,
@@ -2626,17 +2785,18 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetupSSL(FSSLSetup setup);
  *  Use other means of initialization such as CONNECT_Init() or CConnIniter.
  * @sa
  *  SOCK_SetupSSL, CONNECT_Init, CConnIniter
- */ 
+ */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_SetupSSLEx(FSSLSetup setup);
 
 
-/** Return an SSL provider name (in a const static storage), with special
- *  considerations:  return NULL if SSL has not been set up (yet), and return
- *  "" if SSL has not been (properly) initialized for use.
+/** Get the SSL provider name.
+ * @return
+ *  Provider name in static storage;  NULL if SSL has not been set up yet;  ""
+ *  if SSL has not been properly initialized for use.
  * @note
- *  "NONE" is returned as a name if SSL has been explicitly disabled.
+ *  "NONE" is returned if SSL has been explicitly disabled.
  * @sa
- *   SOCK_SetupSSL, SOCK_SetupSSLEx
+ *  SOCK_SetupSSL, SOCK_SetupSSLEx
  */
 extern NCBI_XCONNECT_EXPORT const char* SOCK_SSLName(void);
 

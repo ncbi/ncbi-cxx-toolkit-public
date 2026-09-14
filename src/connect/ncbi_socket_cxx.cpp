@@ -725,6 +725,9 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
     size_t xx_ready;
     EIO_Status status = POLLABLE_Poll(x_n, x_polls,
                                       x_ready ? &kZero : timeout, &xx_ready);
+    x_ready += xx_ready;
+    assert(x_ready <= x_n);
+    assert(x_ready  ||  status != eIO_Success);
 
     for (size_t i = 0;  i < x_n;  ++i) {
         if (x_polls[i].revent)
@@ -732,8 +735,7 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
     }
 
     if ( n_ready )
-        *n_ready = xx_ready + x_ready;
-
+        *n_ready = x_ready;
     delete[] x_polls;
     return status;
 }
