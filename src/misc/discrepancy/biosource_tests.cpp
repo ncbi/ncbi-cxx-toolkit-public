@@ -2130,7 +2130,7 @@ DISCREPANCY_CASE(SARS_QUALS, BIOSRC, eOncaller, "SARS-CoV-2 isolate must have co
 
 // ORGANELLE_PRESENT
 
-DISCREPANCY_CASE(ORGANELLE_PRESENT, BIOSRC, eSubmitter | eSmart, "Discrepancy present")
+DISCREPANCY_CASE(ORGANELLE_PRESENT, BIOSRC, eSubmitter | eSmart, "Organelle present")
 {
     for (const CBioSource* biosrc : context.GetBiosources()) {
         if (! biosrc->IsSetGenome()) {
@@ -2158,6 +2158,103 @@ DISCREPANCY_CASE(ORGANELLE_PRESENT, BIOSRC, eSubmitter | eSmart, "Discrepancy pr
     }
 }
 
+
+// ORGANELLE_OR_PLASMID_ONLY
+
+DISCREPANCY_CASE(ORGANELLE_OR_PLASMID_ONLY, BIOSRC, eSubmitter | eSmart, "Organelle or Plasmid only")
+{
+    for (const CBioSource* biosrc : context.GetBiosources()) {
+        if (! biosrc->IsSetGenome()) {
+            m_Objs["UNLABELLED"].Add(*context.BiosourceObjRef(*biosrc));
+            continue;
+        }
+        CBioSource::EGenome Location = static_cast<CBioSource::EGenome>(biosrc->GetGenome());
+        switch ( Location ) {
+            case CBioSource::eGenome_mitochondrion:
+            case CBioSource::eGenome_chloroplast:
+            case CBioSource::eGenome_apicoplast:
+            case CBioSource::eGenome_chromoplast:
+            case CBioSource::eGenome_chromatophore:
+            case CBioSource::eGenome_cyanelle:
+            case CBioSource::eGenome_hydrogenosome:
+            case CBioSource::eGenome_kinetoplast:
+            case CBioSource::eGenome_leucoplast:
+            case CBioSource::eGenome_nucleomorph:
+            case CBioSource::eGenome_plastid:
+            case CBioSource::eGenome_nitroplast:
+                m_Objs["ORGANELLE"].Add(*context.BiosourceObjRef(*biosrc));
+                break;
+            case CBioSource::eGenome_plasmid:
+                m_Objs["PLASMID"].Add(*context.BiosourceObjRef(*biosrc));
+                break;
+            case CBioSource::eGenome_plasmid_in_mitochondrion:
+            case CBioSource::eGenome_plasmid_in_plastid:
+                m_Objs["INTERNAL"].Add(*context.BiosourceObjRef(*biosrc));
+                break;
+            case CBioSource::eGenome_chromosome:
+                m_Objs["CHROMOSOME"].Add(*context.BiosourceObjRef(*biosrc));
+                break;
+            default:
+                m_Objs["OTHER"].Add(*context.BiosourceObjRef(*biosrc));
+                break;
+        }
+    }
+}
+
+DISCREPANCY_SUMMARIZE(ORGANELLE_OR_PLASMID_ONLY)
+{
+    CReportNode rep, rep1;
+    int unlabelled = 0, organelle = 0, plasmid = 0, internal = 0, chromosome = 0, other = 0;
+
+    // count specific BioSource.genome values in entire record
+    for (auto& it: m_Objs.GetMap()) {
+        if (it.first == "UNLABELLED") {
+            unlabelled++;
+        } else if (it.first == "ORGANELLE") {
+            organelle++;
+        } else if (it.first == "PLASMID") {
+            plasmid++;
+        } else if (it.first == "INTERNAL") {
+            internal++;
+        } else if (it.first == "CHROMOSOME") {
+            chromosome++;
+        } else if (it.first == "OTHER") {
+            other++;
+        }
+    }
+
+    if (unlabelled > 0 || chromosome > 0 || other > 0) {
+        return;
+    }
+
+    string label;
+    if (internal > 0) {
+        if (organelle > 0 || plasmid > 0) {
+            label = "record only contains plasmids inside and outside of organelles";
+        } else {
+            label = "record only contains plasmids inside organelles";
+        }
+    } else if (organelle > 0 && plasmid > 0) {
+        label = "record only contains a combination of organelles and plasmids";
+    } else if (organelle > 0 && plasmid > 0) {
+        label = "record only contains a combination of organelles and plasmids";
+    } else if (organelle > 0) {
+        label = "record only contains organelles";
+    } else if (plasmid > 0) {
+        label = "record only contains plasmids";
+    } else {
+        return;
+    }
+
+    for (auto& it: m_Objs.GetMap()) {
+        for (auto& obj: it.second->GetObjects()) {
+            rep[""][label].Ext().Add(*obj);
+            rep1[label].Add(*obj);
+            m_ReportItems = rep1.GetMap().size() > 1 ? rep.Export(*this)->GetSubitems() : rep1.Export(*this)->GetSubitems();
+            return;
+        }
+    }
+}
 
 
 END_SCOPE(NDiscrepancy)
