@@ -136,10 +136,16 @@ int main(int argc, const char* argv[])
 
     n = 0;
     for (c = 1;  c < argc;  ++c) {
-        int d, q;
-        if (!(str = NcbiStringToAddr(&addr, argv[c], 0))) {
+        int d = 0, q;
+        if ((str = strchr(argv[c], '|')) != 0) {
+            q = (int)(str - argv[c]);
+            if ((d = atoi(str + 1)) <= 0)
+                d = q;
+        } else
+            q = (int) strlen(argv[c]);
+        if (!(str = NcbiStringToAddr(&addr, argv[c], (size_t) d))) {
             CORE_LOGF(eLOG_Error,
-                      ("\"%s\" is not a valid IPv6 address", argv[c]));
+                      ("\"%.*s\" is not a valid IPv6 address", d ? d : q, argv[c]));
             ++n;
             continue;
         }
