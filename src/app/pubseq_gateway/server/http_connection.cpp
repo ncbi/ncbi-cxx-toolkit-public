@@ -367,8 +367,15 @@ CHttpConnection::x_RegisterPending(shared_ptr<CPSGS_Request>  request,
     // interrupted. The requests however could have already be finished.
     // So, run cleaning the finished requests and check again if there is some
     // space in the running list.
-    x_MaintainFinished();
-    if (m_RunningRequests.size() < m_HttpMaxRunning) {
+    // Also there could be requests which finished with the backend and only
+    // need to send final data to the client
+    size_t  prefinished = x_MaintainFinished();
+    size_t  running_size = m_RunningRequests.size();
+    if (running_size - prefinished < m_HttpMaxRunning) {
+        // Some requests have been:
+        // - removed from the list or
+        // - there are pre finished which should not be counted as running
+        //   because they do not occupy backend
         x_Start(request, reply, std::move(processor_names));
         return ePSGS_Running;
     }
@@ -569,15 +576,21 @@ void CHttpConnection::x_CancelBacklog(void)
 }
 
 
-void CHttpConnection::x_MaintainFinished(void)
+size_t CHttpConnection::x_MaintainFinished(void)
 {
-    if (m_RunningRequests.empty()) return;
+    if (m_RunningRequests.empty()) return 0;
 
+    size_t      prefinished_count = 0;
     bool        has_changes = false;
     for (auto &  attr : m_RunningRequests) {
-        if (attr.m_Reply && attr.m_Reply->IsCompleted()) {
-            x_UnregisterRunning(attr);
-            has_changes = true;
+        if (attr.m_Reply) {
+            if (attr.m_Reply->IsCompleted()) {
+                x_UnregisterRunning(attr);
+                has_changes = true;
+            }
+            else if (attr.m_Reply->IsPrefinished()) {
+                ++prefinished_count;
+            }
         }
     }
 
@@ -589,6 +602,8 @@ void CHttpConnection::x_MaintainFinished(void)
 
         m_RunningRequests.erase(trash_begin, m_RunningRequests.end());
     }
+
+    return prefinished_count;
 }
 
 
@@ -758,6 +773,10 @@ string CHttpConnection::GetInternalState(void)
 
     json.append("{\"conn_id\": ")
         .append(to_string(m_RunTimeProps.m_Id))
+        .append(", \"backlog_reqs_cnt\": ")
+        .append(to_string(m_BacklogRequests.size()))
+        .append(", \"running_reqs_cnt\": ")
+        .append(to_string(m_RunningRequests.size()))
         .append(", \"backlog_reqs\": ")
         .append(x_GetBacklogRequestsState())
         .append(", \"running_reqs\": ")

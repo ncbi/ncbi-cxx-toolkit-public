@@ -294,7 +294,7 @@ private:
                  shared_ptr<CPSGS_Reply>  reply,
                  list<string>  processor_names);
 
-    void x_MaintainFinished(void);
+    size_t x_MaintainFinished(void);
     void x_MaintainBacklog(void);
 
     string x_GetBacklogRequestsState(void);

@@ -834,6 +834,11 @@ CPSGS_CassProcessorBase::GetInternalState() const
 
     values.emplace_back("status", IPSGS_Processor::StatusToString(GetStatus()));
     values.emplace_back("num_cass_fetches", to_string(m_FetchDetails.size()));
+    if (m_Reply->IsOutputReady()) {
+        values.emplace_back("output_ready", "true");
+    } else {
+        values.emplace_back("output_ready", "false");
+    }
     if (AreAllFinishedRead()) {
         values.emplace_back("all_finished_read", "true");
     } else {

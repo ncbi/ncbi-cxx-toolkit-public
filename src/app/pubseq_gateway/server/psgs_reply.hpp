@@ -65,7 +65,8 @@ public:
         m_TotalSentReplyChunks(0),
         m_ConnectionCanceled(false),
         m_RequestId(0),
-        m_LastActivityTimestamp(psg_clock_t::now())
+        m_LastActivityTimestamp(psg_clock_t::now()),
+        m_Prefinished(false)
     {
         SetContentType(ePSGS_PSGMime);
         m_Chunks.reserve(64);
@@ -80,7 +81,8 @@ public:
         m_TotalSentReplyChunks(0),
         m_ConnectionCanceled(false),
         m_RequestId(0),
-        m_LastActivityTimestamp(psg_clock_t::now())
+        m_LastActivityTimestamp(psg_clock_t::now()),
+        m_Prefinished(false)
     {
         SetContentType(ePSGS_PSGMime);
         m_Chunks.reserve(64);
@@ -94,6 +96,12 @@ public:
 
     // Tells the lower level that the pending op can be deleted
     void SetCompleted(void);
+
+    void SetPrefinished(void)
+    { m_Prefinished = true; }
+
+    bool IsPrefinished(void) const
+    { return m_Prefinished; }
 
     // Tells if the stream is closed and the pending op can be deleted
     bool IsCompleted(void) const;
@@ -392,6 +400,7 @@ private:
     volatile bool           m_ConnectionCanceled;
     size_t                  m_RequestId;
     psg_time_point_t        m_LastActivityTimestamp;
+    bool                    m_Prefinished;
 };
 
 

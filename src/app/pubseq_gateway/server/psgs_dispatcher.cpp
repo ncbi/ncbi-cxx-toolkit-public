@@ -732,6 +732,12 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     }
 
     if (pre_finished) {
+        // SetCompleted() may lead to a too early destruction of a request
+        // object which then leads to a core dump. However the room in the
+        // connection running list is limited so those "pre finished" requests
+        // should not be counted when available slots are considered
+        reply->SetPrefinished();
+
         // Timer is not needed anymore
         // Note: it is safe to have this call even is the processor has not
         // started yet. If so then the timer is not created thus the call leads
