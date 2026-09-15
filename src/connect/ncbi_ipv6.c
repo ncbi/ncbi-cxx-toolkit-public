@@ -340,9 +340,9 @@ static const char* x_StringToIPv6(TNCBI_IPv6Addr* addr,
         }
     } while (++n <= len);
 
-    assert(0 < t  &&  t <= maxt);
     if (t < maxt  &&  !gap)
         return 0/*failure*/;
+    assert(0 < t  &&  t <= maxt);
 
     dst = temp.octet;
     for (n = 0;  n < t;  ++n) {
