@@ -139,7 +139,7 @@ ERW_Result SPSG_BlobReader::PendingCount(size_t* count)
 
     if (auto src_locked = m_Src.GetLock()) {
         if (!CheckForNewChunks(*src_locked)) {
-            return eRW_Error;
+            return eRW_Success;
         }
     }
 

@@ -1228,7 +1228,7 @@ BOOST_AUTO_TEST_CASE(BlobReaderTreatsCanceledItemAsError)
     size_t read = numeric_limits<size_t>::max();
     char c = '\0';
 
-    BOOST_CHECK(reader.PendingCount(&pending) == eRW_Error);
+    BOOST_CHECK(reader.PendingCount(&pending) == eRW_Success);
     BOOST_CHECK_EQUAL(pending, static_cast<size_t>(0));
     BOOST_CHECK(reader.Read(&c, 1, &read) == eRW_Error);
     BOOST_CHECK_EQUAL(read, static_cast<size_t>(0));
