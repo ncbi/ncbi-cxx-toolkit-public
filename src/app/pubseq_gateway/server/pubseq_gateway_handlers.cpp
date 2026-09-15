@@ -1463,9 +1463,37 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  http_req,
 
         CJsonNode                       status(CJsonNode::NewObjectNode());
 
+        // Add per datacenter connection information
+        uint64_t    total_active_statements = 0;
+        if (m_CassSchemaProvider) {
+            // multimap is for each connection
+            multimap<string, int64_t>   active_stmt = m_CassSchemaProvider->GetActiveStatementsCount();
+            // map is per datacenter
+            map<string, int64_t>        active_stmt_per_datacenter;
+
+            for (const auto &  item : active_stmt) {
+                active_stmt_per_datacenter[item.first] += item.second;
+            }
+
+            for (const auto &  item : active_stmt_per_datacenter) {
+                string      data_center_id = item.first;
+                replace(data_center_id.begin(), data_center_id.end(), ':', '_');
+                uint64_t    active_cnt = item.second;
+
+                m_Counters->AppendValueNode(
+                    status, "CassandraActiveStatementsCount_" + data_center_id,
+                    "Cassandra active statements counter (" + item.first + ")",
+                    "Number of currently active statements for the cassandra data center " + item.first,
+                    active_cnt);
+
+                total_active_statements += active_cnt;
+            }
+        }
+
         m_Counters->AppendValueNode(
             status, CPSGSCounters::ePSGS_CassandraActiveStatements,
-            GetCassandraActiveStatements());
+            total_active_statements);
+
         m_Counters->AppendValueNode(
             status, CPSGSCounters::ePSGS_NumberOfConnections,
             static_cast<uint64_t>(m_HttpDaemon->NumOfConnections()));

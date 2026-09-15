@@ -1325,11 +1325,17 @@ void CPubseqGatewayApp::x_FixIntrospectionBuildDate(void)
 
 uint64_t CPubseqGatewayApp::GetCassandraActiveStatements(void) const
 {
-    if (m_CassConnection) {
-        return static_cast<uint64_t>(m_CassConnection->GetActiveStatements());
+    if (m_CassSchemaProvider) {
+        uint64_t                    cnt = 0;
+        multimap<string, int64_t>   active_stmt = m_CassSchemaProvider->GetActiveStatementsCount();
+
+        for (const auto &  item : active_stmt) {
+            cnt += item.second;
+        }
+        return cnt;
     }
 
-    // No cassandra connection
+    // No cassandra schema provider
     return 0;
 }
 

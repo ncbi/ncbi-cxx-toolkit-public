@@ -590,8 +590,8 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
 
     m_Counters[ePSGS_CassandraActiveStatements] =
         new SCounterInfo(
-            "CassandraActiveStatementsCount", "Cassandra active statements counter",
-            "Number of the currently active Cassandra queries",
+            "CassandraActiveStatementsCount", "Cassandra active statements counter (total)",
+            "Number of the currently active Cassandra queries for all data centers",
             SCounterInfo::ePSGS_Arbitrary);
     m_Counters[ePSGS_NumberOfConnections] =
         new SCounterInfo(
