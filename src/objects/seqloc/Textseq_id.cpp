@@ -249,7 +249,7 @@ ostream& CTextseq_id::AsFastaString(ostream& s, bool allow_version) const
 {
     if (IsSetAccession()) {
         s << GetAccession(); // no Upcase per Ostell - Karl 7/2001
-        if (allow_version  &&  IsSetVersion()) {
+        if (allow_version  &&  HasNonzeroVersion()) {
             int version = GetVersion();
             if (version) {
                 s.put('.');
