@@ -618,7 +618,7 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
             }
             if (tsid->CanGetAccession()) {
                 string acc = tsid->GetAccession();
-                if (tsid->CanGetVersion()  &&
+                if (tsid->HasNonzeroVersion()  &&
                     choice != CSeq_id::e_Swissprot) {
                     acc += '.' + NStr::IntToString(tsid->GetVersion());
                 }

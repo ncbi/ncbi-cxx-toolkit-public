@@ -90,7 +90,7 @@ bool CGffRecord::AssignSeqId(
             case CSeq_id::e_Other:
                 if ( pId->GetOther().CanGetAccession() ) {
                     m_strSeqId = pId->GetOther().GetAccession();
-                    if ( pId->GetOther().CanGetVersion() ) {
+                    if ( pId->GetOther().HasNonzeroVersion() ) {
                         m_strSeqId += ".";
                         m_strSeqId += NStr::UIntToString(
                             pId->GetOther().GetVersion() );
