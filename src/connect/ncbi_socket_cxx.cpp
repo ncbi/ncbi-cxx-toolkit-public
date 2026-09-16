@@ -681,17 +681,21 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
                             const STimeout* timeout,
                             size_t*         n_ready)
 {
-    static const STimeout kZero = {0, 0};
+    static const STimeout kZero = { 0, 0 };
     size_t          x_n     = polls.size();
     SPOLLABLE_Poll* x_polls = 0;
     size_t          x_ready = 0;
 
-    if (x_n  &&  !(x_polls = new SPOLLABLE_Poll[x_n]))
+    if (x_n  &&  !(x_polls = new SPOLLABLE_Poll[x_n])) {
+        if ( n_ready )
+            *n_ready = 0;
         return eIO_Unknown;
+    }
 
     for (size_t i = 0;  i < x_n;  ++i) {
         CPollable* p     = polls[i].m_Pollable;
         EIO_Event  event = polls[i].m_Event;
+        EIO_Event revent = eIO_Open;
         if (p  &&  event) {
             CSocket* s = dynamic_cast<CSocket*>(p);
             if (!s) {
@@ -702,42 +706,52 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
                         = tr ? POLLABLE_FromTRIGGER(tr->GetTRIGGER()) : 0;
                 } else
                     x_polls[i].poll = POLLABLE_FromLSOCK(ls->GetLSOCK());
-                polls[i].m_REvent = eIO_Open;
             } else {
-                EIO_Event revent;
-                if (s->GetStatus(eIO_Open) != eIO_Closed) {
-                    x_polls[i].poll = POLLABLE_FromSOCK(s->GetSOCK());
-                    revent = eIO_Open;
-                } else {
+                if (s->GetStatus(eIO_Open) == eIO_Closed) {
                     x_polls[i].poll = 0;
                     revent = eIO_Close;
                     ++x_ready;
-                }
-                polls[i].m_REvent = revent;
+                } else
+                    x_polls[i].poll = POLLABLE_FromSOCK(s->GetSOCK());
             }
             x_polls[i].event = event;
-        } else {
+        } else
             x_polls[i].poll = 0;
-            polls[i].m_REvent = eIO_Open;
-        }
+        if (!x_polls[i].poll)
+            polls[i].m_REvent = revent;
     }
 
     size_t xx_ready;
     EIO_Status status = POLLABLE_Poll(x_n, x_polls,
                                       x_ready ? &kZero : timeout, &xx_ready);
+    assert(!(status == eIO_Success) == !xx_ready);
+    assert(xx_ready <= x_n);
     x_ready += xx_ready;
-    //assert(x_ready <= x_n);
-    assert(x_ready  ||  status != eIO_Success);
 
     for (size_t i = 0;  i < x_n;  ++i) {
-        if (x_polls[i].revent)
-            polls[i].m_REvent = x_polls[i].revent;
+        if (x_polls[i].poll) {
+            EIO_Event revent = x_polls[i].revent;
+            assert((revent | eIO_ReadWrite) == eIO_ReadWrite  ||  revent == eIO_Close);
+            if (status != eIO_Success) {
+                assert(!(revent & eIO_ReadWrite));
+                if (x_ready)
+                    revent = eIO_Open; /* do not mix in any errors */
+            } else if (revent) {
+                assert(xx_ready);
+                --xx_ready;
+            }
+            polls[i].m_REvent = revent;
+        } else
+            assert(!x_polls[i].revent);
     }
+    assert(x_ready <= x_n);
+    assert(!xx_ready);
+    (void) xx_ready;
 
     if ( n_ready )
         *n_ready = x_ready;
     delete[] x_polls;
-    return status;
+    return x_ready ? eIO_Success : status;
 }
 
 
