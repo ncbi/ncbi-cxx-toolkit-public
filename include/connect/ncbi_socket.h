@@ -2221,7 +2221,7 @@ typedef struct {
  * @param polls[]
  *  [in/out]  array of handles and event masks to check for I/O, and return
  * @param timeout
- *  [in]      how long to wait for at least one handle to get ready.
+ *  [in]      how long to wait for at least one handle to get ready
  * @param n_ready
  *  [out]     how many elements of the "polls" array returned with their
  *            I/O marked ready
