@@ -1520,7 +1520,8 @@ bool s_GetModelEvidance(const CBioseq_Handle& bsh, SModelEvidance& me)
             CConstRef<CSeq_id> accver_seq_id = accver_idh.GetSeqIdOrNull();
             if( accver_seq_id ) {
                 const CTextseq_id *text_id = accver_seq_id->GetTextseq_Id();
-                if( text_id && text_id->IsSetAccession() && text_id->IsSetVersion() ) {
+                if( text_id  &&  text_id->IsSetAccession()
+                    &&  text_id->HasNonzeroVersion() ) {
                     me.name = text_id->GetAccession() + "." + NStr::IntToString(text_id->GetVersion());
                 }
             }
