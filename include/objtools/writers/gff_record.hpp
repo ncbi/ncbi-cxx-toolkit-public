@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 //  ============================================================================
-class NCBI_XOBJWRITE_EXPORT CGffRecord
+class NCBI_DEPRECATED NCBI_XOBJWRITE_EXPORT CGffRecord
 //  ============================================================================
 {
 public:
