@@ -416,7 +416,6 @@ if(NOT NCBI_COMPONENT_VDB_DISABLED AND NOT NCBI_COMPONENT_VDB_FOUND)
             ${NCBI_ThirdParty_VDB}/interfaces/cc/${NCBI_ThirdParty_VDB_COMPILER}/${NCBI_ThirdParty_VDB_ARCH}
             ${NCBI_ThirdParty_VDB}/interfaces/cc/${NCBI_ThirdParty_VDB_COMPILER}
         )
-        set(NCBI_COMPONENT_VDB_LIBPATH ${NCBI_ThirdParty_VDB}/mac/release/${NCBI_ThirdParty_VDB_ARCH}/lib)
         set(HAVE_NCBI_VDB 1)
     endif()
 endif()
