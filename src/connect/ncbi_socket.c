@@ -3913,6 +3913,14 @@ static EIO_Status s_SelectStallsafe(size_t                n,
         x_ready = k = 0;
         pending = 0/*false*/;
         for (i = 0;  i < n;  ++i) {
+            /* "revent" is valid for all elements, and is always zero(eIO_Open)
+             * for empty elements ("sock" == NULL or/and "event" == eIO_Open).
+             * So, always start with "revent" b/c "event" may just be invalid:
+             * e.g. for NULL "sock", it does not even have to be initialized,
+             * and it will *not* looked into at all (but "revent" == 0 guards
+             * against any value it might have had)!  This way we don't need
+             * to keep checking "sock" for NULL repeatedly and unnecessarily. */
+
             if (polls[i].revent == eIO_Close)
                 break/*ready*/;
 
@@ -3950,7 +3958,7 @@ static EIO_Status s_SelectStallsafe(size_t                n,
         for (i = k;  i < n;  ++i) {
             SOCK sock;
             /* try to push pending writes to writeable sockets */
-            if (polls[i].event == eIO_Read  &&  polls[i].revent == eIO_Write) {
+            if (polls[i].revent == eIO_Write  &&  polls[i].event == eIO_Read) {
                 static const struct timeval kZero = { 0 };
                 sock = polls[i].sock;
                 assert(sock                          &&
@@ -3967,7 +3975,7 @@ static EIO_Status s_SelectStallsafe(size_t                n,
                 continue;
             }
             /* try to upread immediately readable sockets */
-            if (polls[i].event == eIO_Write  &&  polls[i].revent == eIO_Read) {
+            if (polls[i].revent == eIO_Read  &&  polls[i].event == eIO_Write) {
                 size_t dummy/*dontcare*/;
                 sock = polls[i].sock;
                 assert(sock                          &&
