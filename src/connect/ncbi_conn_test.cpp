@@ -1033,7 +1033,11 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             temp += "NOTE that even though that not the entire port range may"
                 " currently be utilized and checked, in order for NCBI"
                 " services to work correctly and seamlessly, your network must"
-                " support all ports in the range as documented above\n";
+                " support "
+                + string(net_info->firewall == eFWMode_Legacy
+                         ? "arbitrary ports"
+                         : "all ports in the range")
+                + " as documented above\n";
         }
         if (net_info->firewall & eFWMode_Adaptive) {
             temp += net_info->firewall == eFWMode_Fallback
