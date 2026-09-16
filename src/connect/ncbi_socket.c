@@ -2624,6 +2624,7 @@ static EIO_Status s_Select_(size_t                n,
                     polls[i].revent = event;
             }
             assert((polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
+            assert( polls[i].revent );
             ++ready;
         }
     }
@@ -3893,13 +3894,14 @@ static EIO_Status s_SelectStallsafe(size_t                n,
                                     const struct timeval* tv,
                                     size_t*               n_ready)
 {
-    size_t i, k, m;
+    size_t x_ready;
 
     assert(!n  ||  polls);
 
     for (;;) { /* until ready, or one full "tv" term expires or error occurs */
         int/*bool*/ pending;
         EIO_Status  status;
+        size_t      i, k;
 
         status = s_Select(n, polls, tv, 0);
         if (status != eIO_Success) {
@@ -3908,53 +3910,65 @@ static EIO_Status s_SelectStallsafe(size_t                n,
             return status;
         }
 
-        m = k = 0;
+        x_ready = k = 0;
         pending = 0/*false*/;
         for (i = 0;  i < n;  ++i) {
-            if (polls[i].revent == eIO_Close) {
+            if (polls[i].revent == eIO_Close)
                 break/*ready*/;
-            }
+
             assert((polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
             if (polls[i].revent & polls[i].event) {
                 polls[i].revent
                     = (EIO_Event)(polls[i].revent & polls[i].event);
                 break/*ready*/;
             }
+
             if (polls[i].revent  &&  !pending) {
                 assert(polls[i].sock);
                 pending = 1/*true*/;
                 k = i;
             }
         }
-        if (i < n/*ready*/) {
-            m = 1/*ready*/;
-            break;
+
+        if (i < n) {
+            x_ready = 1;
+            for (++i;  i < n;  ++i) {
+                if (polls[i].revent != eIO_Close) {
+                    assert((polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
+                    polls[i].revent
+                        = (EIO_Event)(polls[i].revent & polls[i].event);
+                    if (!polls[i].revent)
+                        continue;
+                }
+                ++x_ready;
+            }
+            break/*ready*/;
         }
 
-        assert(pending  &&  !m);
-        /* all sockets are not ready for the requested events */
+        assert(pending  &&  !x_ready);
+        /* no sockets are ready for the requested events */
         for (i = k;  i < n;  ++i) {
             SOCK sock;
-            /* try to push pending writes */
+            /* try to push pending writes to writeable sockets */
             if (polls[i].event == eIO_Read  &&  polls[i].revent == eIO_Write) {
-                static const struct timeval zero = { 0 };
+                static const struct timeval kZero = { 0 };
                 sock = polls[i].sock;
                 assert(sock                          &&
                        sock->sock != SOCK_INVALID    &&
                        sock->type == eSOCK_Socket    &&
                        sock->w_status != eIO_Closed  &&
                        (sock->pending | sock->w_len));
-                (void) s_WritePending(sock, &zero, 1/*writeable*/, 0);
+                (void) s_WritePending(sock, &kZero, 1/*writeable*/, 0);
                 if (sock->r_status == eIO_Closed  ||  sock->eof) {
                     polls[i].revent = eIO_Read;
-                    ++m/*ready*/;
+                    ++x_ready;
                 } else
                     polls[i].revent = eIO_Open;
                 continue;
             }
             /* try to upread immediately readable sockets */
             if (polls[i].event == eIO_Write  &&  polls[i].revent == eIO_Read) {
-                size_t dummy;
+                size_t dummy/*dontcare*/;
                 sock = polls[i].sock;
                 assert(sock                          &&
                        sock->sock != SOCK_INVALID    &&
@@ -3968,27 +3982,18 @@ static EIO_Status s_SelectStallsafe(size_t                n,
                 (void) s_Read_(sock, 0, 0, &dummy, -1/*upread*/);
                 if (sock->w_status == eIO_Closed) {
                     polls[i].revent = eIO_Write;
-                    ++m/*ready*/;
+                    ++x_ready;
                 } else
                     polls[i].revent = eIO_Open;
             }
         }
-        if (m)
+        if (x_ready)
             break/*ready*/;
     }
 
-    assert(m);
-    for ( ;  i < n;  ++i) {
-        if (polls[i].revent != eIO_Close) {
-            polls[i].revent = (EIO_Event)(polls[i].revent & polls[i].event);
-            if (!polls[i].revent)
-                continue;
-        }
-        ++m;
-    }
-
+    assert(x_ready  &&  x_ready <= n);
     if ( n_ready )
-        *n_ready = m;
+        *n_ready = x_ready;
     return eIO_Success;
 }
 
@@ -7884,10 +7889,8 @@ extern EIO_Status SOCK_Poll(size_t          n,
                             const STimeout* timeout,
                             size_t*         n_ready)
 {
-    EIO_Status     status = eIO_InvalidArg;
-    int/*bool*/    error;
-    struct timeval tv;
-    size_t         i;
+    EIO_Status status;
+    size_t     i;
 
 #ifdef NCBI_MONKEY
     SSOCK_Poll* orig_polls = polls; /* to know if 'polls' was replaced */
@@ -7905,10 +7908,10 @@ extern EIO_Status SOCK_Poll(size_t          n,
     if (n  &&  !polls) {
         if ( n_ready )
             *n_ready = 0;
-        return status/*eIO_InvalidArg*/;
+        return eIO_InvalidArg;
     }
 
-    error = 0/*false*/;
+    status = eIO_Success;
     for (i = 0;  i < n;  ++i) {
         SOCK      sock;
         EIO_Event event;
@@ -7918,11 +7921,17 @@ extern EIO_Status SOCK_Poll(size_t          n,
         }
         if ((event | eIO_ReadWrite) != eIO_ReadWrite) {
             polls[i].revent = eIO_Close;
-            /*status = eIO_InvalidArg;*/
-            error = 1/*true*/;
+            if (status == eIO_Success) {
+                size_t k;
+                for (k = 0;  k < i;  ++k) {
+                    if (polls[k].revent)
+                        polls[k].revent = eIO_Open;
+                }
+                status = eIO_InvalidArg;
+            }
             continue;
         }
-        if (error) {
+        if (status != eIO_Success) {
             polls[i].revent = eIO_Open;
             continue;
         }
@@ -7947,22 +7956,21 @@ extern EIO_Status SOCK_Poll(size_t          n,
     }
 
     if (!n_ready)
-        n_ready = &i;
-    if (!error) {
+        n_ready = &i;  /*!!*/
+    if (status == eIO_Success) {
+        struct timeval tv;
         status = s_SelectStallsafe(n, polls, s_to2tv(timeout, &tv), n_ready);
-        assert(!(status == eIO_Success) == !*n_ready);
-    } else {
-        assert(status != eIO_Success);
+        if (status != eIO_Success) {
+            size_t k;  /* NB: "i" might have been tied to "n_ready"!! */
+            for (k = 0;  k < n;  ++k) {
+                if (polls[k].revent & eIO_ReadWrite)
+                    polls[k].revent = eIO_Open;
+            }
+            assert(!*n_ready);
+        } else
+            assert(*n_ready  &&  *n_ready <= n);
+    } else
         *n_ready = 0;
-    }
-
-    if (status != eIO_Success) {
-        for (i = 0;  i < n;  ++i) {
-            if (polls[i].revent != eIO_Close)
-                polls[i].revent  = eIO_Open;
-        }
-        assert(!*n_ready);
-    }
 
 #ifdef NCBI_MONKEY
     if (orig_polls != polls) {
