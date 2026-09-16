@@ -179,6 +179,7 @@ ALBU	s	Rocky Mountain Forest and Range Experiment Station
 ALCB	s	Universidade Federal da Bahia, Campus Universitario de Ondina			
 ALCP	c	Algotheque du Laboratoire de Cryptogamie	MNHN:ALCP		
 ALD	s	Alderney Society and Museum			
+ALDA	s	Seychelles Islands Foundation			
 ALEX	s	University of Alexandria, Department of Botany			
 ALF	s	Campus International de Baillarguet, Departement d'Elevage et de Medecine Veterinaire			
 ALGOBANK	c	ALGOBANK	AC<FRA>		
@@ -516,6 +517,7 @@ BC<ESP>	s	Institut Botanic de Barcelona
 BCAC	sc	Bashkortostan Collection of Algae and Cyanobacteria			
 BCB	s	Universitat Autonoma de Barcelona, Unitat de Botanica			
 BCBC	s	Broward College			
+BCBHR	s	Biological Collection of Bardia			
 BCBL	s	Barnard College			
 BCC<ESP>	s	Universitat de Barcelona, Departament de Biologia Vegetal (Unitat de Botanica)			
 BCC<THA>	c	BIOTEC Culture Collection			
@@ -1195,6 +1197,7 @@ CDFN	s	Canadian Forest Service - Atlantic
 CDFW	s	California Department of Fish and Wildlife			
 CDFW:Bird	s	Bird Collection			
 CDH	s	Bureau of Land Management			
+CDMB	s	Corporacion Autonoma Regional para la Defensa de la Meseta de Bucaramanga			
 CDMU	s	Chengde Medical University			
 CDN	s	Whitgift School			
 CDRI	s	Central Drug Research Institute			
@@ -1638,6 +1641,7 @@ CPUH	s	Career Point University Hamirpur
 CPUN	s	Universidad Nacional de Cajamarca, Departamento de Biologia			
 CPUP	s	California Polytechnic University			
 CPZ	c	Centro Panamericano de Zoonosis			
+CPZOO	s	Cameron Park Zoo			
 CQBG	s	Chongqing Botanical Garden			
 CQNM	s	Chongqing Natural History Museum			
 CR	s	Museo Nacional de Costa Rica			
@@ -1840,6 +1844,7 @@ DAFH	s	Department of Agriculture and Fisheries
 DAG	s	Mountain Botanical Garden of the Dagestan Scientific Centre			
 DAKAR	s	Universite Cheikh Anta Diop, Departement de Biologie Vegetale			
 DAL	s	Dalhousie University, Biology Department			
+DALLAS	s	Dallas Zoo			
 DAM	s	Damietta University			
 DANV	s	Umweltamt Darmstadt			
 DAO	s	Agriculture and Agri-Food Canada			
@@ -2859,6 +2864,7 @@ GUCC	c	Guizhou University Culture Collection
 GUCM	s	Guangzhou University of Chinese Medicine			
 GUD	s	The Gandhigram Rural Institute (Deemed to be University)			
 GUH	s	HNB Garhwal University, Botany Department			
+GUIDE	s	Gujarat Desert Ecology Herbarium			
 GUL	s	Suleyman Demirel University			
 GUM	s	Glasgow University Museum (Hunter Museum)			
 GUM<IRN>	s	Guilan University Mycological Herbarium			
@@ -4031,6 +4037,7 @@ JCE	s	Jiangxi College of Education, Biology Department
 JCM	c	Japan Collection of Microorganisms		https://www.jcm.riken.jp/cgi-bin/jcm/jcm_number?JCM=	
 JCRB	c	Japanese Collection of Research Bioresources Cell Bank			
 JCT	c	James Cook Townsville			
+JDJ	s	Jardin Botanico de Santiago Prof. Eugenio de Jesus Marcano Fondeur			
 JE	s	Herbarium Haussknecht, Jena			
 JEF	s	Indiana University Southeast, Biology Department			
 JEL	c	Joyce E. Longcore Chytrid Collection at the University of Maine			
@@ -4074,6 +4081,7 @@ JNU<KOR>	s	Chonbuk National University, Faculty of Biological Sciences
 JNUB	s	Jeju National University			
 JOE	s	University of Joensuu, Biology Department			
 JOI	s	Universidade da Regiao de Joinville			
+JOLM	s	Odawara Local Museum			
 JOMU	s	John Muir National Historic Site			
 JONK	s	Jonkershoek Herbarium			
 JOTR	s	Joshua Tree National Park			
@@ -4083,6 +4091,7 @@ JPMP	s	Janus Pannonius Museum
 JPU	s	Janus Pannonius University, Botany Department			
 JRAU	s	University of Johannesburg, Department of Botany and Plant Biotechnology			
 JROH	s	Jasper Ridge Biological Preserve, Stanford University			
+JSCM	s	Sagamihara City Museum			
 JSHC	s	Jay S. Haft Collection			
 JSMI	s	Jiangsu Marine Fisheries Research Institute			
 JSMPE	s	Joint Soviet Mongolian Paleontolgical Expedition	JRMPE		
@@ -4578,6 +4587,7 @@ LISM	s	Missao de Estudos Agronomicos do Ultramar
 LISU	s	Museu Nacional de Historia Natural			
 LISVA	s	Ministerio da Educacao			
 LIT	s	Oblastni muzeum v Litomericich			
+LITTLEROC	s	Little Rock Zoo			
 LIUSP	s	Laboratorio de Ictiogenetica, Universidade de Sao Paulo			
 LIV	s	Liverpool Museum			
 LIVC	s	Liverpool Botanic Garden			
@@ -8309,6 +8319,7 @@ UAMM	s	Universidad de los Andes
 UAMX	s	Universidad Autonoma Metropolitana, Unidad Xochimilco			
 UAMZ	s	University of Alberta Museum of Zoology			
 UAMZC	s	University of Arkansas, Museum Zoological Collections			
+UAN	s	Museo de Zoologia, Unidad Academica de Agricultura, Universidad Autonoma de Nayarit			
 UANL	s	Universidad Autonoma de Nuevo Leon			
 UAO	s	University of Akron			
 UAPC	s	University of Alberta			
@@ -8426,6 +8437,7 @@ UEGQ	s	Universidade Estadual de Goias
 UEH	s	University of Education Lahore, Pakistan			
 UEMA	s	State University of Maranhao			
 UENF	s	Universidade Estadual do Norte Fluminense			
+UES	s	Universidad Estatal de Sonora			
 UESC	s	Universidade Estadual de Santa Cruz			
 UESS	s	Universidad de El Salvador			
 UESTCC	sc	University of Electronic Science and Technology Culture Collection			
@@ -8566,6 +8578,7 @@ UMIC	s	University of Mississippi
 UMIM	s	Univeristy of Miami Ichthyological Museum			
 UMIP	c	Collection de Champignons et Actinomycetes Pathogenes			
 UMKC	s	University of Missouri			
+UMKJ	s	Universiti Malaysia Kelantan			
 UMKL	s	University of Malaysia			
 UMKU	s	Uganda Museum			
 UMM	s	University of Maine at Machias			
@@ -9084,6 +9097,7 @@ VNC	s	Los Angeles Valley College, Life Sciences Department
 VNF	s	Vietnam Forestry Herbarium			
 VNFSIH	s	Forest Science Institute of Central Highlands and South of Central Vietnam (FSIH			
 VNGA	s	Vorarlberger Naturschau			
+VNIIKR	s	Federal State Budgetary Institution All-Russian Plant Quarantine Center			
 VNIRO	s	Institute of Oceanography			
 VNM	s	Institute of Tropical Biology			
 VNMN	s	Vietnam National Museum of Nature			
@@ -9399,6 +9413,7 @@ YBDC	s	Yibin Institute for Drug Control
 YBI	s	Institut National pour l'Etude et la Recherche Agronomique, Departement de Botanique			
 YBLF	c	Yamanouchi Pharmaceutical Co., Ltd.			
 YBU	s	Yibin University, College of Life Science and Food Engineering			
+YCCSK	s	Yashwantrao Chavan College of Science			
 YCE	s	Yunnan College of Education, Biology Department			
 YCH	s	Yavapai College, Biology Department			
 YCM	s	Yokosuka City Museum			
@@ -9519,6 +9534,7 @@ ZIUW	s	Universitaet Wien, Zoologisches Institut
 ZIUZ	s	Zagreb University			
 ZJFC	s	Zhejiang Forestry College, Forestry Department			
 ZJFI	s	Zhejiang Forestry Institute, Bamboo Department			
+ZJFU	s	Zhejiang University			
 ZJMA	s	Zhejiang Academy of Medical Sciences			
 ZJMR	s	Zhejiang Academy of Traditional Chinese Medicine			
 ZJSC	s	Zhejiang Institute of Subtropical Crops herbarium			
