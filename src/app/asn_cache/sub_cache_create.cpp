@@ -377,7 +377,7 @@ CSeq_id_Handle StrippedAccVer(const CSeq_id_Handle &idh)
 {
     const CTextseq_id *text_seqid = idh.GetSeqId()->GetTextseq_Id();
     string accver = text_seqid->GetAccession();
-    if (text_seqid->IsSetVersion()) {
+    if (text_seqid->HasNonzeroVersion()) {
         accver += '.' + NStr::NumericToString(text_seqid->GetVersion());
     }
     return CSeq_id_Handle::GetHandle(accver);
