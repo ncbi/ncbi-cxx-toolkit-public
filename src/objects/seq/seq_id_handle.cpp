@@ -265,7 +265,7 @@ string GetDirectLabel(const CSeq_id& id)
             const CTextseq_id* text_id = id.GetTextseq_Id();
             if ( text_id &&
                  text_id->IsSetAccession() &&
-                 text_id->IsSetVersion() ) {
+                 text_id->HasNonzeroVersion() ) {
                 ret = text_id->GetAccession() + '.' +
                     NStr::IntToString(text_id->GetVersion());
             }
@@ -297,7 +297,7 @@ string GetLabel(const CSeq_id& id)
         else if ( text_id->IsSetName() ) {
             ret = text_id->GetName();
         }
-        if ( text_id->IsSetVersion() ) {
+        if ( text_id->HasNonzeroVersion() ) {
             ret += '.';
             ret += NStr::IntToString(text_id->GetVersion());
         }
