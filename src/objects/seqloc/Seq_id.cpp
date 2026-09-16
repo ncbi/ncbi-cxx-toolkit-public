@@ -2821,11 +2821,12 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
             str = tsid->GetName();
         }
 
-        if (version != NULL && tsid->IsSetVersion()) {
+        if (version != NULL && tsid->HasNonzeroVersion()) {
             *version = tsid->GetVersion();
         }
         if ( !str.empty() ) {
-            if ( (flags & CSeq_id::fLabel_Version)  &&  tsid->IsSetVersion()) {
+            if ( (flags & CSeq_id::fLabel_Version)
+                &&  tsid->HasNonzeroVersion()) {
                 str += "." + NStr::IntToString(tsid->GetVersion());
             }
         }
@@ -2956,7 +2957,7 @@ void CSeq_id::GetLabel(string* label, ELabelType type, TLabelFlags flags) const
                 *label += *secondary_id_list.begin();
             if (flags & fLabel_Version) {
                 const CTextseq_id* tsid = GetTextseq_Id();
-                if (tsid && tsid->IsSetVersion())
+                if (tsid && tsid->HasNonzeroVersion())
                     *label += "." + NStr::IntToString(tsid->GetVersion());
             }
         } else {
