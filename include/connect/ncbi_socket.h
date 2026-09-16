@@ -1195,7 +1195,7 @@ typedef struct {
  * @note  To lower overhead, use SOCK_Wait() to wait for I/O on a single socket.
  * @note  NULL sockets (without any verification for the contents of "event")
  *        and non-NULL sockets with eIO_Open requested are not polled.  Their
- *        corresponding "revent" is set to eIO_Open when no I/O event is ready.
+ *        corresponding "revent" is set to eIO_Open.
  * @note  For a socket not ready for an operation, "revent" is eIO_Open;  for a
  *        failing or closed socket, it is eIO_Close.
  * @note  This call may return eIO_InvalidArg if the parameters are incomplete
