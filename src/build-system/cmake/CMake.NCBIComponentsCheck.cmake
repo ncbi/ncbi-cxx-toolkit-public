@@ -1103,12 +1103,14 @@ macro(NCBIcomponent_find_package _name _pkglib _pkg)
         string(TOUPPER ${_package} _uppackage)
         string(TOLOWER ${_package} _lopackage)
         if (${_package}_FOUND OR ${_uppackage}_FOUND OR ${_lopackage}_FOUND)
-            if( ${_uppackage}_LIBRARIES OR ${_uppackage}_INCLUDE_DIRS OR
-                ${_uppackage}_LIBRARY   OR ${_uppackage}_INCLUDE_DIR)
-                set(_package ${_uppackage})
-            elseif( ${_lopackage}_LIBRARIES OR ${_lopackage}_INCLUDE_DIRS OR
-                ${_lopackage}_LIBRARY   OR ${_lopackage}_INCLUDE_DIR)
-                set(_package ${_lopackage})
+            if(NOT TARGET "${_package}::${_package}")
+                if( ${_uppackage}_LIBRARIES OR ${_uppackage}_INCLUDE_DIRS OR
+                    ${_uppackage}_LIBRARY   OR ${_uppackage}_INCLUDE_DIR)
+                    set(_package ${_uppackage})
+                elseif( ${_lopackage}_LIBRARIES OR ${_lopackage}_INCLUDE_DIRS OR
+                    ${_lopackage}_LIBRARY   OR ${_lopackage}_INCLUDE_DIR)
+                    set(_package ${_lopackage})
+                endif()
             endif()
             if(${_package}_INCLUDE_DIRS)
                 set(_pkg_include ${${_package}_INCLUDE_DIRS})
