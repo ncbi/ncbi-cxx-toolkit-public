@@ -88,6 +88,9 @@ public:
     /// Format the contents FASTA string style
     ostream& AsFastaString(ostream& s, bool allow_version = true) const;
 
+    bool HasNonzeroVersion() const
+    { return IsSetVersion()  &&  GetVersion() != 0; }
+
 private:
     void x_Reject(const CDiagCompileInfo& info, int subcode,
                   CSeq_id::TParseFlags flags, const CTempString& msg);
