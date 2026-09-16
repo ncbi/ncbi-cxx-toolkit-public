@@ -99,7 +99,10 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self._default_requires("lmdb/[>=0.9.29 <=0.9.32]")
         self._default_requires("lzo/2.10")
         self._default_requires("openssl/[>=3.5.1 <=3.6.3]")
-        self._default_requires("opentelemetry-cpp/[>=1.14.2 <=1.26.0]")
+        if self.settings.os == "Linux":
+            self._default_requires("opentelemetry-cpp/[>=1.14.2 <=1.26.0]")
+        else:
+            self._optional_requires("opentelemetry-cpp/[>=1.14.2 <=1.26.0]")
         self._optional_requires("pcre/8.45")
         self._default_requires("pcre2/10.47")
         self._default_requires("protobuf/[>=3.21.12 <=7.35.0]")
