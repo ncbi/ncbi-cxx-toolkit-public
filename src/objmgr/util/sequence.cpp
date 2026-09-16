@@ -2909,7 +2909,7 @@ void CFastaOstream::x_WriteAsFasta(const CBioseq& bioseq)
             if (text_id->IsSetAccession())
             {
                 m_Out << text_id->GetAccession();
-                if (text_id->IsSetVersion())
+                if (text_id->HasNonzeroVersion())
                 {
                     m_Out << "." << text_id->GetVersion();
                 }
