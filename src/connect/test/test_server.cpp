@@ -103,7 +103,6 @@ private:
     mutable CFastMutex m_RngMutex;            ///< Ensure RNG thread-safety
 };
 
-
 unsigned int CTestServer::GetRandomDelay() const
 {
     CFastMutexGuard LOCK(m_RngMutex);
@@ -217,9 +216,10 @@ void CTestConnectionHandler::OnMessage(BUF buf)
 
 void CTestConnectionHandler::OnWrite(void)
 {
-    GetSocket().Write("Hello!\n", sizeof("Hello!\n") - 1);
+    GetSocket().Write("Ready!\n", sizeof("Ready!\n") - 1);
     m_State = Read;
 }
+
 
 /// CTestConnectionFactory --
 ///
@@ -282,14 +282,16 @@ void CConnectionRequest::Process(void)
     } while (!sleep_time.IsEmpty());
     CConn_SocketStream stream("localhost", m_Port);
 
-    string junk;
+    string word;
 
     // FIXME: May not be always possible to read here (eg connection refused)
-    stream >> junk;
+    stream >> word;
+    //ERR_POST(Info << word);
 
     stream << "Hello!" << endl;
 
-    stream >> junk;
+    stream >> word;
+    //ERR_POST(Info << word);
 }
 
 
@@ -303,7 +305,6 @@ public:
     virtual int  Run (void);
     virtual void Exit(void);
 };
-
 
 void CServerTestApp::Init(void)
 {
@@ -377,7 +378,6 @@ int CServerTestApp::Run(void)
     const CArgs& args = GetArgs();
 
     unsigned short port = 4096;
-
     {
         CListeningSocket listener;
 
