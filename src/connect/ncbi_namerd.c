@@ -1374,13 +1374,16 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
     namelen = strlen(iter->name);
     len = argslen + namelen;
     if (iter->arglen) {
+        assert(iter->arg  &&  strlen(iter->arg) == iter->arglen);
         if (strcasecmp(iter->arg, "dbaf") == 0  &&  iter->val  &&  *iter->val)
             skiparg = 1/*true: ad-hoc CXX-13087*/;
         else
             len += 1 + iter->arglen;
         if (iter->val)
             len += 1 + iter->vallen;
-    }
+        assert((iter->val ? strlen(iter->val) : 0) == iter->vallen);
+    } else
+        assert(!iter->arg  &&  !iter->val  &&  !iter->vallen);
     if (len < sizeof(buf)) {
         len = argslen;
         svccpy(buf + len, iter->name, namelen);

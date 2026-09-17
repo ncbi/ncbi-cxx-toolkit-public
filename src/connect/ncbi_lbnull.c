@@ -260,13 +260,13 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
                                      const char*  default_domain)
 {
     char buf[CONN_PATH_LEN + 1], temp[80];
+    size_t len, pfxlen, namelen, domlen;
     TSERV_TypeOnly type, types;
-    size_t len, pfxlen, domlen;
+    int/*bool*/ skiparg, vhost;
     struct SLBNULL_Data* data;
     const char* path = 0;
     char *args, *domain;
     unsigned long port;
-    int/*bool*/ vhost;
     const char* str;
 
     assert(iter  &&  !iter->data  &&  !iter->op  &&  !iter->external);
@@ -300,27 +300,34 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     assert(type  &&  (type == fSERV_Dns  ||  type == fSERV_Standalone
                       ||  (type | fSERV_Http) == fSERV_Http));
 
-    CORE_TRACEF(("SERV_LBNULL_Open(\"%s%s\" + \"%s\" + \"%s%s\")",
+    CORE_TRACEF(("SERV_LBNULL_Open(\"%s%s\" + \"%s\" + \"%s%s\"%s%s%s%s%s%s)",
                  default_prefix ? default_prefix : "", &"-"[!default_prefix],
                  iter->name,
-                 &"."[!default_domain], default_domain ? default_domain : ""));
-
-    if ((len = strlen(iter->name)) > CONN_HOST_LEN) {
+                 &"."[!default_domain], default_domain ? default_domain : "",
+                 iter->arg  ||  iter->val ? " ["      : "",
+                 iter->arg                ? iter->arg : "",
+                 iter->val                ? "=\""     : "",
+                 iter->val                ? iter->val : "",
+                 iter->val                ? "\""      : "",
+                 iter->arg  ||  iter->val ? "]"       : ""));
+    len = namelen = strlen(iter->name);
+    skiparg = 0/*false*/;
+    if (iter->arglen) {
+        assert(iter->arg  &&  strlen(iter->arg) == iter->arglen);
+        if (strcasecmp(iter->arg, "dbaf") == 0  &&  iter->val  &&  *iter->val)
+            skiparg = 1/*true: ad-hoc CXX-13087*/;
+        else
+            len += 1 + iter->arglen;
+        if (iter->vallen)
+            len += 1 + iter->vallen;
+        assert((iter->val ? strlen(iter->val) : 0) == iter->vallen);
+    } else
+        assert(!iter->arg  &&  !iter->val  &&  !iter->vallen);
+    if (len > CONN_HOST_LEN) {
         CORE_LOGF_X(87, eLOG_Error,
                     ("[%s]  Service name too long for LBNULL", iter->name));
         goto out;
     }
-    assert(len);
-    if (iter->arg) {
-        assert(iter->arglen  &&  (!iter->val  ||  strlen(iter->val) == iter->vallen));
-        CORE_LOGF_X(88, eLOG_Error,
-                    ("[%s]  Argument affinity lookup not supported by LBNULL:"
-                     " %s%s%s%s%s", iter->name, iter->arg, &"="[!iter->val],
-                     &"\""[!iter->val], iter->val ? iter->val : "",
-                     &"\""[!iter->val]));
-        goto out;
-    } else
-        assert(!iter->arglen  &&  !iter->val  &&  !iter->vallen);
     CORE_TRACEF(("[%s]  LBNULL using %sserver type \"%s\"",
                  iter->name, iter->reverse_dns ? "REVERSE " : "", SERV_TypeStr(type)));
 
@@ -410,13 +417,28 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
             buf[pfxlen++] = '-';
     } else
         pfxlen = 0;  /* non-legacy P2 decorated name, prefix already in place */
-    if (exact  ||  ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
-                                       (iter->name, REG_CONN_LBNULL_AS_IS,
-                                        temp, sizeof(temp), 0))) {
-        memcpy(buf + pfxlen, iter->name, len);
+    if (exact  ||  (exact = ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
+                                                (iter->name, REG_CONN_LBNULL_AS_IS,
+                                                 temp, sizeof(temp), 0)))) {
+        memcpy(buf + pfxlen, iter->name, namelen);
     } else
-        x_tr(buf + pfxlen, iter->name, len, '_', '-');
+        x_tr(buf + pfxlen, iter->name, namelen, '_', '-');
     len += pfxlen;
+    if (iter->arglen) {
+        namelen += pfxlen;
+        if (!skiparg) {
+            buf[namelen++] = '-';
+            x_tr(buf + namelen, iter->arg, iter->arglen, '_', '-');
+            namelen += iter->arglen;
+        }
+        if (iter->vallen/*cannot have a trailing '-', so a bit different from NAMERD*/) {
+            buf[namelen++] = '-';
+            x_tr(buf + namelen, iter->val, iter->vallen, '_', '-');
+            namelen += iter->vallen;
+        }
+        assert(namelen == len);
+        (void) namelen;
+    }
     assert(len <= 2 * (CONN_HOST_LEN + 1));
     assert(SERV_CheckServiceName(buf, len, 1/*dns*/, 0/*ismask*/));
 

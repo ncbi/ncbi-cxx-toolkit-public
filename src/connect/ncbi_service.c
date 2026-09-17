@@ -362,7 +362,9 @@ static size_t x_ServicePrefix(const char* svc, size_t len)
         size_t      lablen;  /* strlen(label) - 1 */
         const char* label;
     } kLegacyLabel[] = {
-#define SERV_LABLEN_MIN         5
+#define SERV_LABLEN_MIN         3
+        { 3, "-tx-"       },
+        { 4, 0/*unused*/  },
         { 5, "-solr-"     },
         { 6, "-mssql-"    },   
         { 7, "-legacy-"   },
@@ -395,6 +397,9 @@ static size_t x_ServicePrefix(const char* svc, size_t len)
             size_t n = lablen - SERV_LABLEN_MIN;
             assert(n < sizeof(kLegacyLabel) / sizeof(kLegacyLabel[0]));
             assert(lablen == kLegacyLabel[n].lablen);
+            if (!kLegacyLabel[n].label)
+                continue;
+            assert(*kLegacyLabel[n].label == '-');
             if (strncasecmp(beg + 1, kLegacyLabel[n].label + 1, lablen - 1) == 0)
                 return len + 1;
         }
