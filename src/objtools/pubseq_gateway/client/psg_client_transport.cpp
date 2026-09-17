@@ -1967,8 +1967,8 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
     const auto kRegularRate = nextafter(0.009, 1.0);
     const auto kStandbyRate = 0.001;
 
-    const auto& service_name = m_Service.GetServiceName();
-    auto discovered = m_Service();
+    const auto& service_name = m_Service.discovery.GetServiceName();
+    auto discovered = m_Service.discovery();
 
     auto total_preferred_regular_rate = 0.0;
     auto total_preferred_standby_rate = 0.0;
@@ -2109,7 +2109,7 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
         if (server.second > numeric_limits<double>::epsilon()) {
             auto rate = server.second / rate_total;
             auto l = [&] { ++servers.server_eligibility_generation; m_Queues.SignalAll(); };
-            servers.emplace_back(server.first, TPSG_Https::GetDefault(), rate, m_Params.max_concurrent_requests_per_server, m_ThrottleParams, handle->loop, l);
+            servers.emplace_back(server.first, m_Service.https, rate, m_Params.max_concurrent_requests_per_server, m_ThrottleParams, handle->loop, l);
             eligibility_changed = true;
             _DEBUG_CODE(server.first.GetHostName();); // To avoid splitting the trace message below by gethostbyaddr
             PSG_DISCOVERY_TRACE("Server '" << server.first << "' added to service '" <<
@@ -2263,6 +2263,19 @@ bool SPSG_DiscoveryImpl::SNoServers::operator()(bool discovered, SUv_Timer* time
     }
 
     return !discovered;
+}
+
+SPSG_DiscoveryImpl::SServiceOrFallback SPSG_DiscoveryImpl::SServiceOrFallback::Create(CServiceDiscovery service)
+{
+    if (!service().empty()) {
+        return { std::move(service), TPSG_Https::GetDefault() };
+    }
+
+    auto service_name = service.GetServiceName();
+    NStr::ToLower(service_name);
+    NStr::ReplaceInPlace(service_name, "_", "-");
+    service_name += ".ncbi.nlm.nih.gov:443";
+    return { CServiceDiscovery(service_name), true };
 }
 
 

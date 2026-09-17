@@ -1339,7 +1339,7 @@ struct SPSG_DiscoveryImpl
     SPSG_DiscoveryImpl(CServiceDiscovery service, shared_ptr<SPSG_Stats> stats, const SPSG_Params& params, SPSG_Servers::TTS& servers, SPSG_AsyncQueues& queues) :
         m_Params(params),
         m_NoServers(params, servers),
-        m_Service(std::move(service)),
+        m_Service(SServiceOrFallback::Create(std::move(service))),
         m_Stats(std::move(stats)),
         m_Servers(servers),
         m_Queues(queues)
@@ -1365,13 +1365,23 @@ private:
         uint64_t m_Passed = 0;
     };
 
+    struct SServiceOrFallback
+    {
+        CServiceDiscovery discovery;
+        const bool https;
+
+        static SServiceOrFallback Create(CServiceDiscovery service);
+    };
+
     SPSG_Params m_Params;
     SNoServers m_NoServers;
-    CServiceDiscovery m_Service;
+    SServiceOrFallback m_Service;
     shared_ptr<SPSG_Stats> m_Stats;
     SPSG_Servers::TTS& m_Servers;
     SPSG_AsyncQueues& m_Queues;
     SPSG_ThrottleParams m_ThrottleParams;
+
+    friend struct SPSG_TestAccess;
 };
 
 struct SPSG_IoCoordinator

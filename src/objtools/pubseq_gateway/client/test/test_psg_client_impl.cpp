@@ -1355,6 +1355,12 @@ BEGIN_NCBI_SCOPE
 
 struct SPSG_TestAccess
 {
+    static pair<string, bool> GetServiceOrFallback(CServiceDiscovery service)
+    {
+        auto selected = SPSG_DiscoveryImpl::SServiceOrFallback::Create(std::move(service));
+        return { selected.discovery.GetServiceName(), selected.https };
+    }
+
     static void CheckForServerEligibilityChanges(SPSG_IoImpl& io, uv_async_t* handle)
     {
         io.CheckForServerEligibilityChanges();
@@ -1504,6 +1510,28 @@ bool SPSG_TestAccess::x_HasDrainingSession(const SPSG_ServerSessions& server_ses
 END_NCBI_SCOPE
 
 BOOST_AUTO_TEST_SUITE(PSG)
+BOOST_AUTO_TEST_SUITE(Discovery)
+
+BOOST_AUTO_TEST_CASE(PreservesDiscoveredService)
+{
+    const auto selected = SPSG_TestAccess::GetServiceOrFallback(CServiceDiscovery("127.0.0.1:443"));
+
+    BOOST_CHECK_EQUAL(selected.first, "127.0.0.1:443");
+    BOOST_CHECK_EQUAL(selected.second, TPSG_Https::GetDefault());
+}
+
+BOOST_AUTO_TEST_CASE(UsesHttpsFallbackForUndiscoveredService)
+{
+    const auto selected = SPSG_TestAccess::GetServiceOrFallback(
+            CServiceDiscovery("PSG_UNIT_TEST_SERVICE_THAT_DOES_NOT_EXIST"));
+
+    BOOST_CHECK_EQUAL(selected.first,
+            "psg-unit-test-service-that-does-not-exist.ncbi.nlm.nih.gov:443");
+    BOOST_CHECK(selected.second);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_SUITE(IoSessionAllocation)
 
 BOOST_AUTO_TEST_CASE(IdleQueueDoesNotCreateSessions)
