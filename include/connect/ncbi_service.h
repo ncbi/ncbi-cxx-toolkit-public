@@ -126,7 +126,8 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *       of dash-separated words and terminated by one of the recognized
  *       marker words:
  *
- *           "-legacy-", "-mongodb-", "-mssql-", "-postgres-", or "-solr-".
+ *           "-legacy-", or
+ *           "-mongodb-", "-mssql-", "-postgres-", "-solr-", or "-tx-".
  *
  *       Any such marker triggers the same special treatment: the entire
  *       prefix, including the marker itself, is stripped.  Without a
