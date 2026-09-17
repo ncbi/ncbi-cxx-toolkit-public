@@ -420,7 +420,7 @@ sub get_last_modified_date_from_ncbi_ftp
     } else {
         use Time::Local;
         my %month2int = (Jan=>0, Feb=>1, Mar=>2, Apr=>3, May=>4, Jun=>5,
-            Jul=>6, Aug=>8, Sep=>8, Oct=>9, Nov=>10, Dec=>11);
+            Jul=>6, Aug=>7, Sep=>8, Oct=>9, Nov=>10, Dec=>11);
         my $cmd = "$curl --user " . USER . ":" . PASSWORD . " -sI $file";
         if (open(my $fh, "-|", $cmd)) {
             while (<$fh>) {
