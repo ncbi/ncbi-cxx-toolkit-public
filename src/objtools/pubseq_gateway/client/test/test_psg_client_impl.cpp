@@ -1323,7 +1323,7 @@ struct STransportTestEnv
         auto servers_locked = servers.GetLock();
         auto a = SSocketAddress::Parse(address, SSocketAddress::SHost::EName::eOriginal);
         auto l = [&g = servers_locked->server_eligibility_generation, &i = queue_initialized, &q = queues] { ++g; if (i) q.SignalAll(); };
-        servers_locked->emplace_back(std::move(a), rate, available_streams, SPSG_ThrottleParams(), &loop, l);
+        servers_locked->emplace_back(std::move(a), false, rate, available_streams, SPSG_ThrottleParams(), &loop, l);
         return servers_locked->operator[](servers_locked->size() - 1);
     }
 

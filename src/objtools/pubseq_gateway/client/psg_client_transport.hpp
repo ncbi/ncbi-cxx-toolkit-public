@@ -920,13 +920,15 @@ private:
 struct SPSG_Server
 {
     const SSocketAddress address;
+    const bool https;
     atomic<double> rate;
     atomic_int available_streams;
     atomic_uint stats;
     SPSG_Throttling throttling;
 
-    SPSG_Server(SSocketAddress a, double r, int as, SPSG_ThrottleParams p, uv_loop_t* l, SPSG_Throttling::TOnChange on_change) :
+    SPSG_Server(SSocketAddress a, bool h, double r, int as, SPSG_ThrottleParams p, uv_loop_t* l, SPSG_Throttling::TOnChange on_change) :
         address(std::move(a)),
+        https(h),
         rate(r),
         available_streams(as),
         stats(0),

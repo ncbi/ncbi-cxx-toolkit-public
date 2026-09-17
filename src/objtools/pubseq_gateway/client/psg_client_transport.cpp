@@ -1211,14 +1211,14 @@ SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, const SPSG_Params& params, SPSG_A
             TAddrNCred{{s.address, SUvNgHttp2_Tls::TCred()}, params.proxy},
             TPSG_RdBufSize::GetDefault(),
             TPSG_WrBufSize::GetDefault(),
-            TPSG_Https::GetDefault(),
+            s.https,
             TPSG_MaxConcurrentStreams::GetDefault(),
             std::forward<TNgHttp2Cbs>(callbacks)...),
     server(s),
     m_Params(params),
     m_Headers{{
         { ":method", "GET" },
-        { ":scheme", TPSG_Https::GetDefault() ? "https" : "http" },
+        { ":scheme", s.https ? "https" : "http" },
         { ":authority", m_Authority },
         { ":path" },
         { "user-agent", SUvNgHttp2_UserAgent::Get() },
@@ -2109,7 +2109,7 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
         if (server.second > numeric_limits<double>::epsilon()) {
             auto rate = server.second / rate_total;
             auto l = [&] { ++servers.server_eligibility_generation; m_Queues.SignalAll(); };
-            servers.emplace_back(server.first, rate, m_Params.max_concurrent_requests_per_server, m_ThrottleParams, handle->loop, l);
+            servers.emplace_back(server.first, TPSG_Https::GetDefault(), rate, m_Params.max_concurrent_requests_per_server, m_ThrottleParams, handle->loop, l);
             eligibility_changed = true;
             _DEBUG_CODE(server.first.GetHostName();); // To avoid splitting the trace message below by gethostbyaddr
             PSG_DISCOVERY_TRACE("Server '" << server.first << "' added to service '" <<
