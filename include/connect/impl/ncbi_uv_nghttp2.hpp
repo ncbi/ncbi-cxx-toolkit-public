@@ -485,7 +485,7 @@ struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_SessionBase
 
     SId GetId() const { return { m_Authority, m_Tcp.GetLocalPort() }; }
     void Reset(SUvNgHttp2_Error error, SUv_Tcp::ECloseType close_type = SUv_Tcp::eCloseReset, bool shutdown = false);
-    void Shutdown() { Reset("Shutdown is in process", SUv_Tcp::eNormalClose, true); }
+    void Shutdown() { Reset("Client is shutting down", SUv_Tcp::eNormalClose, true); }
 
 protected:
     bool Send();
