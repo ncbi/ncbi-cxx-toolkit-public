@@ -449,6 +449,7 @@ if(NOT NCBI_COMPONENT_SQLITE3_FOUND)
     NCBI_define_Xcomponent(NAME SQLITE3 INTERFACELIB SQLite::SQLite3 MODULE sqlite3 PACKAGE SQLite3 LIB sqlite3)
     if(NCBI_COMPONENT_SQLITE3_FOUND)
         get_target_property(_inc SQLite::SQLite3 INTERFACE_INCLUDE_DIRECTORIES)
+        NCBI_evaluate_ifcfg_expression("${_inc}" DEBUG _inc)
         check_symbol_exists(sqlite3_unlock_notify ${_inc}/sqlite3.h HAVE_SQLITE3_UNLOCK_NOTIFY)
         check_include_file(sqlite3async.h HAVE_SQLITE3ASYNC_H "-I${_inc}")
     endif()
@@ -507,12 +508,12 @@ if(NOT NCBI_COMPONENT_VDB_DISABLED AND NOT NCBI_COMPONENT_VDB_FOUND)
 #        LIBPATH_SUFFIX ${NCBI_ThirdParty_VDB_OS}/$<LOSTDCONFIG>/${NCBI_ThirdParty_VDB_ARCH}/lib
         INCPATH_SUFFIX interfaces)
     if(NCBI_COMPONENT_VDB_FOUND)
-        set(NCBI_COMPONENT_VDB_INCLUDE
-            ${NCBI_ThirdParty_VDB}/interfaces 
-            ${NCBI_ThirdParty_VDB}/interfaces/os/${NCBI_ThirdParty_VDB_OS}
-            ${NCBI_ThirdParty_VDB}/interfaces/os/unix
-            ${NCBI_ThirdParty_VDB}/interfaces/cc/${NCBI_ThirdParty_VDB_COMPILER}/${NCBI_ThirdParty_VDB_ARCH}
-            ${NCBI_ThirdParty_VDB}/interfaces/cc/${NCBI_ThirdParty_VDB_COMPILER}
+        get_target_property(_inc ncbi-vdb::ncbi-vdb INTERFACE_INCLUDE_DIRECTORIES)
+        set_property(TARGET ncbi-vdb::ncbi-vdb APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+            ${_inc}/os/${NCBI_ThirdParty_VDB_OS}
+            ${_inc}/os/unix
+            ${_inc}/cc/${NCBI_ThirdParty_VDB_COMPILER}/${NCBI_ThirdParty_VDB_ARCH}
+            ${_inc}/cc/${NCBI_ThirdParty_VDB_COMPILER}
         )
         set(HAVE_NCBI_VDB 1)
     endif()
@@ -531,31 +532,45 @@ if(NOT NCBI_COMPONENT_wxWidgets_FOUND)
     set(_wx_ver 3.2)
     if(NCBI_COMPONENT_GTK2_FOUND AND NCBI_COMPONENT_FONTCONFIG_FOUND)
         NCBI_define_Xcomponent(NAME wxWidgets LIB
-            wx_gtk2_gl-${_wx_ver}
-            wx_gtk2_richtext-${_wx_ver}
-            wx_gtk2_aui-${_wx_ver}
-            wx_gtk2_propgrid-${_wx_ver}
-            wx_gtk2_xrc-${_wx_ver}
-            wx_gtk2_html-${_wx_ver}
-            wx_gtk2_qa-${_wx_ver}
-            wx_gtk2_adv-${_wx_ver}
-            wx_gtk2_core-${_wx_ver}
-            wx_base_xml-${_wx_ver}
-            wx_base_net-${_wx_ver}
-            wx_base-${_wx_ver}
+            wx_gtk2u_gl-${_wx_ver}
+            wx_gtk2u_richtext-${_wx_ver}
+            wx_gtk2u_aui-${_wx_ver}
+            wx_gtk2u_propgrid-${_wx_ver}
+            wx_gtk2u_xrc-${_wx_ver}
+            wx_gtk2u_html-${_wx_ver}
+            wx_gtk2u_qa-${_wx_ver}
+            wx_gtk2u_adv-${_wx_ver}
+            wx_gtk2u_core-${_wx_ver}
+            wx_baseu_xml-${_wx_ver}
+            wx_baseu_net-${_wx_ver}
+            wx_baseu-${_wx_ver}
             wxscintilla-${_wx_ver}
             INCLUDE wx-${_wx_ver} ADD_COMPONENT FONTCONFIG GTK2
         )
     endif()
     if(NCBI_COMPONENT_wxWidgets_FOUND)
-        list(GET NCBI_COMPONENT_wxWidgets_LIBS 0 _lib)
-        get_filename_component(_libdir ${_lib} DIRECTORY)
-        set(NCBI_COMPONENT_wxWidgets_INCLUDE ${_libdir}/wx/include/gtk2-ansi-${_wx_ver} ${NCBI_COMPONENT_wxWidgets_INCLUDE})
+        get_property(_libs TARGET wxWidgets::wxWidgets PROPERTY INTERFACE_LINK_LIBRARIES)
+        list(GET _libs 0 _lib)
+        foreach(_cfg IN ITEMS _RELEASE _DEBUG "")
+            get_target_property(_libdir${_cfg} ${_lib} IMPORTED_LOCATION${_cfg})
+            get_filename_component(_libdir${_cfg} ${_libdir${_cfg}} DIRECTORY)
+        endforeach()
+        set(_sfx "wx/include/gtk2-unicode-${_wx_ver}")
+        if(_libdir)
+            set(_inc_path "${_libdir}/${_sfx}")
+        else()
+            if("${_libdir_RELEASE}" STREQUAL "${_libdir_DEBUG}")
+                set(_inc_path "${_libdir_RELEASE}/${_sfx}")
+            else()
+                set(_inc_path "$<IF:$<CONFIG:DEBUG>,${_libdir_DEBUG}/${_sfx},${_libdir_RELEASE}/${_sfx}>")
+            endif()
+        endif()
+        set_property(TARGET wxWidgets::wxWidgets APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${_inc_path}")
         set(NCBI_COMPONENT_wxWidgets_LIBS    ${NCBI_COMPONENT_wxWidgets_LIBS} -lXxf86vm -lSM -lexpat)
         if(NCBI_PTBCFG_COMPONENT_StaticComponents)
-            set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__ wxDEBUG_LEVEL=0)
+            target_compile_definitions(wxWidgets::wxWidgets INTERFACE __WXGTK__ wxDEBUG_LEVEL=0)
         else()
-            set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__  WXUSINGDLL wxDEBUG_LEVEL=0)
+            target_compile_definitions(wxWidgets::wxWidgets INTERFACE __WXGTK__  WXUSINGDLL wxDEBUG_LEVEL=0)
         endif()
     else()
         NCBI_define_Xcomponent(NAME wxWidgets PACKAGE wxWidgets)
@@ -641,19 +656,13 @@ NCBIcomponent_report(FTGL)
 #NCBI_define_Xcomponent(NAME GLEW MODULE glew LIB GLEW)
 NCBI_define_Xcomponent(NAME GLEW INTERFACELIB GLEW::GLEW LIB GLEW)
 if(NCBI_COMPONENT_GLEW_FOUND)
-    foreach( _inc IN LISTS NCBI_COMPONENT_GLEW_INCLUDE)
-        get_filename_component(_incdir ${_inc} DIRECTORY)
-        get_filename_component(_incGL ${_inc} NAME)
-        if("${_incGL}" STREQUAL "GL")
-            set(NCBI_COMPONENT_GLEW_INCLUDE ${_incdir} ${NCBI_COMPONENT_GLEW_INCLUDE})
-            break()
-        endif()
-    endforeach()
+    get_target_property(_inc GLEW::GLEW INTERFACE_INCLUDE_DIRECTORIES)
+    NCBI_evaluate_ifcfg_expression("${_inc}" DEBUG _inc)
     set(saved_REQUIRED_DEFINITIONS  ${CMAKE_REQUIRED_DEFINITIONS})
     set(saved_REQUIRED_INCLUDES     ${CMAKE_REQUIRED_INCLUDES})
     set(saved_REQUIRED_LINK_OPTIONS ${CMAKE_REQUIRED_LINK_OPTIONS})
     set(CMAKE_REQUIRED_DEFINITIONS  "-DGLEW_MX")
-    set(CMAKE_REQUIRED_INCLUDES     ${NCBI_COMPONENT_GLEW_INCLUDE})
+    set(CMAKE_REQUIRED_INCLUDES     ${_inc})
     set(CMAKE_REQUIRED_LINK_OPTIONS ${NCBI_COMPONENT_GLEW_LDFLAGS})
     check_symbol_exists(glewContextInit "GL/glew.h" HAVE_GLEW_MX)
     set(CMAKE_REQUIRED_DEFINITIONS  ${saved_REQUIRED_DEFINITIONS})
@@ -720,8 +729,7 @@ if(TARGET protobuf::libprotobuf)
     set(Protobuf_LIBRARIES        protobuf::libprotobuf)
     set(Protobuf_LITE_LIBRARIES   protobuf::libprotobuf-lite)
     set(Protobuf_PROTOC_LIBRARIES protobuf::libprotoc)
-    get_target_property(Protobuf_INCLUDE_DIR protobuf::libprotobuf
-                        INTERFACE_INCLUDE_DIRECTORIES)
+    get_target_property(Protobuf_INCLUDE_DIR protobuf::libprotobuf INTERFACE_INCLUDE_DIRECTORIES)
     set(Protobuf_PROTOC_EXECUTABLE ${NCBI_PROTOC_APP})
 endif()
 
@@ -732,15 +740,17 @@ endif()
 NCBI_define_Xcomponent(NAME GRPC INTERFACELIB grpc::grpc CMAKE_PACKAGE gRPC CMAKE_LIB grpc++)
 if(NOT NCBI_COMPONENT_GRPC_FOUND)
     NCBI_define_Xcomponent(NAME Boring LIB boringssl boringcrypto)
-    NCBI_define_Xcomponent(NAME GRPC MODULE grpc++ LIB
-        grpc++ grpc address_sorting re2 upb cares
-        absl_raw_hash_set absl_hashtablez_sampler absl_exponential_biased absl_hash
-        absl_city absl_statusor absl_bad_variant_access gpr
-        absl_status absl_cord absl_str_format_internal absl_synchronization absl_graphcycles_internal
-        absl_symbolize absl_demangle_internal absl_stacktrace absl_debugging_internal absl_malloc_internal
-        absl_time absl_time_zone absl_civil_time absl_strings absl_strings_internal absl_throw_delegate
-        absl_int128 absl_base absl_spinlock_wait absl_bad_optional_access absl_raw_logging_internal absl_log_severity
-        )
+    if(NCBI_COMPONENT_Boring_FOUND)
+        NCBI_define_Xcomponent(NAME GRPC INTERFACELIB grpc::grpc MODULE grpc++ LIB
+            grpc++ grpc address_sorting re2 upb cares
+            absl_raw_hash_set absl_hashtablez_sampler absl_exponential_biased absl_hash
+            absl_city absl_statusor absl_bad_variant_access gpr
+            absl_status absl_cord absl_str_format_internal absl_synchronization absl_graphcycles_internal
+            absl_symbolize absl_demangle_internal absl_stacktrace absl_debugging_internal absl_malloc_internal
+            absl_time absl_time_zone absl_civil_time absl_strings absl_strings_internal absl_throw_delegate
+            absl_int128 absl_base absl_spinlock_wait absl_bad_optional_access absl_raw_logging_internal absl_log_severity
+            )
+    endif()
     if(NCBI_COMPONENT_GRPC_FOUND)
         set(NCBI_COMPONENT_GRPC_LIBS  ${NCBI_COMPONENT_GRPC_LIBS} ${NCBI_COMPONENT_Boring_LIBS})
         if(NOT NCBI_PTBCFG_USECONAN AND NOT NCBI_PTBCFG_HASCONAN AND NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED AND
@@ -802,9 +812,11 @@ NCBIcomponent_report(PERL)
 NCBI_define_Xcomponent(NAME OpenSSL INTERFACELIB openssl::openssl MODULE openssl PACKAGE OpenSSL LIB ssl crypto CHECK_INCLUDE openssl/ssl.h)
 NCBIcomponent_report(OpenSSL)
 if(NCBI_COMPONENT_OpenSSL_FOUND)
+    get_target_property(_inc openssl::openssl INTERFACE_INCLUDE_DIRECTORIES)
+    NCBI_evaluate_ifcfg_expression("${_inc}" DEBUG _inc)
     set(saved_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES})
     set(saved_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
-    set(CMAKE_REQUIRED_INCLUDES  ${NCBI_COMPONENT_OpenSSL_INCLUDE})
+    set(CMAKE_REQUIRED_INCLUDES  ${_inc})
     set(CMAKE_REQUIRED_LIBRARIES ${NCBI_COMPONENT_OpenSSL_LIBS})
     check_symbol_exists(ASN1_STRING_get0_data "openssl/ssl.h"
                    HAVE_ASN1_STRING_GET0_DATA)
@@ -827,6 +839,7 @@ NCBIcomponent_report(SGE)
 #############################################################################
 # MONGOCXX
 NCBI_define_Xcomponent(NAME MONGOC INTERFACELIB mongoc::mongoc LIB mongoc-1.0 bson-1.0)
+if(OFF)
 if(NCBI_COMPONENT_MONGOC_FOUND)
     list(GET NCBI_COMPONENT_MONGOC_LIBS 0 NCBI_COMPONENT_MONGOC_LIBS_0)
     get_filename_component(NCBI_COMPONENT_MONGOC_LIBDIR ${NCBI_COMPONENT_MONGOC_LIBS_0} DIRECTORY)
@@ -839,6 +852,7 @@ if(NCBI_COMPONENT_MONGOC_FOUND)
     if(EXISTS ${NCBI_COMPONENT_MONGOC_LIBCRYPTO})
         list(APPEND NCBI_COMPONENT_MONGOC_LIBS ${NCBI_COMPONENT_MONGOC_LIBCRYPTO})
     endif()
+endif()
 endif()
 NCBI_define_Xcomponent(NAME MONGOCXX INTERFACELIB mongocxx::mongocxx MODULE libmongocxx LIB mongocxx bsoncxx INCLUDE mongocxx/v_noabi bsoncxx/v_noabi)
 NCBIcomponent_report(MONGOCXX)
@@ -947,9 +961,11 @@ if(NOT NCBI_COMPONENT_GNUTLS_DISABLED)
 endif()
 NCBIcomponent_report(GNUTLS)
 if(NCBI_COMPONENT_GNUTLS_FOUND)
+    get_target_property(_inc GnuTLS::GnuTLS INTERFACE_INCLUDE_DIRECTORIES)
+    NCBI_evaluate_ifcfg_expression("${_inc}" DEBUG _inc)
     set(saved_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES})
     set(saved_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
-    set(CMAKE_REQUIRED_INCLUDES  ${NCBI_COMPONENT_GNUTLS_INCLUDE})
+    set(CMAKE_REQUIRED_INCLUDES  ${_inc})
     set(CMAKE_REQUIRED_LIBRARIES ${NCBI_COMPONENT_GNUTLS_LIBS})
     check_symbol_exists(gnutls_certificate_set_verify_function "gnutls/gnutls.h"
                    HAVE_GNUTLS_CERTIFICATE_SET_VERIFY_FUNCTION)
@@ -1031,7 +1047,7 @@ if(NOT NCBI_COMPONENT_IPS4O_FOUND)
     NCBIcomponent_report(TBB)
     if(NCBI_COMPONENT_TBB_FOUND)
         get_target_property(TBB_INCLUDE_DIR TBB::tbb INTERFACE_INCLUDE_DIRECTORIES)
-        set(TBB_LIBS ${NCBI_COMPONENT_TBB_LIBS})
+        get_target_property(TBB_LIBS        TBB::tbb LOCATION)
     endif()
 
     NCBI_define_Xcomponent(NAME IPS4O INTERFACELIB ips4o::ips4o)
