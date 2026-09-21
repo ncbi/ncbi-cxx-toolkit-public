@@ -2862,8 +2862,8 @@ BEGIN_STD_SCOPE
 
 template<class C, class L>
 inline
-void swap(NCBI_NS_NCBI::CRef<C,L>& ref1,
-          NCBI_NS_NCBI::CRef<C,L>& ref2) noexcept
+void swap(ncbi::CRef<C,L>& ref1,
+          ncbi::CRef<C,L>& ref2) noexcept
 {
     ref1.Swap(ref2);
 }
@@ -2871,8 +2871,8 @@ void swap(NCBI_NS_NCBI::CRef<C,L>& ref1,
 
 template<class C, class L>
 inline
-void swap(NCBI_NS_NCBI::CConstIRef<C,L>& ref1,
-          NCBI_NS_NCBI::CConstIRef<C,L>& ref2) noexcept
+void swap(ncbi::CConstIRef<C,L>& ref1,
+          ncbi::CConstIRef<C,L>& ref2) noexcept
 {
     ref1.Swap(ref2);
 }
@@ -2880,8 +2880,8 @@ void swap(NCBI_NS_NCBI::CConstIRef<C,L>& ref1,
 
 template<class C, class L>
 inline
-void swap(NCBI_NS_NCBI::CIRef<C,L>& ref1,
-          NCBI_NS_NCBI::CIRef<C,L>& ref2) noexcept
+void swap(ncbi::CIRef<C,L>& ref1,
+          ncbi::CIRef<C,L>& ref2) noexcept
 {
     ref1.Swap(ref2);
 }
@@ -2889,8 +2889,8 @@ void swap(NCBI_NS_NCBI::CIRef<C,L>& ref1,
 
 template<class C, class L>
 inline
-void swap(NCBI_NS_NCBI::CConstRef<C,L>& ref1,
-          NCBI_NS_NCBI::CConstRef<C,L>& ref2) noexcept
+void swap(ncbi::CConstRef<C,L>& ref1,
+          ncbi::CConstRef<C,L>& ref2) noexcept
 {
     ref1.Swap(ref2);
 }
@@ -2898,8 +2898,8 @@ void swap(NCBI_NS_NCBI::CConstRef<C,L>& ref1,
 
 template<class C, class L>
 inline
-void swap(NCBI_NS_NCBI::CWeakRef<C,L>& ref1,
-          NCBI_NS_NCBI::CWeakRef<C,L>& ref2) noexcept
+void swap(ncbi::CWeakRef<C,L>& ref1,
+          ncbi::CWeakRef<C,L>& ref2) noexcept
 {
     ref1.Swap(ref2);
 }
@@ -2907,8 +2907,8 @@ void swap(NCBI_NS_NCBI::CWeakRef<C,L>& ref1,
 
 template<class C, class L>
 inline
-void swap(NCBI_NS_NCBI::CWeakIRef<C,L>& ref1,
-          NCBI_NS_NCBI::CWeakIRef<C,L>& ref2) noexcept
+void swap(ncbi::CWeakIRef<C,L>& ref1,
+          ncbi::CWeakIRef<C,L>& ref2) noexcept
 {
     ref1.Swap(ref2);
 }
