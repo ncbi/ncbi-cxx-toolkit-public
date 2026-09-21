@@ -55,7 +55,6 @@ class NCBI_CDUTILS_EXPORT CSimpleB2SWrapper
         CObjectManager::TRegisteredNames loader_names;
         om->GetRegisteredNames(loader_names);
         ITERATE(CObjectManager::TRegisteredNames, itr, loader_names) {
-            cout << "data loader " << i << ":  " << *itr << endl;
             om->RevokeDataLoader(*itr);
             ++i;
         }
