@@ -139,7 +139,7 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 #elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901)
 #  define NCBI_CURRENT_FUNCTION __func__
 #else
-#  define NCBI_CURRENT_FUNCTION NCBI_NS_NCBI::g_DiagUnknownFunction()
+#  define NCBI_CURRENT_FUNCTION ncbi::g_DiagUnknownFunction()
 #endif
 
 
@@ -167,12 +167,11 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 ///
 /// @sa
 ///   CDiagCompileInfo
-#define DIAG_COMPILE_INFO                                           \
-    NCBI_NS_NCBI::CDiagCompileInfo(__FILE__,                        \
-                                   __LINE__,                        \
-                                   NCBI_CURRENT_FUNCTION,           \
-                                   NCBI_MAKE_MODULE(NCBI_MODULE))
-
+#define DIAG_COMPILE_INFO                                   \
+    ncbi::CDiagCompileInfo(__FILE__,                        \
+                           __LINE__,                        \
+                           NCBI_CURRENT_FUNCTION,           \
+                           NCBI_MAKE_MODULE(NCBI_MODULE))
 
 
 
@@ -183,10 +182,10 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 ///
 /// @sa
 ///   ERR_POST_EX, ERR_POST_X
-#define ERR_POST(message)                                 \
-    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO).GetRef() \
-      << message                                          \
-      << NCBI_NS_NCBI::Endm )
+#define ERR_POST(message)                         \
+    ( ncbi::CNcbiDiag(DIAG_COMPILE_INFO).GetRef() \
+      << message                                  \
+      << ncbi::Endm )
 
 /// Wrappers for ERR_POST family of macros checking if the desired
 /// severity is enabled.
@@ -194,21 +193,21 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 /// @sa
 ///   ERR_POST, ERR_POST_X, ERR_POST_EX
 #define SEVERITY_POST(severity, message)                  \
-    do if (NCBI_NS_NCBI::IsVisibleDiagPostLevel(NCBI_NS_NCBI::eDiag_##severity)) \
+    do if (ncbi::IsVisibleDiagPostLevel(ncbi::eDiag_##severity)) \
             ERR_POST(severity << message); \
     while(0)
 #define WARNING_POST(message) SEVERITY_POST(Warning, message)
 #define INFO_POST(message) SEVERITY_POST(Info, message)
 #define TRACE_POST(message) SEVERITY_POST(Trace, message)
 #define SEVERITY_POST_X(severity, subcode, message)       \
-    do if (NCBI_NS_NCBI::IsVisibleDiagPostLevel(NCBI_NS_NCBI::eDiag_##severity)) \
+    do if (ncbi::IsVisibleDiagPostLevel(ncbi::eDiag_##severity)) \
             ERR_POST_X(subcode, severity << message); \
     while(0)
 #define WARNING_POST_X(subcode, message) SEVERITY_POST_X(Warning, subcode, message)
 #define INFO_POST_X(subcode, message) SEVERITY_POST_X(Info, subcode, message)
 #define TRACE_POST_X(subcode, message) SEVERITY_POST_X(Trace, subcode, message)
 #define SEVERITY_POST_EX(severity, errcode, subcode, message) \
-    do if (NCBI_NS_NCBI::IsVisibleDiagPostLevel(NCBI_NS_NCBI::eDiag_##severity)) \
+    do if (ncbi::IsVisibleDiagPostLevel(ncbi::eDiag_##severity)) \
             ERR_POST_EX(errcode, subcode, severity << message); \
     while(0)
 #define WARNING_POST_EX(errcode, subcode, message) SEVERITY_POST_EX(Warning, errcode, subcode, message)
@@ -224,11 +223,11 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 /// @sa
 ///   LOG_POST_EX, LOG_POST_X
 #define LOG_POST(message)                                               \
-    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,                        \
-      NCBI_NS_NCBI::eDiag_Error,                                        \
-      NCBI_NS_NCBI::eDPF_Log | NCBI_NS_NCBI::eDPF_IsNote).GetRef()      \
+    ( ncbi::CNcbiDiag(DIAG_COMPILE_INFO,                        \
+      ncbi::eDiag_Error,                                        \
+      ncbi::eDPF_Log | ncbi::eDPF_IsNote).GetRef()      \
       << message                                                        \
-      << NCBI_NS_NCBI::Endm )
+      << ncbi::Endm )
 
 /// Posting fatal error and abort.
 /// This macro is deprecated and it's strongly recomended to move in all
@@ -238,8 +237,8 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 /// @sa
 ///   ERR_FATAL_X, ERR_POST
 #define ERR_FATAL(message)                                              \
-    NCBI_NS_NCBI::EndmFatal(NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,  \
-        NCBI_NS_NCBI::eDiag_Fatal).GetRef() << message )
+    ncbi::EndmFatal(ncbi::CNcbiDiag(DIAG_COMPILE_INFO,  \
+        ncbi::eDiag_Fatal).GetRef() << message )
 
 /// Error posting with error codes.
 /// This macro should be used only when you need to make non-constant
@@ -250,23 +249,23 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 /// @sa
 ///   ERR_POST, ERR_POST_X
 #define ERR_POST_EX(err_code, err_subcode, message)          \
-    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO).GetRef()    \
-      << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) )  \
+    ( ncbi::CNcbiDiag(DIAG_COMPILE_INFO).GetRef()    \
+      << ncbi::ErrCode( (err_code), (err_subcode) )  \
       << message                                             \
-      << NCBI_NS_NCBI::Endm )
+      << ncbi::Endm )
 
 #define LOG_POST_EX(err_code, err_subcode, message)          \
-    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,                        \
-      NCBI_NS_NCBI::eDiag_Error,                                        \
-      NCBI_NS_NCBI::eDPF_Log | NCBI_NS_NCBI::eDPF_IsNote).GetRef()      \
-      << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) )  \
+    ( ncbi::CNcbiDiag(DIAG_COMPILE_INFO,                        \
+      ncbi::eDiag_Error,                                        \
+      ncbi::eDPF_Log | ncbi::eDPF_IsNote).GetRef()      \
+      << ncbi::ErrCode( (err_code), (err_subcode) )  \
       << message                                             \
-      << NCBI_NS_NCBI::Endm )
+      << ncbi::Endm )
 
 #define ERR_FATAL_EX(err_code, err_subcode, message)                    \
-    NCBI_NS_NCBI::EndmFatal(NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,  \
-        NCBI_NS_NCBI::eDiag_Fatal).GetRef() <<                          \
-        NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) ) << message )
+    ncbi::EndmFatal(ncbi::CNcbiDiag(DIAG_COMPILE_INFO,  \
+        ncbi::eDiag_Fatal).GetRef() <<                          \
+        ncbi::ErrCode( (err_code), (err_subcode) ) << message )
 
 /// Define global error code name with given value (err_code) and given
 /// maximum value of error subcode within this code. To use defined error
@@ -307,8 +306,7 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
                 dumm_dumm = int(dummy)                          \
             };                                                  \
         };                                                      \
-    }                                                           \
-    NCBI_EAT_SEMICOLON(err_code)
+    }
 
 /// Define maximum value of subcode for the error code currently in use.
 /// Currently used error code is defined by macro NCBI_USE_ERRCODE_X. This
@@ -367,7 +365,7 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 ///
 /// @sa NCBI_DEFINE_ERRCODE_X
 #define NCBI_ERRCODE_X_NAME(name)   \
-    NCBI_NS_NCBI::err_code_x::NCBI_NAME2(eErrCodeX_, name)
+    ncbi::err_code_x::NCBI_NAME2(eErrCodeX_, name)
 
 /// Returns currently set default error code. Default error code is set by
 /// definition of NCBI_USE_ERRCODE_X with name of error code as its value.
@@ -379,7 +377,7 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 ///
 /// @sa NCBI_DEFINE_ERRCODE_X
 #define NCBI_MAX_ERR_SUBCODE_X_NAME(name)   \
-    NCBI_NS_NCBI::err_code_x::NCBI_NAME2(SErrCodeX_Max_, name)<true>::value
+    ncbi::err_code_x::NCBI_NAME2(SErrCodeX_Max_, name)<true>::value
 
 /// Returns maximum value of error subcode within current default error code.
 ///
@@ -431,9 +429,9 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, false> {
 /// code.
 #define NCBI_CHECK_ERRCODE_USAGE(name)                              \
     inline void NCBI_NAME2(s_ErrCodeCheck_, name) (                 \
-        NCBI_NS_NCBI::WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO <     \
+        ncbi::WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO <     \
               NCBI_ERRCODE_X_NAME(name),                            \
-              NCBI_NS_NCBI::err_code_x::eErrCodeX_Max_##name != 0>  \
+              ncbi::err_code_x::eErrCodeX_Max_##name != 0>  \
                                                /*err_subcode*/)     \
     {}
 
@@ -450,8 +448,8 @@ inline void CheckErrSubcodeX(int)
 ///
 /// @sa ERR_POST_X
 #define NCBI_CHECK_ERR_SUBCODE_X_NAME(name, subcode)                  \
-    NCBI_NS_NCBI::CheckErrSubcodeX(                                   \
-        (int)sizeof(NCBI_NS_NCBI::WRONG_ERROR_SUBCODE_IN_POST_MACRO<  \
+    ncbi::CheckErrSubcodeX(                                           \
+        (int)sizeof(ncbi::WRONG_ERROR_SUBCODE_IN_POST_MACRO<          \
               NCBI_ERRCODE_X_NAME(name), subcode,                     \
               NCBI_MAX_ERR_SUBCODE_X_NAME(name),                      \
               ((unsigned int)subcode >                                \
@@ -1001,8 +999,8 @@ public:
     ///
     /// Example:
     ///   CNcbiDiag() << SetPostFlags(eDPF_DateTime) << "My message";
-    const CNcbiDiag& Put(const NCBI_NS_NCBI::SetPostFlags*,
-                         const NCBI_NS_NCBI::SetPostFlags& flags) const;
+    const CNcbiDiag& Put(const ncbi::SetPostFlags*,
+                         const ncbi::SetPostFlags& flags) const;
 
     /// Helper method to handle various diagnostic stream manipulators.
     ///
