@@ -1954,7 +1954,7 @@ CNcbiTestsObserver::assertion_result(bool passed)
         s_GetTestApp().SetTestErrored(const_cast<but::test_case*>(&but::framework::current_test_case()));
         // On any failed assetion set request context status to 500
         // We have the same for exceptions, see test_boost.hpp : BOOST_AUTO_TC_INVOKER()
-        NCBI_NS_NCBI::GetDiagContext().GetRequestContext().SetRequestStatus(500);
+        ncbi::GetDiagContext().GetRequestContext().SetRequestStatus(500);
     }
 }
 
@@ -2293,7 +2293,7 @@ init_unit_test_suite(int argc, char** argv)
         argc = s_NcbiArgc;
         argv = s_NcbiArgv;
     }
-    return NCBI_NS_NCBI::s_GetTestApp().InitTestFramework(argc, argv);
+    return ncbi::s_GetTestApp().InitTestFramework(argc, argv);
 }
 
 
@@ -2322,8 +2322,8 @@ main(int argc, char* argv[])
 #if BOOST_VERSION >= 106000
         std::vector<char*> boost_args(1, argv[0]), ncbi_args;
         for (int i = 0;  i < argc;  ++i) {
-            NCBI_NS_NCBI::CTempString s(argv[i]);
-            if (NCBI_NS_NCBI::NStr::StartsWith(s, "--")) {
+            ncbi::CTempString s(argv[i]);
+            if (ncbi::NStr::StartsWith(s, "--")) {
                 boost_args.push_back(argv[i]);
             } else if (s.size() == 2  &&  s[0] == '-'
                        &&  s[1] >= 'a'  &&  s[1] <= 'z') {
@@ -2407,8 +2407,8 @@ main(int argc, char* argv[])
             const_cast<but::counter_t&>(tr.p_test_cases_skipped.get()) = 0;
 #endif
             result_code = results_collector.results( framework::master_test_suite().p_id ).result_code();
-            if (!NCBI_NS_NCBI::s_GetTestApp().HasTestErrors()
-                &&  NCBI_NS_NCBI::s_GetTestApp().HasTestTimeouts())
+            if (!ncbi::s_GetTestApp().HasTestErrors()
+                &&  ncbi::s_GetTestApp().HasTestTimeouts())
             {
                 // This should certainly go to the output. So we can use only
                 // printf, nothing else.
@@ -2454,10 +2454,10 @@ main(int argc, char* argv[])
     framework::shutdown();
 #endif
 
-    delete NCBI_NS_NCBI::s_TestApp;
-    delete NCBI_NS_NCBI::s_TestMemoryCleanupList;
+    delete ncbi::s_TestApp;
+    delete ncbi::s_TestMemoryCleanupList;
 
-    NCBI_NS_NCBI::GetDiagContext().SetExitCode(result_code);
+    ncbi::GetDiagContext().SetExitCode(result_code);
     return result_code;
 }
 
