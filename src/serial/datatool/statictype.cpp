@@ -704,7 +704,7 @@ AutoPtr<CTypeStrings> CStringDataType::GetFullCType(void) const
 const char* CStringDataType::GetDefaultCType(void) const
 {
     if (m_Type == eStringTypeUTF8) {
-        return "NCBI_NS_NCBI::CStringUTF8";
+        return "ncbi::CStringUTF8";
     }
     return "std::string";
 }
@@ -790,7 +790,7 @@ AutoPtr<CTypeStrings> CBitStringDataType::GetFullCType(void) const
 
 const char* CBitStringDataType::GetDefaultCType(void) const
 {
-    return "NCBI_NS_NCBI::CBitString";
+    return "ncbi::CBitString";
 }
 
 const char* CBitStringDataType::GetXMLContents(void) const
@@ -1089,7 +1089,7 @@ AutoPtr<CTypeStrings> CAnyContentDataType::GetFullCType(void) const
 
 const char* CAnyContentDataType::GetDefaultCType(void) const
 {
-    return "NCBI_NS_NCBI::CAnyContentObject";
+    return "ncbi::CAnyContentObject";
 }
 
 const char* CAnyContentDataType::GetASNKeyword(void) const

@@ -194,25 +194,25 @@ private:
 // Inline method definitions; some are a bit involved, but WorkShop's
 // approach to templates requires them to be here anyway.
 
-EMPTY_TEMPLATE inline
+template<> inline
 void CDataValueTmpl<bool>::PrintASN(CNcbiOstream& out, int ) const
 {
     out << (GetValue()? "TRUE": "FALSE");
 }
 
-EMPTY_TEMPLATE inline
+template<> inline
 string CDataValueTmpl<bool>::GetXmlString(void) const
 {
     return (GetValue()? "true": "false");
 }
 
 
-EMPTY_TEMPLATE inline
+template<> inline
 void CDataValueTmpl<Int8>::PrintASN(CNcbiOstream& out, int ) const
 {
     out << GetValue();
 }
-EMPTY_TEMPLATE inline
+template<> inline
 string CDataValueTmpl<Int8>::GetXmlString(void) const
 {
     CNcbiOstrstream buffer;
@@ -221,12 +221,12 @@ string CDataValueTmpl<Int8>::GetXmlString(void) const
 }
 
 
-EMPTY_TEMPLATE inline
+template<> inline
 void CDataValueTmpl<double>::PrintASN(CNcbiOstream& out, int ) const
 {
     out << GetValue();
 }
-EMPTY_TEMPLATE inline
+template<> inline
 string CDataValueTmpl<double>::GetXmlString(void) const
 {
     CNcbiOstrstream buffer;
@@ -234,7 +234,7 @@ string CDataValueTmpl<double>::GetXmlString(void) const
     return CNcbiOstrstreamToString(buffer);
 }
 
-EMPTY_TEMPLATE inline
+template<> inline
 void CDataValueTmpl<string>::PrintASN(CNcbiOstream& out, int ) const
 {
     out << '"';
@@ -248,7 +248,7 @@ void CDataValueTmpl<string>::PrintASN(CNcbiOstream& out, int ) const
     out << '"';
 }
 
-EMPTY_TEMPLATE inline
+template<> inline
 string CDataValueTmpl<string>::GetXmlString(void) const
 {
     CNcbiOstrstream buffer;

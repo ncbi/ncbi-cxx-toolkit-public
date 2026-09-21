@@ -151,7 +151,7 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
         } else {
             hpp << CClassCode::GetExportSpecifier();
         }
-        hpp << " const NCBI_NS_NCBI::CEnumeratedTypeValues* ENUM_METHOD_NAME";
+        hpp << " const ncbi::CEnumeratedTypeValues* ENUM_METHOD_NAME";
         hpp << '('<<m_EnumName<<")(void);\n\n";
 #endif
         ctx.AddHPPCode(hpp);

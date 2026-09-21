@@ -696,7 +696,7 @@ void WSDLParser::ParseService(void)
     if (!GetAttribute("name")) {
         ParseError("Service has no name", "name");
     }
-//    ((CDataTool*)CNcbiApplication::Instance())->SetDefaultNamespace(string("NCBI_NS_NCBI::objects") + "::" + m_Value);
+//    ((CDataTool*)CNcbiApplication::Instance())->SetDefaultNamespace(string("ncbi::objects") + "::" + m_Value);
     DTDElement& node = m_MapElement[CreateWsdlName(m_Value,DTDElement::eWsdlService)];
     node.SetName(m_Value);
     node.SetSourceLine(Lexer().CurrentLine());

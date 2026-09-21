@@ -1266,7 +1266,7 @@ mem_simple = false;
             ITERATE ( TMembers, i, m_Members ) {
                 if ( i->delayed ) {
                     code.ClassPrivate() <<
-                        "    mutable NCBI_NS_NCBI::CDelayBuffer " DELAY_PREFIX<<i->cName<<";\n";
+                        "    mutable ncbi::CDelayBuffer " DELAY_PREFIX<<i->cName<<";\n";
                 }
             }
         }
@@ -1518,7 +1518,7 @@ mem_simple = false;
                 }
                 methods << defset;
                 if ( defref )
-                    methods << "new NCBI_NS_NCBI::CRef< "+defTName+" >(";
+                    methods << "new ncbi::CRef< "+defTName+" >(";
                 methods << "new "<<defTName<<"("<<i->defaultValue<<')';
                 if ( defref )
                     methods << ')';

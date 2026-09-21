@@ -53,7 +53,7 @@ public:
         string mName; // member name
         string tName; // typedef name
         AutoPtr<CTypeStrings> type; // value type
-        string ptrType; // "*" or "NCBI_NS_NCBI::CRef"
+        string ptrType; // "*" or "ncbi::CRef"
         string valueName; // value name (mName or '*'+mName)
         bool optional;  // have OPTIONAL or DEFAULT attribute
         bool ref;       // implement member via CRef

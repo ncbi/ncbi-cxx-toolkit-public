@@ -529,7 +529,7 @@ AutoPtr<CTypeStrings> CEnumDataType::GetFullCType(void) const
                 new CStringTypeStrings("std::string",Comments(),true));
         } else if (NStr::EndsWith(type, "CStringUTF8")) {
             return AutoPtr<CTypeStrings>(
-                new CStringTypeStrings("NCBI_NS_NCBI::CStringUTF8",Comments(),true));
+                new CStringTypeStrings("ncbi::CStringUTF8",Comments(),true));
         } else if (type == "double") {
             return AutoPtr<CTypeStrings>(
                 new CStdTypeStrings(type,Comments(),true));

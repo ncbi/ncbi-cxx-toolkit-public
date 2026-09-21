@@ -38,7 +38,7 @@
 BEGIN_NCBI_SCOPE
 
 const string CNamespace::KNCBINamespaceName("ncbi");
-const string CNamespace::KNCBINamespaceDefine("NCBI_NS_NCBI");
+const string CNamespace::KNCBINamespaceDefine("ncbi");
 const string CNamespace::KSTDNamespaceName("std");
 const string CNamespace::KSTDNamespaceDefine("std");
 

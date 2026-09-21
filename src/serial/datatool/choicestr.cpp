@@ -57,13 +57,13 @@ BEGIN_NCBI_SCOPE
 #define STRING_TYPE "string"
 #define STRING_MEMBER "m_string"
 #define UTF8_STRING_MEMBER "m_string_utf8"
-#define OBJECT_TYPE_FULL "NCBI_NS_NCBI::CSerialObject"
+#define OBJECT_TYPE_FULL "ncbi::CSerialObject"
 #define OBJECT_TYPE "CSerialObject"
 #define OBJECT_MEMBER "m_object"
 #define STATE_PREFIX "e_"
 #define STATE_NOT_SET "e_not_set"
 #define DELAY_MEMBER "m_delayBuffer"
-#define DELAY_TYPE_FULL "NCBI_NS_NCBI::CDelayBuffer"
+#define DELAY_TYPE_FULL "ncbi::CDelayBuffer"
 
 CChoiceTypeStrings::CChoiceTypeStrings(const string& externalName,
                                        const string& className,
@@ -424,9 +424,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         "}\n"
         "\n"
         "inline\n"
-        "void "<<methodPrefix<<"Select(" STATE_ENUM " index, NCBI_NS_NCBI::EResetVariant reset, NCBI_NS_NCBI::CObjectMemoryPool* pool)\n"
+        "void "<<methodPrefix<<"Select(" STATE_ENUM " index, ncbi::EResetVariant reset, ncbi::CObjectMemoryPool* pool)\n"
         "{\n"
-        "    if ( reset == NCBI_NS_NCBI::eDoResetVariant || " STATE_MEMBER " != index ) {\n"
+        "    if ( reset == ncbi::eDoResetVariant || " STATE_MEMBER " != index ) {\n"
         "        if ( " STATE_MEMBER " != " STATE_NOT_SET " )\n"
         "            ResetSelection();\n"
         "        DoSelect(index, pool);\n"
@@ -434,7 +434,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         "}\n"
         "\n"
         "inline\n"
-        "void "<<methodPrefix<<"Select(" STATE_ENUM " index, NCBI_NS_NCBI::EResetVariant reset)\n"
+        "void "<<methodPrefix<<"Select(" STATE_ENUM " index, ncbi::EResetVariant reset)\n"
         "{\n"
         "    Select(index, reset, 0);\n"
         "}\n"
@@ -763,7 +763,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     // generate Select method
     {
         methods <<
-            "void "<<methodPrefix<<"DoSelect(" STATE_ENUM " index, NCBI_NS_NCBI::CObjectMemoryPool* ";
+            "void "<<methodPrefix<<"DoSelect(" STATE_ENUM " index, ncbi::CObjectMemoryPool* ";
         if ( haveUnion || haveObjectPointer ) {
             ITERATE ( TVariants, i, m_Variants ) {
                 if (!i->attlist && i->memberType == eObjectPointerMember) {
@@ -881,12 +881,12 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "\n"
             "std::string "<<methodPrefix<<"SelectionName(" STATE_ENUM " index)\n"
             "{\n"
-            "    return NCBI_NS_NCBI::CInvalidChoiceSelection::GetName(index, sm_SelectionNames, sizeof(sm_SelectionNames)/sizeof(sm_SelectionNames[0]));\n"
+            "    return ncbi::CInvalidChoiceSelection::GetName(index, sm_SelectionNames, sizeof(sm_SelectionNames)/sizeof(sm_SelectionNames[0]));\n"
             "}\n"
             "\n"
             "void "<<methodPrefix<<"ThrowInvalidSelection(" STATE_ENUM " index) const\n"
             "{\n"
-            "    throw NCBI_NS_NCBI::CInvalidChoiceSelection(DIAG_COMPILE_INFO";
+            "    throw ncbi::CInvalidChoiceSelection(DIAG_COMPILE_INFO";
         if ( 1 ) { // add extra argument for better error message
             methods << ", this";
         }
@@ -1187,7 +1187,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 }
                 code.Methods(inl) <<
                     "{\n"
-                    "    Select(" STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n";
+                    "    Select(" STATE_PREFIX<<i->cName<<", ncbi::eDoNotResetVariant);\n";
                 if (!isNull) {
                     if ( i->delayed ) {
                         code.Methods(inl) <<
@@ -1218,7 +1218,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                         }
                         code.Methods(set_inl) << " value)\n"
                             "{\n"
-                            "    Select(" STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n";
+                            "    Select(" STATE_PREFIX<<i->cName<<", ncbi::eDoNotResetVariant);\n";
                         if ( i->delayed ) {
                             code.Methods(set_inl) <<
                                 "    " DELAY_MEMBER ".Forget();\n";
@@ -1326,13 +1326,13 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 }
                 else if ( i->memberType == eBufferMember ) {
                     code.ClassPrivate() <<
-                        "        NCBI_NS_NCBI::CUnionBuffer<T"<<i->cName<<"> m_"<<i->cName<<";\n";
+                        "        ncbi::CUnionBuffer<T"<<i->cName<<"> m_"<<i->cName<<";\n";
                 }
             }
             if ( haveString ) {
                 if ( haveBuffer ) {
                     code.ClassPrivate() <<
-                        "        NCBI_NS_NCBI::CUnionBuffer<" STRING_TYPE_FULL "> " STRING_MEMBER ";\n";
+                        "        ncbi::CUnionBuffer<" STRING_TYPE_FULL "> " STRING_MEMBER ";\n";
                 }
                 else {
                     code.ClassPrivate() <<
@@ -1342,7 +1342,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             if ( haveUtf8String ) {
                 if ( haveBuffer ) {
                     code.ClassPrivate() <<
-                        "        NCBI_NS_NCBI::CUnionBuffer<" <<
+                        "        ncbi::CUnionBuffer<" <<
                         utf8CType <<
                         "> " UTF8_STRING_MEMBER ";\n";
                 }

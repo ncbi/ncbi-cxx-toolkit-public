@@ -382,12 +382,12 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
         bool kindIO = kind == eKindStd    || kind == eKindEnum ||
                       kind == eKindString || kind == eKindPointer;
         code.MethodStart(true) <<
-            "NCBI_NS_NCBI::CNcbiOstream& operator<<\n" <<
-            "(NCBI_NS_NCBI::CNcbiOstream& str, const " << (m_Nested ? classFullName : className) << "& obj)\n" <<
+            "ncbi::CNcbiOstream& operator<<\n" <<
+            "(ncbi::CNcbiOstream& str, const " << (m_Nested ? classFullName : className) << "& obj)\n" <<
             "{\n";
         if (kindIO) {
             code.Methods(true) <<
-                "    if (NCBI_NS_NCBI::MSerial_Flags::HasSerialFormatting(str)) {\n" <<
+                "    if (ncbi::MSerial_Flags::HasSerialFormatting(str)) {\n" <<
                 "        return WriteObject(str,&obj,obj.GetTypeInfo());\n" <<
                 "    }\n" <<
                 "    str << obj.Get();\n" <<
@@ -398,12 +398,12 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
         }
         code.Methods(true) << "}\n\n";
         code.MethodStart(true) <<
-            "NCBI_NS_NCBI::CNcbiIstream& operator>>\n" <<
-            "(NCBI_NS_NCBI::CNcbiIstream& str, " << (m_Nested ? classFullName : className) << "& obj)\n" <<
+            "ncbi::CNcbiIstream& operator>>\n" <<
+            "(ncbi::CNcbiIstream& str, " << (m_Nested ? classFullName : className) << "& obj)\n" <<
             "{\n";
         if (kindIO) {
             code.Methods(true) <<
-                "    if (NCBI_NS_NCBI::MSerial_Flags::HasSerialFormatting(str)) {\n" <<
+                "    if (ncbi::MSerial_Flags::HasSerialFormatting(str)) {\n" <<
                 "        return ReadObject(str,&obj,obj.GetTypeInfo());\n" <<
                 "    }\n";
             if (kind == eKindEnum && m_RefType->GetEnumName() == ref_name)

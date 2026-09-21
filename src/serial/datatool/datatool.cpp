@@ -296,7 +296,7 @@ bool CDataTool::ProcessModules(void)
         generator.SetCPPDir(srcDir);
         modulesPath.push_back(srcDir);
         generator.SetFileNamePrefixSource(eFileName_FromSourceFileName);
-        generator.SetDefaultNamespace("NCBI_NS_NCBI::objects");
+        generator.SetDefaultNamespace("ncbi::objects");
     }
     
     if ( generator.GetOpt("opm", &opt) ) {

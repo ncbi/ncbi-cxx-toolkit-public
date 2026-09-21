@@ -130,7 +130,7 @@ void CChoicePtrTypeStrings::GenerateClassCode(CClassCode& code,
             "\n"
             "std::string "<<methodPrefix<<"SelectionName(" STATE_ENUM " index)\n"
             "{\n"
-            "    return NCBI_NS_NCBI::CInvalidChoiceSelection::GetName(index, sm_SelectionNames, sizeof(sm_SelectionNames)/sizeof(sm_SelectionNames[0]));\n"
+            "    return ncbi::CInvalidChoiceSelection::GetName(index, sm_SelectionNames, sizeof(sm_SelectionNames)/sizeof(sm_SelectionNames[0]));\n"
             "}\n"
             "\n";
     }
@@ -172,9 +172,9 @@ void CChoicePtrTypeStrings::GenerateClassCode(CClassCode& code,
 
     // generate ref type info
     code.Methods() <<
-        "const NCBI_NS_NCBI::CTypeInfo* "<<methodPrefix<<REFCHOICE_TYPE_METHOD"(void)\n"
+        "const ncbi::CTypeInfo* "<<methodPrefix<<REFCHOICE_TYPE_METHOD"(void)\n"
         "{\n"
-        "    return NCBI_NS_NCBI::CChoicePointerTypeInfo::GetTypeInfo(NCBI_NS_NCBI::CRefTypeInfo<"<<
+        "    return ncbi::CChoicePointerTypeInfo::GetTypeInfo(ncbi::CRefTypeInfo<"<<
         classPrefix<<GetClassNameDT()<<">::GetTypeInfo("<<classPrefix<<GetClassNameDT()<<
         "::GetTypeInfo()));\n"
         "}\n"
