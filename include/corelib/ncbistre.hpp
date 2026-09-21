@@ -86,7 +86,7 @@
 #    include <sstream>
 #  endif
 #  include <iomanip>
-#  define IO_PREFIX     NCBI_NS_STD
+#  define IO_PREFIX     std
 #  define IOS_BASE      IO_PREFIX::ios_base
 #  define IOS_PREFIX    IO_PREFIX::ios
 
@@ -710,15 +710,15 @@ extern bool NcbiStreamCompareText(CNcbiIstream& is, const string& str,
                                   ECompareTextMode mode, size_t buf_size = 0);
 
 
-#  define CT_INT_TYPE      NCBI_NS_STD::char_traits<char>::int_type
-#  define CT_CHAR_TYPE     NCBI_NS_STD::char_traits<char>::char_type
-#  define CT_POS_TYPE      NCBI_NS_STD::char_traits<char>::pos_type
-#  define CT_OFF_TYPE      NCBI_NS_STD::char_traits<char>::off_type
-#  define CT_EOF           NCBI_NS_STD::char_traits<char>::eof()
-#  define CT_NOT_EOF       NCBI_NS_STD::char_traits<char>::not_eof
-#  define CT_TO_INT_TYPE   NCBI_NS_STD::char_traits<char>::to_int_type
-#  define CT_TO_CHAR_TYPE  NCBI_NS_STD::char_traits<char>::to_char_type
-#  define CT_EQ_INT_TYPE   NCBI_NS_STD::char_traits<char>::eq_int_type
+#  define CT_INT_TYPE      std::char_traits<char>::int_type
+#  define CT_CHAR_TYPE     std::char_traits<char>::char_type
+#  define CT_POS_TYPE      std::char_traits<char>::pos_type
+#  define CT_OFF_TYPE      std::char_traits<char>::off_type
+#  define CT_EOF           std::char_traits<char>::eof()
+#  define CT_NOT_EOF       std::char_traits<char>::not_eof
+#  define CT_TO_INT_TYPE   std::char_traits<char>::to_int_type
+#  define CT_TO_CHAR_TYPE  std::char_traits<char>::to_char_type
+#  define CT_EQ_INT_TYPE   std::char_traits<char>::eq_int_type
 
 
 #ifdef NCBI_COMPILER_MIPSPRO
@@ -1110,10 +1110,10 @@ END_NCBI_SCOPE
 // NOTE:  these must have been inside the _NCBI_SCOPE and without the
 //        "ncbi::" and "std::" prefixes, but there is some bug in SunPro 5.0...
 #if defined(NCBI_USE_OLD_IOSTREAM)
-extern NCBI_NS_NCBI::CNcbiOstream& 
-    operator<<(NCBI_NS_NCBI::CNcbiOstream& os, const NCBI_NS_STD::string& str);
-extern NCBI_NS_NCBI::CNcbiIstream& 
-    operator>>(NCBI_NS_NCBI::CNcbiIstream& is, NCBI_NS_STD::string& str);
+extern ncbi::CNcbiOstream& 
+    operator<<(ncbi::CNcbiOstream& os, const std::string& str);
+extern ncbi::CNcbiIstream& 
+    operator>>(ncbi::CNcbiIstream& is, std::string& str);
 #endif // NCBI_USE_OLD_IOSTREAM
 
 
