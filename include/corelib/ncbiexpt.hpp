@@ -120,7 +120,7 @@ extern void DoDbgPrint(const CDiagCompileInfo& info,
 #  define RETHROW_TRACE                         \
     do {                                        \
         _TRACE("EXCEPTION: re-throw");          \
-        NCBI_NS_NCBI::DoThrowTraceAbort();      \
+        ncbi::DoThrowTraceAbort();      \
         throw;                                  \
     } while(0)
 
@@ -244,8 +244,8 @@ const string& DbgPrintEx(const CDiagCompileInfo& info, const string& str, const 
 /// -  THROW_TRACE_SIMPLE("Throw just a string");
 /// -  THROW_TRACE_SIMPLE(runtime_error("message"));
 #  define THROW_TRACE_SIMPLE(exception_object) \
-    throw NCBI_NS_NCBI::DbgPrintEx(DIAG_COMPILE_INFO, \
-                                   exception_object, #exception_object)
+    throw ncbi::DbgPrintEx(DIAG_COMPILE_INFO, \
+                           exception_object, #exception_object)
 
 /// Throw trace.
 ///
@@ -267,8 +267,8 @@ const string& DbgPrintEx(const CDiagCompileInfo& info, const string& str, const 
 /// @sa
 ///   THROW_TRACE_SIMPLE
 #  define THROW_TRACE_ARGS(exception_class, ...) \
-    throw NCBI_NS_NCBI::DbgPrintEx(DIAG_COMPILE_INFO, \
-                                   exception_class(__VA_ARGS__), #exception_class)
+    throw ncbi::DbgPrintEx(DIAG_COMPILE_INFO, \
+                           exception_class(__VA_ARGS__), #exception_class)
 
 
 /////////////////////////////////
@@ -362,8 +362,8 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// -  THROW0_TRACE("Throw just a string");
 /// -  THROW0_TRACE(runtime_error("message"));
 #  define THROW0_TRACE(exception_object) \
-    throw NCBI_NS_NCBI::DbgPrint(DIAG_COMPILE_INFO, \
-                                 exception_object, #exception_object)
+    throw ncbi::DbgPrint(DIAG_COMPILE_INFO, \
+                         exception_object, #exception_object)
 
 /// Throw trace.
 ///
@@ -381,8 +381,8 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// @sa
 ///   THROW0np_TRACE
 #  define THROW0p_TRACE(exception_object) \
-    throw NCBI_NS_NCBI::DbgPrintP(DIAG_COMPILE_INFO, \
-                                  exception_object, #exception_object)
+    throw ncbi::DbgPrintP(DIAG_COMPILE_INFO, \
+                          exception_object, #exception_object)
 
 /// Throw trace.
 ///
@@ -398,8 +398,8 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// @sa
 ///   THROW0p_TRACE
 #  define THROW0np_TRACE(exception_object) \
-    throw NCBI_NS_NCBI::DbgPrintNP(DIAG_COMPILE_INFO, \
-                                   exception_object, #exception_object)
+    throw ncbi::DbgPrintNP(DIAG_COMPILE_INFO, \
+                           exception_object, #exception_object)
 
 /// Throw trace.
 ///
@@ -415,8 +415,8 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// Example:
 /// -  THROW1_TRACE(runtime_error, "Something is weird...");
 #  define THROW1_TRACE(exception_class, exception_arg) \
-    throw NCBI_NS_NCBI::DbgPrint(DIAG_COMPILE_INFO, \
-                                 exception_class(exception_arg), #exception_class)
+    throw ncbi::DbgPrint(DIAG_COMPILE_INFO, \
+                         exception_class(exception_arg), #exception_class)
 
 /// Throw trace.
 ///
@@ -434,8 +434,8 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// @sa
 ///   THROW1np_TRACE
 #  define THROW1p_TRACE(exception_class, exception_arg) \
-    throw NCBI_NS_NCBI::DbgPrintP(DIAG_COMPILE_INFO,    \
-                                  exception_class(exception_arg), #exception_class)
+    throw ncbi::DbgPrintP(DIAG_COMPILE_INFO,    \
+                          exception_class(exception_arg), #exception_class)
 
 /// Throw trace.
 ///
@@ -451,8 +451,8 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// Example:
 /// -  THROW1np_TRACE(CUserClass, "argument");
 #  define THROW1np_TRACE(exception_class, exception_arg) \
-    throw NCBI_NS_NCBI::DbgPrintNP(DIAG_COMPILE_INFO,    \
-                                   exception_class(exception_arg), #exception_class)
+    throw ncbi::DbgPrintNP(DIAG_COMPILE_INFO,    \
+                           exception_class(exception_arg), #exception_class)
 
 /// Throw trace.
 ///
@@ -475,8 +475,8 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// @sa
 ///   THROW1_TRACE
 #  define THROW_TRACE(exception_class, exception_args) \
-    throw NCBI_NS_NCBI::DbgPrint(DIAG_COMPILE_INFO,    \
-                                 exception_class exception_args, #exception_class)
+    throw ncbi::DbgPrint(DIAG_COMPILE_INFO,    \
+                         exception_class exception_args, #exception_class)
 
 /// Throw trace.
 ///
@@ -497,8 +497,8 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// @sa
 ///   THROW1p_TRACE
 #  define THROWp_TRACE(exception_class, exception_args) \
-    throw NCBI_NS_NCBI::DbgPrintP(DIAG_COMPILE_INFO,    \
-                                  exception_class exception_args, #exception_class)
+    throw ncbi::DbgPrintP(DIAG_COMPILE_INFO,    \
+                          exception_class exception_args, #exception_class)
 
 /// Throw trace.
 ///
@@ -517,8 +517,8 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// Example:
 /// -  THROWnp_TRACE(CUserClass, (arg1, arg2));
 #  define THROWnp_TRACE(exception_class, exception_args) \
-    throw NCBI_NS_NCBI::DbgPrintNP(DIAG_COMPILE_INFO,    \
-                                   exception_class exception_args, #exception_class)
+    throw ncbi::DbgPrintNP(DIAG_COMPILE_INFO,    \
+                           exception_class exception_args, #exception_class)
 
 
 #else  /* _DEBUG */
@@ -558,9 +558,9 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// Standard handling of "exception"-derived exceptions.
 /// This macro is deprecated - use *_X or *_XX variant instead of it.
 #define STD_CATCH(message)                                    \
-    catch (NCBI_NS_STD::exception& e) {                       \
-        NCBI_NS_NCBI::CNcbiDiag()                             \
-            << NCBI_NS_NCBI::Error                            \
+    catch (std::exception& e) {                               \
+        ncbi::CNcbiDiag()                                     \
+            << ncbi::Error                                    \
             << "[" << message << "] Exception: " << e.what(); \
     }
 
@@ -570,22 +570,22 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 #define STD_CATCH_ALL(message)                                \
     STD_CATCH(message)                                        \
     catch (...) {                                             \
-        NCBI_NS_NCBI::CNcbiDiag()                             \
-           << NCBI_NS_NCBI::Error                             \
+        ncbi::CNcbiDiag()                                     \
+           << ncbi::Error                                     \
            << "[" << message << "] Unknown exception";        \
     }
 
 /// Catch CExceptions as well
 /// This macro is deprecated - use *_X or *_XX variant instead of it.
 #define NCBI_CATCH(message)                                   \
-    catch (NCBI_NS_NCBI::CException& e) {                     \
+    catch (ncbi::CException& e) {                             \
         NCBI_REPORT_EXCEPTION(message, e);                    \
     }                                                         \
     STD_CATCH(message)
 
 /// This macro is deprecated - use *_X or *_XX variant instead of it.
 #define NCBI_CATCH_ALL(message)                               \
-    catch (NCBI_NS_NCBI::CException& e) {                     \
+    catch (ncbi::CException& e) {                             \
         NCBI_REPORT_EXCEPTION(message, e);                    \
     }                                                         \
     STD_CATCH_ALL(message)
@@ -624,11 +624,11 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 ///
 /// @sa STD_CATCH_X, NCBI_DEFINE_ERRCODE_X, ERR_POST_XX
 #define STD_CATCH_XX(err_name, err_subcode, message)                 \
-    catch (NCBI_NS_STD::exception& e) {                              \
+    catch (std::exception& e) {                                      \
         NCBI_CHECK_ERR_SUBCODE_X_NAME(err_name, err_subcode);        \
-        NCBI_NS_NCBI::CNcbiDiag()                                    \
+        ncbi::CNcbiDiag()                                            \
             << ErrCode(NCBI_ERRCODE_X_NAME(err_name), err_subcode)   \
-            << NCBI_NS_NCBI::Error                                   \
+            << ncbi::Error                                           \
             << "[" << message << "] Exception: " << e.what();        \
     }
 
@@ -640,9 +640,9 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 #define STD_CATCH_ALL_XX(err_name, err_subcode, message)             \
     STD_CATCH_XX(err_name, err_subcode, message)                     \
     catch (...) {                                                    \
-        NCBI_NS_NCBI::CNcbiDiag()                                    \
+        ncbi::CNcbiDiag()                                            \
            << ErrCode(NCBI_ERRCODE_X_NAME(err_name), err_subcode)    \
-           << NCBI_NS_NCBI::Error                                    \
+           << ncbi::Error                                            \
            << "[" << message << "] Unknown exception";               \
     }
 
@@ -651,14 +651,14 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 ///
 /// @sa STD_CATCH_X, NCBI_DEFINE_ERRCODE_X, ERR_POST_XX
 #define NCBI_CATCH_XX(err_name, err_subcode, message)                 \
-    catch (NCBI_NS_NCBI::CException& e) {                             \
+    catch (ncbi::CException& e) {                                     \
         NCBI_REPORT_EXCEPTION_XX(err_name, err_subcode, message, e);  \
     }                                                                 \
     STD_CATCH_XX(err_name, err_subcode, message)
 
 /// @sa STD_CATCH_X, NCBI_DEFINE_ERRCODE_X, ERR_POST_XX
 #define NCBI_CATCH_ALL_XX(err_name, err_subcode, message)             \
-    catch (NCBI_NS_NCBI::CException& e) {                             \
+    catch (ncbi::CException& e) {                                     \
         NCBI_REPORT_EXCEPTION_XX(err_name, err_subcode, message, e);  \
     }                                                                 \
     STD_CATCH_ALL_XX(err_name, err_subcode, message)
@@ -670,7 +670,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// Format message using iostreams library.
 /// This macro returns an object convertible to std::string.
 #define FORMAT(message) \
-    NCBI_NS_NCBI::CNcbiOstrstreamToString(static_cast<NCBI_NS_NCBI::CNcbiOstrstream&>(NCBI_NS_NCBI::CNcbiOstrstream().flush() << message))
+    ncbi::CNcbiOstrstreamToString(static_cast<ncbi::CNcbiOstrstream&>(ncbi::CNcbiOstrstream().flush() << message))
 
 
 /// Create an exception instance to be thrown later, given the exception
@@ -703,7 +703,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// case the error code value must be the first in the combination.
 #define NCBI_THROW(exception_class, err_code, message)                  \
     do {                                                                \
-        USING_SCOPE(NCBI_NS_NCBI::ncbi_ex_manip);                       \
+        USING_SCOPE(ncbi::ncbi_ex_manip);                       \
         NCBI_EXCEPTION_THROW(NCBI_EXCEPTION(exception_class, err_code,  \
                                             message));                  \
     } while (0)
@@ -713,7 +713,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// This macro is intended for use only in stand-alone applications.
 /// Library APIs should properly declare their specific exception types.
 #define NCBI_USER_THROW(message) \
-    NCBI_THROW(NCBI_NS_NCBI::CException, eUnknown, message)
+    NCBI_THROW(ncbi::CException, eUnknown, message)
 
 /// The same as NCBI_THROW but with message processed as output to ostream.
 #define NCBI_THROW_FMT(exception_class, err_code, message)      \
@@ -722,7 +722,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// Throw a "user exception" with message processed as output to ostream.
 /// See NCBI_USER_THROW for details.
 #define NCBI_USER_THROW_FMT(message)                            \
-    NCBI_THROW_FMT(NCBI_NS_NCBI::CException, eUnknown, message)
+    NCBI_THROW_FMT(ncbi::CException, eUnknown, message)
 
 /// Generic macro to make an exception, given the exception class,
 /// previous exception, error code and message string.
@@ -736,7 +736,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// case the error code value must be the first in the combination.
 #define NCBI_RETHROW(prev_exception, exception_class, err_code, message) \
     do {                                                                \
-        USING_SCOPE(NCBI_NS_NCBI::ncbi_ex_manip);                       \
+        USING_SCOPE(ncbi::ncbi_ex_manip);                               \
         throw NCBI_EXCEPTION_EX(prev_exception, exception_class,        \
                                 err_code, message);                     \
     } while (0)
@@ -753,8 +753,8 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 
 /// Generate a report on the exception.
 #define NCBI_REPORT_EXCEPTION(title, ex)                        \
-    NCBI_NS_NCBI::CExceptionReporter::ReportDefault             \
-        (DIAG_COMPILE_INFO, title, ex, NCBI_NS_NCBI::eDPF_Default)
+    ncbi::CExceptionReporter::ReportDefault                     \
+        (DIAG_COMPILE_INFO, title, ex, ncbi::eDPF_Default)
 
 /// Generate a report on the exception with default error code and
 /// given subcode.
@@ -765,9 +765,9 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// given subcode.
 #define NCBI_REPORT_EXCEPTION_XX(err_name, err_subcode, title, ex)   \
     NCBI_CHECK_ERR_SUBCODE_X_NAME(err_name, err_subcode);            \
-    NCBI_NS_NCBI::CExceptionReporter::ReportDefaultEx                \
+    ncbi::CExceptionReporter::ReportDefaultEx                        \
     (NCBI_ERRCODE_X_NAME(err_name), err_subcode,                     \
-     DIAG_COMPILE_INFO, title, ex, NCBI_NS_NCBI::eDPF_Default)
+     DIAG_COMPILE_INFO, title, ex, ncbi::eDPF_Default)
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1526,8 +1526,8 @@ extern const char* Ncbi_strerror(int errnum);
 #ifdef NCBI_COMPILER_GCC
 inline int         NcbiErrnoCode(void)      { return errno; }
 inline const char* NcbiErrnoStr(int errnum) { return ::strerror(errnum); }
-#  define NCBI_ERRNO_CODE_WRAPPER NCBI_NS_NCBI::NcbiErrnoCode
-#  define NCBI_ERRNO_STR_WRAPPER  NCBI_NS_NCBI::NcbiErrnoStr
+#  define NCBI_ERRNO_CODE_WRAPPER ncbi::NcbiErrnoCode
+#  define NCBI_ERRNO_STR_WRAPPER  ncbi::NcbiErrnoStr
 #else
 class CErrnoAdapt
 {
@@ -1539,8 +1539,8 @@ public:
             return Ncbi_strerror(errnum);
         }
 };
-#  define NCBI_ERRNO_CODE_WRAPPER NCBI_NS_NCBI::CErrnoAdapt::GetErrCode
-#  define NCBI_ERRNO_STR_WRAPPER  NCBI_NS_NCBI::CErrnoAdapt::GetErrCodeString
+#  define NCBI_ERRNO_CODE_WRAPPER ncbi::CErrnoAdapt::GetErrCode
+#  define NCBI_ERRNO_STR_WRAPPER  ncbi::CErrnoAdapt::GetErrCodeString
 #endif
 
 // MS Windows API errors
@@ -1553,9 +1553,9 @@ public:
     static const char* GetErrCodeString(int errnum);
 };
 #  define NCBI_LASTERROR_CODE_WRAPPER \
-    NCBI_NS_NCBI::CLastErrorAdapt::GetErrCode
+    ncbi::CLastErrorAdapt::GetErrCode
 #  define NCBI_LASTERROR_STR_WRAPPER  \
-    NCBI_NS_NCBI::CLastErrorAdapt::GetErrCodeString
+    ncbi::CLastErrorAdapt::GetErrCodeString
 #endif
 
 
