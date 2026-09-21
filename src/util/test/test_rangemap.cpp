@@ -42,7 +42,7 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
-BEGIN_NCBI_SCOPE
+USING_NCBI_SCOPE;
 
 class CTestRangeMap : public CNcbiApplication
 {
@@ -366,9 +366,8 @@ int CTestRangeMap::Run(void)
     return 0;
 }
 
-END_NCBI_SCOPE
 
 int main(int argc, const char* argv[])
 {
-    return NCBI_NS_NCBI::CTestRangeMap().AppMain(argc, argv);
+    return CTestRangeMap().AppMain(argc, argv);
 }

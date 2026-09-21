@@ -53,7 +53,7 @@
 #include <util/static_set.hpp>
 
 
-BEGIN_NCBI_SCOPE
+USING_NCBI_SCOPE;
 
 class CTestStaticMap : public CNcbiApplication
 {
@@ -708,9 +708,8 @@ int CTestStaticMap::Run(void)
     return 0;
 }
 
-END_NCBI_SCOPE
 
 int main(int argc, const char* argv[])
 {
-    return NCBI_NS_NCBI::CTestStaticMap().AppMain(argc, argv);
+    return CTestStaticMap().AppMain(argc, argv);
 }

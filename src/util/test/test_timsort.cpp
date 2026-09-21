@@ -40,7 +40,7 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
-BEGIN_NCBI_SCOPE
+USING_NCBI_SCOPE;
 
 class CTestTimSort : public CNcbiApplication
 {
@@ -255,9 +255,8 @@ int CTestTimSort::Run(void)
     return 0;
 }
 
-END_NCBI_SCOPE
 
 int main(int argc, const char* argv[])
 {
-    return NCBI_NS_NCBI::CTestTimSort().AppMain(argc, argv);
+    return CTestTimSort().AppMain(argc, argv);
 }
