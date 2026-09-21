@@ -8050,7 +8050,7 @@ bool CNcbiDiag::StrToSeverityLevel(const char* str_sev, EDiagSev& sev)
 void CNcbiDiag::DiagFatal(const CDiagCompileInfo& info,
                           const char* message)
 {
-    CNcbiDiag(info, NCBI_NS_NCBI::eDiag_Fatal) << message << Endm;
+    CNcbiDiag(info, ncbi::eDiag_Fatal) << message << Endm;
     // DiagFatal is non-returnable, so force aborting even if the above
     // call has returned.
     Abort();
@@ -8059,14 +8059,14 @@ void CNcbiDiag::DiagFatal(const CDiagCompileInfo& info,
 void CNcbiDiag::DiagTrouble(const CDiagCompileInfo& info,
                             const char* message)
 {
-    CNcbiDiag(info, NCBI_NS_NCBI::eDiag_Fatal) << message << Endm;
+    CNcbiDiag(info, ncbi::eDiag_Fatal) << message << Endm;
 }
 
 void CNcbiDiag::DiagAssert(const CDiagCompileInfo& info,
                            const char* expression,
                            const char* message)
 {
-    CNcbiDiag(info, NCBI_NS_NCBI::eDiag_Fatal, eDPF_Trace) <<
+    CNcbiDiag(info, ncbi::eDiag_Fatal, eDPF_Trace) <<
         "Assertion failed: (" <<
         (expression ? expression : "") << ") " <<
         (message ? message : "") << Endm;
