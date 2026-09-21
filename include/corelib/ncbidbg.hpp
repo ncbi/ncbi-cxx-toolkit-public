@@ -67,17 +67,17 @@ BEGIN_NCBI_SCOPE
 
 /// Define macros to support debugging.
 #define _ALWAYS_TRACE(message)                   \
-    do if (NCBI_NS_NCBI::IsVisibleDiagPostLevel(NCBI_NS_NCBI::eDiag_Trace)) \
-    { NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, \
-      NCBI_NS_NCBI::eDiag_Trace).GetRef()        \
-      << message << NCBI_NS_NCBI::Endm; } while (0)
+    do if (ncbi::IsVisibleDiagPostLevel(ncbi::eDiag_Trace)) \
+    { ncbi::CNcbiDiag(DIAG_COMPILE_INFO, \
+      ncbi::eDiag_Trace).GetRef()        \
+      << message << ncbi::Endm; } while (0)
 
 #define _ALWAYS_TRACE_EX(err_code, err_subcode, message)    \
-    do if (NCBI_NS_NCBI::IsVisibleDiagPostLevel(NCBI_NS_NCBI::eDiag_Trace)) \
-    { NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,            \
-      NCBI_NS_NCBI::eDiag_Trace).GetRef()                   \
-      << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) ) \
-      << message << NCBI_NS_NCBI::Endm; } while (0)
+    do if (ncbi::IsVisibleDiagPostLevel(ncbi::eDiag_Trace)) \
+    { ncbi::CNcbiDiag(DIAG_COMPILE_INFO,            \
+      ncbi::eDiag_Trace).GetRef()                   \
+      << ncbi::ErrCode( (err_code), (err_subcode) ) \
+      << message << ncbi::Endm; } while (0)
 
 #define _ALWAYS_TRACE_X(err_subcode, message)               \
     _ALWAYS_TRACE_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
@@ -87,7 +87,7 @@ BEGIN_NCBI_SCOPE
       _ALWAYS_TRACE_EX(NCBI_ERRCODE_X_NAME(error_name), err_subcode, message); } while (0)
 
 #define NCBI_ALWAYS_TROUBLE(mess) \
-    NCBI_NS_NCBI::CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO, mess)
+    ncbi::CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO, mess)
 
 #ifdef NCBI_COMPILER_MSVC
     // Use standard _ASSERT macro on MSVC in Debug modes
@@ -96,26 +96,26 @@ BEGIN_NCBI_SCOPE
           bool x_expr = ((expr)? true : false); \
           if ( !x_expr ) { \
               const char* x_mess = (mess); \
-              NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, \
-                                      NCBI_NS_NCBI::eDiag_Error, \
-                                      NCBI_NS_NCBI::eDPF_Trace) << \
+              ncbi::CNcbiDiag(DIAG_COMPILE_INFO, \
+                              ncbi::eDiag_Error, \
+                              ncbi::eDPF_Trace) << \
                   "Assertion failed: (" << \
                   (#expr ? #expr : "") << ") " << \
-                  (x_mess ? x_mess : "") << NCBI_NS_NCBI::Endm; \
+                  (x_mess ? x_mess : "") << ncbi::Endm; \
               _ASSERT_BASE(x_expr, NULL); \
-              NCBI_NS_NCBI::CNcbiDiag::DiagAssertIfSuppressedSystemMessageBox( \
+              ncbi::CNcbiDiag::DiagAssertIfSuppressedSystemMessageBox( \
                   DIAG_COMPILE_INFO, #expr, x_mess); \
           } \
       } while ( 0 )
 #  define NCBI_ALWAYS_ASSERT_EXPR(expr, mess) \
-    ((expr)?(void)0:NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess))
+    ((expr)?(void)0:ncbi::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess))
 #else  /* NCBI_COMPILER_MSVC */
 #  define NCBI_ALWAYS_ASSERT(expr, mess) \
       do { if ( !(expr) ) \
-          NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess); \
+          ncbi::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess); \
       } while ( 0 )
 #  define NCBI_ALWAYS_ASSERT_EXPR(expr, mess) \
-    ((expr)?(void)0:NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess))
+    ((expr)?(void)0:ncbi::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess))
 #endif
 
 #define NCBI_ALWAYS_VERIFY(expr, mess) NCBI_ALWAYS_ASSERT(expr, mess)
