@@ -490,19 +490,19 @@ typedef TMutexGuard          CMutexGuard;
 
 /// Define static fast mutex initial value.
 #   define STATIC_FAST_MUTEX_INITIALIZER \
-    { SYSTEM_MUTEX_INITIALIZER, NCBI_NS_NCBI::SSystemFastMutex::eMutexInitialized }
+    { SYSTEM_MUTEX_INITIALIZER, ncbi::SSystemFastMutex::eMutexInitialized }
 
 /// Define static fast mutex and initialize it.
 #   define DEFINE_STATIC_FAST_MUTEX(id) \
-static NCBI_NS_NCBI::SSystemFastMutex id = STATIC_FAST_MUTEX_INITIALIZER
+static ncbi::SSystemFastMutex id = STATIC_FAST_MUTEX_INITIALIZER
 
 /// Declare static fast mutex.
 #   define DECLARE_CLASS_STATIC_FAST_MUTEX(id) \
-static NCBI_NS_NCBI::SSystemFastMutex id
+static ncbi::SSystemFastMutex id
 
 /// Define fast mutex and initialize it.
 #   define DEFINE_CLASS_STATIC_FAST_MUTEX(id) \
-NCBI_NS_NCBI::SSystemFastMutex id = STATIC_FAST_MUTEX_INITIALIZER
+ncbi::SSystemFastMutex id = STATIC_FAST_MUTEX_INITIALIZER
 
 /// Define static mutex initializer.
 #   define STATIC_MUTEX_INITIALIZER \
@@ -510,15 +510,15 @@ NCBI_NS_NCBI::SSystemFastMutex id = STATIC_FAST_MUTEX_INITIALIZER
 
 /// Define static mutex and initialize it.
 #   define DEFINE_STATIC_MUTEX(id) \
-static NCBI_NS_NCBI::SSystemMutex id = STATIC_MUTEX_INITIALIZER
+static ncbi::SSystemMutex id = STATIC_MUTEX_INITIALIZER
 
 /// Declare static mutex.
 #   define DECLARE_CLASS_STATIC_MUTEX(id) \
-static NCBI_NS_NCBI::SSystemMutex id
+static ncbi::SSystemMutex id
 
 /// Define mutex and initialize it.
 #   define DEFINE_CLASS_STATIC_MUTEX(id) \
-NCBI_NS_NCBI::SSystemMutex id = STATIC_MUTEX_INITIALIZER
+ncbi::SSystemMutex id = STATIC_MUTEX_INITIALIZER
 
 #else
 
@@ -527,27 +527,27 @@ NCBI_NS_NCBI::SSystemMutex id = STATIC_MUTEX_INITIALIZER
 
 /// Define auto-initialized static fast mutex.
 #   define DEFINE_STATIC_FAST_MUTEX(id) \
-static NCBI_NS_NCBI::CAutoInitializeStaticFastMutex id
+static ncbi::CAutoInitializeStaticFastMutex id
 
 /// Declare auto-initialized static fast mutex.
 #   define DECLARE_CLASS_STATIC_FAST_MUTEX(id) \
-static NCBI_NS_NCBI::CAutoInitializeStaticFastMutex id
+static ncbi::CAutoInitializeStaticFastMutex id
 
 /// Define auto-initialized mutex.
 #   define DEFINE_CLASS_STATIC_FAST_MUTEX(id) \
-NCBI_NS_NCBI::CAutoInitializeStaticFastMutex id
+ncbi::CAutoInitializeStaticFastMutex id
 
 /// Define auto-initialized static mutex.
 #   define DEFINE_STATIC_MUTEX(id) \
-static NCBI_NS_NCBI::CAutoInitializeStaticMutex id
+static ncbi::CAutoInitializeStaticMutex id
 
 /// Declare auto-initialized static mutex.
 #   define DECLARE_CLASS_STATIC_MUTEX(id) \
-static NCBI_NS_NCBI::CAutoInitializeStaticMutex id
+static ncbi::CAutoInitializeStaticMutex id
 
 /// Define auto-initialized mutex.
 #   define DEFINE_CLASS_STATIC_MUTEX(id) \
-NCBI_NS_NCBI::CAutoInitializeStaticMutex id
+ncbi::CAutoInitializeStaticMutex id
 
 #endif
 
