@@ -252,8 +252,8 @@ catch( ... ) {                                                               \
     BOOST_CHECK_THROW_IMPL_EX( S, E, P, affix, TL, )
 #  define BOOST_CHECK_THROW_IMPL_MT_SAFE( S, E, P, affix, TL )                \
     BOOST_CHECK_THROW_IMPL_EX( S, E, P, affix, TL,                            \
-                               NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard( \
-                                   NCBI_NS_NCBI::g_NcbiTestMutex) )
+                               ncbi::CFastMutexGuard _ncbitest_guard(         \
+                                   ncbi::g_NcbiTestMutex) )
 
 #define BOOST_WARN_THROW_MT_SAFE( S, E ) \
     BOOST_CHECK_THROW_IMPL_MT_SAFE( S, E, true, BOOST_THROW_AFFIX, WARN )
@@ -274,11 +274,11 @@ catch( ... ) {                                                               \
 
 #define BOOST_CHECK_NO_THROW_IMPL( S, TL ) \
     BOOST_CHECK_NO_THROW_IMPL_EX( S, TL, )
-#define BOOST_CHECK_NO_THROW_IMPL_MT_SAFE( S, TL )                      \
-    BOOST_CHECK_NO_THROW_IMPL_EX( S, TL,                                \
-                                  NCBI_NS_NCBI::CFastMutexGuard         \
-                                  _ncbitest_guard(                      \
-                                      NCBI_NS_NCBI::g_NcbiTestMutex) )
+#define BOOST_CHECK_NO_THROW_IMPL_MT_SAFE( S, TL )              \
+    BOOST_CHECK_NO_THROW_IMPL_EX( S, TL,                        \
+                                  ncbi::CFastMutexGuard         \
+                                  _ncbitest_guard(              \
+                                      ncbi::g_NcbiTestMutex) )
 
 #define BOOST_WARN_NO_THROW_MT_SAFE( S ) \
     BOOST_CHECK_NO_THROW_IMPL_MT_SAFE( S, WARN )
@@ -316,10 +316,10 @@ struct test_name : public F { void test_method(); };                    \
                                                                         \
 static void BOOST_AUTO_TC_INVOKER( test_name )()                        \
 {                                                                       \
-    NCBI_NS_NCBI::CDiagContext& dctx = NCBI_NS_NCBI::GetDiagContext();  \
-    NCBI_NS_NCBI::CRequestContext& rctx = dctx.GetRequestContext();     \
+    ncbi::CDiagContext& dctx = ncbi::GetDiagContext();                  \
+    ncbi::CRequestContext& rctx = dctx.GetRequestContext();             \
     rctx.SetRequestID();                                                \
-    NCBI_NS_NCBI::CRequestContextGuard_Base rg(&rctx);                  \
+    ncbi::CRequestContextGuard_Base rg(&rctx);                          \
     dctx.PrintRequestStart().Print("test_name", #test_name);            \
     BOOST_TEST_CHECKPOINT('"' << #test_name << "\" fixture entry.");    \
     test_name t;                                                        \
@@ -327,13 +327,13 @@ static void BOOST_AUTO_TC_INVOKER( test_name )()                        \
     try {                                                               \
         t.test_method();                                                \
     }                                                                   \
-    catch (NCBI_NS_NCBI::CException& ex) {                              \
+    catch (ncbi::CException& ex) {                                      \
         ERR_POST("Uncaught exception in \""                             \
                  << boost::unit_test                                    \
                          ::framework::current_test_case().p_name        \
                  << "\"" << ex);                                        \
         char* msg = NcbiSysChar_strdup(ex.what());                      \
-        NCBI_NS_NCBI::CNcbiTestMemoryCleanupList::GetInstance()->Add(msg); \
+        ncbi::CNcbiTestMemoryCleanupList::GetInstance()->Add(msg);      \
         throw boost::execution_exception(                               \
                 boost::execution_exception::cpp_exception_error,        \
                 msg                                                     \
@@ -344,12 +344,12 @@ static void BOOST_AUTO_TC_INVOKER( test_name )()                        \
                                                                         \
 struct BOOST_AUTO_TC_UNIQUE_ID( test_name ) {};                         \
                                                                         \
-static ::NCBI_NS_NCBI::SNcbiTestRegistrar                               \
+static ::ncbi::SNcbiTestRegistrar                                       \
 BOOST_JOIN( BOOST_JOIN( test_name, _registrar ), __LINE__ ) (           \
     boost::unit_test::make_test_case(                                   \
         &BOOST_AUTO_TC_INVOKER( test_name ), #test_name,                \
         __FILE__, __LINE__ ),                                           \
-    ::NCBI_NS_NCBI::SNcbiTestTCTimeout<                                 \
+    ::ncbi::SNcbiTestTCTimeout<                                         \
         BOOST_AUTO_TC_UNIQUE_ID( test_name )>::instance()->value(),     \
     decorators );                                                       \
                                                                         \
@@ -361,22 +361,22 @@ struct test_name : public F { void test_method(); };                    \
                                                                         \
 static void BOOST_AUTO_TC_INVOKER( test_name )()                        \
 {                                                                       \
-    NCBI_NS_NCBI::CDiagContext& dctx = NCBI_NS_NCBI::GetDiagContext();  \
-    NCBI_NS_NCBI::CRequestContext& rctx = dctx.GetRequestContext();     \
+    ncbi::CDiagContext& dctx = ncbi::GetDiagContext();                  \
+    ncbi::CRequestContext& rctx = dctx.GetRequestContext();             \
     rctx.SetRequestID();                                                \
-    NCBI_NS_NCBI::CRequestContextGuard_Base rg(&rctx);                  \
+    ncbi::CRequestContextGuard_Base rg(&rctx);                          \
     dctx.PrintRequestStart().Print("test_name", #test_name);            \
     test_name t;                                                        \
     try {                                                               \
         t.test_method();                                                \
     }                                                                   \
-    catch (NCBI_NS_NCBI::CException& ex) {                              \
+    catch (ncbi::CException& ex) {                                      \
         ERR_POST("Uncaught exception in \""                             \
                  << boost::unit_test                                    \
                          ::framework::current_test_case().p_name        \
                  << "\"" << ex);                                        \
         char* msg = NcbiSysChar_strdup(ex.what());                      \
-        NCBI_NS_NCBI::CNcbiTestMemoryCleanupList::GetInstance()->Add(msg); \
+        ncbi::CNcbiTestMemoryCleanupList::GetInstance()->Add(msg);      \
         throw boost::execution_exception(                               \
                 boost::execution_exception::cpp_exception_error,        \
                 msg                                                     \
@@ -386,23 +386,23 @@ static void BOOST_AUTO_TC_INVOKER( test_name )()                        \
                                                                         \
 struct BOOST_AUTO_TC_UNIQUE_ID( test_name ) {};                         \
                                                                         \
-static ::NCBI_NS_NCBI::SNcbiTestRegistrar                               \
+static ::ncbi::SNcbiTestRegistrar                                       \
 BOOST_JOIN( BOOST_JOIN( test_name, _registrar ), __LINE__ ) (           \
     boost::unit_test::make_test_case(                                   \
         &BOOST_AUTO_TC_INVOKER( test_name ), #test_name ),              \
     boost::unit_test::ut_detail::auto_tc_exp_fail<                      \
         BOOST_AUTO_TC_UNIQUE_ID( test_name )>::instance()->value(),     \
-    ::NCBI_NS_NCBI::SNcbiTestTCTimeout<                                 \
+    ::ncbi::SNcbiTestTCTimeout<                                         \
         BOOST_AUTO_TC_UNIQUE_ID( test_name )>::instance()->value() );   \
                                                                         \
 void test_name::test_method()                                           \
 /**/
 #endif
 
-#define BOOST_PARAM_TEST_CASE( function, begin, end )                       \
-    ::NCBI_NS_NCBI::NcbiTestGenTestCases( function,                         \
-                                          BOOST_TEST_STRINGIZE( function ), \
-                                          (begin), (end) )                  \
+#define BOOST_PARAM_TEST_CASE( function, begin, end )                   \
+    ::ncbi::NcbiTestGenTestCases( function,                             \
+                                  BOOST_TEST_STRINGIZE( function ),     \
+                                  (begin), (end) )                      \
 /**/
 
 /// Set timeout value for the test case created using auto-registration
@@ -411,11 +411,11 @@ void test_name::test_method()                                           \
 struct BOOST_AUTO_TC_UNIQUE_ID( test_name );                            \
                                                                         \
 static struct BOOST_JOIN( test_name, _timeout_spec )                    \
-: ::NCBI_NS_NCBI::                                                      \
+: ::ncbi::                                                              \
   SNcbiTestTCTimeout<BOOST_AUTO_TC_UNIQUE_ID( test_name ) >             \
 {                                                                       \
     BOOST_JOIN( test_name, _timeout_spec )()                            \
-    : ::NCBI_NS_NCBI::                                                  \
+    : ::ncbi::                                                          \
       SNcbiTestTCTimeout<BOOST_AUTO_TC_UNIQUE_ID( test_name ) >( n )    \
     {}                                                                  \
 } BOOST_JOIN( test_name, _timeout_spec_inst );                          \
@@ -459,10 +459,10 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
 #  define NCBITEST_CHECK_IMPL_MT_SAFE(P, check_descr, TL, CT)             \
     do {                                                                  \
         bool _ncbitest_value;                                             \
-        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard                     \
-            (NCBI_NS_NCBI::eEmptyGuard);                                  \
+        ncbi::CFastMutexGuard _ncbitest_guard                             \
+            (ncbi::eEmptyGuard);                                          \
         BOOST_CHECK_NO_THROW_IMPL_EX(_ncbitest_value = (P);, TL,          \
-            _ncbitest_guard.Guard(NCBI_NS_NCBI::g_NcbiTestMutex));        \
+            _ncbitest_guard.Guard(ncbi::g_NcbiTestMutex));                \
         BOOST_TEST_TOOL_IMPL(2, _ncbitest_value, check_descr, TL, CT, _); \
     } while( BOOST_TEST_DETAIL_DUMMY_COND )
 
@@ -477,11 +477,11 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
     do {                                                                    \
         std::decay<decltype(A1)>::type _ncbitest_value1;                    \
         std::decay<decltype(A2)>::type _ncbitest_value2;                    \
-        NCBI_NS_NCBI::CFastMutexGuard  _ncbitest_guard                      \
-            (NCBI_NS_NCBI::eEmptyGuard);                                    \
+        ncbi::CFastMutexGuard  _ncbitest_guard                              \
+            (ncbi::eEmptyGuard);                                            \
         BOOST_CHECK_NO_THROW_IMPL_EX(                                       \
             _ncbitest_value1 = (A1); _ncbitest_value2 = (A2);, TL,          \
-            _ncbitest_guard.Guard(NCBI_NS_NCBI::g_NcbiTestMutex));          \
+            _ncbitest_guard.Guard(ncbi::g_NcbiTestMutex));                  \
         BOOST_TEST_TOOL_IMPL(00, ::boost::test_tools::tt_detail::P(),       \
                              descr, TL, CT,                                 \
                              (_ncbitest_value1)(BOOST_STRINGIZE(A1))        \
@@ -491,8 +491,8 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
 #  define BOOST_CHECK_IMPL_MT_SAFE( P, check_descr, TL, CT )                \
     do {                                                                    \
         bool _ncbitest_value = (P);                                         \
-        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard                       \
-            (NCBI_NS_NCBI::g_NcbiTestMutex);                                \
+        ncbi::CFastMutexGuard _ncbitest_guard                               \
+            (ncbi::g_NcbiTestMutex);                                        \
         BOOST_TEST_TOOL_IMPL( 2, _ncbitest_value, check_descr, TL, CT, _ ); \
     } while( BOOST_TEST_DETAIL_DUMMY_COND )
 
@@ -500,8 +500,8 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
     do {                                                                 \
         auto _ncbitest_value1 = A1;                                      \
         auto _ncbitest_value2 = A2;                                      \
-        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard                    \
-            (NCBI_NS_NCBI::g_NcbiTestMutex);                             \
+        ncbi::CFastMutexGuard _ncbitest_guard                            \
+            (ncbi::g_NcbiTestMutex);                                     \
         BOOST_TEST_TOOL_IMPL(00, ::boost::test_tools::tt_detail::P(),    \
                              descr, TL, CT,                              \
                              (_ncbitest_value1)(BOOST_STRINGIZE(A1))     \
@@ -513,8 +513,8 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
         auto _ncbitest_l = L;                                                 \
         auto _ncbitest_r = R;                                                 \
         auto _ncbitest_t = ::boost::math::fpc::percent_tolerance(T);          \
-        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard                         \
-            (NCBI_NS_NCBI::g_NcbiTestMutex);                                  \
+        ncbi::CFastMutexGuard _ncbitest_guard                                 \
+            (ncbi::g_NcbiTestMutex);                                          \
         BOOST_TEST_TOOL_IMPL(                                                 \
             00, ::boost::test_tools::check_is_close_t(), "", TL, CHECK_CLOSE, \
             (_ncbitest_l)(BOOST_STRINGIZE(L))(_ncbitest_r)(BOOST_STRINGIZE(R))\
@@ -523,8 +523,8 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
 
 #  define BOOST_EQUAL_COLLECTIONS_IMPL_MT_SAFE( LB, LE, RB, RE, TL ) \
     do {                                                             \
-        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard                \
-            (NCBI_NS_NCBI::g_NcbiTestMutex);                         \
+        ncbi::CFastMutexGuard _ncbitest_guard                        \
+            (ncbi::g_NcbiTestMutex);                                 \
         BOOST_TEST_TOOL_IMPL(                                        \
             1, ::boost::test_tools::tt_detail::equal_coll_impl(),    \
             "", TL, CHECK_EQUAL_COLL, (LB)(LE)(RB)(RE) );            \
@@ -542,10 +542,10 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
 #  define NCBITEST_CHECK_IMPL_MT_SAFE(P, check_descr, TL, CT)           \
     do {                                                                \
         bool _ncbitest_value;                                           \
-        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard                   \
-            (NCBI_NS_NCBI::eEmptyGuard);                                \
+        ncbi::CFastMutexGuard _ncbitest_guard                           \
+            (ncbi::eEmptyGuard);                                        \
         BOOST_CHECK_NO_THROW_IMPL_EX(_ncbitest_value = (P), TL,         \
-            _ncbitest_guard.Guard(NCBI_NS_NCBI::g_NcbiTestMutex));      \
+            _ncbitest_guard.Guard(ncbi::g_NcbiTestMutex));              \
         BOOST_CHECK_IMPL(_ncbitest_value, check_descr, TL, CT);         \
     } while ( ::boost::test_tools::dummy_cond )
 
@@ -553,11 +553,11 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
     do {                                                                      \
         std::decay<decltype(A1)>::type _ncbitest_value1;                      \
         std::decay<decltype(A2)>::type _ncbitest_value2;                      \
-        NCBI_NS_NCBI::CFastMutexGuard  _ncbitest_guard                        \
-            (NCBI_NS_NCBI::eEmptyGuard);                                      \
+        ncbi::CFastMutexGuard  _ncbitest_guard                                \
+            (ncbi::eEmptyGuard);                                              \
         BOOST_CHECK_NO_THROW_IMPL_EX(                                         \
             _ncbitest_value1 = (A1); _ncbitest_value2 = (A2);, TL,            \
-            _ncbitest_guard.Guard(NCBI_NS_NCBI::g_NcbiTestMutex));            \
+            _ncbitest_guard.Guard(ncbi::g_NcbiTestMutex));                    \
         /* BOOST_TEST_PASSPOINT(); */ /* redundant */                         \
         BOOST_TEST_TOOL_IMPL( check_frwd,                                     \
                               ::boost::test_tools::tt_detail::P(),            \
@@ -570,8 +570,8 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
 #  define BOOST_CHECK_IMPL_MT_SAFE( P, check_descr, TL, CT )      \
     do {                                                          \
         bool _ncbitest_value = (P);                               \
-        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard             \
-            (NCBI_NS_NCBI::g_NcbiTestMutex);                      \
+        ncbi::CFastMutexGuard _ncbitest_guard                     \
+            (ncbi::g_NcbiTestMutex);                              \
         BOOST_CHECK_IMPL( _ncbitest_value, check_descr, TL, CT ); \
     } while ( ::boost::test_tools::dummy_cond )
 
@@ -579,8 +579,8 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
     do {                                                                      \
         auto _ncbitest_value1 = A1;                                           \
         auto _ncbitest_value2 = A2;                                           \
-        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard                         \
-            (NCBI_NS_NCBI::g_NcbiTestMutex);                                  \
+        ncbi::CFastMutexGuard _ncbitest_guard                                 \
+            (ncbi::g_NcbiTestMutex);                                          \
         BOOST_TEST_PASSPOINT();                                               \
         BOOST_TEST_TOOL_IMPL( check_frwd,                                     \
                               ::boost::test_tools::tt_detail::P(),            \
@@ -595,8 +595,8 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
         auto _ncbitest_l = L;                                                 \
         auto _ncbitest_r = R;                                                 \
         auto _ncbitest_t = ::boost::test_tools::percent_tolerance(T);         \
-        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard                         \
-            (NCBI_NS_NCBI::g_NcbiTestMutex);                                  \
+        ncbi::CFastMutexGuard _ncbitest_guard                                 \
+            (ncbi::g_NcbiTestMutex);                                          \
         BOOST_TEST_PASSPOINT();                                               \
         BOOST_TEST_TOOL_IMPL(check_frwd, ::boost::test_tools::check_is_close, \
                              "", TL, CHECK_CLOSE)                             \
@@ -608,8 +608,8 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
 
 #  define BOOST_EQUAL_COLLECTIONS_IMPL_MT_SAFE( LB, LE, RB, RE, TL ) \
     do {                                                             \
-        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard                \
-            (NCBI_NS_NCBI::g_NcbiTestMutex);                         \
+        ncbi::CFastMutexGuard _ncbitest_guard                        \
+            (ncbi::g_NcbiTestMutex);                                 \
         BOOST_EQUAL_COLLECTIONS_IMPL( LB, LE, RB, RE, TL );          \
     } while( ::boost::test_tools::dummy_cond )
 
@@ -717,8 +717,8 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
 
 #define BOOST_TEST_MESSAGE_MT_SAFE( M )               \
     do {                                              \
-        NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard \
-            (NCBI_NS_NCBI::g_NcbiTestMutex);          \
+        ncbi::CFastMutexGuard _ncbitest_guard         \
+            (ncbi::g_NcbiTestMutex);                  \
         BOOST_TEST_MESSAGE( M );                      \
     } while (false)
 
@@ -1118,21 +1118,21 @@ boost::unit_test::test_unit* NcbiTestGetUnit(CTempString test_name);
 #define NCBITEST_AUTOREG_OBJ     BOOST_JOIN(NcbiTestAutoObj,    __LINE__)
 #define NCBITEST_AUTOREG_HELPER  BOOST_JOIN(NcbiTestAutoHelper, __LINE__)
 
-#define NCBITEST_AUTOREG_FUNCTION(type)                                    \
-static void NCBITEST_AUTOREG_FUNC(type)(void);                             \
-static ::NCBI_NS_NCBI::SNcbiTestUserFuncReg                                \
-NCBITEST_AUTOREG_OBJ(&NCBITEST_AUTOREG_FUNC(type), ::NCBI_NS_NCBI::type);  \
+#define NCBITEST_AUTOREG_FUNCTION(type)                             \
+static void NCBITEST_AUTOREG_FUNC(type)(void);                      \
+static ::ncbi::SNcbiTestUserFuncReg                                 \
+NCBITEST_AUTOREG_OBJ(&NCBITEST_AUTOREG_FUNC(type), ::ncbi::type);   \
 static void NCBITEST_AUTOREG_FUNC(type)(void)
 
-#define NCBITEST_AUTOREG_PARAMFUNC(type, param_decl, param_func)       \
-static void NCBITEST_AUTOREG_FUNC(type)(::NCBI_NS_NCBI::param_decl);   \
-static void NCBITEST_AUTOREG_HELPER(void)                              \
-{                                                                      \
-    NCBITEST_AUTOREG_FUNC(type)(::NCBI_NS_NCBI::param_func());         \
-}                                                                      \
-static ::NCBI_NS_NCBI::SNcbiTestUserFuncReg                            \
-NCBITEST_AUTOREG_OBJ(&NCBITEST_AUTOREG_HELPER, ::NCBI_NS_NCBI::type);  \
-static void NCBITEST_AUTOREG_FUNC(type)(::NCBI_NS_NCBI::param_decl)
+#define NCBITEST_AUTOREG_PARAMFUNC(type, param_decl, param_func)    \
+static void NCBITEST_AUTOREG_FUNC(type)(::ncbi::param_decl);        \
+static void NCBITEST_AUTOREG_HELPER(void)                           \
+{                                                                   \
+    NCBITEST_AUTOREG_FUNC(type)(::ncbi::param_func());              \
+}                                                                   \
+static ::ncbi::SNcbiTestUserFuncReg                                 \
+NCBITEST_AUTOREG_OBJ(&NCBITEST_AUTOREG_HELPER, ::ncbi::type);       \
+static void NCBITEST_AUTOREG_FUNC(type)(::ncbi::param_decl)
 
 /// Extension auto-registrar from Boost.Test that can automatically set the
 /// timeout for unit.
