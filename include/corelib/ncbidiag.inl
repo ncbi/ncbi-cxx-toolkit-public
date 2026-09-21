@@ -385,8 +385,8 @@ const CNcbiDiag& CNcbiDiag::Put(const Severity*,
 }
 
 inline
-const CNcbiDiag& CNcbiDiag::Put(const NCBI_NS_NCBI::SetPostFlags*,
-                                const NCBI_NS_NCBI::SetPostFlags& flags) const
+const CNcbiDiag& CNcbiDiag::Put(const ncbi::SetPostFlags*,
+                                const ncbi::SetPostFlags& flags) const
 {
     x_EndMess();
     SetPostFlags(flags.m_Flags);
