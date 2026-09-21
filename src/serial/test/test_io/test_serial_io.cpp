@@ -93,27 +93,27 @@ public:
 
     void Select(E_Choice index, EResetVariant reset, CObjectMemoryPool* pool)
     {
-        if (reset == NCBI_NS_NCBI::eDoResetVariant || m_choice != index) {
+        if (reset == ncbi::eDoResetVariant || m_choice != index) {
             if (m_choice != e_not_set)
                 ResetSelection();
             DoSelect(index, pool);
         }
     }
 
-    void DoSelect(E_Choice index, NCBI_NS_NCBI::CObjectMemoryPool* /*pool*/)
+    void DoSelect(E_Choice index, ncbi::CObjectMemoryPool* /*pool*/)
     {
         m_choice = index;
     }
 
     void SetStr(const string& str)
     {
-        Select(e_Str, NCBI_NS_NCBI::eDoNotResetVariant);
+        Select(e_Str, ncbi::eDoNotResetVariant);
         m_Str = str;
     }
 
     void SetInt(int i)
     {
-        Select(e_Int, NCBI_NS_NCBI::eDoNotResetVariant);
+        Select(e_Int, ncbi::eDoNotResetVariant);
         m_Int = i;
     }
 
@@ -200,33 +200,33 @@ public:
 
     void Select(E_Choice index, EResetVariant reset, CObjectMemoryPool* pool)
     {
-        if (reset == NCBI_NS_NCBI::eDoResetVariant || m_choice != index) {
+        if (reset == ncbi::eDoResetVariant || m_choice != index) {
             if (m_choice != e_not_set)
                 ResetSelection();
             DoSelect(index, pool);
         }
     }
 
-    void DoSelect(E_Choice index, NCBI_NS_NCBI::CObjectMemoryPool* /*pool*/)
+    void DoSelect(E_Choice index, ncbi::CObjectMemoryPool* /*pool*/)
     {
         m_choice = index;
     }
 
     void SetStr(const string& str)
     {
-        Select(e_Str, NCBI_NS_NCBI::eDoNotResetVariant);
+        Select(e_Str, ncbi::eDoNotResetVariant);
         m_Str = str;
     }
 
     void SetInt(int i)
     {
-        Select(e_Int, NCBI_NS_NCBI::eDoNotResetVariant);
+        Select(e_Int, ncbi::eDoNotResetVariant);
         m_Int = i;
     }
 
     void SetBool(bool b)
     {
-        Select(e_Bool, NCBI_NS_NCBI::eDoNotResetVariant);
+        Select(e_Bool, ncbi::eDoNotResetVariant);
         m_Bool = b;
     }
 
