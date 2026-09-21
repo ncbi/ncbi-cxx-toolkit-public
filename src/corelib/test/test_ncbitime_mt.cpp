@@ -62,7 +62,7 @@ void s_failed_assert_equal(const A& a, const B& b,
                            const char* aexpr, const char* bexpr,
                            const char* file, int line)
 {
-    using namespace NCBI_NS_NCBI;
+    using namespace ncbi;
     EndmFatal(CNcbiDiag(CDiagCompileInfo(file, line)).GetRef()
               << "assert_equal("<<aexpr<<", "<<bexpr<<") failed: "
               << a << " != " << b);

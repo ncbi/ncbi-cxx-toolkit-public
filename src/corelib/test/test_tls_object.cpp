@@ -150,7 +150,7 @@ void message(const char* msg,
     }
     CCurrentProcess::SMemoryUsage mem;
     if ( CCurrentProcess::GetMemoryUsage(mem) ) {
-        NCBI_NS_NCBI::CFastMutexGuard guard(s_MemMutex);
+        ncbi::CFastMutexGuard guard(s_MemMutex);
         max_total = max(max_total, mem.total);
         max_resident = max(max_resident, mem.resident);
         max_shared = max(max_shared, mem.shared);
@@ -366,7 +366,7 @@ TTlsKey sx_GetLastNewPtrMultipleKey(void)
     auto key = sx_GetLastNewPtrMultipleCurrentKey();
     if ( !key ) {
         DEFINE_STATIC_FAST_MUTEX(s_InitMutex);
-        NCBI_NS_NCBI::CFastMutexGuard guard(s_InitMutex);
+        ncbi::CFastMutexGuard guard(s_InitMutex);
         key = s_LastNewPtrMultiple_key.load(memory_order_acquire);
         if ( !key ) {
             do {
@@ -1039,7 +1039,7 @@ bool CTestTlsObjectApp::TestApp_Init(void)
 bool CTestTlsObjectApp::TestApp_Exit(void)
 {
     check_cnts(~0u);
-    NCBI_NS_NCBI::CFastMutexGuard guard(s_MemMutex);
+    ncbi::CFastMutexGuard guard(s_MemMutex);
     LOG_POST("Max memory VS: " << (double)max_total/(1024*1024.) << " MB" <<
              " RSS: " << (double)max_resident/(1024*1024.) << " MB" <<
              " SHR: " << (double)max_shared/(1024*1024.) << " MB");
