@@ -197,7 +197,7 @@ x_Practically_Equal(const TFloat v1, const TFloat v2)
     return d <= allowed;
 }
 
-EMPTY_TEMPLATE
+template<>
 bool CPrimitiveTypeFunctions<double>::Equals(TConstObjectPtr obj1,
                                              TConstObjectPtr obj2,
                                              ESerialRecursionMode)
@@ -214,7 +214,7 @@ bool CPrimitiveTypeFunctions<double>::Equals(TConstObjectPtr obj1,
 #  define FLT_EPSILON EPSILON(FLT_DIG)
 #endif
 
-EMPTY_TEMPLATE
+template<>
 bool CPrimitiveTypeFunctions<float>::Equals(TConstObjectPtr obj1,
                                             TConstObjectPtr obj2,
                                             ESerialRecursionMode)
@@ -229,7 +229,7 @@ bool CPrimitiveTypeFunctions<float>::Equals(TConstObjectPtr obj1,
 
 #if SIZEOF_LONG_DOUBLE != 0
 
-EMPTY_TEMPLATE
+template<>
 bool CPrimitiveTypeFunctions<long double>::Equals(TConstObjectPtr obj1,
                                                   TConstObjectPtr obj2,
                                                   ESerialRecursionMode)
@@ -1167,27 +1167,27 @@ public:
         }
 };
 
-EMPTY_TEMPLATE
+template<>
 void CStringFunctions<utf8_string_type>::Read(CObjectIStream& in,
                     TTypeInfo , TObjectPtr objectPtr)
     {
         in.ReadString( CTypeConverter<CStringUTF8>::Get(objectPtr), eStringTypeUTF8);
     }
-EMPTY_TEMPLATE
+template<>
 void CStringFunctions<utf8_string_type>::Write(CObjectOStream& out,
                     TTypeInfo , TConstObjectPtr objectPtr)
     {
         out.WriteString( CTypeConverter<CStringUTF8>::Get(objectPtr), eStringTypeUTF8);
     }
 
-EMPTY_TEMPLATE
+template<>
 void CStringFunctions<utf8_string_type>::Copy(CObjectStreamCopier& copier,
                                          TTypeInfo )
 {
     copier.CopyString(eStringTypeUTF8);
 }
 
-EMPTY_TEMPLATE
+template<>
 void CStringFunctions<utf8_string_type>::Skip(CObjectIStream& in, TTypeInfo )
 {
     in.SkipString(eStringTypeUTF8);

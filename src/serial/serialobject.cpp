@@ -298,19 +298,19 @@ void CSerialObject::ThrowUnassigned(TMemberIndex index,
         }
 // set temporary diag compile info to use argument file name and line
 #undef DIAG_COMPILE_INFO
-#define DIAG_COMPILE_INFO                                               \
-        NCBI_NS_NCBI::CDiagCompileInfo(file_name? file_name: __FILE__,  \
-                                       file_line? file_line: __LINE__,  \
-                                       NCBI_CURRENT_FUNCTION,           \
-                                       NCBI_MAKE_MODULE(NCBI_MODULE))
+#define DIAG_COMPILE_INFO                                       \
+        ncbi::CDiagCompileInfo(file_name? file_name: __FILE__,  \
+                               file_line? file_line: __LINE__,  \
+                               NCBI_CURRENT_FUNCTION,           \
+                               NCBI_MAKE_MODULE(NCBI_MODULE))
         NCBI_THROW(CUnassignedMember,eGet,CNcbiOstrstreamToString(s));
 // restore original diag compile info definition
 #undef DIAG_COMPILE_INFO
-#define DIAG_COMPILE_INFO                                               \
-        NCBI_NS_NCBI::CDiagCompileInfo(__FILE__,                        \
-                                       __LINE__,                        \
-                                       NCBI_CURRENT_FUNCTION,           \
-                                       NCBI_MAKE_MODULE(NCBI_MODULE))
+#define DIAG_COMPILE_INFO                                       \
+        ncbi::CDiagCompileInfo(__FILE__,                        \
+                               __LINE__,                        \
+                               NCBI_CURRENT_FUNCTION,           \
+                               NCBI_MAKE_MODULE(NCBI_MODULE))
     }
 }
 
