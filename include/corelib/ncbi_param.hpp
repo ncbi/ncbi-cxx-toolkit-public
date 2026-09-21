@@ -123,13 +123,13 @@ BEGIN_NCBI_SCOPE
 // 'ptype' is the final parameter type used to make the parser unique even
 // if the same enum is used by another parameter.
 #define X_NCBI_PARAM_ENUM_PARSER_DECL(type, ptype)                          \
-    EMPTY_TEMPLATE inline                                                   \
+    template<> inline                                                       \
     CParamParser< SParamEnumDescription< type >, ptype >::TValueType        \
     CParamParser< SParamEnumDescription< type >, ptype >::                  \
     StringToValue(const string&     str,                                    \
                   const TParamDesc& descr)                                  \
     { return CEnumParser< type, ptype >::StringToEnum(str, descr); }        \
-    EMPTY_TEMPLATE inline string                                            \
+    template<> inline string                                                \
     CParamParser< SParamEnumDescription< type >, ptype >::                  \
     ValueToString(const TValueType& val,                                    \
                   const TParamDesc& descr)                                  \
