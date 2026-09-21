@@ -890,11 +890,11 @@ public:
 
 #define DEFINE_STATIC_ARRAY_MAP_WITH_COPY(Type, Var, Array)             \
     static const Type (Var)((Array), sizeof(Array), __FILE__, __LINE__, \
-                            NCBI_NS_NCBI::NStaticArray::eCopyWarn_hide)
+                            ncbi::NStaticArray::eCopyWarn_hide)
 
 #define DEFINE_CLASS_STATIC_ARRAY_MAP_WITH_COPY(Type, Var, Array)       \
     const Type (Var)((Array), sizeof(Array), __FILE__, __LINE__,        \
-                     NCBI_NS_NCBI::NStaticArray::eCopyWarn_hide)
+                     ncbi::NStaticArray::eCopyWarn_hide)
 
 
 // Deprecated constructors (defined here to avoid GCC 3.3 parse errors)
