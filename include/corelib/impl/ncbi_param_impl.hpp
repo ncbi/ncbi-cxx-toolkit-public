@@ -257,7 +257,7 @@ string CParamParser<TDescription, TParam>::ValueToString(const TValueType& val,
 
 // CParamParser for string
 
-EMPTY_TEMPLATE
+template<>
 inline
 CParamParser< SParamDescription<string>, string>::TValueType
 CParamParser< SParamDescription<string>, string>::StringToValue(const string& str,
@@ -267,7 +267,7 @@ CParamParser< SParamDescription<string>, string>::StringToValue(const string& st
 }
 
 
-EMPTY_TEMPLATE
+template<>
 inline
 string
 CParamParser< SParamDescription<string>, string>::ValueToString(const string& val,
@@ -279,7 +279,7 @@ CParamParser< SParamDescription<string>, string>::ValueToString(const string& va
 
 // CParamParser for bool
 
-EMPTY_TEMPLATE
+template<>
 inline
 CParamParser< SParamDescription<bool>, bool>::TValueType
 CParamParser< SParamDescription<bool>, bool>::StringToValue(const string& str,
@@ -294,7 +294,7 @@ CParamParser< SParamDescription<bool>, bool>::StringToValue(const string& str,
 }
 
 
-EMPTY_TEMPLATE
+template<>
 inline
 string
 CParamParser< SParamDescription<bool>, bool>::ValueToString(const bool& val,
@@ -305,7 +305,7 @@ CParamParser< SParamDescription<bool>, bool>::ValueToString(const bool& val,
 
 // CParamParser for double
 
-EMPTY_TEMPLATE
+template<>
 inline
 CParamParser< SParamDescription<double>, double>::TValueType
 CParamParser< SParamDescription<double>, double>::StringToValue(const string& str,
@@ -317,7 +317,7 @@ CParamParser< SParamDescription<double>, double>::StringToValue(const string& st
 }
 
 
-EMPTY_TEMPLATE
+template<>
 inline
 string
 CParamParser< SParamDescription<double>, double>::ValueToString(const double& val,
