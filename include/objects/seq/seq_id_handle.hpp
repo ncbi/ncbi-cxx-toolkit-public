@@ -390,8 +390,8 @@ END_NCBI_SCOPE
 
 BEGIN_STD_SCOPE
 inline 
-void swap(NCBI_NS_NCBI::objects::CSeq_id_Handle& idh1,
-          NCBI_NS_NCBI::objects::CSeq_id_Handle& idh2)
+void swap(ncbi::objects::CSeq_id_Handle& idh1,
+          ncbi::objects::CSeq_id_Handle& idh2)
 {
     idh1.Swap(idh2);
 }
