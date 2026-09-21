@@ -56,11 +56,11 @@ BEGIN_NCBI_NAMESPACE;
 
 /// Empty "C" string (points to a '\0').
 NCBI_XNCBI_EXPORT extern const char *const kEmptyCStr;
-#define NcbiEmptyCStr NCBI_NS_NCBI::kEmptyCStr
+#define NcbiEmptyCStr ncbi::kEmptyCStr
 
 #if defined(HAVE_WSTRING)
 NCBI_XNCBI_EXPORT extern const wchar_t *const kEmptyWCStr;
-#define NcbiEmptyWCStr NCBI_NS_NCBI::kEmptyWCStr
+#define NcbiEmptyWCStr ncbi::kEmptyWCStr
 #endif
 
 /// Empty "C++" string.
@@ -89,18 +89,18 @@ public:
 #endif
 
 
-#define NcbiEmptyString NCBI_NS_NCBI::CNcbiEmptyString::Get()
+#define NcbiEmptyString ncbi::CNcbiEmptyString::Get()
 #define kEmptyStr NcbiEmptyString
 
 #if defined(HAVE_WSTRING)
-#  define NcbiEmptyWString NCBI_NS_NCBI::CNcbiEmptyWString::Get()
+#  define NcbiEmptyWString ncbi::CNcbiEmptyWString::Get()
 #  define kEmptyWStr NcbiEmptyWString
 #endif
 
 // SIZE_TYPE and NPOS
 
-typedef NCBI_NS_STD::string::size_type SIZE_TYPE;
-#define NPOS NCBI_NS_STD::string::npos
+typedef std::string::size_type SIZE_TYPE;
+#define NPOS std::string::npos
 
 
 
