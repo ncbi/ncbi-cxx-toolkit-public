@@ -714,7 +714,7 @@ typedef CDB_UserHandler_Diag CDB_UserHandler_Default;
 /// database error code and message string.
 #define NCBI_DATABASE_THROW( exception_class, message, err_code, severity ) \
     do { \
-        NCBI_NS_NCBI::CDB_Exception::MakeException<exception_class>( \
+        ncbi::CDB_Exception::MakeException<exception_class>( \
             DIAG_COMPILE_INFO, (message), severity, err_code); \
     } while(0)
 #define NCBI_DATABASE_RETHROW( prev_exception, exception_class, message, \
