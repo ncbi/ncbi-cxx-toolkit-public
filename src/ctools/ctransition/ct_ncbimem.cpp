@@ -747,7 +747,7 @@ NLM_EXTERN Nlm_MemMapPtr Nlm_MemMapInit(const Nlm_Char PNTR name)
     return NULL;
 
   for (;;) {{ /* (quasi-TRY block) */
-    if ((mem_mapp->file_size = NCBI_NS_NCBI::CFile(name).GetLength()) < 0)
+    if ((mem_mapp->file_size = ncbi::CFile(name).GetLength()) < 0)
       break;
 
     if (mem_mapp->file_size == 0) /* Special case */
