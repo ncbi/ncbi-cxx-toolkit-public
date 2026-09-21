@@ -887,7 +887,7 @@ inline const Type& s_ITERATE_ConstRef(const Type& obj)
 {
     return obj;
 }
-#define ITERATE_CONST(Cont) NCBI_NS_NCBI::s_ITERATE_ConstRef(Cont)
+#define ITERATE_CONST(Cont) ncbi::s_ITERATE_ConstRef(Cont)
 
 // *ITERATE helper to verify that the container isn't a temporary object
 #ifdef _DEBUG
@@ -896,8 +896,8 @@ inline bool s_ITERATE_SameObject(const Type& obj1, const Type& obj2)
 {
     return &obj1 == &obj2;
 }
-# define ITERATE_BEGIN(Cont, Begin)                                     \
-    (NCBI_ASSERT_EXPR(NCBI_NS_NCBI::s_ITERATE_SameObject(Cont, Cont),   \
+# define ITERATE_BEGIN(Cont, Begin)                             \
+    (NCBI_ASSERT_EXPR(ncbi::s_ITERATE_SameObject(Cont, Cont),   \
                       "rvalue container in *ITERATE"), (Cont).Begin())
 #else
 # define ITERATE_BEGIN(Cont, Begin) ((Cont).Begin())
@@ -1444,7 +1444,7 @@ private:
 /// put new macro:
 ///   DECLARE_SAFE_FLAGS_TYPE(EFlags, TFlags);
 #define DECLARE_SAFE_FLAGS_TYPE(E, T)           \
-    typedef NCBI_NS_NCBI::CSafeFlags<E> T
+    typedef ncbi::CSafeFlags<E> T
 
 /// Macro DECLARE_SAFE_FLAGS marks a enum as safe-flags enum.
 /// The argument is the enum name.
@@ -1452,14 +1452,14 @@ private:
 /// must be placed outside the class definition:
 ///   DECLARE_SAFE_FLAGS(CMyClass::EFlags);
 #define DECLARE_SAFE_FLAGS(E)                          \
-inline NCBI_NS_NCBI::CSafeFlags<E> operator|(E a, E b) \
-{ return NCBI_NS_NCBI::CSafeFlags<E>(a) | b; }         \
-inline NCBI_NS_NCBI::CSafeFlags<E> operator&(E a, E b) \
-{ return NCBI_NS_NCBI::CSafeFlags<E>(a) & b; }         \
-inline NCBI_NS_NCBI::CSafeFlags<E> operator^(E a, E b) \
-{ return NCBI_NS_NCBI::CSafeFlags<E>(a) ^ b; }         \
-inline NCBI_NS_NCBI::CSafeFlags<E> operator~(E a)      \
-{ return ~NCBI_NS_NCBI::CSafeFlags<E>(a); }
+inline ncbi::CSafeFlags<E> operator|(E a, E b) \
+{ return ncbi::CSafeFlags<E>(a) | b; }         \
+inline ncbi::CSafeFlags<E> operator&(E a, E b) \
+{ return ncbi::CSafeFlags<E>(a) & b; }         \
+inline ncbi::CSafeFlags<E> operator^(E a, E b) \
+{ return ncbi::CSafeFlags<E>(a) ^ b; }         \
+inline ncbi::CSafeFlags<E> operator~(E a)      \
+{ return ~ncbi::CSafeFlags<E>(a); }
 
 /// Helper operators for safe-flags enums.
 /// These operators will be used only for enums marked
@@ -1485,7 +1485,7 @@ ostream& operator<<(ostream& out, const CSafeFlags<E>& v)
 #else // NCBI_ENABLE_SAFE_FLAGS
 // backup implementation of safe flag macros
 # define DECLARE_SAFE_FLAGS_TYPE(Enum,Typedef) typedef underlying_type<Enum>::type Typedef
-# define DECLARE_SAFE_FLAGS(Enum) NCBI_EAT_SEMICOLON(safe_flags)
+# define DECLARE_SAFE_FLAGS(Enum) 
 #endif // NCBI_ENABLE_SAFE_FLAGS
 
 
@@ -1613,8 +1613,8 @@ BEGIN_STD_NAMESPACE;
 
 template<class T1, class T2>
 inline
-void swap(NCBI_NS_NCBI::pair_base_member<T1,T2>& pair1,
-          NCBI_NS_NCBI::pair_base_member<T1,T2>& pair2) noexcept
+void swap(ncbi::pair_base_member<T1,T2>& pair1,
+          ncbi::pair_base_member<T1,T2>& pair2) noexcept
 {
     pair1.Swap(pair2);
 }
@@ -1622,8 +1622,8 @@ void swap(NCBI_NS_NCBI::pair_base_member<T1,T2>& pair1,
 
 template<class P, class D>
 inline
-void swap(NCBI_NS_NCBI::AutoPtr<P,D>& ptr1,
-          NCBI_NS_NCBI::AutoPtr<P,D>& ptr2) noexcept
+void swap(ncbi::AutoPtr<P,D>& ptr1,
+          ncbi::AutoPtr<P,D>& ptr2) noexcept
 {
     ptr1.Swap(ptr2);
 }
