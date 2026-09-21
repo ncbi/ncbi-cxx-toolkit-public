@@ -92,7 +92,7 @@ public:
 #if defined(NCBI_COUNTER_USE_ASM)
     static TValue x_Add(volatile TValue* value, int delta) noexcept;
 #  if !defined(NCBI_COUNTER_ADD)
-#     define NCBI_COUNTER_ADD(value, delta) NCBI_NS_NCBI::CAtomicCounter::x_Add((value), (delta))
+#     define NCBI_COUNTER_ADD(value, delta) ncbi::CAtomicCounter::x_Add((value), (delta))
 #  endif
 #endif
 
