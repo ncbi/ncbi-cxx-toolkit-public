@@ -53,7 +53,7 @@ BEGIN_NCBI_SCOPE
 #  define xncbi_Validate(expression, message) \
     do { \
         if ( !(expression) ) \
-            NCBI_NS_NCBI::CNcbiDiag::DiagValidate(DIAG_COMPILE_INFO, #expression, message); \
+            ncbi::CNcbiDiag::DiagValidate(DIAG_COMPILE_INFO, #expression, message); \
     } while ( 0 )
 
 
@@ -64,7 +64,7 @@ BEGIN_NCBI_SCOPE
             ext_message += " (errno=" + NStr::NumericToString(NCBI_ERRNO_CODE_WRAPPER()) + \
                            ": " + \
                            string(NCBI_ERRNO_STR_WRAPPER(NCBI_ERRNO_CODE_WRAPPER())) + ")"; \
-            NCBI_NS_NCBI::CNcbiDiag::DiagValidate(DIAG_COMPILE_INFO, #expression, ext_message.c_str()); \
+            ncbi::CNcbiDiag::DiagValidate(DIAG_COMPILE_INFO, #expression, ext_message.c_str()); \
         } \
     } while ( 0 )
 
@@ -86,7 +86,7 @@ BEGIN_NCBI_SCOPE
                     msg += " errno=" + NStr::NumericToString(errno); \
                 } \
                 msg += ")"; \
-                NCBI_NS_NCBI::CNcbiDiag::DiagValidate(DIAG_COMPILE_INFO, #expression, msg.c_str()); \
+                ncbi::CNcbiDiag::DiagValidate(DIAG_COMPILE_INFO, #expression, msg.c_str()); \
             } \
         } while ( 0 )
 #endif
