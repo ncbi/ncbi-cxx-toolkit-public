@@ -69,18 +69,18 @@ enum ErrSev { SEV_NONE=0, SEV_INFO, SEV_WARNING, SEV_ERROR, SEV_REJECT, SEV_FATA
 #define ErrSetLog  SetLogFile
 
 // Convert C Toolkit severity to C++
-extern NCBI_NS_NCBI::Severity ctransition_ErrSeverity(ErrSev sev);
+extern ncbi::Severity ctransition_ErrSeverity(ErrSev sev);
 
 // Convert variable list of arguments to string
 extern std::string  ctransition_ErrMessage(const char* format, ...);
 
 // Post message
-#define ErrPostEx(sev, err_code, ...)                      \
-    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO).GetRef()  \
-      << NCBI_NS_NCBI::ErrCode(err_code)                   \
-      << ctransition_ErrSeverity(sev)                      \
-      << ctransition_ErrMessage(__VA_ARGS__)               \
-      << NCBI_NS_NCBI::Endm )
+#define ErrPostEx(sev, err_code, ...)              \
+    ( ncbi::CNcbiDiag(DIAG_COMPILE_INFO).GetRef()  \
+      << ncbi::ErrCode(err_code)                   \
+      << ctransition_ErrSeverity(sev)              \
+      << ctransition_ErrMessage(__VA_ARGS__)       \
+      << ncbi::Endm )
 
 
 // Redefine message function via ErrPostEx()
