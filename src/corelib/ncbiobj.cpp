@@ -220,7 +220,7 @@ TTlsKey sx_GetLastNewPtrMultipleKey(void)
     auto key = sx_GetLastNewPtrMultipleCurrentKey();
     if ( !key ) {
         DEFINE_STATIC_FAST_MUTEX(s_InitMutex);
-        NCBI_NS_NCBI::CFastMutexGuard guard(s_InitMutex);
+        ncbi::CFastMutexGuard guard(s_InitMutex);
         key = s_LastNewPtrMultiple_key.load(memory_order_acquire);
         if ( !key ) {
             do {
@@ -1384,7 +1384,7 @@ static const unsigned kFreedMagicHeader = 0x8b0bdead;
 static const unsigned kFreedMagicFooter = 0x9e0edead;
 
 DEFINE_STATIC_FAST_MUTEX(s_alloc_mutex);
-static NCBI_NS_NCBI::CAtomicCounter seq_number;
+static ncbi::CAtomicCounter seq_number;
 static const size_t kLogSize = 64 * 1024;
 struct SAllocLog {
     unsigned seq_number;
@@ -1496,7 +1496,7 @@ void* s_alloc_mem(size_t size, bool array) throw()
 
     SAllocHeader* header;
     {{
-        NCBI_NS_NCBI::CFastMutexGuard guard(s_alloc_mutex);
+        ncbi::CFastMutexGuard guard(s_alloc_mutex);
         header = (SAllocHeader*)std::malloc(get_total_size(size));
     }}
     if ( !header ) {
@@ -1565,7 +1565,7 @@ void s_free_mem(void* ptr, bool array)
         }
         static bool no_free = s_EnvFlag("DEBUG_NEW_NO_FREE_ON_DELETE");
         if ( !no_free ) {
-            NCBI_NS_NCBI::CFastMutexGuard guard(s_alloc_mutex);
+            ncbi::CFastMutexGuard guard(s_alloc_mutex);
             std::free(header);
         }
     }
