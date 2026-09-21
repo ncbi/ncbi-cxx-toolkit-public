@@ -555,7 +555,7 @@ public:
 };
 
 
-EMPTY_TEMPLATE
+template<>
 inline
 void CBlockingQueue<CRef<CStdRequest> >::CQueueItem::x_SetStatus
 (EStatus new_status)
