@@ -174,7 +174,7 @@ void CTimeTypeInfo::SetValueString(TObjectPtr object,
  */
 
 
-EMPTY_TEMPLATE
+template<>
 class CStdTypeInfo<CTime>
 {
 public:

@@ -172,7 +172,7 @@ class CStdTypeInfo
 {
 };
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<bool>
 {
 public:
@@ -182,7 +182,7 @@ public:
     static CTypeInfo* CreateTypeInfoNullBool(void);
 };
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<char>
 {
 public:
@@ -190,7 +190,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<signed char>
 {
 public:
@@ -198,7 +198,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<unsigned char>
 {
 public:
@@ -206,7 +206,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<short>
 {
 public:
@@ -214,7 +214,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<unsigned short>
 {
 public:
@@ -222,7 +222,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<int>
 {
 public:
@@ -230,7 +230,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<unsigned>
 {
 public:
@@ -239,7 +239,7 @@ public:
 };
 
 #ifndef NCBI_INT8_IS_LONG
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<long>
 {
 public:
@@ -247,7 +247,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<unsigned long>
 {
 public:
@@ -256,7 +256,7 @@ public:
 };
 #endif
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<Int8>
 {
 public:
@@ -264,7 +264,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<Uint8>
 {
 public:
@@ -272,7 +272,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<float>
 {
 public:
@@ -280,7 +280,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<double>
 {
 public:
@@ -289,7 +289,7 @@ public:
 };
 
 #if SIZEOF_LONG_DOUBLE != 0
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<long double>
 {
 public:
@@ -298,7 +298,7 @@ public:
 };
 #endif
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<string>
 {
 public:
@@ -310,7 +310,7 @@ public:
 
 class utf8_string_type {
 };
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<utf8_string_type>
 {
 public:
@@ -320,7 +320,7 @@ public:
 
 class bigint_type {
 };
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<bigint_type>
 {
 public:
@@ -328,7 +328,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<char*>
 {
 public:
@@ -336,7 +336,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<const char*>
 {
 public:
@@ -344,7 +344,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo< vector<char> >
 {
 public:
@@ -352,7 +352,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo< vector<signed char> >
 {
 public:
@@ -360,7 +360,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo< vector<unsigned char> >
 {
 public:
@@ -368,7 +368,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<ncbi::CAnyContentObject>
 {
 public:
@@ -376,7 +376,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-EMPTY_TEMPLATE
+template<>
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<CBitString>
 {
 public:

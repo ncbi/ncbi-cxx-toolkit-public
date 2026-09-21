@@ -110,59 +110,59 @@ GetOldAsnTypeRef(const string& name,
 #define BEGIN_NAMED_ASN_STRUCT_INFO(AsnStructAlias, AsnStructName) \
     BEGIN_TYPE_INFO(NCBI_NAME2(struct_,AsnStructName), \
         ASN_STRUCT_METHOD_NAME(AsnStructName), \
-        NCBI_NS_NCBI::CClassTypeInfo, \
-        NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateAsnStructInfo(AsnStructAlias))
+        ncbi::CClassTypeInfo, \
+        ncbi::CClassInfoHelper<CClass>::CreateAsnStructInfo(AsnStructAlias))
 #define BEGIN_ASN_STRUCT_INFO(AsnStructName) \
     BEGIN_NAMED_ASN_STRUCT_INFO(#AsnStructName, AsnStructName)
 #define END_ASN_STRUCT_INFO \
     END_STRUCT_INFO
 
 #define SET_ASN_STRUCT_MODULE(ModuleName) \
-    NCBI_NS_NCBI::SetModuleName(info, ModuleName)
+    ncbi::SetModuleName(info, ModuleName)
 
 #define BEGIN_NAMED_ASN_CHOICE_INFO(AsnChoiceAlias, AsnChoiceName) \
     BEGIN_TYPE_INFO(valnode, \
         ASN_STRUCT_METHOD_NAME(AsnChoiceName), \
-        NCBI_NS_NCBI::CChoiceTypeInfo, \
-        NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateAsnChoiceInfo(AsnChoiceAlias))
+        ncbi::CChoiceTypeInfo, \
+        ncbi::CClassInfoHelper<CClass>::CreateAsnChoiceInfo(AsnChoiceAlias))
 #define BEGIN_ASN_CHOICE_INFO(AsnChoiceName) \
     BEGIN_NAMED_ASN_CHOICE_INFO(#AsnChoiceName, AsnChoiceName)
 
 #define SET_ASN_CHOICE_MODULE(ModuleName) \
-    NCBI_NS_NCBI::SetModuleName(info, ModuleName)
+    ncbi::SetModuleName(info, ModuleName)
 
 #define END_ASN_CHOICE_INFO \
     END_STRUCT_INFO
 
 // adding old ASN members
 #define ADD_NAMED_ASN_MEMBER(MemberAlias, MemberName, AsnTypeKind) \
-    NCBI_NS_NCBI::AddMember(info,MemberAlias,MEMBER_PTR(MemberName),\
+    ncbi::AddMember(info,MemberAlias,MEMBER_PTR(MemberName),\
         NCBI_NAME3(Get,AsnTypeKind,TypeRef)(MEMBER_PTR(MemberName)))
 #define ADD_ASN_MEMBER(MemberName, AsnTypeKind) \
     ADD_NAMED_ASN_MEMBER(#MemberName, MemberName, AsnTypeKind)
 
 #define ADD_NAMED_OLD_ASN_MEMBER(MemberAlias, MemberName, AsnTypeAlias, AsnTypeName) \
-    NCBI_NS_NCBI::AddMember(info,MemberAlias,MEMBER_PTR(MemberName), \
-    NCBI_NS_NCBI::GetOldAsnTypeRef(AsnTypeAlias, \
+    ncbi::AddMember(info,MemberAlias,MEMBER_PTR(MemberName), \
+    ncbi::GetOldAsnTypeRef(AsnTypeAlias, \
         &NCBI_NAME2(AsnTypeName,New), &NCBI_NAME2(AsnTypeName,Free), \
         &NCBI_NAME2(AsnTypeName,AsnRead), &NCBI_NAME2(AsnTypeName,AsnWrite)))
 #define ADD_OLD_ASN_MEMBER(MemberName, AsnTypeName) \
     ADD_NAMED_OLD_ASN_MEMBER(#MemberName, MemberName, #AsnTypeName, AsnTypeName)
 
 #define ADD_NAMED_ASN_CHOICE_MEMBER(MemberAlias, MemberName, AsnChoiceName) \
-    NCBI_NS_NCBI::AddMember(info,MemberAlias,MEMBER_PTR(MemberName), \
-    NCBI_NS_NCBI::GetChoiceTypeRef(ASN_STRUCT_METHOD_NAME(AsnChoiceName)))
+    ncbi::AddMember(info,MemberAlias,MEMBER_PTR(MemberName), \
+    ncbi::GetChoiceTypeRef(ASN_STRUCT_METHOD_NAME(AsnChoiceName)))
 #define ADD_ASN_CHOICE_MEMBER(MemberName, AsnChoiceName) \
     ADD_NAMED_ASN_CHOICE_MEMBER(#MemberName, MemberName, AsnChoiceName)
 
 #define ADD_NAMED_ASN_CHOICE_STD_VARIANT(VariantAlias, AsnTypeName) \
-    NCBI_NS_NCBI::AddVariant(info,VariantAlias, \
+    ncbi::AddVariant(info,VariantAlias, \
         MEMBER_PTR(data.NCBI_NAME2(AsnTypeName,value)), \
         GetStdTypeInfoGetter(MEMBER_PTR(data.NCBI_NAME2(AsnTypeName,value))))
 #define ADD_ASN_CHOICE_STD_VARIANT(VariantName, AsnTypeName) \
     ADD_NAMED_ASN_CHOICE_STD_VARIANT(#VariantName, AsnTypeName)
 #define ADD_NAMED_ASN_CHOICE_VARIANT(VariantAlias, AsnTypeKind, AsnTypeName) \
-    NCBI_NS_NCBI::AddVariant(info,VariantAlias, \
+    ncbi::AddVariant(info,VariantAlias, \
         MEMBER_PTR(data.ptrvalue), \
         NCBI_NAME3(Get,AsnTypeKind,TypeRef)(reinterpret_cast<NCBI_NAME2(struct_,AsnTypeName)*const*>(MEMBER_PTR(data.ptrvalue))))
 #define ADD_ASN_CHOICE_VARIANT(VariantName, AsnTypeKind, AsnTypeName) \

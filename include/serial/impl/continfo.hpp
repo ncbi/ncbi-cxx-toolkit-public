@@ -85,7 +85,7 @@ public:
         CConstIterator(void);
         ~CConstIterator(void);
 
-        typedef NCBI_NS_NCBI::TConstObjectPtr TObjectPtr;
+        typedef ncbi::TConstObjectPtr TObjectPtr;
 
         const CContainerTypeInfo* GetContainerType(void) const;
         TObjectPtr GetContainerPtr(void) const;
@@ -102,7 +102,7 @@ public:
         CIterator(void);
         ~CIterator(void);
 
-        typedef NCBI_NS_NCBI::TObjectPtr TObjectPtr;
+        typedef ncbi::TObjectPtr TObjectPtr;
 
         const CContainerTypeInfo* GetContainerType(void) const;
         TObjectPtr GetContainerPtr(void) const;

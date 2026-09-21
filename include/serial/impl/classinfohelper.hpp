@@ -166,7 +166,7 @@ public:
         {
             typedef typename CClassType::E_Choice E_Choice;
             if (WhichChoice(choiceType,choicePtr) != index) {
-                Get(choicePtr).Select(E_Choice(index + eMemberIndexToGeneratedChoice), NCBI_NS_NCBI::eDoResetVariant, memPool);
+                Get(choicePtr).Select(E_Choice(index + eMemberIndexToGeneratedChoice), ncbi::eDoResetVariant, memPool);
             }
         }
     static void SelectDelayBuffer(const CChoiceTypeInfo* /*choiceType*/,
@@ -177,7 +177,7 @@ public:
             Get(choicePtr).SelectDelayBuffer(E_Choice(index + eMemberIndexToGeneratedChoice));
         }
 
-    static void SetReadWriteMethods(NCBI_NS_NCBI::CClassTypeInfo* info)
+    static void SetReadWriteMethods(ncbi::CClassTypeInfo* info)
         {
             const CClassType* object = 0;
             NCBISERSetPreRead(object, info);
@@ -185,7 +185,7 @@ public:
             NCBISERSetPreWrite(object, info);
             NCBISERSetPostWrite(object, info);
         }
-    static void SetReadWriteMethods(NCBI_NS_NCBI::CChoiceTypeInfo* info)
+    static void SetReadWriteMethods(ncbi::CChoiceTypeInfo* info)
         {
             const CClassType* object = 0;
             NCBISERSetPreRead(object, info);
@@ -193,13 +193,13 @@ public:
             NCBISERSetPreWrite(object, info);
             NCBISERSetPostWrite(object, info);
         }
-    static void SetReadWriteMemberMethods(NCBI_NS_NCBI::CClassTypeInfo* info)
+    static void SetReadWriteMemberMethods(ncbi::CClassTypeInfo* info)
         {
             const CClassType* object = 0;
             NCBISERSetGlobalReadMemberHook(object, info);
             NCBISERSetGlobalReadVariantHook(object, info);
         }
-    static void SetReadWriteVariantMethods(NCBI_NS_NCBI::CChoiceTypeInfo* info)
+    static void SetReadWriteVariantMethods(ncbi::CChoiceTypeInfo* info)
         {
             const CClassType* object = 0;
             NCBISERSetGlobalReadMemberHook(object, info);

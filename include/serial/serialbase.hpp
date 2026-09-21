@@ -946,8 +946,8 @@ template<class CInfo> \
 inline \
 void NCBISERSetPreRead(const Class* /*object*/, CInfo* info) \
 { \
-    NCBI_NS_NCBI::SetPreRead \
-        (info, &NCBI_NS_NCBI::CClassPrePostReadWrite<Class>::PreRead);\
+    ncbi::SetPreRead \
+        (info, &ncbi::CClassPrePostReadWrite<Class>::PreRead);\
 }
 
 #define NCBISER_HAVE_POST_READ(Class) \
@@ -955,8 +955,8 @@ template<class CInfo> \
 inline \
 void NCBISERSetPostRead(const Class* /*object*/, CInfo* info) \
 { \
-    NCBI_NS_NCBI::SetPostRead \
-        (info, &NCBI_NS_NCBI::CClassPrePostReadWrite<Class>::PostRead);\
+    ncbi::SetPostRead \
+        (info, &ncbi::CClassPrePostReadWrite<Class>::PostRead);\
 }
 
 #define NCBISER_HAVE_PRE_WRITE(Class) \
@@ -964,8 +964,8 @@ template<class CInfo> \
 inline \
 void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 { \
-    NCBI_NS_NCBI::SetPreWrite \
-        (info, &NCBI_NS_NCBI::CClassPrePostReadWrite<Class>::PreWrite);\
+    ncbi::SetPreWrite \
+        (info, &ncbi::CClassPrePostReadWrite<Class>::PreWrite);\
 }
 
 #define NCBISER_HAVE_POST_WRITE(Class) \
@@ -973,8 +973,8 @@ template<class CInfo> \
 inline \
 void NCBISERSetPostWrite(const Class* /*object*/, CInfo* info) \
 { \
-    NCBI_NS_NCBI::SetPostWrite \
-        (info, &NCBI_NS_NCBI::CClassPrePostReadWrite<Class>::PostWrite);\
+    ncbi::SetPostWrite \
+        (info, &ncbi::CClassPrePostReadWrite<Class>::PostWrite);\
 }
 
 #define NCBISER_HAVE_GLOBAL_READ_MEMBER_HOOK(Class, Name, Hook)         \
@@ -983,7 +983,7 @@ void NCBISERSetPostWrite(const Class* /*object*/, CInfo* info) \
     void NCBISERSetGlobalReadMemberHook(const Class* /*obj*/,           \
                                          CInfo* info)                   \
     {                                                                   \
-        NCBI_NS_NCBI::SetGlobalReadMemberHook(info, Name, Hook);        \
+        ncbi::SetGlobalReadMemberHook(info, Name, Hook);        \
     }
 
 #define NCBISER_HAVE_GLOBAL_READ_VARIANT_HOOK(Class, Name, Hook)        \
@@ -992,26 +992,26 @@ void NCBISERSetPostWrite(const Class* /*object*/, CInfo* info) \
     void NCBISERSetGlobalReadVariantHook(const Class* /*obj*/,          \
                                           CInfo* info)                  \
     {                                                                   \
-        NCBI_NS_NCBI::SetGlobalReadVariantHook(info, Name, Hook);       \
+        ncbi::SetGlobalReadVariantHook(info, Name, Hook);       \
     }
 
 // define for declaring specific function
 #define DECLARE_INTERNAL_TYPE_INFO() \
-    typedef const NCBI_NS_NCBI::CTypeInfo* TTypeInfo; \
+    typedef const ncbi::CTypeInfo* TTypeInfo; \
     virtual TTypeInfo GetThisTypeInfo(void) const { return GetTypeInfo(); } \
     static  TTypeInfo GetTypeInfo(void)
 
 #define ENUM_METHOD_NAME(EnumName) \
     NCBI_NAME2(GetTypeInfo_enum_,EnumName)
 #define DECLARE_ENUM_INFO(EnumName) \
-    const NCBI_NS_NCBI::CEnumeratedTypeValues* ENUM_METHOD_NAME(EnumName)(void)
+    const ncbi::CEnumeratedTypeValues* ENUM_METHOD_NAME(EnumName)(void)
 #define DECLARE_INTERNAL_ENUM_INFO(EnumName) \
     static DECLARE_ENUM_INFO(EnumName) /* NCBI_SAFE_STATIC */
 
 //#define DECLARE_STD_ALIAS_TYPE_INFO() DECLARE_INTERNAL_TYPE_INFO()
 #define DECLARE_STD_ALIAS_TYPE_INFO() \
-           const NCBI_NS_NCBI::CTypeInfo* GetThisTypeInfo(void) const { return GetTypeInfo(); } \
-    static const NCBI_NS_NCBI::CTypeInfo* GetTypeInfo(void) /* NCBI_SAFE_STATIC */
+           const ncbi::CTypeInfo* GetThisTypeInfo(void) const { return GetTypeInfo(); } \
+    static const ncbi::CTypeInfo* GetTypeInfo(void) /* NCBI_SAFE_STATIC */
 
 #if HAVE_NCBI_C
 
@@ -1020,12 +1020,12 @@ void NCBISERSetPostWrite(const Class* /*object*/, CInfo* info) \
     NCBI_NAME2(GetTypeInfo_struct_,AsnStructName)
 
 #define DECLARE_ASN_TYPE_INFO(AsnStructName) \
-    const NCBI_NS_NCBI::CTypeInfo* ASN_STRUCT_METHOD_NAME(AsnStructName)(void)
+    const ncbi::CTypeInfo* ASN_STRUCT_METHOD_NAME(AsnStructName)(void)
 #define DECLARE_ASN_STRUCT_INFO(AsnStructName) \
     struct ASN_STRUCT_NAME(AsnStructName); \
     DECLARE_ASN_TYPE_INFO(AsnStructName); \
     inline \
-    const NCBI_NS_NCBI::CTypeInfo* \
+    const ncbi::CTypeInfo* \
     GetAsnStructTypeInfo(const ASN_STRUCT_NAME(AsnStructName)* ) \
     { \
         return ASN_STRUCT_METHOD_NAME(AsnStructName)(); \

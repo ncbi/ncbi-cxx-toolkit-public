@@ -97,133 +97,133 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 #define SERIAL_REF_CLASS(ClassName) &ClassName::GetTypeInfo
 
 #define SERIAL_TYPE_STD(CType) CType
-#define SERIAL_REF_STD(CType) &NCBI_NS_NCBI::CStdTypeInfo<CType>::GetTypeInfo
+#define SERIAL_REF_STD(CType) &ncbi::CStdTypeInfo<CType>::GetTypeInfo
 
-#define SERIAL_TYPE_StringStore() NCBI_NS_STD::string
+#define SERIAL_TYPE_StringStore() std::string
 #define SERIAL_REF_StringStore() \
-    &NCBI_NS_NCBI::CStdTypeInfo<string>::GetTypeInfoStringStore
+    &ncbi::CStdTypeInfo<string>::GetTypeInfoStringStore
 
 #define SERIAL_TYPE_null() bool
 #define SERIAL_REF_null() \
-    &NCBI_NS_NCBI::CStdTypeInfo<bool>::GetTypeInfoNullBool
+    &ncbi::CStdTypeInfo<bool>::GetTypeInfoNullBool
 
-#define SERIAL_TYPE_CStringUTF8() NCBI_NS_NCBI::CStringUTF8
+#define SERIAL_TYPE_CStringUTF8() ncbi::CStringUTF8
 #define SERIAL_REF_CStringUTF8() \
-    &NCBI_NS_NCBI::CStdTypeInfo<NCBI_NS_NCBI::utf8_string_type>::GetTypeInfo
+    &ncbi::CStdTypeInfo<ncbi::utf8_string_type>::GetTypeInfo
 
 #define SERIAL_TYPE_BigInt() Int8
 #define SERIAL_REF_BigInt() \
-    &NCBI_NS_NCBI::CStdTypeInfo<NCBI_NS_NCBI::bigint_type>::GetTypeInfo
+    &ncbi::CStdTypeInfo<ncbi::bigint_type>::GetTypeInfo
 
 #define SERIAL_TYPE_ENUM(CType, EnumName) CType
 #define SERIAL_REF_ENUM(CType, EnumName) \
-    NCBI_NS_NCBI::CreateEnumeratedTypeInfo(CType(0), ENUM_METHOD_NAME(EnumName)())
+    ncbi::CreateEnumeratedTypeInfo(CType(0), ENUM_METHOD_NAME(EnumName)())
 
 #define SERIAL_TYPE_ENUM_IN(CType, CppContext, EnumName) CppContext CType
 #define SERIAL_REF_ENUM_IN(CType, CppContext, EnumName) \
-    NCBI_NS_NCBI::CreateEnumeratedTypeInfo(CppContext CType(0), CppContext ENUM_METHOD_NAME(EnumName)())
+    ncbi::CreateEnumeratedTypeInfo(CppContext CType(0), CppContext ENUM_METHOD_NAME(EnumName)())
 
 #define SERIAL_TYPE_POINTER(TypeMacro,TypeMacroArgs) \
     SERIAL_TYPE(TypeMacro)TypeMacroArgs*
 #define SERIAL_REF_POINTER(TypeMacro,TypeMacroArgs) \
-    &NCBI_NS_NCBI::CPointerTypeInfo::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
+    &ncbi::CPointerTypeInfo::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
 #define SERIAL_TYPE_STL_multiset(TypeMacro,TypeMacroArgs) \
-    NCBI_NS_STD::multiset<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
+    std::multiset<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
 #define SERIAL_REF_STL_multiset(TypeMacro,TypeMacroArgs) \
-    &NCBI_NS_NCBI::CStlClassInfo_multiset<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
+    &ncbi::CStlClassInfo_multiset<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
 #define SERIAL_TYPE_STL_set(TypeMacro,TypeMacroArgs) \
-    NCBI_NS_STD::set<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
+    std::set<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
 #define SERIAL_REF_STL_set(TypeMacro,TypeMacroArgs) \
-    &NCBI_NS_NCBI::CStlClassInfo_set<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
+    &ncbi::CStlClassInfo_set<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
 #define SERIAL_TYPE_STL_multiset2(TypeMacro,TypeMacroArgs,ComparatorType) \
-    NCBI_NS_STD::multiset<SERIAL_TYPE(TypeMacro)TypeMacroArgs, ComparatorType >
+    std::multiset<SERIAL_TYPE(TypeMacro)TypeMacroArgs, ComparatorType >
 #define SERIAL_REF_STL_multiset2(TypeMacro,TypeMacroArgs,ComparatorType) \
-    &NCBI_NS_NCBI::CStlClassInfo_multiset2<SERIAL_TYPE(TypeMacro)TypeMacroArgs,ComparatorType >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
+    &ncbi::CStlClassInfo_multiset2<SERIAL_TYPE(TypeMacro)TypeMacroArgs,ComparatorType >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
 #define SERIAL_TYPE_STL_set2(TypeMacro,TypeMacroArgs,ComparatorType)    \
-    NCBI_NS_STD::set<SERIAL_TYPE(TypeMacro)TypeMacroArgs,ComparatorType >
+    std::set<SERIAL_TYPE(TypeMacro)TypeMacroArgs,ComparatorType >
 #define SERIAL_REF_STL_set2(TypeMacro,TypeMacroArgs,ComparatorType)      \
-    &NCBI_NS_NCBI::CStlClassInfo_set2<SERIAL_TYPE(TypeMacro)TypeMacroArgs,ComparatorType >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
+    &ncbi::CStlClassInfo_set2<SERIAL_TYPE(TypeMacro)TypeMacroArgs,ComparatorType >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
 #define SERIAL_TYPE_STL_multimap(KeyTypeMacro,KeyTypeMacroArgs,ValueTypeMacro,ValueTypeMacroArgs) \
-    NCBI_NS_STD::multimap<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs >
+    std::multimap<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs >
 #define SERIAL_REF_STL_multimap(KeyTypeMacro,KeyTypeMacroArgs,ValueTypeMacro,ValueTypeMacroArgs) \
-    CTypeRef(&NCBI_NS_NCBI::CStlClassInfo_multimap<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs >::GetTypeInfo, SERIAL_REF(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_REF(ValueTypeMacro)ValueTypeMacroArgs)
+    CTypeRef(&ncbi::CStlClassInfo_multimap<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs >::GetTypeInfo, SERIAL_REF(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_REF(ValueTypeMacro)ValueTypeMacroArgs)
 
 #define SERIAL_TYPE_STL_map(KeyTypeMacro,KeyTypeMacroArgs,ValueTypeMacro,ValueTypeMacroArgs) \
-    NCBI_NS_STD::map<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs >
+    std::map<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs >
 #define SERIAL_REF_STL_map(KeyTypeMacro,KeyTypeMacroArgs,ValueTypeMacro,ValueTypeMacroArgs) \
-    CTypeRef(&NCBI_NS_NCBI::CStlClassInfo_map<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs >::GetTypeInfo, SERIAL_REF(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_REF(ValueTypeMacro)ValueTypeMacroArgs)
+    CTypeRef(&ncbi::CStlClassInfo_map<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs >::GetTypeInfo, SERIAL_REF(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_REF(ValueTypeMacro)ValueTypeMacroArgs)
 
 #define SERIAL_TYPE_STL_multimap3(KeyTypeMacro,KeyTypeMacroArgs,ValueTypeMacro,ValueTypeMacroArgs,ComparatorType) \
-    NCBI_NS_STD::multimap<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs, ComparatorType >
+    std::multimap<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs, ComparatorType >
 #define SERIAL_REF_STL_multimap3(KeyTypeMacro,KeyTypeMacroArgs,ValueTypeMacro,ValueTypeMacroArgs,ComparatorType) \
-    CTypeRef(NCBI_NS_NCBI::CStlClassInfo_multimap3<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs,ComparatorType >::GetTypeInfo, SERIAL_REF(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_REF(ValueTypeMacro)ValueTypeMacroArgs)
+    CTypeRef(ncbi::CStlClassInfo_multimap3<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs,ComparatorType >::GetTypeInfo, SERIAL_REF(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_REF(ValueTypeMacro)ValueTypeMacroArgs)
 
 #define SERIAL_TYPE_STL_map3(KeyTypeMacro,KeyTypeMacroArgs,ValueTypeMacro,ValueTypeMacroArgs,ComparatorType) \
-    NCBI_NS_STD::map<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs, ComparatorType >
+    std::map<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs, ComparatorType >
 #define SERIAL_REF_STL_map3(KeyTypeMacro,KeyTypeMacroArgs,ValueTypeMacro,ValueTypeMacroArgs,ComparatorType) \
-    CTypeRef(NCBI_NS_NCBI::CStlClassInfo_map3<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs,ComparatorType >::GetTypeInfo, SERIAL_REF(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_REF(ValueTypeMacro)ValueTypeMacroArgs)
+    CTypeRef(ncbi::CStlClassInfo_map3<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs,ComparatorType >::GetTypeInfo, SERIAL_REF(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_REF(ValueTypeMacro)ValueTypeMacroArgs)
 
 #define SERIAL_TYPE_STL_list(TypeMacro,TypeMacroArgs) \
-    NCBI_NS_STD::list<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
+    std::list<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
 #define SERIAL_REF_STL_list(TypeMacro,TypeMacroArgs) \
-    &NCBI_NS_NCBI::CStlClassInfo_list<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
+    &ncbi::CStlClassInfo_list<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
 #define SERIAL_TYPE_STL_list_set(TypeMacro,TypeMacroArgs) \
-    NCBI_NS_STD::list<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
+    std::list<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
 #define SERIAL_REF_STL_list_set(TypeMacro,TypeMacroArgs) \
-    &NCBI_NS_NCBI::CStlClassInfo_list<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetSetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
+    &ncbi::CStlClassInfo_list<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetSetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
 #define SERIAL_TYPE_STL_vector(TypeMacro,TypeMacroArgs) \
-    NCBI_NS_STD::vector<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
+    std::vector<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
 #define SERIAL_REF_STL_vector(TypeMacro,TypeMacroArgs) \
-    &NCBI_NS_NCBI::CStlClassInfo_vector<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
+    &ncbi::CStlClassInfo_vector<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
 #define SERIAL_TYPE_STL_vector_set(TypeMacro,TypeMacroArgs) \
-    NCBI_NS_STD::vector<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
+    std::vector<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
 #define SERIAL_REF_STL_vector_set(TypeMacro,TypeMacroArgs) \
-    &NCBI_NS_NCBI::CStlClassInfo_vector<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetSetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
+    &ncbi::CStlClassInfo_vector<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetSetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
-#define SERIAL_TYPE_STL_CHAR_vector(CharType) NCBI_NS_STD::vector<CharType>
+#define SERIAL_TYPE_STL_CHAR_vector(CharType) std::vector<CharType>
 #define SERIAL_REF_STL_CHAR_vector(CharType) \
-    &NCBI_NS_NCBI::CStdTypeInfo< SERIAL_TYPE(STL_CHAR_vector)(CharType) >::GetTypeInfo
+    &ncbi::CStdTypeInfo< SERIAL_TYPE(STL_CHAR_vector)(CharType) >::GetTypeInfo
 
 #define SERIAL_TYPE_STL_auto_ptr(TypeMacro,TypeMacroArgs) \
-    NCBI_NS_STD::shared_ptr<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
+    std::shared_ptr<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
 #define SERIAL_REF_STL_auto_ptr(TypeMacro,TypeMacroArgs) \
-    &NCBI_NS_NCBI::CStlClassInfo_auto_ptr<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
+    &ncbi::CStlClassInfo_auto_ptr<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
 #define SERIAL_TYPE_STL_AutoPtr(TypeMacro,TypeMacroArgs) \
-    NCBI_NS_NCBI::AutoPtr<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
+    ncbi::AutoPtr<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
 #define SERIAL_REF_STL_AutoPtr(TypeMacro,TypeMacroArgs) \
-    &NCBI_NS_NCBI::CAutoPtrTypeInfo<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
+    &ncbi::CAutoPtrTypeInfo<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
 #define SERIAL_TYPE_STL_CRef(TypeMacro,TypeMacroArgs) \
-    NCBI_NS_NCBI::CRef<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
+    ncbi::CRef<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
 #define SERIAL_REF_STL_CRef(TypeMacro,TypeMacroArgs) \
-    &NCBI_NS_NCBI::CRefTypeInfo<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
+    &ncbi::CRefTypeInfo<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
 #define SERIAL_TYPE_STL_CConstRef(TypeMacro,TypeMacroArgs) \
-    NCBI_NS_NCBI::CConstRef<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
+    ncbi::CConstRef<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
 #define SERIAL_REF_STL_CConstRef(TypeMacro,TypeMacroArgs) \
-    &NCBI_NS_NCBI::CConstRefTypeInfo<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
+    &ncbi::CConstRefTypeInfo<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
 #define SERIAL_TYPE_CHOICE(TypeMacro,TypeMacroArgs) \
     SERIAL_TYPE(TypeMacro)TypeMacroArgs
 #define SERIAL_REF_CHOICE(TypeMacro,TypeMacroArgs) \
-    &NCBI_NS_NCBI::CChoicePointerTypeInfo::GetTypeInfo, \
+    &ncbi::CChoicePointerTypeInfo::GetTypeInfo, \
     SERIAL_REF(TypeMacro)TypeMacroArgs
 
-//#define SERIAL_TYPE_CHOICERef(ClassName) NCBI_NS_NCBI::CRef<ClassName>
+//#define SERIAL_TYPE_CHOICERef(ClassName) ncbi::CRef<ClassName>
 //#define SERIAL_REF_CHOICERef(ClassName) &ClassName::GetChoiceRefTypeInfo
 #define SERIAL_TYPE_CHOICERef(TypeMacro,TypeMacroArgs) \
-    NCBI_NS_NCBI::CRef<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
+    ncbi::CRef<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
 #define SERIAL_REF_CHOICERef(TypeMacro,TypeMacroArgs) \
-    &NCBI_NS_NCBI::CChoicePointerTypeInfo::GetTypeInfo, \
+    &ncbi::CChoicePointerTypeInfo::GetTypeInfo, \
     SERIAL_REF(TypeMacro)TypeMacroArgs
 
 
@@ -270,12 +270,12 @@ TTypeInfo EnumTypeInfo(const T* member, const CEnumeratedTypeValues* enumInfo)
 
 #if 0
 NCBI_XSERIAL_EXPORT CRWLock& GetTypeInfoLock(void);
-#define XSERIAL_TYPEINFO_WRITELOCK NCBI_NS_NCBI::CWriteLockGuard GUARD(NCBI_NS_NCBI::GetTypeInfoLock())
-#define XSERIAL_TYPEINFO_READLOCK  NCBI_NS_NCBI::CReadLockGuard  GUARD(NCBI_NS_NCBI::GetTypeInfoLock())
+#define XSERIAL_TYPEINFO_WRITELOCK ncbi::CWriteLockGuard GUARD(ncbi::GetTypeInfoLock())
+#define XSERIAL_TYPEINFO_READLOCK  ncbi::CReadLockGuard  GUARD(ncbi::GetTypeInfoLock())
 #else
 NCBI_XSERIAL_EXPORT SSystemMutex& GetTypeInfoMutex(void);
-#define XSERIAL_TYPEINFO_WRITELOCK NCBI_NS_NCBI::CMutexGuard GUARD(NCBI_NS_NCBI::GetTypeInfoMutex())
-#define XSERIAL_TYPEINFO_READLOCK  NCBI_NS_NCBI::CMutexGuard GUARD(NCBI_NS_NCBI::GetTypeInfoMutex())
+#define XSERIAL_TYPEINFO_WRITELOCK ncbi::CMutexGuard GUARD(ncbi::GetTypeInfoMutex())
+#define XSERIAL_TYPEINFO_READLOCK  ncbi::CMutexGuard GUARD(ncbi::GetTypeInfoMutex())
 #endif
 
 // internal macros for implementing BEGIN_*_INFO and ADD_*_MEMBER
@@ -285,7 +285,7 @@ NCBI_XSERIAL_EXPORT SSystemMutex& GetTypeInfoMutex(void);
 #define CLASS_PTR(ClassName) static_cast<const ClassName*>(BASE_OBJECT())
 
 #define BEGIN_BASE_TYPE_INFO(ClassName,BaseClassName,Method,InfoType,Code) \
-const NCBI_NS_NCBI::CTypeInfo* Method(void) \
+const ncbi::CTypeInfo* Method(void) \
 { \
     typedef ClassName CClass; \
     typedef BaseClassName CClass_Base; \
@@ -297,7 +297,7 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
         if ( !info ) { \
             DECLARE_BASE_OBJECT(CClass); \
             info = Code; \
-            NCBI_NS_NCBI::RegisterTypeInfoObject(info);
+            ncbi::RegisterTypeInfoObject(info);
 #define BEGIN_TYPE_INFO(ClassName, Method, InfoType, Code) \
     BEGIN_BASE_TYPE_INFO(ClassName, ClassName, Method, InfoType, Code)
     
@@ -315,50 +315,50 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 
 // macros for specifying differents members
 #define SERIAL_MEMBER(MemberName,TypeMacro,TypeMacroArgs) \
-    NCBI_NS_NCBI::Check<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::Ptr(MEMBER_PTR(MemberName)), SERIAL_REF(TypeMacro)TypeMacroArgs
+    ncbi::Check<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::Ptr(MEMBER_PTR(MemberName)), SERIAL_REF(TypeMacro)TypeMacroArgs
 #define SERIAL_BUF_MEMBER(MemberName,TypeMacro,TypeMacroArgs) \
-    NCBI_NS_NCBI::Check<NCBI_NS_NCBI::CUnionBuffer<SERIAL_TYPE(TypeMacro)TypeMacroArgs > >::Ptr(MEMBER_PTR(MemberName)), SERIAL_REF(TypeMacro)TypeMacroArgs
+    ncbi::Check<ncbi::CUnionBuffer<SERIAL_TYPE(TypeMacro)TypeMacroArgs > >::Ptr(MEMBER_PTR(MemberName)), SERIAL_REF(TypeMacro)TypeMacroArgs
 #define SERIAL_STD_MEMBER(MemberName) \
-    MEMBER_PTR(MemberName),NCBI_NS_NCBI::GetStdTypeInfoGetter(MEMBER_PTR(MemberName))
+    MEMBER_PTR(MemberName),ncbi::GetStdTypeInfoGetter(MEMBER_PTR(MemberName))
 #define SERIAL_CLASS_MEMBER(MemberName) \
     MEMBER_PTR(MemberName),&MEMBER_PTR(MemberName).GetTypeInfo
 #define SERIAL_ENUM_MEMBER(MemberName,EnumName) \
-    MEMBER_PTR(MemberName), NCBI_NS_NCBI::EnumTypeInfo(MEMBER_PTR(MemberName), ENUM_METHOD_NAME(EnumName)())
+    MEMBER_PTR(MemberName), ncbi::EnumTypeInfo(MEMBER_PTR(MemberName), ENUM_METHOD_NAME(EnumName)())
 #define SERIAL_ENUM_IN_MEMBER(MemberName,CppContext,EnumName) \
-    MEMBER_PTR(MemberName), NCBI_NS_NCBI::EnumTypeInfo(MEMBER_PTR(MemberName),CppContext ENUM_METHOD_NAME(EnumName)())
+    MEMBER_PTR(MemberName), ncbi::EnumTypeInfo(MEMBER_PTR(MemberName),CppContext ENUM_METHOD_NAME(EnumName)())
 #define SERIAL_REF_MEMBER(MemberName,ClassName) \
     SERIAL_MEMBER(MemberName,STL_CRef,(CLASS,(ClassName)))
 #define SERIAL_PTR_CHOICE_VARIANT(MemberName,TypeMacro,TypeMacroArgs) \
-    NCBI_NS_NCBI::Check<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::PtrPtr(MEMBER_PTR(MemberName)), SERIAL_REF(TypeMacro)TypeMacroArgs
+    ncbi::Check<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::PtrPtr(MEMBER_PTR(MemberName)), SERIAL_REF(TypeMacro)TypeMacroArgs
 #define SERIAL_REF_CHOICE_VARIANT(MemberName,ClassName) \
-    NCBI_NS_NCBI::Check<SERIAL_TYPE(CLASS)(ClassName)>::ObjectPtrPtr(MEMBER_PTR(MemberName)), SERIAL_REF(CLASS)(ClassName)
+    ncbi::Check<SERIAL_TYPE(CLASS)(ClassName)>::ObjectPtrPtr(MEMBER_PTR(MemberName)), SERIAL_REF(CLASS)(ClassName)
 #define SERIAL_BASE_CLASS(ClassName) \
     CLASS_PTR(ClassName),&(CLASS_PTR(ClassName)->GetTypeInfo)
 
 // ADD_NAMED_*_MEMBER macros    
 #define ADD_NAMED_NULL_MEMBER(MemberAlias,TypeMacro,TypeMacroArgs) \
-    NCBI_NS_NCBI::AddMember(info,MemberAlias, \
+    ncbi::AddMember(info,MemberAlias, \
                             BASE_OBJECT(),SERIAL_REF(TypeMacro)TypeMacroArgs)
 #define ADD_NAMED_MEMBER(MemberAlias,MemberName,TypeMacro,TypeMacroArgs) \
-    NCBI_NS_NCBI::AddMember(info,MemberAlias, \
+    ncbi::AddMember(info,MemberAlias, \
                             SERIAL_MEMBER(MemberName,TypeMacro,TypeMacroArgs))
 #define ADD_NAMED_STD_MEMBER(MemberAlias,MemberName) \
-    NCBI_NS_NCBI::AddMember(info,MemberAlias, \
+    ncbi::AddMember(info,MemberAlias, \
                             SERIAL_STD_MEMBER(MemberName))
 #define ADD_NAMED_CLASS_MEMBER(MemberAlias,MemberName) \
-    NCBI_NS_NCBI::AddMember(info,MemberAlias, \
+    ncbi::AddMember(info,MemberAlias, \
                             SERIAL_CLASS_MEMBER(MemberName))
 #define ADD_NAMED_ENUM_MEMBER(MemberAlias,MemberName,EnumName) \
-    NCBI_NS_NCBI::AddMember(info,MemberAlias, \
+    ncbi::AddMember(info,MemberAlias, \
                             SERIAL_ENUM_MEMBER(MemberName,EnumName))
 #define ADD_NAMED_ENUM_IN_MEMBER(MemberAlias,MemberName,CppContext,EnumName) \
-    NCBI_NS_NCBI::AddMember(info,MemberAlias, \
+    ncbi::AddMember(info,MemberAlias, \
                   SERIAL_ENUM_IN_MEMBER(MemberName,CppContext,EnumName))
 #define ADD_NAMED_REF_MEMBER(MemberAlias,MemberName,ClassName) \
-    NCBI_NS_NCBI::AddMember(info,MemberAlias, \
+    ncbi::AddMember(info,MemberAlias, \
                             SERIAL_REF_MEMBER(MemberName,ClassName))
 #define ADD_NAMED_BASE_CLASS(MemberAlias,ClassName) \
-    NCBI_NS_NCBI::AddMember(info,MemberAlias, \
+    ncbi::AddMember(info,MemberAlias, \
                             SERIAL_BASE_CLASS(ClassName))
 
 // ADD_*_MEMBER macros    
@@ -377,28 +377,28 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 
 // ADD_NAMED_*_CHOICE_VARIANT macros    
 #define ADD_NAMED_NULL_CHOICE_VARIANT(MemberAlias,TypeMacro,TypeMacroArgs) \
-    NCBI_NS_NCBI::AddVariant(info,MemberAlias, \
+    ncbi::AddVariant(info,MemberAlias, \
         BASE_OBJECT(),SERIAL_REF(TypeMacro)TypeMacroArgs)
 #define ADD_NAMED_CHOICE_VARIANT(MemberAlias,MemberName,TypeMacro,TypeMacroArgs) \
-    NCBI_NS_NCBI::AddVariant(info,MemberAlias, \
+    ncbi::AddVariant(info,MemberAlias, \
         SERIAL_MEMBER(MemberName,TypeMacro,TypeMacroArgs))
 #define ADD_NAMED_BUF_CHOICE_VARIANT(MemberAlias,MemberName,TypeMacro,TypeMacroArgs) \
-    NCBI_NS_NCBI::AddVariant(info,MemberAlias, \
+    ncbi::AddVariant(info,MemberAlias, \
         SERIAL_BUF_MEMBER(MemberName,TypeMacro,TypeMacroArgs))
 #define ADD_NAMED_STD_CHOICE_VARIANT(MemberAlias,MemberName) \
-    NCBI_NS_NCBI::AddVariant(info,MemberAlias, \
+    ncbi::AddVariant(info,MemberAlias, \
         SERIAL_STD_MEMBER(MemberName))
 #define ADD_NAMED_ENUM_CHOICE_VARIANT(MemberAlias,MemberName,EnumName) \
-    NCBI_NS_NCBI::AddVariant(info,MemberAlias, \
+    ncbi::AddVariant(info,MemberAlias, \
         SERIAL_ENUM_MEMBER(MemberName,EnumName))
 #define ADD_NAMED_ENUM_IN_CHOICE_VARIANT(MemberAlias,MemberName,CppContext,EnumName) \
-    NCBI_NS_NCBI::AddVariant(info,MemberAlias, \
+    ncbi::AddVariant(info,MemberAlias, \
         SERIAL_ENUM_IN_MEMBER(MemberName,CppContext,EnumName))
 #define ADD_NAMED_PTR_CHOICE_VARIANT(MemberAlias,MemberName,TypeMacro,TypeMacroArgs) \
-    NCBI_NS_NCBI::AddVariant(info,MemberAlias, \
+    ncbi::AddVariant(info,MemberAlias, \
         SERIAL_PTR_CHOICE_VARIANT(MemberName,TypeMacro,TypeMacroArgs))->SetPointer()
 #define ADD_NAMED_REF_CHOICE_VARIANT(MemberAlias,MemberName,ClassName) \
-    NCBI_NS_NCBI::AddVariant(info,MemberAlias, \
+    ncbi::AddVariant(info,MemberAlias, \
         SERIAL_REF_CHOICE_VARIANT(MemberName,ClassName))->SetObjectPointer()
 
 // ADD_*_CHOICE_VARIANT macros
@@ -419,15 +419,15 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 #define BEGIN_NAMED_CLASS_INFO(ClassAlias,ClassName) \
     BEGIN_TYPE_INFO(ClassName, \
         ClassName::GetTypeInfo, \
-        NCBI_NS_NCBI::CClassTypeInfo, \
-        NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateClassInfo(ClassAlias))
+        ncbi::CClassTypeInfo, \
+        ncbi::CClassInfoHelper<CClass>::CreateClassInfo(ClassAlias))
 #define BEGIN_CLASS_INFO(ClassName) \
     BEGIN_NAMED_CLASS_INFO(#ClassName, ClassName)
 #define BEGIN_NAMED_BASE_CLASS_INFO(ClassAlias,ClassName) \
     BEGIN_BASE_TYPE_INFO(ClassName, NCBI_NAME2(ClassName,_Base), \
         NCBI_NAME2(ClassName,_Base)::GetTypeInfo, \
-        NCBI_NS_NCBI::CClassTypeInfo, \
-        NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateClassInfo(ClassAlias))
+        ncbi::CClassTypeInfo, \
+        ncbi::CClassInfoHelper<CClass>::CreateClassInfo(ClassAlias))
 #define BEGIN_BASE_CLASS_INFO(ClassName) \
     BEGIN_NAMED_BASE_CLASS_INFO(#ClassName, ClassName)
 
@@ -442,10 +442,10 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
     BEGIN_BASE_CLASS_INFO(ClassName); SET_CLASS_IMPLICIT();
 
 #define SET_CLASS_MODULE(ModuleName) \
-    NCBI_NS_NCBI::SetModuleName(info, ModuleName)
+    ncbi::SetModuleName(info, ModuleName)
 
 #define SET_INTERNAL_NAME(OwnerName, MemberName) \
-    NCBI_NS_NCBI::SetInternalName(info, OwnerName, MemberName)
+    ncbi::SetInternalName(info, OwnerName, MemberName)
 
 #define SET_NAMESPACE(name) \
     info->SetNamespaceName(name)
@@ -454,21 +454,21 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
     info->method args
 
 #define END_CLASS_INFO                                                  \
-    NCBI_NS_NCBI::CClassInfoHelper<CClass>::SetReadWriteMemberMethods(info); \
+    ncbi::CClassInfoHelper<CClass>::SetReadWriteMemberMethods(info); \
     END_STRUCT_INFO
 
 #define BEGIN_NAMED_ABSTRACT_CLASS_INFO(ClassAlias,ClassName) \
     BEGIN_TYPE_INFO(ClassName, \
         ClassName::GetTypeInfo, \
-        NCBI_NS_NCBI::CClassTypeInfo, \
-        NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateAbstractClassInfo(ClassAlias))
+        ncbi::CClassTypeInfo, \
+        ncbi::CClassInfoHelper<CClass>::CreateAbstractClassInfo(ClassAlias))
 #define BEGIN_ABSTRACT_CLASS_INFO(ClassName) \
     BEGIN_NAMED_ABSTRACT_CLASS_INFO(#ClassName, ClassName)
 #define BEGIN_NAMED_ABSTRACT_BASE_CLASS_INFO(ClassAlias,ClassName) \
     BEGIN_BASE_TYPE_INFO(ClassName, NCBI_NAME2(ClassName,_Base), \
         NCBI_NAME2(ClassName,_Base)::GetTypeInfo, \
-        NCBI_NS_NCBI::CClassTypeInfo, \
-        NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateAbstractClassInfo(ClassAlias))
+        ncbi::CClassTypeInfo, \
+        ncbi::CClassInfoHelper<CClass>::CreateAbstractClassInfo(ClassAlias))
 
 #define END_ABSTRACT_CLASS_INFO \
     END_STRUCT_INFO
@@ -485,26 +485,26 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 #define BEGIN_NAMED_CHOICE_INFO(ClassAlias,ClassName) \
     BEGIN_TYPE_INFO(ClassName, \
         ClassName::GetTypeInfo, \
-        NCBI_NS_NCBI::CChoiceTypeInfo, \
-        NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateChoiceInfo(ClassAlias))
+        ncbi::CChoiceTypeInfo, \
+        ncbi::CClassInfoHelper<CClass>::CreateChoiceInfo(ClassAlias))
 #define BEGIN_CHOICE_INFO(ClassName) \
     BEGIN_NAMED_CHOICE_INFO(#ClassName, ClassName)
 #define BEGIN_NAMED_BASE_CHOICE_INFO(ClassAlias,ClassName) \
     BEGIN_BASE_TYPE_INFO(ClassName, NCBI_NAME2(ClassName,_Base), \
         NCBI_NAME2(ClassName,_Base)::GetTypeInfo, \
-        NCBI_NS_NCBI::CChoiceTypeInfo, \
-        NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateChoiceInfo(ClassAlias))
+        ncbi::CChoiceTypeInfo, \
+        ncbi::CClassInfoHelper<CClass>::CreateChoiceInfo(ClassAlias))
 #define BEGIN_BASE_CHOICE_INFO(ClassName) \
     BEGIN_NAMED_BASE_CHOICE_INFO(#ClassName, ClassName)
 
 #define SET_CHOICE_MODULE(ModuleName) \
-    NCBI_NS_NCBI::SetModuleName(info, ModuleName)
+    ncbi::SetModuleName(info, ModuleName)
 
 #define SET_CHOICE_DELAYED() \
-    info->SetSelectDelay(&NCBI_NS_NCBI::CClassInfoHelper<CClass>::SelectDelayBuffer)
+    info->SetSelectDelay(&ncbi::CClassInfoHelper<CClass>::SelectDelayBuffer)
 
 #define END_CHOICE_INFO                                                 \
-    NCBI_NS_NCBI::CClassInfoHelper<CClass>::SetReadWriteVariantMethods(info); \
+    ncbi::CClassInfoHelper<CClass>::SetReadWriteVariantMethods(info); \
     info->SetSelectorInfo(MEMBER_PTR(m_choice), sizeof(BASE_OBJECT()->m_choice)); \
     END_STRUCT_INFO
 
@@ -522,16 +522,16 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 
 // enum definition macros
 #define BEGIN_ENUM_INFO_METHOD(MethodName, EnumAlias, EnumName, IsInteger) \
-const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
+const ncbi::CEnumeratedTypeValues* MethodName(void) \
 { \
-    static NCBI_NS_NCBI::CEnumeratedTypeValues* volatile s_enumInfo = 0; \
-    NCBI_NS_NCBI::CEnumeratedTypeValues* enumInfo = s_enumInfo; \
+    static ncbi::CEnumeratedTypeValues* volatile s_enumInfo = 0; \
+    ncbi::CEnumeratedTypeValues* enumInfo = s_enumInfo; \
     if ( !enumInfo ) { \
         XSERIAL_TYPEINFO_WRITELOCK; \
         enumInfo = s_enumInfo; \
         if ( !enumInfo ) { \
-            enumInfo = new NCBI_NS_NCBI::CEnumeratedTypeValues(EnumAlias, IsInteger); \
-            NCBI_NS_NCBI::RegisterEnumTypeValuesObject(enumInfo); \
+            enumInfo = new ncbi::CEnumeratedTypeValues(EnumAlias, IsInteger); \
+            ncbi::RegisterEnumTypeValuesObject(enumInfo); \
             EnumName enumValue;
 #define END_ENUM_INFO_METHOD \
             s_enumInfo = enumInfo; \
@@ -551,13 +551,13 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
     BEGIN_NAMED_ENUM_INFO(#EnumName, EnumName, IsInteger)
 
 #define SET_ENUM_MODULE(ModuleName) \
-    NCBI_NS_NCBI::SetModuleName(enumInfo, ModuleName)
+    ncbi::SetModuleName(enumInfo, ModuleName)
 
 #define SET_ENUM_BITSET \
     enumInfo->SetBitset()
 
 #define SET_ENUM_INTERNAL_NAME(OwnerName, MemberName) \
-    NCBI_NS_NCBI::SetInternalName(enumInfo, OwnerName, MemberName)
+    ncbi::SetInternalName(enumInfo, OwnerName, MemberName)
 
 #define ADD_ENUM_VALUE(EnumValueName, EnumValueValue) \
     enumInfo->AddValue(EnumValueName, enumValue = EnumValueValue)
@@ -574,10 +574,10 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
 #define ALIASED_TYPE_INFO(RefType, RefCode) \
     NCBI_NAME2(RefType, RefCode)
 #define BEGIN_ALIAS_INFO_METHOD(AliasName,ClassName,BaseClassName,SerialRef,Code) \
-const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
+const ncbi::CTypeInfo* BaseClassName::GetTypeInfo(void) \
 { \
-    static std::atomic<NCBI_NS_NCBI::CAliasTypeInfo*> s_info;  \
-    NCBI_NS_NCBI::CAliasTypeInfo* info = s_info.load(std::memory_order_acquire); \
+    static std::atomic<ncbi::CAliasTypeInfo*> s_info;  \
+    ncbi::CAliasTypeInfo* info = s_info.load(std::memory_order_acquire); \
     if ( !info ) { \
         XSERIAL_TYPEINFO_WRITELOCK; \
         info = s_info.load(std::memory_order_acquire); \
@@ -585,10 +585,10 @@ const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
             typedef ClassName CClass; \
             typedef BaseClassName CClass_Base; \
             DECLARE_BASE_OBJECT(CClass); \
-            typedef NCBI_NS_NCBI::TTypeInfo (*TGetter)(void); \
+            typedef ncbi::TTypeInfo (*TGetter)(void); \
             TGetter getter = SerialRef Code; \
-            info = new NCBI_NS_NCBI::CAliasTypeInfo(AliasName, getter()); \
-            NCBI_NS_NCBI::RegisterTypeInfoObject(info);
+            info = new ncbi::CAliasTypeInfo(AliasName, getter()); \
+            ncbi::RegisterTypeInfoObject(info);
 #define BEGIN_ALIAS_INFO(AliasName,ClassName,RefType,RefCode) \
     BEGIN_ALIAS_INFO_METHOD(AliasName, ClassName, \
     NCBI_NAME2(ClassName,_Base), \
@@ -600,10 +600,10 @@ const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
     SERIAL_ALIAS(RefType), RefCode)
 
 #define BEGIN_ENUM_ALIAS_INFO_METHOD(AliasName,ClassName,BaseClassName,SerialRef,Code) \
-const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
+const ncbi::CTypeInfo* BaseClassName::GetTypeInfo(void) \
 { \
-    static std::atomic<NCBI_NS_NCBI::CAliasTypeInfo*> s_info; \
-    NCBI_NS_NCBI::CAliasTypeInfo* info = s_info.load(std::memory_order_acquire); \
+    static std::atomic<ncbi::CAliasTypeInfo*> s_info; \
+    ncbi::CAliasTypeInfo* info = s_info.load(std::memory_order_acquire); \
     if ( !info ) { \
         XSERIAL_TYPEINFO_WRITELOCK; \
         info = s_info.load(std::memory_order_acquire); \
@@ -611,8 +611,8 @@ const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
             typedef ClassName CClass; \
             typedef BaseClassName CClass_Base; \
             DECLARE_BASE_OBJECT(CClass); \
-            info = new NCBI_NS_NCBI::CAliasTypeInfo(AliasName, SerialRef Code); \
-            NCBI_NS_NCBI::RegisterTypeInfoObject(info);
+            info = new ncbi::CAliasTypeInfo(AliasName, SerialRef Code); \
+            ncbi::RegisterTypeInfoObject(info);
 #define BEGIN_ENUM_ALIAS_INFO(AliasName,ClassName,RefType,RefCode) \
     BEGIN_ENUM_ALIAS_INFO_METHOD(AliasName, ClassName, \
     NCBI_NAME2(ClassName,_Base), \
@@ -624,10 +624,10 @@ const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
     SERIAL_ALIAS(RefType), RefCode)
 
 #define SET_STD_ALIAS_DATA_PTR \
-    info->SetDataOffset(NCBI_NS_NCBI::TPointerOffsetType(GetDataPtr(BASE_OBJECT())))
+    info->SetDataOffset(ncbi::TPointerOffsetType(GetDataPtr(BASE_OBJECT())))
 #define SET_CLASS_ALIAS_DATA_PTR \
-    info->SetDataOffset(NCBI_NS_NCBI::TPointerOffsetType(BASE_OBJECT())); \
-    info->SetCreateFunction(NCBI_NS_NCBI::CClassInfoHelper<CClass>::Create)
+    info->SetDataOffset(ncbi::TPointerOffsetType(BASE_OBJECT())); \
+    info->SetCreateFunction(ncbi::CClassInfoHelper<CClass>::Create)
 #define END_ALIAS_INFO \
             s_info.store(info, std::memory_order_release); \
         } \
@@ -635,7 +635,7 @@ const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
     return info; \
 }
 #define SET_ALIAS_MODULE(ModuleName) \
-    NCBI_NS_NCBI::SetModuleName(info, ModuleName)
+    ncbi::SetModuleName(info, ModuleName)
 
 #define SET_FULL_ALIAS  info->SetFullAlias()
 
