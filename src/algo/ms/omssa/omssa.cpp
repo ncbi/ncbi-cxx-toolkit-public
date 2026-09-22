@@ -81,7 +81,7 @@ CSearchHelper::ReadModFiles(const string& ModFileName,
         modsin->Read(ObjectInfo(*Modset));
         modsin->Close();
     
-    } catch (NCBI_NS_STD::exception& e) {
+    } catch (std::exception& e) {
         ERR_POST(Fatal << "Unable to read modification file " <<
                  FileName << " with error " << e.what());
     }
@@ -103,7 +103,7 @@ CSearchHelper::ReadModFiles(const string& ModFileName,
             usermodsin->Read(ObjectInfo(*UserModset));
             usermodsin->Close();
             Modset->Append(*UserModset);
-        } catch (NCBI_NS_STD::exception& e) {
+        } catch (std::exception& e) {
              ERR_POST(Fatal << "Unable to read user modification file " <<
                       FileName << " with error " << e.what());
         }
@@ -391,7 +391,7 @@ CSearchHelper::CreateSearchSettings(string FileName,
             paramsin->Read(ObjectInfo(*Settings));
             paramsin->Close();
 
-        } catch (NCBI_NS_STD::exception& e) {
+        } catch (std::exception& e) {
             ERR_POST(Fatal << "Unable to read parameter file " <<
                      FileName << " with error " << e.what());
         }
@@ -1432,7 +1432,7 @@ void CSearch::Search(CRef <CMSRequest> MyRequestIn,
                      "Taxonomically restricted search specified and no matching organisms found in sequence library.  Did you use a sequence library with taxonomic information?");
 
     }
-    catch (NCBI_NS_STD::exception& e) {
+    catch (std::exception& e) {
         ERR_POST(Info << "Exception caught in CSearch::Search: " << e.what());
         throw;
     }
