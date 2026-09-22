@@ -326,7 +326,7 @@ bool IsSpName (string taxname)
 {
     bool is_sp_name = false;
     string::size_type pos = NStr::Find(taxname, " sp.");
-    if (pos != NCBI_NS_STD::string::npos
+    if (pos != string::npos
         && (pos < 2 || !NStr::StartsWith(taxname.substr(pos - 2), "f."))) {
         is_sp_name = true;
     }
