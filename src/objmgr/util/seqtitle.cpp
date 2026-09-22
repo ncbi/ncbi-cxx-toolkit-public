@@ -242,14 +242,14 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             if (gb->GetGenbank().IsSetKeywords()) {
                 keywords = &gb->GetGenbank().GetKeywords();
             }
-            BREAK(gb);
+            break;
         }
         if ( !keywords ) {
             for (CSeqdesc_CI embl(hnd, CSeqdesc::e_Embl);  embl;  ++embl) {
                 if (embl->GetEmbl().IsSetKeywords()) {
                     keywords = &embl->GetEmbl().GetKeywords();
                 }
-                BREAK(embl);
+                break;
             }
         }
         if (keywords) {
@@ -367,7 +367,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
                 case CMolInfo::eBiomol_tmRNA:   title += "tmRNA";        break;
                 default:                        break;
                 }
-                BREAK(it);
+                break;
             }
         }
     }
@@ -385,7 +385,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
                     title = string("Chain ") + (char)pdb_id->GetChain() + ", ";
                 }
                 title += it->GetPdb().GetCompound().front();
-                BREAK(it);
+                break;
             }
         }
     }
@@ -534,7 +534,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             CSeqdesc_CI it(hnd, CSeqdesc::e_Org);
             for (;  it;  ++it) {
                 org = &it->GetOrg();
-                BREAK(it);
+                break;
             }
         }
 
@@ -1282,13 +1282,13 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
         CConstRef<COrg_ref> org;
         for (CSeqdesc_CI it(handle, CSeqdesc::e_Source, 1);  it;  ++it) {
             org = &it->GetSource().GetOrg();
-            BREAK(it);
+            break;
         }
         if (org.Empty()  &&  cds_loc.NotEmpty()) {
             for (CFeat_CI it(scope, *cds_loc, CSeqFeatData::e_Biosrc);
                  it;  ++it) {
                 org = &it->GetData().GetBiosrc().GetOrg();
-                BREAK(it);
+                break;
             }
         }
         if (org.NotEmpty()  &&  org->IsSetTaxname()) {
@@ -1340,7 +1340,7 @@ static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope,
                     }
                 }
             }
-            BREAK(it);
+            break;
         }
     }
 
@@ -1381,8 +1381,7 @@ static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope,
                     locus = *gene_feat->GetData().GetGene().GetSyn().begin();
                 }
             }
-
-            BREAK(it);
+            break;
         }
     }
 
