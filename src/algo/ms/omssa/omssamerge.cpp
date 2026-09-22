@@ -250,7 +250,7 @@ int COMSSAMerge::Run()
     }
 
 
-    } catch (NCBI_NS_STD::exception& e) {
+    } catch (std::exception& e) {
 	ERR_POST(Fatal << "Exception in COMSSAMerge::Run: " << e.what());
     }
 
