@@ -302,7 +302,7 @@ void CAutoDefModifierCombo::x_CleanUpTaxName (string &tax_name)
         tax_name = "HIV-2";
     } else if (!m_KeepParen) {
         string::size_type pos = NStr::Find(tax_name, "(");
-        if (pos != NCBI_NS_STD::string::npos) {
+        if (pos != string::npos) {
             tax_name = tax_name.substr(0, pos);
             NStr::TruncateSpacesInPlace(tax_name);
         }
@@ -353,7 +353,7 @@ bool CAutoDefModifierCombo::x_AddSubsourceString (string &source_description, co
             // truncate value at first semicolon
 			      if (!m_KeepAfterSemicolon) {
 				        string::size_type pos = NStr::Find(val, ";");
-				        if (pos != NCBI_NS_STD::string::npos) {
+				        if (pos != string::npos) {
 					          val = val.substr(0, pos);
 				        }
 			      }
@@ -362,7 +362,7 @@ bool CAutoDefModifierCombo::x_AddSubsourceString (string &source_description, co
             if (st == CSubSource::eSubtype_country
                 && ! m_KeepCountryText) {
                 string::size_type pos = NStr::Find(val, ":");
-                if (pos != NCBI_NS_STD::string::npos) {
+                if (pos != string::npos) {
                     val = val.substr(0, pos);
                 }
             } else if (st == CSubSource::eSubtype_plasmid_name && NStr::EqualNocase(val, "unnamed")) {
@@ -427,7 +427,7 @@ bool CAutoDefModifierCombo::x_AddOrgModString (string &source_description, const
             // truncate value at first semicolon
 			if (!m_KeepAfterSemicolon) {
 				string::size_type pos = NStr::Find(val, ";");
-				if (pos != NCBI_NS_STD::string::npos) {
+				if (pos != string::npos) {
 					val = val.substr(0, pos);
 				}
 			}
@@ -802,7 +802,7 @@ string CAutoDefModifierCombo::GetSourceDescriptionString(const CBioSource& bsrc)
     /* should this organism be excluded? */
     if (m_ExcludeSpOrgs) {
         string::size_type pos = NStr::Find(source_description, " sp. ");
-        if (pos != NCBI_NS_STD::string::npos
+        if (pos != string::npos
             && (pos < 2 || !NStr::StartsWith(source_description.substr(pos - 2), "f."))) {
             no_extras = true;
             // but add plasmid name anyway
@@ -813,19 +813,19 @@ string CAutoDefModifierCombo::GetSourceDescriptionString(const CBioSource& bsrc)
     }
     if (m_ExcludeCfOrgs) {
         string::size_type pos = NStr::Find(source_description, " cf. ");
-        if (pos != NCBI_NS_STD::string::npos) {
+        if (pos != string::npos) {
             no_extras = true;
         }
     }
     if (m_ExcludeNrOrgs) {
         string::size_type pos = NStr::Find(source_description, " nr. ");
-        if (pos != NCBI_NS_STD::string::npos) {
+        if (pos != string::npos) {
             no_extras = true;
         }
     }
     if (m_ExcludeAffOrgs) {
         string::size_type pos = NStr::Find(source_description, " aff. ");
-        if (pos != NCBI_NS_STD::string::npos) {
+        if (pos != string::npos) {
             no_extras = true;
         }
     }
