@@ -211,7 +211,7 @@ int COMSSA::Run()
         SearchEngine->InitBlast(SearchSettings->GetDb().c_str(),
 	args["umm"]);
     }
-    catch (const NCBI_NS_STD::exception &e) {
+    catch (const std::exception &e) {
         ERR_POST(Fatal << "Unable to open blast library " << SearchSettings->GetDb() << " with error:" <<
                  e.what());
     }
@@ -278,7 +278,7 @@ int COMSSA::Run()
                                SearchSettings->GetOutfiles(),
                                Modset);
     
-    } catch (NCBI_NS_STD::exception& e) {
+    } catch (std::exception& e) {
 	ERR_POST(Fatal << "Exception in COMSSA::Run: " << e.what());
     }
 
