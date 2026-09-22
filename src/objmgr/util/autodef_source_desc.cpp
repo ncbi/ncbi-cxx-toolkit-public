@@ -104,7 +104,7 @@ bool CAutoDefSourceDescription::AddQual (bool isOrgMod, int subtype, bool keepAf
 				string val = it->GetValue();
 				if (!keepAfterSemicolon) {
                     string::size_type end = NStr::Find(val, ";");
-                    if (end != NCBI_NS_STD::string::npos) {
+                    if (end != string::npos) {
                         val = val.substr(0, end);
 					}
 				}
@@ -119,7 +119,7 @@ bool CAutoDefSourceDescription::AddQual (bool isOrgMod, int subtype, bool keepAf
 				string val = it->GetValue();
 				if (!keepAfterSemicolon) {
                     string::size_type end = NStr::Find(val, ";");
-                    if (end != NCBI_NS_STD::string::npos) {
+                    if (end != string::npos) {
                         val = val.substr(0, end);
 					}
 				}
