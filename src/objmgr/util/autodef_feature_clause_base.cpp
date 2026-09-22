@@ -443,7 +443,7 @@ string CAutoDefFeatureClause_Base::ListClauses(bool allow_semicolons, bool suppr
                 print_typeword = true;
                 if (!is_last && !oneafter_has_detail_change) {
                     typeword_is_plural = true;
-                } else if (NStr::Find(m_ClauseList[k]->GetDescription(), " through ") != NCBI_NS_STD::string::npos
+                } else if (NStr::Find(m_ClauseList[k]->GetDescription(), " through ") != string::npos
                            && NStr::Equal(m_ClauseList[k]->GetTypeword(), "exon")) {
                     typeword_is_plural = true;
                 }
@@ -660,7 +660,7 @@ void CAutoDefFeatureClause_Base::PluralizeInterval()
     }
     
     string::size_type pos = NStr::Find(m_Interval, "gene");
-    if (pos != NCBI_NS_STD::string::npos 
+    if (pos != string::npos 
         && (m_Interval.length() == pos + 4 || !NStr::Equal(m_Interval.substr(pos + 4, 1), "s"))) {
         m_Interval = m_Interval.substr(0, pos + 4) = "s" + m_Interval.substr(pos + 5);
     }
@@ -959,7 +959,7 @@ bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (size_t clause1, size_t cl
         // remove unwanted words from splice name
         for (unsigned int k = 0; k < sizeof(unwanted_words) / sizeof(string); k++) {
             string::size_type pos;
-            while ((pos = NStr::Find(splice_name, unwanted_words[k])) != NCBI_NS_STD::string::npos ) {
+            while ((pos = NStr::Find(splice_name, unwanted_words[k])) != string::npos ) {
                 string temp_name;
                 if (pos > 0) {
                     temp_name += splice_name.substr(0, pos);
