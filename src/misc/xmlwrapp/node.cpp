@@ -160,34 +160,44 @@ namespace {
         compare_attr (const char *attr_name) : name_(attr_name) { }
 
         bool operator() (xmlNodePtr lhs, xmlNodePtr rhs) {
-            xmlAttrPtr attr_l, attr_r;
-            phantom_attr * dtd_l(0);
-            phantom_attr * dtd_r(0);
+            xmlAttrPtr          attr_l = find_prop(lhs, name_, NULL);
+            phantom_attr *      dtd_l = 0;
+            bool                has_l = (attr_l != 0 ||
+                                         (dtd_l = find_default_prop(lhs, name_, NULL)) != 0);
 
-            attr_l = find_prop(lhs, name_, NULL);
-            if (attr_l == 0 &&
-                (dtd_l = find_default_prop(lhs, name_, NULL)) == 0)
-                return true;
+            xmlAttrPtr          attr_r = find_prop(rhs, name_, NULL);
+            phantom_attr *      dtd_r = 0;
+            bool                has_r = (attr_r != 0 ||
+                                         (dtd_r = find_default_prop(rhs, name_, NULL)) != 0);
 
-            attr_r = find_prop(rhs, name_, NULL);
-            if (attr_r == 0 &&
-                (dtd_r = find_default_prop(rhs, name_, NULL)) == 0)
-                return false;
+            if (!has_l && !has_r) return false;
+            if (!has_l)           return true;
+            if (!has_r)           return false;
 
-            xmlChar *value_l, *value_r;
+            xmlChar *   value_l = NULL;
+            bool        must_free_l = false;
 
-            if (dtd_l) value_l = const_cast<xmlChar*>
-                                        (dtd_l->def_prop_->defaultValue);
-            else value_l = xmlNodeListGetString(lhs->doc, attr_l->children, 1);
+            if (dtd_l) {
+                value_l = const_cast<xmlChar*>(dtd_l->def_prop_->defaultValue);
+            } else {
+                value_l = xmlNodeListGetString(lhs->doc, attr_l->children, 1);
+                must_free_l = (value_l != NULL);
+            }
 
-            if (dtd_r) value_r = const_cast<xmlChar*>
-                                        (dtd_r->def_prop_->defaultValue);
-            else value_r = xmlNodeListGetString(rhs->doc, attr_r->children, 1);
+            xmlChar *   value_r = NULL;
+            bool        must_free_r = false;
 
-            int rc = xmlStrcmp(value_l, value_r);
+            if (dtd_r) {
+                value_r = const_cast<xmlChar*>(dtd_r->def_prop_->defaultValue);
+            } else {
+                value_r = xmlNodeListGetString(rhs->doc, attr_r->children, 1);
+                must_free_r = (value_r != NULL);
+            }
 
-            if (!dtd_l) xmlFree(value_l);
-            if (!dtd_r) xmlFree(value_r);
+            int     rc = xmlStrcmp(value_l, value_r);
+
+            if (must_free_l) xmlFree(value_l);
+            if (must_free_r) xmlFree(value_r);
 
             return rc < 0;
         }
