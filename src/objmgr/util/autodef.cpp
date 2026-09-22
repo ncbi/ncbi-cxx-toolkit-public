@@ -768,27 +768,27 @@ static unsigned int s_GetProductFlagFromCDSProductNames (CBioseq_Handle bh)
                 bh.GetScope());
             if (prot) {
                 feature::GetLabel(*prot, &label, feature::fFGL_Content);
-                if (NStr::Find(label, "mitochondrion") != NCBI_NS_STD::string::npos
-                    || NStr::Find(label, "mitochondrial") != NCBI_NS_STD::string::npos) {
+                if (NStr::Find(label, "mitochondrion") != string::npos
+                    || NStr::Find(label, "mitochondrial") != string::npos) {
                     product_flag = CBioSource::eGenome_mitochondrion;
-                } else if (NStr::Find(label, "apicoplast") != NCBI_NS_STD::string::npos) {
+                } else if (NStr::Find(label, "apicoplast") != string::npos) {
                     product_flag = CBioSource::eGenome_apicoplast;
-                } else if (NStr::Find(label, "chloroplast") != NCBI_NS_STD::string::npos) {
+                } else if (NStr::Find(label, "chloroplast") != string::npos) {
                     product_flag = CBioSource::eGenome_chloroplast;
-                } else if (NStr::Find(label, "chromoplast") != NCBI_NS_STD::string::npos) {
+                } else if (NStr::Find(label, "chromoplast") != string::npos) {
                     product_flag = CBioSource::eGenome_chromoplast;
-                } else if (NStr::Find(label, "kinetoplast") != NCBI_NS_STD::string::npos) {
+                } else if (NStr::Find(label, "kinetoplast") != string::npos) {
                     product_flag = CBioSource::eGenome_kinetoplast;
-                } else if (NStr::Find(label, "proplastid") != NCBI_NS_STD::string::npos) {
+                } else if (NStr::Find(label, "proplastid") != string::npos) {
                     product_flag = CBioSource::eGenome_proplastid;
-                } else if ((pos = NStr::Find(label, "plastid")) != NCBI_NS_STD::string::npos
+                } else if ((pos = NStr::Find(label, "plastid")) != string::npos
                     && (pos == 0 || isspace(label.c_str()[pos]))) {
                     product_flag = CBioSource::eGenome_plastid;
-                } else if (NStr::Find(label, "cyanelle") != NCBI_NS_STD::string::npos) {
+                } else if (NStr::Find(label, "cyanelle") != string::npos) {
                     product_flag = CBioSource::eGenome_cyanelle;
-                } else if (NStr::Find(label, "leucoplast") != NCBI_NS_STD::string::npos) {
+                } else if (NStr::Find(label, "leucoplast") != string::npos) {
                     product_flag = CBioSource::eGenome_leucoplast;
-                } else if (NStr::Find(label, "nitroplast") != NCBI_NS_STD::string::npos) {
+                } else if (NStr::Find(label, "nitroplast") != string::npos) {
                     product_flag = CBioSource::eGenome_nitroplast;
                 }
             }
@@ -812,12 +812,12 @@ string CAutoDef::x_GetFeatureClauseProductEnding(const string& feature_clauses,
         product_flag_to_use = m_Options.GetProductFlag();
         nuclear_copy_flag = m_Options.GetNuclearCopyFlag();
     }
-    if (NStr::Find(feature_clauses, "genes") != NCBI_NS_STD::string::npos) {
+    if (NStr::Find(feature_clauses, "genes") != string::npos) {
         pluralize = true;
     } else {
         string::size_type pos = NStr::Find(feature_clauses, "gene");
-        if (pos != NCBI_NS_STD::string::npos
-            && NStr::Find (feature_clauses, "gene", pos + 4) != NCBI_NS_STD::string::npos) {
+        if (pos != string::npos
+            && NStr::Find (feature_clauses, "gene", pos + 4) != string::npos) {
             pluralize = true;
         }
     }
