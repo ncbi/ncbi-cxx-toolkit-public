@@ -409,12 +409,12 @@ if(NOT NCBI_COMPONENT_VDB_DISABLED AND NOT NCBI_COMPONENT_VDB_FOUND)
     NCBI_define_Xcomponent(NAME VDB INTERFACELIB ncbi-vdb::ncbi-vdb LIB ncbi-vdb
         LIBPATH_SUFFIX mac/release/${NCBI_ThirdParty_VDB_ARCH}/lib INCPATH_SUFFIX interfaces)
     if(NCBI_COMPONENT_VDB_FOUND)
+        get_target_property(_inc ncbi-vdb::ncbi-vdb INTERFACE_INCLUDE_DIRECTORIES)
         set(NCBI_COMPONENT_VDB_INCLUDE
-            ${NCBI_ThirdParty_VDB}/interfaces 
-            ${NCBI_ThirdParty_VDB}/interfaces/os/mac
-            ${NCBI_ThirdParty_VDB}/interfaces/os/unix
-            ${NCBI_ThirdParty_VDB}/interfaces/cc/${NCBI_ThirdParty_VDB_COMPILER}/${NCBI_ThirdParty_VDB_ARCH}
-            ${NCBI_ThirdParty_VDB}/interfaces/cc/${NCBI_ThirdParty_VDB_COMPILER}
+            ${_inc}/os/mac
+            ${_inc}/os/unix
+            ${_inc}/cc/${NCBI_ThirdParty_VDB_COMPILER}/${NCBI_ThirdParty_VDB_ARCH}
+            ${_inc}/cc/${NCBI_ThirdParty_VDB_COMPILER}
         )
         set(HAVE_NCBI_VDB 1)
     endif()
@@ -425,27 +425,42 @@ NCBIcomponent_report(VDB)
 # wxWidgets
 if(NOT NCBI_COMPONENT_wxWidgets_FOUND)
     set(_wx_ver 3.2)
-#    NCBI_define_Xcomponent(NAME wxWidgets LIB
-    NCBI_define_component(wxWidgets
-        wx_osx_cocoa_gl-${_wx_ver}
-        wx_osx_cocoa_richtext-${_wx_ver}
-        wx_osx_cocoa_aui-${_wx_ver}
-        wx_osx_cocoa_propgrid-${_wx_ver}
-        wx_osx_cocoa_xrc-${_wx_ver}
-        wx_osx_cocoa_qa-${_wx_ver}
-        wx_osx_cocoa_html-${_wx_ver}
-        wx_osx_cocoa_adv-${_wx_ver}
-        wx_osx_cocoa_core-${_wx_ver}
-        wx_base_xml-${_wx_ver}
-        wx_base_net-${_wx_ver}
-        wx_base-${_wx_ver}
+    NCBI_define_Xcomponent(NAME wxWidgets LIB
+        wx_osx_cocoau_gl-${_wx_ver}
+        wx_osx_cocoau_richtext-${_wx_ver}
+        wx_osx_cocoau_aui-${_wx_ver}
+        wx_osx_cocoau_propgrid-${_wx_ver}
+        wx_osx_cocoau_xrc-${_wx_ver}
+        wx_osx_cocoau_qa-${_wx_ver}
+        wx_osx_cocoau_html-${_wx_ver}
+        wx_osx_cocoau_adv-${_wx_ver}
+        wx_osx_cocoau_core-${_wx_ver}
+        wx_baseu_xml-${_wx_ver}
+        wx_baseu_net-${_wx_ver}
+        wx_baseu-${_wx_ver}
+        INCLUDE wx-${_wx_ver}
     )
     if(NCBI_COMPONENT_wxWidgets_FOUND)
-        list(GET NCBI_COMPONENT_wxWidgets_LIBS 0 _lib)
-        get_filename_component(_libdir ${_lib} DIRECTORY)
-        set(NCBI_COMPONENT_wxWidgets_INCLUDE ${NCBI_COMPONENT_wxWidgets_INCLUDE}/wx-${_wx_ver} ${_libdir}/wx/include/osx_cocoa-ansi-${_wx_ver})
+        get_property(_libs TARGET wxWidgets::wxWidgets PROPERTY INTERFACE_LINK_LIBRARIES)
+        list(GET _libs 0 _lib)
+        foreach(_cfg IN ITEMS _RELEASE _DEBUG "")
+            get_target_property(_libdir${_cfg} ${_lib} IMPORTED_LOCATION${_cfg})
+            get_filename_component(_libdir${_cfg} ${_libdir${_cfg}} DIRECTORY)
+        endforeach()
+        set(_sfx "wx/include/osx_cocoa-unicode-${_wx_ver}")
+        if(_libdir)
+            set(_inc_path "${_libdir}/${_sfx}")
+        else()
+            if("${_libdir_RELEASE}" STREQUAL "${_libdir_DEBUG}")
+                set(_inc_path "${_libdir_RELEASE}/${_sfx}")
+            else()
+                set(_inc_path "$<IF:$<CONFIG:DEBUG>,${_libdir_DEBUG}/${_sfx},${_libdir_RELEASE}/${_sfx}>")
+            endif()
+        endif()
+        set_property(TARGET wxWidgets::wxWidgets APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${_inc_path}")
         set(NCBI_COMPONENT_wxWidgets_LIBS    ${NCBI_COMPONENT_wxWidgets_LIBS}  "-framework Cocoa")
-        set(NCBI_COMPONENT_wxWidgets_DEFINES __WXMAC__ __WXOSX__ __WXOSX_COCOA__ wxDEBUG_LEVEL=0)
+        target_compile_definitions(wxWidgets::wxWidgets INTERFACE __WXMAC__ __WXOSX__ __WXOSX_COCOA__ wxDEBUG_LEVEL=0)
+
     endif()
 endif()
 NCBIcomponent_report(wxWidgets)
