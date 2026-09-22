@@ -1017,16 +1017,16 @@ END_NCBI_SCOPE
 
 BEGIN_STD_SCOPE
 inline
-void swap(NCBI_NS_NCBI::objects::CAnnotMapping_Info& info1,
-          NCBI_NS_NCBI::objects::CAnnotMapping_Info& info2)
+void swap(ncbi::objects::CAnnotMapping_Info& info1,
+          ncbi::objects::CAnnotMapping_Info& info2)
 {
     info1.Swap(info2);
 }
 
 
 inline
-void swap(NCBI_NS_NCBI::objects::CAnnotObject_Ref& ref1,
-          NCBI_NS_NCBI::objects::CAnnotObject_Ref& ref2)
+void swap(ncbi::objects::CAnnotObject_Ref& ref1,
+          ncbi::objects::CAnnotObject_Ref& ref2)
 {
     ref1.Swap(ref2);
 }
