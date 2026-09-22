@@ -46,7 +46,7 @@ enum EReaderCode
     eReader_Alignment,
 };
 
-NCBI_XOBJREAD_EXPORT const NCBI_NS_NCBI::CEnumeratedTypeValues* ENUM_METHOD_NAME(EReaderCode)(void);
+NCBI_XOBJREAD_EXPORT const ncbi::CEnumeratedTypeValues* ENUM_METHOD_NAME(EReaderCode)(void);
 
 enum EModSubcode
 {
@@ -61,7 +61,7 @@ enum EModSubcode
     eModSubcode_Applied
 };
 
-NCBI_XOBJREAD_EXPORT const NCBI_NS_NCBI::CEnumeratedTypeValues* ENUM_METHOD_NAME(EModSubcode)(void);
+NCBI_XOBJREAD_EXPORT const ncbi::CEnumeratedTypeValues* ENUM_METHOD_NAME(EModSubcode)(void);
 
 
 enum EAlnSubcode
@@ -89,7 +89,7 @@ enum EAlnSubcode
     eAlnSubcode_UnexpectedCommandArgs
 };
 
-NCBI_XOBJREAD_EXPORT const NCBI_NS_NCBI::CEnumeratedTypeValues* ENUM_METHOD_NAME(EAlnSubcode)(void);
+NCBI_XOBJREAD_EXPORT const ncbi::CEnumeratedTypeValues* ENUM_METHOD_NAME(EAlnSubcode)(void);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
