@@ -84,7 +84,7 @@ void CMSHit::RecordMatchesScan(CLadder& Ladder,
                 iHitInfo++;
             }
         }
-    } catch (NCBI_NS_STD::exception& e) {
+    } catch (std::exception& e) {
 	ERR_POST(Info << "Exception caught in CMSHit::RecordMatchesScan: " << e.what());
 	throw;
     }
@@ -536,7 +536,7 @@ int CMSPeak::Read(const CMSSpectrum& Spectrum,
         }
         SetPeakLists()[eMSPeakListOriginal]->Sort(eMSPeakListSortMZ);
     }
-    catch (NCBI_NS_STD::exception& e) {
+    catch (std::exception& e) {
         ERR_POST(Info << "Exception in CMSPeak::Read: " << e.what());
         throw;
     }
