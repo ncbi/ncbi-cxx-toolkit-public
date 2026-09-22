@@ -2677,7 +2677,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(TParseFlags flags) const
 
     case e_General:
     {
-        if (GetGeneral().GetDb().size() >= sizeof(SAccGuide::CPrefix)) {
+        if (GetGeneral().GetDb().size() >= sizeof(SAccGuide::CPrefix) - 1) {
             return eAcc_general;
         }
         SAccGuide::TPrefix db(GetGeneral().GetDb());
