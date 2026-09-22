@@ -81,7 +81,7 @@ CAutoDefFeatureClause::CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat&
         m_SuppressSubfeatures = true;
     }
 
-    if (m_pMainFeat->CanGetComment() && NStr::Find(m_pMainFeat->GetComment(), "alternatively spliced") != NCBI_NS_STD::string::npos
+    if (m_pMainFeat->CanGetComment() && NStr::Find(m_pMainFeat->GetComment(), "alternatively spliced") != string::npos
         && (subtype == CSeqFeatData::eSubtype_cdregion
         || subtype == CSeqFeatData::eSubtype_exon
         || IsNoncodingProductFeat())) {
@@ -423,16 +423,16 @@ bool CAutoDefFeatureClause::x_FindNoncodingFeatureKeywordProduct (string comment
     }
     string::size_type start_pos = 0;
     
-    while (start_pos != NCBI_NS_STD::string::npos) {
+    while (start_pos != string::npos) {
         start_pos = NStr::Find(comment, keyword, start_pos);
-        if (start_pos != NCBI_NS_STD::string::npos) {
+        if (start_pos != string::npos) {
             string possible = comment.substr(start_pos + keyword.length());
             NStr::TruncateSpacesInPlace(possible);
             if (!NStr::StartsWith(possible, "GenBank Accession Number")) {
                 product_name = possible;
                 // truncate at first semicolon
                 string::size_type end = NStr::Find(product_name, ";");
-                if (end != NCBI_NS_STD::string::npos) {
+                if (end != string::npos) {
                     product_name = product_name.substr(0, end);
                 }
                 // remove sequence from end of product name if found
@@ -461,9 +461,9 @@ bool CAutoDefFeatureClause::x_GetNoncodingProductFeatProduct (string &product_na
     }
     string comment = m_pMainFeat->GetComment();
     string::size_type start_pos = NStr::Find(comment, "nonfunctional ");
-    if (start_pos != NCBI_NS_STD::string::npos) {
+    if (start_pos != string::npos) {
         string::size_type sep_pos = NStr::Find (comment, " due to ", start_pos);
-        if (sep_pos != NCBI_NS_STD::string::npos) {
+        if (sep_pos != string::npos) {
             product_name = comment.substr(start_pos, sep_pos - start_pos);
             return true;
         }
@@ -544,7 +544,7 @@ bool CAutoDefParsedtRNAClause::ParseString(string comment, string& gene_name, st
     }
 
     string::size_type pos = NStr::Find(comment, "(");
-    if (pos == NCBI_NS_STD::string::npos) {
+    if (pos == string::npos) {
         if (NStr::StartsWith (comment, "tRNA-")) {
             product_name = comment;
         } else {
@@ -555,7 +555,7 @@ bool CAutoDefParsedtRNAClause::ParseString(string comment, string& gene_name, st
         product_name = comment.substr(0, pos);
         comment = comment.substr (pos + 1);
         pos = NStr::Find(comment, ")");
-        if (pos == NCBI_NS_STD::string::npos) {
+        if (pos == string::npos) {
             return false;
         }
         gene_name = comment.substr (0, pos);
@@ -625,7 +625,7 @@ void s_UseCommentBeforeSemicolon(const CSeq_feat& feat, string& label)
     if (feat.IsSetComment()) {
         label = feat.GetComment();
         string::size_type pos = NStr::Find(label, ";");
-        if (pos != NCBI_NS_STD::string::npos) {
+        if (pos != string::npos) {
             label = label.substr(0, pos);
         }
     }
@@ -661,7 +661,7 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
         string comment = m_pMainFeat->GetComment();
         if (!NStr::IsBlank(comment)) {
             string::size_type pos = NStr::Find(comment, ";");
-            if (pos != NCBI_NS_STD::string::npos) {
+            if (pos != string::npos) {
                 comment = comment.substr(0, pos);
             }
             product_name = comment;
@@ -1570,7 +1570,7 @@ bool CAutoDefNcRNAClause::x_GetProductName(string &product_name)
         ncrna_comment = m_pMainFeat->GetComment();
         if (!NStr::IsBlank(ncrna_comment)) {
             string::size_type pos = NStr::Find(ncrna_comment, ";");
-            if (pos != NCBI_NS_STD::string::npos) {
+            if (pos != string::npos) {
                 ncrna_comment = ncrna_comment.substr(0, pos);
             }
         }
@@ -1717,7 +1717,7 @@ CAutoDefSatelliteClause::CAutoDefSatelliteClause(CBioseq_Handle bh, const CSeq_f
 {
 	string comment = m_pMainFeat->GetNamedQual("satellite");
     string::size_type pos = NStr::Find(comment, ";");
-    if (pos != NCBI_NS_STD::string::npos) {
+    if (pos != string::npos) {
         comment = comment.substr(0, pos);
     }
 
@@ -1829,7 +1829,7 @@ void CAutoDefIntergenicSpacerClause::InitWithString (string comment, bool suppre
             }
         } else {
             string::size_type pos = NStr::Find(comment, "intergenic spacer");
-            if (pos != NCBI_NS_STD::string::npos) {
+            if (pos != string::npos) {
                 m_Description = comment.substr(0, pos);
                 NStr::TruncateSpacesInPlace(m_Description);
                 m_DescriptionChosen = true;
@@ -1859,7 +1859,7 @@ CAutoDefIntergenicSpacerClause::CAutoDefIntergenicSpacerClause(CBioseq_Handle bh
 
     /* truncate at first semicolon */
     string::size_type pos = NStr::Find(comment, ";");
-    if (pos != NCBI_NS_STD::string::npos) {
+    if (pos != string::npos) {
         comment = comment.substr(0, pos);
     }
 
@@ -2005,7 +2005,7 @@ CAutoDefGeneClusterClause::CAutoDefGeneClusterClause(CBioseq_Handle bh, const CS
     string comment = m_pMainFeat->GetComment();
     
     string::size_type pos = NStr::Find(comment, "gene cluster");
-    if (pos == NCBI_NS_STD::string::npos) {
+    if (pos == string::npos) {
         pos = NStr::Find(comment, "gene locus");
         m_Typeword = "gene locus";
         m_TypewordChosen = true;
@@ -2014,7 +2014,7 @@ CAutoDefGeneClusterClause::CAutoDefGeneClusterClause(CBioseq_Handle bh, const CS
         m_TypewordChosen = true;
     }
     
-    if (pos != NCBI_NS_STD::string::npos) {
+    if (pos != string::npos) {
         comment = comment.substr(0, pos);
     }
     NStr::TruncateSpacesInPlace(comment);
@@ -2042,7 +2042,7 @@ CAutoDefMiscCommentClause::CAutoDefMiscCommentClause(CBioseq_Handle bh, const CS
     if (m_pMainFeat->CanGetComment()) {
         m_Description = m_pMainFeat->GetComment();
         string::size_type pos = NStr::Find(m_Description, ";");
-        if (pos != NCBI_NS_STD::string::npos) {
+        if (pos != string::npos) {
             m_Description = m_Description.substr(0, pos);
         }
         m_DescriptionChosen = true;
