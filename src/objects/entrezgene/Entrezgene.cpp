@@ -231,7 +231,7 @@ CRef<CGene_commentary> CEntrezgene::FindComment(const string& heading) const
 
 // Extract all PMIDs.
 
-void CEntrezgene::GetPubs(set<NCBI_NS_NCBI::TEntrezId>& pubs_out) const
+void CEntrezgene::GetPubs(set<ncbi::TEntrezId>& pubs_out) const
 {
     CTypeConstIterator<CPub> iter(*this);
     for (const auto& pub : iter) {

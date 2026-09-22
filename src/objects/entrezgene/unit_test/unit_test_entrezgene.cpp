@@ -183,7 +183,7 @@ BOOST_AUTO_TEST_CASE(s_TestFindComment)
 BOOST_AUTO_TEST_CASE(s_TestPubs)
 {
     CEntrezgene eg_obj;
-    set<NCBI_NS_NCBI::TEntrezId> pubs;
+    set<ncbi::TEntrezId> pubs;
 
     s_GetObject("1", eg_obj);
     eg_obj.GetPubs(pubs);
