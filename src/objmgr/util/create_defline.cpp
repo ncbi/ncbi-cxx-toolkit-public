@@ -1869,8 +1869,8 @@ void CDeflineGenerator::x_SetTitleFromPDB (void)
       if (m_UsePDBCompoundForDefline) {
           joiner.Add("Chain ").Add(chain).Add(", ").Add(m_PDBCompound);
       } else {
-          std::size_t found = m_Comment.find_first_not_of("0123456789");
-          if (found != std::string::npos && found < m_Comment.length() && m_Comment[found] == ' ') {
+          size_t found = m_Comment.find_first_not_of("0123456789");
+          if (found != string::npos && found < m_Comment.length() && m_Comment[found] == ' ') {
               joiner.Add("Chain ").Add(chain).Add(", ").Add(m_Comment.substr (found));
           } else {
               joiner.Add("Chain ").Add(chain).Add(", ").Add(m_Comment);
@@ -1883,8 +1883,8 @@ void CDeflineGenerator::x_SetTitleFromPDB (void)
         if (m_UsePDBCompoundForDefline) {
             joiner.Add("Chain ").Add(chain).Add(", ").Add(m_PDBCompound);
         } else {
-            std::size_t found = m_Comment.find_first_not_of("0123456789");
-            if (found != std::string::npos && found < m_Comment.length() && m_Comment[found] == ' ') {
+            size_t found = m_Comment.find_first_not_of("0123456789");
+            if (found != string::npos && found < m_Comment.length() && m_Comment[found] == ' ') {
                 joiner.Add("Chain ").Add(chain).Add(", ").Add(m_Comment.substr (found));
             } else {
                 joiner.Add("Chain ").Add(chain).Add(", ").Add(m_Comment);
