@@ -193,7 +193,7 @@ int CSpectrumSet::LoadMultDTA(CNcbiIstream& DTA, int Max)
         return 1;
     }
         
-    } catch (NCBI_NS_STD::exception& e) {
+    } catch (std::exception& e) {
         ERR_POST(Info << "Exception in CSpectrumSet::LoadMultDTA: " << e.what());
         throw;
     } catch (...) {
@@ -264,7 +264,7 @@ int CSpectrumSet::LoadMultBlankLineDTA(CNcbiIstream& DTA, int Max, bool isPKL)
         if (!GotOne) 
             return 1;
 
-    } catch (NCBI_NS_STD::exception& e) {
+    } catch (std::exception& e) {
         ERR_POST(Info << "Exception in CSpectrumSet::LoadMultBlankLineDTA: " << e.what());
         throw;
     } catch (...) {
@@ -407,7 +407,7 @@ int CSpectrumSet::LoadDTA(CNcbiIstream& DTA)
             Set().push_back(MySpectrum);
         }
 
-    } catch (NCBI_NS_STD::exception& e) {
+    } catch (std::exception& e) {
         ERR_POST(Info << "Exception in CSpectrumSet::LoadDTA: " << e.what());
         throw;
     } catch (...) {
@@ -456,7 +456,7 @@ int CSpectrumSet::LoadMGF(CNcbiIstream& DTA, int Max)
         if (!GotOne) 
             return 1;
 
-    } catch (NCBI_NS_STD::exception& e) {
+    } catch (std::exception& e) {
         ERR_POST(Info << "Exception in CSpectrumSet::LoadMGF: " << e.what());
         throw;
     } catch (...) {
