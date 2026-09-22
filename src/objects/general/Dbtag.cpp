@@ -361,7 +361,7 @@ static constexpr string_view kHomdSeq = "http://www.homd.org/seq="; // https not
 MAKE_CONST_MAP(sc_UrlMap, CDbtag::EDbtagType, string,
 {
     { CDbtag::eDbtagType_AFTOL, "https://wasabi.lutzonilab.net/pub/displayTaxonInfo?aftol_id=" },
-    { CDbtag::eDbtagType_APHIDBASE, "http://bipaa.genouest.org/apps/grs-2.3/grs?reportID=aphidbase_transcript_report&objectID=" }, // "Service Unavailable" tested 7/13/2016
+    { CDbtag::eDbtagType_APHIDBASE, "https://aphidcyc.cycadsys.org/ACYPI/new-image?type=GENE&object=" }, // "Service Unavailable" tested 7/13/2016
     { CDbtag::eDbtagType_ATCC, "https://www.atcc.org/Products/All/" },
     { CDbtag::eDbtagType_AceView_WormGenes, "https://www.ncbi.nlm.nih.gov/IEB/Research/Acembly/av.cgi?db=worm&c=gene&q=" },
     { CDbtag::eDbtagType_AntWeb, "https://www.antweb.org/specimen.do?name=" },
