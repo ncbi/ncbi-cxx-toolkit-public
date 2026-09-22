@@ -87,7 +87,7 @@ int CRelLocTester::Run(void)
     CConstRef<CSeq_loc> parent;
     for (CFeat_CI it(handle, CSeqFeatData::e_Cdregion);  it;  ++it) {
         parent = &it->GetLocation();
-        BREAK(it);
+        break;
     }
     if ( !parent ) {
         // use the middle third
