@@ -262,7 +262,7 @@ private:
     }
     key_type x_GetKeyLong(void) const {
         DEFINE_STATIC_FAST_MUTEX(s_InitMutex);
-        NCBI_NS_NCBI::CFastMutexGuard guard(s_InitMutex);
+        ncbi::CFastMutexGuard guard(s_InitMutex);
         if ( !m_Key ) {
             _ASSERT(sizeof(value_type) <= sizeof(void*));
             key_type new_key = 0;
