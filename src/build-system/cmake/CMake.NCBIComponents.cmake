@@ -23,33 +23,8 @@ set(NCBI_ALL_LEGACY "")
 set(NCBI_ALL_DISABLED_LEGACY "")
 
 #############################################################################
-macro(NCBIcomponent_report _name)
-    if (NCBI_COMPONENT_${_name}_DISABLED)
-        NCBI_notice("DISABLED ${_name}")
-    endif()
-    if (NOT ${_name} IN_LIST NCBI_ALL_COMPONENTS AND
-        NOT ${_name} IN_LIST NCBI_ALL_REQUIRES AND
-        NOT ${_name} IN_LIST NCBI_ALL_DISABLED)
-        if(NOT DEFINED NCBI_COMPONENT_${_name}_FOUND AND NOT DEFINED NCBI_REQUIRE_${_name}_FOUND)
-            set(NCBI_REQUIRE_${_name}_FOUND NO)
-        endif()
-        if(NCBI_COMPONENT_${_name}_FOUND)
-            list(APPEND NCBI_ALL_COMPONENTS ${_name})
-        elseif(NCBI_REQUIRE_${_name}_FOUND)
-            list(APPEND NCBI_ALL_REQUIRES ${_name})
-        else()
-            list(APPEND NCBI_ALL_DISABLED ${_name})
-        endif()
-    endif()
-endmacro()
-macro(NCBIcomponent_deprecated_name _deprecated_name _newname)
-    if(NCBI_COMPONENT_${_newname}_FOUND)
-        list(APPEND NCBI_ALL_LEGACY ${_deprecated_name})
-        set(NCBI_COMPONENT_${_deprecated_name}_FOUND ${_newname})
-    else()
-        list(APPEND NCBI_ALL_DISABLED_LEGACY ${_deprecated_name})
-    endif()
-endmacro()
+include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsCheck.cmake)
+
 #############################################################################
 
 set(NCBI_REQUIRE_MT_FOUND YES)
@@ -122,9 +97,6 @@ foreach( _comp IN ITEMS GNUTLS WGMLST)
         set(NCBI_COMPONENT_${_comp}_DISABLED YES)
     endif()
 endforeach()
-
-#############################################################################
-include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsCheck.cmake)
 
 #############################################################################
 # ORIG_LIBS
