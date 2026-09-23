@@ -1183,7 +1183,7 @@ void CGFFReader::x_PlaceFeature(CSeq_feat& feat, const SRecord&)
                 seq.Reset(seq2);
             } else if ( seq2.NotEmpty()  &&  seq != seq2) {
                 seq.Reset();
-                BREAK(it);
+                break;
             }
         }
     }
@@ -1485,7 +1485,7 @@ void CGFFReader::x_PlaceSeq(CBioseq& seq)
     for (CTypeConstIterator<CBioseq> it(*m_TSE);  it;  ++it) {
         if (&*it == &seq) {
             found = true;
-            BREAK(it);
+            break;
         }
     }
     if ( !found ) {

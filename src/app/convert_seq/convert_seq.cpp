@@ -277,7 +277,7 @@ CRef<CSeq_entry> CConversionApp::Read(const CArgs& args)
             CBioseq& seq = entry->SetSeq();
             for (CTypeIterator<CSeq_id> it(*annot);  it;  ++it) {
                 seq.SetId().push_back(CRef<CSeq_id>(&*it));
-                BREAK(it);
+                break;
             }
             seq.SetInst().SetRepr(CSeq_inst::eRepr_virtual);
             seq.SetInst().SetMol(CSeq_inst::eMol_not_set);
