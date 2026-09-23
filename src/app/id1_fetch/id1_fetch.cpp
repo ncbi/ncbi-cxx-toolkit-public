@@ -84,7 +84,7 @@
 
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(NCBI_NS_NCBI::objects); // MSVC requires qualification (!)
+USING_SCOPE(ncbi::objects); // MSVC requires qualification (!)
 
 
 /////////////////////////////////
