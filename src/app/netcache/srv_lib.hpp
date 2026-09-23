@@ -413,7 +413,7 @@ CNcbiOstream& operator<<(CNcbiOstream& os, const CStackTrace& stack_trace)
 /**/
 
 #define NCBI_ERRCODE_X_NAME(name)   \
-    NCBI_NS_NCBI::err_code_x::NCBI_NAME2(eErrCodeX_, name)
+    ncbi::err_code_x::NCBI_NAME2(eErrCodeX_, name)
 
 #define NCBI_ERRCODE_X   NCBI_ERRCODE_X_NAME(NCBI_USE_ERRCODE_X)
 
