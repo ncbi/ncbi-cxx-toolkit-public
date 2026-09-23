@@ -71,19 +71,19 @@ template<typename T> const CTypeInfo* (*GetTypeRef(const T* object))(void);
 template<typename T> pair<void*, const CTypeInfo*> ObjectInfo(T& object);
 template<typename T> pair<const void*, const CTypeInfo*> ConstObjectInfo(const T& object);
 
-EMPTY_TEMPLATE
+template<>
 inline
 const CTypeInfo* (*GetTypeRef< CRef<ncbi::objects::CSeq_entry> >(const CRef<ncbi::objects::CSeq_entry>* object))(void)
 {
     return &ncbi::objects::CSeq_entry::GetRefChoiceTypeInfo;
 }
-EMPTY_TEMPLATE
+template<>
 inline
 pair<void*, const CTypeInfo*> ObjectInfo< CRef<ncbi::objects::CSeq_entry> >(CRef<ncbi::objects::CSeq_entry>& object)
 {
     return make_pair((void*)&object, GetTypeRef(&object)());
 }
-EMPTY_TEMPLATE
+template<>
 inline
 pair<const void*, const CTypeInfo*> ConstObjectInfo< CRef<ncbi::objects::CSeq_entry> >(const CRef<ncbi::objects::CSeq_entry>& object)
 {
