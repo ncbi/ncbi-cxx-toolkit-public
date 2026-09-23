@@ -1140,6 +1140,7 @@ CCM	c	Czech Collection of Microorganisms	CCM<CZE>
 CCM-A	c	Coleccion de Cultivos Microbianos			
 CCM-CIBE	c	Escuela Superior Politecnica del Litoral			
 CCM-UFV 	c	Collection of Cyanobacteria and Microalgae at the Universidade Federal de Vicosa	CCM-UFV		
+CCM/UEA	c	Central De Colecoes Microbiologicas Da Universidade Do Estado Do Amazonas			
 CCM<CHN>	s	Changchun College of Traditional Chinese Medicine, Department of Chinese Materia Medica			
 CCM<USA-MT>	s	Carter County Museum			
 CCMA-UFSCar	c	Culture Collection of Freshwater Microalgae			
