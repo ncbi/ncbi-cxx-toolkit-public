@@ -868,15 +868,13 @@ END_NCBI_SCOPE
 
 #if defined(NCBI_USE_OLD_IOSTREAM)
 
-extern NCBI_NS_NCBI::CNcbiOstream& operator<<(NCBI_NS_NCBI::CNcbiOstream& os,
-                                              const NCBI_NS_STD::string& str)
+extern ncbi::CNcbiOstream& operator<<(ncbi::CNcbiOstream& os, const std::string& str)
 {
     return str.empty() ? os : os << str.c_str();
 }
 
 
-extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
-                                              NCBI_NS_STD::string& str)
+extern ncbi::CNcbiIstream& operator>>(ncbi::CNcbiIstream& is, std::string& str)
 {
     int ch;
     if ( !is.ipfx() )
