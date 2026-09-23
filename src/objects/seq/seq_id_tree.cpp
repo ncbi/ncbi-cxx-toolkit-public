@@ -1102,7 +1102,7 @@ CSeq_id_Textseq_Tree::x_FindStrInfo(const TStringMap& str_map,
                                     CSeq_id::E_Choice type,
                                     const CTextseq_id& tid) const
 {
-    for ( TStringMapCI vit = str_map.find(str);
+    for ( TStringMapCI vit = str_map.lower_bound(str);
           vit != str_map.end() && NStr::EqualNocase(vit->first, str);
           ++vit ) {
         CConstRef<CSeq_id> id = vit->second->GetSeqId();
@@ -1208,7 +1208,7 @@ void CSeq_id_Textseq_Tree::x_Erase(TStringMap& str_map,
                                    const string& key,
                                    const CSeq_id_Info* info)
 {
-    for ( TStringMap::iterator it = str_map.find(key);
+    for ( TStringMap::iterator it = str_map.lower_bound(key);
           it != str_map.end() && NStr::EqualNocase(it->first, key);
           ++it ) {
         if ( it->second == info ) {
@@ -1280,7 +1280,7 @@ void CSeq_id_Textseq_Tree::x_FindMatchByAcc(TSeq_id_MatchList& id_list,
         }
     }
 
-    for ( TStringMapCI vit = m_ByAcc.find(acc);
+    for ( TStringMapCI vit = m_ByAcc.lower_bound(acc);
           vit != m_ByAcc.end() && NStr::EqualNocase(vit->first, acc);
           ++vit ) {
         if ( ver ) {
@@ -1327,7 +1327,7 @@ CSeq_id_Textseq_Tree::x_FindRevMatchByAccNonPacked(TSeq_id_MatchList& id_list,
                                                    const string& acc,
                                                    const TVersion* ver) const
 {
-    for ( TStringMapCI vit = m_ByAcc.find(acc);
+    for ( TStringMapCI vit = m_ByAcc.lower_bound(acc);
           vit != m_ByAcc.end() && NStr::EqualNocase(vit->first, acc);
           ++vit ) {
         CConstRef<CSeq_id> tst_id = vit->second->GetSeqId();
@@ -1357,7 +1357,7 @@ void CSeq_id_Textseq_Tree::x_FindMatchByName(TSeq_id_MatchList& id_list,
                                              const CTextseq_id* tid,
                                              EAllowFields allow_fields) const
 {
-    for ( TStringMapCI vit = m_ByName.find(name);
+    for ( TStringMapCI vit = m_ByName.lower_bound(name);
           vit != m_ByName.end() && NStr::EqualNocase(vit->first, name);
           ++vit ) {
         if ( tid || allow_fields != eAnyFields ) {
@@ -1399,7 +1399,7 @@ void CSeq_id_Textseq_Tree::x_FindRevMatchByName(TSeq_id_MatchList& /*id_list*/,
                                                 const CTextseq_id* /*tid*/) const
 {
     /*
-    for ( TStringMapCI vit = m_ByName.find(name);
+    for ( TStringMapCI vit = m_ByName.lower_bound(name);
           vit != m_ByName.end() && NStr::EqualNocase(vit->first, name);
           ++vit ) {
         if ( tid ) {
