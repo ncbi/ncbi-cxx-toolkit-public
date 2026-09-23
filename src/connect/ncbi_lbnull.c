@@ -325,9 +325,8 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
         assert(!iter->arg  &&  !iter->val  &&  !iter->vallen);
     if (len > CONN_HOST_LEN) {
         CORE_LOGF_X(namelen > CONN_HOST_LEN ? 87 : 88, eLOG_Error,
-                    ("[%s]  %service name too long for LBNULL",
-                     namelen > CONN_HOST_LEN ? "S" : "Extended s",
-                     iter->name));
+                    ("[%s]  %service name too long for LBNULL", iter->name,
+                     namelen > CONN_HOST_LEN ? "S" : "Extended s"));
         goto out;
     }
     CORE_TRACEF(("[%s]  LBNULL using %sserver type \"%s\"",
@@ -433,7 +432,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
             x_tr(buf + namelen, iter->arg, iter->arglen, '_', '-');
             namelen += iter->arglen;
         }
-        if (iter->vallen/*cannot have a trailing '-', so a bit different from NAMERD*/) {
+        if (iter->vallen/*cannot have a dangling '-', so a bit different from NAMERD*/) {
             buf[namelen++] = '-';
             x_tr(buf + namelen, iter->val, iter->vallen, '_', '-');
             namelen += iter->vallen;
