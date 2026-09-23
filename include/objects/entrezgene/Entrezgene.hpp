@@ -77,7 +77,7 @@ public:
     CRef<CGene_commentary> FindComment(const string& heading) const; 
 
     // Extract all PMIDs.
-    void GetPubs(set<NCBI_NS_NCBI::TEntrezId>& pubs) const;
+    void GetPubs(set<ncbi::TEntrezId>& pubs) const;
 
 private:
     // Prohibit copy constructor and assignment operator
