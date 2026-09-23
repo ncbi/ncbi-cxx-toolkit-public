@@ -286,11 +286,12 @@ static const char* x_GetValue(const char* svc/*ign if !svclen*/, size_t svclen,
 
 /* Trim in-place all leading and trailing whitespace first, then strip a pair
  * of matching enveloping quotes (single or double), if any.  Do not trim any
- * whitespace within the quotes, though.  Return its argument. */
+ * whitespace within the quotes, though.
+ */
 #ifdef __GNUC__
 inline
 #endif /*__GNUC__*/
-static char* x_TrimInPlace(char* str)
+static void x_TrimInPlace(char* str)
 {
     size_t len;
     char*  ptr = str;
@@ -308,7 +309,6 @@ static char* x_TrimInPlace(char* str)
     if (len  &&  ptr != str)
         memmove(str, ptr, len);
     str[len] = '\0';
-    return str;
 }
 
 
@@ -316,7 +316,7 @@ static char* x_TrimInPlace(char* str)
 char* ConnNetInfo_TrimInPlace(char* str)
 {
     if (str  &&  *str)
-        str = x_TrimInPlace(str);
+        x_TrimInPlace(str);
     return str;
 }
 
@@ -333,14 +333,14 @@ static const char* s_GetValue(const char* svc, size_t svclen,
                                     value_size, def_value, generic, strncompar);
     if (retval) {
         assert(retval == value);
-        if (*retval) {
-            retval = x_TrimInPlace(value);
-            assert(retval == value);
-        }
+        if (*retval)
+            x_TrimInPlace(value);
     }
     if (*value  ||  (!*value  &&  def_value  &&  *def_value)) {
-        CORE_TRACEF(("ConnNetInfo(%s%.*s%s%.*s=\"%s\"): %s%s%s", &"\""[!svclen],
-                     (int) svclen, svc,   svclen ? "\", " : "",
+        CORE_TRACEF(("ConnNetInfo(%s%.*s%s%.*s=\"%s\"): %s%s%s",
+                     !svclen ? "" : *generic ? "/*\""   : "\"",
+                     (int) svclen, svc,
+                     !svclen ? "" : *generic ? "\",*/ " : "\", ",
                      (int) parlen, param, value,
                      &"\""[!retval], retval ? retval : "NULL",
                      &"\""[!retval]));
