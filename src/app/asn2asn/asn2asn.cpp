@@ -73,19 +73,19 @@ template<typename T> pair<const void*, const CTypeInfo*> ConstObjectInfo(const T
 
 EMPTY_TEMPLATE
 inline
-const CTypeInfo* (*GetTypeRef< CRef<NCBI_NS_NCBI::objects::CSeq_entry> >(const CRef<NCBI_NS_NCBI::objects::CSeq_entry>* object))(void)
+const CTypeInfo* (*GetTypeRef< CRef<ncbi::objects::CSeq_entry> >(const CRef<ncbi::objects::CSeq_entry>* object))(void)
 {
-    return &NCBI_NS_NCBI::objects::CSeq_entry::GetRefChoiceTypeInfo;
+    return &ncbi::objects::CSeq_entry::GetRefChoiceTypeInfo;
 }
 EMPTY_TEMPLATE
 inline
-pair<void*, const CTypeInfo*> ObjectInfo< CRef<NCBI_NS_NCBI::objects::CSeq_entry> >(CRef<NCBI_NS_NCBI::objects::CSeq_entry>& object)
+pair<void*, const CTypeInfo*> ObjectInfo< CRef<ncbi::objects::CSeq_entry> >(CRef<ncbi::objects::CSeq_entry>& object)
 {
     return make_pair((void*)&object, GetTypeRef(&object)());
 }
 EMPTY_TEMPLATE
 inline
-pair<const void*, const CTypeInfo*> ConstObjectInfo< CRef<NCBI_NS_NCBI::objects::CSeq_entry> >(const CRef<NCBI_NS_NCBI::objects::CSeq_entry>& object)
+pair<const void*, const CTypeInfo*> ConstObjectInfo< CRef<ncbi::objects::CSeq_entry> >(const CRef<ncbi::objects::CSeq_entry>& object)
 {
     return make_pair((const void*)&object, GetTypeRef(&object)());
 }
@@ -117,7 +117,7 @@ END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 
-using namespace NCBI_NS_NCBI::objects;
+using namespace ncbi::objects;
 
 #if CSEQ_ENTRY_REF_CHOICE
 typedef CRef<CSeq_entry> TSeqEntry;
