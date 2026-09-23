@@ -2604,13 +2604,13 @@ throw (std::bad_alloc)
 throw ()
 #endif
 {
-    return NCBI_NS_NCBI::CNCMMCentral::AllocMemory(size);
+    return ncbi::CNCMMCentral::AllocMemory(size);
 }
 
 void
 operator delete (void* ptr) throw ()
 {
-    NCBI_NS_NCBI::CNCMMCentral::DeallocMemory(ptr);
+    ncbi::CNCMMCentral::DeallocMemory(ptr);
 }
 
 void*
@@ -2621,13 +2621,13 @@ throw (std::bad_alloc)
 throw ()
 #endif
 {
-    return NCBI_NS_NCBI::CNCMMCentral::AllocMemory(size);
+    return ncbi::CNCMMCentral::AllocMemory(size);
 }
 
 void
 operator delete[] (void* ptr) throw ()
 {
-    NCBI_NS_NCBI::CNCMMCentral::DeallocMemory(ptr);
+    ncbi::CNCMMCentral::DeallocMemory(ptr);
 }
 */
 #ifdef __GLIBC__
@@ -2638,17 +2638,17 @@ operator delete[] (void* ptr) throw ()
 /*
 void* s_NCMallocHook(size_t size, const void* caller)
 {
-    return NCBI_NS_NCBI::CNCMMCentral::AllocMemory(size);
+    return ncbi::CNCMMCentral::AllocMemory(size);
 }
 
 void* s_NCReallocHook(void* mem_ptr, size_t size, const void* caller)
 {
-    return NCBI_NS_NCBI::CNCMMCentral::ReallocMemory(mem_ptr, size);
+    return ncbi::CNCMMCentral::ReallocMemory(mem_ptr, size);
 }
 
 void s_NCFreeHook(void* mem_ptr, const void* caller)
 {
-    NCBI_NS_NCBI::CNCMMCentral::DeallocMemory(mem_ptr);
+    ncbi::CNCMMCentral::DeallocMemory(mem_ptr);
 }
 
 void s_NCInitMallocHook(void)
@@ -2668,26 +2668,26 @@ void (*__malloc_initialize_hook) (void) = s_NCInitMallocHook;
 void*
 malloc(size_t size)
 {
-    return NCBI_NS_NCBI::CNCMMCentral::AllocMemory(size);
+    return ncbi::CNCMMCentral::AllocMemory(size);
 }
 
 void
 free(void* ptr)
 {
-    NCBI_NS_NCBI::CNCMMCentral::DeallocMemory(ptr);
+    ncbi::CNCMMCentral::DeallocMemory(ptr);
 }
 
 void*
 realloc(void* mem_ptr, size_t new_size)
 {
-    return NCBI_NS_NCBI::CNCMMCentral::ReallocMemory(mem_ptr, new_size);
+    return ncbi::CNCMMCentral::ReallocMemory(mem_ptr, new_size);
 }
 
 void*
 calloc(size_t num, size_t size)
 {
     size_t mem_size = size * num;
-    void* mem_ptr = NCBI_NS_NCBI::CNCMMCentral::AllocMemory(mem_size);
+    void* mem_ptr = ncbi::CNCMMCentral::AllocMemory(mem_size);
     memset(mem_ptr, 0, mem_size);
     return mem_ptr;
 }
