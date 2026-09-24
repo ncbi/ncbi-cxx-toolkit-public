@@ -364,6 +364,11 @@ if test \$? -ne 0;  then
    export NCBI_CONFIG__ID2SNP__PTIS_NAME
 fi
 
+# Work around macOS's low default soft limit on open files, which
+# breaks seqdb_unit_test.  Raise it to a value observed under Cygwin
+# so the setting can be unconditional without yielding noise.
+ulimit -n 3200
+
 
 
 #//////////////////////////////////////////////////////////////////////////
