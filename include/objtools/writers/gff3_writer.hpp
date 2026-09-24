@@ -146,7 +146,8 @@ public:
         fMicroIntrons = (fGff2WriterLast << 2),
         fExcludeNucs = (fGff2WriterLast << 3), // for backward compatibility :-(
         fIncludeProts = (fGff2WriterLast << 4),
-        fGff3WriterLast = fIncludeProts,
+        fInsdcMode = (fGff2WriterLast << 5),
+        fGff3WriterLast = fInsdcMode,
     } TFlags;
 
 public:
@@ -502,6 +503,8 @@ private:
             const CGff3FeatureRecord& rna_record,
             const CGffFeatureContext& fc,
             const CMappedFeat& mf);
+
+    bool xIsInsdcMode() const;
 
 protected:
     unsigned int m_uRecordId;

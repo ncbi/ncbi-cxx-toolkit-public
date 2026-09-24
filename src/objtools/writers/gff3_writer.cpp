@@ -3199,5 +3199,9 @@ string CGff3Writer::xNextAlignId()
     return string("aln") + NStr::UIntToString(m_uPendingAlignId++);
 }
 
+bool CGff3Writer::xIsInsdcMode() const {
+    return (m_uFlags & fInsdcMode);
+}
+
 END_NCBI_SCOPE
 

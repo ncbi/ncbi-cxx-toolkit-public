@@ -57,18 +57,13 @@ public:
     typedef enum {  // Must be consistent with flags in CReaderBase
         fNormal =       0,
         fGenbankMode =  1 << 4,
-        fRetainLocusIds = 1 << 5,
-        fAssumeCircularSequence = 1 << 6,
+        fRetainLocusIds [[deprecated]] = 1 << 5,
+        fAssumeCircularSequence [[deprecated]] = 1 << 6,
     } TFlags;
 
     using IdToFeatureMap = map<string, CRef<CSeq_feat>>;
     using TScoreValueMap = map<string, CRef<CScore::TValue>>;
 
-public:
-
-    //
-    //  object management:
-    //
 public:
     CGff2Reader(
         TReaderFlags iFlags,
@@ -79,9 +74,6 @@ public:
 
     virtual ~CGff2Reader();
 
-    //
-    //  object interface:
-    //
 public:
     unsigned int
     ObjectType() const { return OT_SEQENTRY; };
@@ -149,35 +141,43 @@ public:
         CSeq_annot&,
         const CTempString = {});
 
+    [[deprecated]]
     virtual bool x_ParseAlignmentGff(
         const CTempString& strLine,
         list<string>& id_list,
         map<string, list<CRef<CSeq_align>>>& alignments);
 
+    [[deprecated]]
     void x_GetAlignmentScores(
         const CSeq_align& alignment,
         TScoreValueMap& score_values) const;
 
+    [[deprecated]]
     void x_FindMatchingScores(
         const TScoreValueMap& scores_1,
         const TScoreValueMap& scores_2,
         set<string>& matching_scores) const;
 
+    [[deprecated]]
     virtual bool x_CreateAlignment(
         const CGff2Record& gff,
         CRef<CSeq_align>& pAlign);
 
+    [[deprecated]]
     bool x_MergeAlignments(
         const list<CRef<CSeq_align>>& alignment_list,
         CRef<CSeq_align>& processed);
 
+    [[deprecated]]
     void x_InitializeScoreSums(const TScoreValueMap score_values,
         map<string, TSeqPos>& summed_scores) const;
 
+    [[deprecated]]
     void x_ProcessAlignmentScores(const CSeq_align& alignment,
         map<string, TSeqPos>& summed_scores,
         TScoreValueMap& common_scores) const;
 
+    [[deprecated]]
     void x_ProcessAlignmentsGff(
         const list<string>& id_list,
         const map<string, list<CRef<CSeq_align>>>& alignments,
@@ -188,6 +188,7 @@ public:
         CSeq_annot&,
         ILineErrorListener* =0);
 
+    [[deprecated]]
     virtual bool x_UpdateAnnotAlignment(
         const CGff2Record&,
         CSeq_annot&,
@@ -197,11 +198,13 @@ public:
         CRef< CSeq_feat >,
         CSeq_annot& );
 
+    [[deprecated]]
     bool xFeatureSetQualifier(
         const CTempString&,
         const CTempString&,
         CRef<CSeq_feat>);
 
+    [[deprecated]]
     virtual bool x_ProcessQualifierSpecialCase(
         CGff2Record::TAttrCit,
         CRef< CSeq_feat > );
@@ -210,10 +213,12 @@ public:
         const CTempString&,
         CRef< CSeq_feat >& );
 
+    [[deprecated]]
     bool xAlignmentSetScore(
         const CGff2Record&,
         CRef<CSeq_align> );
 
+    [[deprecated]]
     bool xSetDensegStarts(
         const vector<string>& gapParts,
         ENa_strand identStrand,
@@ -223,11 +228,13 @@ public:
         const CGff2Record& gff,
         CSeq_align::C_Segs::TDenseg& denseg);
 
+    [[deprecated]]
     bool xGetStartsOnMinusStrand(TSeqPos offset,
         const vector<string>& gapParts,
         bool isTarget,
         vector<int>& starts) const;
 
+    [[deprecated]]
     bool xGetStartsOnPlusStrand(TSeqPos offset,
         const vector<string>& gapParts,
         bool isTarget,
@@ -239,27 +246,34 @@ public:
     virtual bool xGenerateParentChildXrefs(
         CSeq_annot&);
 
+    [[deprecated]]
     bool xUpdateSplicedAlignment(const CGff2Record& gff,
                                  CRef<CSeq_align> pAlign) const;
 
+    [[deprecated]]
     bool xUpdateSplicedSegment(const CGff2Record& gff,
                                CSpliced_seg& segment) const;
 
+    [[deprecated]]
     bool xSetSplicedExon(
         const CGff2Record& gff,
         CRef<CSpliced_exon> pExon) const;
 
+    [[deprecated]]
     bool xGetTargetParts(const CGff2Record& gff,
                          vector<string>& targetParts) const;
 
+    [[deprecated]]
     bool xAlignmentSetSegment(
         const CGff2Record&,
         CRef<CSeq_align> );
 
+    [[deprecated]]
     bool xAlignmentSetDenseg(
         const CGff2Record&,
         CRef<CSeq_align> );
 
+    [[deprecated]]
     bool xAlignmentSetSpliced_seg(
         const CGff2Record&,
         CRef<CSeq_align> );
@@ -268,24 +282,25 @@ public:
     x_ParseDbtag(
         const CTempString& );
 
+    [[deprecated]]
     static bool xIsSequenceRegion(
         const CTempString& line);
 
+    [[deprecated]]
     static bool xIsFastaMarker(
         const CTempString& line);
 
     CMessageListenerLenient m_ErrorsPrivate;
     IdToFeatureMap m_MapIdToFeature;
 
+    [[deprecated]]
     virtual bool xIsIgnoredFeatureType(
         const CTempString&);
 
+    [[deprecated]]
     virtual bool xIsIgnoredFeatureId(
         const CTempString&);
 
-    //
-    //  helpers:
-    //
 protected:
     virtual CGff2Record* x_CreateRecord() { return new CGff2Record(); };
 
@@ -307,8 +322,6 @@ protected:
     virtual void xProcessSequenceRegionPragma(
         const CTempString& /*pragma*/) { /* ignored for most GFF variants */ };
 
-    //  data:
-    //
 protected:
     string m_CurrentSeqId;
     ILineErrorListener* m_pErrors;
@@ -316,7 +329,6 @@ protected:
     bool mParsingAlignment;
     CRef<CAnnotdesc> m_CurrentBrowserInfo;
     CRef<CAnnotdesc> m_CurrentTrackInfo;
-    //unsigned int mSequenceSize;
     bool mAtSequenceData;
 };
 

@@ -184,6 +184,33 @@ void CGff2Reader::xPostProcessAnnot(
     }
 }
 
+//  -------------------------------------------------------------------------------
+static bool s_IsSequenceRegion(
+    const CTempString& line)
+//  -------------------------------------------------------------------------------
+{
+    if (!NStr::StartsWith(line, "##"))
+        return false;
+
+    string lineLowerCase(line.substr(0, 18));
+    NStr::ToLower(lineLowerCase);
+    return NStr::StartsWith(lineLowerCase, "##sequence-region");
+}
+
+//  -------------------------------------------------------------------------------
+static bool s_IsFastaMarker(
+    const CTempString& line)
+//  -------------------------------------------------------------------------------
+{
+    if (!NStr::StartsWith(line, "##"))
+        return false;
+
+    string lineLowerCase(line.substr(0, 8));
+    NStr::ToLower(lineLowerCase);
+
+    return NStr::StartsWith(lineLowerCase, "##fasta");
+}
+
 //  ----------------------------------------------------------------------------
 void
 CGff2Reader::xGetData(
@@ -217,7 +244,7 @@ CGff2Reader::xGetData(
         }
         return;
     }
-    if (xIsSequenceRegion(line)) {
+    if (s_IsSequenceRegion(line)) {
         xProcessSequenceRegionPragma(line);
         if (!mCurrentFeatureCount) {
             xParseTrackLine("track");
@@ -225,7 +252,7 @@ CGff2Reader::xGetData(
         }
         return;
     }
-    if (xIsFastaMarker(line)) {
+    if (s_IsFastaMarker(line)) {
         mAtSequenceData = true;
         readerData.clear();
         return;
@@ -297,14 +324,6 @@ CGff2Reader::xParseFeature(
     catch(CObjReaderLineException& err) {
         ProcessError(err, pEC);
         return false;
-    }
-
-    //make sure we are interested:
-    if (xIsIgnoredFeatureType(pRecord->Type())) {
-        return true;
-    }
-    if (xIsIgnoredFeatureId(pRecord->Id())) {
-        return true;
     }
 
     //append feature to annot:
@@ -389,32 +408,11 @@ void CGff2Reader::x_FindMatchingScores(const TScoreValueMap& scores_1,
 
 
 //  ----------------------------------------------------------------------------
-void CGff2Reader::x_ProcessAlignmentsGff(const list<string>& id_list,
-                            const map<string, list<CRef<CSeq_align>>>& alignments,
-                            CRef<CSeq_annot> pAnnot)
+void CGff2Reader::x_ProcessAlignmentsGff(const list<string>&,
+                            const map<string, list<CRef<CSeq_align>>>&,
+                            CRef<CSeq_annot>)
 //  ----------------------------------------------------------------------------
-{
-    if (pAnnot.IsNull()) {
-        pAnnot = Ref(new CSeq_annot());
-    }
-
-    for (const string& id : id_list) {
-        CRef<CSeq_align> pAlign = Ref(new CSeq_align());
-        if (x_MergeAlignments(alignments.at(id), pAlign)) {
-            // if available, add current browser information
-            if ( m_CurrentBrowserInfo ) {
-                pAnnot->SetDesc().Set().push_back( m_CurrentBrowserInfo );
-            }
-
-            pAnnot->SetNameDesc("alignments");
-
-            if ( !m_AnnotTitle.empty() ) {
-                pAnnot->SetTitleDesc(m_AnnotTitle);
-            }
-            // Add alignment
-            pAnnot->SetData().SetAlign().push_back(pAlign);
-        }
-    }
+{ // DEPRECATED
 }
 
 
@@ -441,10 +439,11 @@ bool CGff2Reader::x_ParseAlignmentGff(
     }
 
     CRef<CSeq_align> alignment;
+/*
     if (!x_CreateAlignment(*pRecord, alignment)) {
         return false;
     }
-
+*/
     alignments[id].push_back(alignment);
 
     ++mCurrentFeatureCount;
@@ -470,148 +469,20 @@ void CGff2Reader::x_InitializeScoreSums(const TScoreValueMap score_values,
 
 
 //  ----------------------------------------------------------------------------
-void CGff2Reader::x_ProcessAlignmentScores(const CSeq_align& alignment,
-    map<string, TSeqPos>& summed_scores,
-    TScoreValueMap& common_scores) const
+void CGff2Reader::x_ProcessAlignmentScores(const CSeq_align&,
+    map<string, TSeqPos>&,
+    TScoreValueMap&) const
 //  ----------------------------------------------------------------------------
-{
-    const list<string> summed_score_names {"num_ident", "num_mismatch"};
-
-    TScoreValueMap new_scores;
-    x_GetAlignmentScores(alignment, new_scores);
-
-    for (const string& score_name : summed_score_names) {
-        if (new_scores.find(score_name) == new_scores.end()) {
-            summed_scores.erase(score_name);
-        } else if (summed_scores.find(score_name) != summed_scores.end()) {
-            summed_scores[score_name] += new_scores[score_name]->GetInt();
-            new_scores.erase(score_name);
-        }
-    }
-
-    set<string> matching_score_names;
-    x_FindMatchingScores(common_scores,
-        new_scores,
-        matching_score_names);
-
-    common_scores.clear();
-    for (string score_name : matching_score_names) {
-        common_scores[score_name] = Ref(new CScore::TValue());
-        common_scores[score_name]->Assign(*new_scores[score_name]);
-    }
+{ // DEPRECATED
 }
 
 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_MergeAlignments(
-        const list<CRef<CSeq_align>>& alignment_list,
-        CRef<CSeq_align>& processed)
+        const list<CRef<CSeq_align>>&,
+        CRef<CSeq_align>&)
 //  ----------------------------------------------------------------------------
-{
-    if (alignment_list.empty()) {
-        return false;
-    }
-
-    if (alignment_list.size() == 1) {
-        processed = alignment_list.front();
-        return true;
-    }
-
-    map<string, TSeqPos> summed_scores;
-    const list<string> summed_score_names {"num_ident", "num_mismatch"};
-
-    // Factor out identical scores
-    list<CRef<CSeq_align>>::const_iterator align_it = alignment_list.begin();
-    TScoreValueMap score_values;
-    x_GetAlignmentScores(**align_it, score_values);
-
-    x_InitializeScoreSums(score_values,
-        summed_scores);
-    ++align_it;
-
-    while (align_it != alignment_list.end() &&
-           !score_values.empty()) {
-
-        x_ProcessAlignmentScores(**align_it, summed_scores, score_values);
-        ++align_it;
-    }
-    // At this point, the score_values map should contain the scores that
-    // do not change over the rows
-
-    const auto first_alignment = alignment_list.front();
-    if (first_alignment->IsSetSegs() &&
-        first_alignment->GetSegs().IsSpliced()) {
-
-        processed->SetType(CSeq_align::eType_global);
-
-        if (first_alignment->IsSetDim()) {
-            processed->SetDim(first_alignment->GetDim());
-        }
-
-        for (auto& kv : summed_scores) {
-            auto score = Ref(new CScore());
-            score->SetId().SetStr(kv.first);
-            score->SetValue().SetInt(kv.second);
-            processed->SetScore().push_back(score);
-        }
-
-        for (auto& kv : score_values) {
-            auto score = Ref(new CScore());
-            score->SetId().SetStr(kv.first);
-            score->SetValue().Assign(*(kv.second));
-            processed->SetScore().push_back(score);
-        }
-
-        CRef<CSpliced_seg> spliced = Ref(new CSpliced_seg());
-        spliced->Assign(first_alignment->GetSegs().GetSpliced());
-        processed->SetSegs().SetSpliced(*spliced);
-
-        auto align_it = alignment_list.cbegin();
-        ++align_it;
-
-        while(align_it != alignment_list.end()) {
-            const auto& spliced_seg = (*align_it)->GetSegs().GetSpliced();
-            if (spliced_seg.IsSetExons()) {
-                for (auto exon : spliced_seg.GetExons()) {
-                    processed->SetSegs().SetSpliced().SetExons().push_back(exon);
-                }
-            }
-            ++align_it;
-        }
-        return true;
-    }
-
-
-    processed->SetType(CSeq_align::eType_disc);
-
-    for (auto& kv : summed_scores) {
-        auto score = Ref(new CScore());
-        score->SetId().SetStr(kv.first);
-        score->SetValue().SetInt(kv.second);
-        processed->SetScore().push_back(score);
-    }
-
-    for (auto& kv : score_values) {
-        auto score = Ref(new CScore());
-        score->SetId().SetStr(kv.first);
-        score->SetValue().Assign(*(kv.second));
-        processed->SetScore().push_back(score);
-    }
-
-    for (auto current : alignment_list) {
-        auto new_align = Ref(new CSeq_align());
-        new_align->Assign(*current);
-        new_align->ResetScore();
-
-        for (CRef<CScore> score : current->GetScore()) {
-            const string& score_name = score->GetId().GetStr();
-            if (score_values.find(score_name) == score_values.end()) {
-                new_align->SetScore().push_back(score);
-            }
-        }
-        processed->SetSegs().SetDisc().Set().push_back(new_align);
-    }
-
+{ // DEPRECATED
     return true;
 }
 
@@ -642,82 +513,37 @@ bool CGff2Reader::xUpdateAnnotFeature(
 
 
 bool CGff2Reader::x_CreateAlignment(
-        const CGff2Record& gff,
-        CRef<CSeq_align>& pAlign )
-{
-    pAlign = Ref(new CSeq_align());
-    pAlign->SetType(CSeq_align::eType_partial);
-    pAlign->SetDim(2);
-
-    //score
-    if (!xAlignmentSetScore(gff, pAlign)) {
-        return false;
-    }
-
-    if (!xAlignmentSetSegment(gff, pAlign)) {
-        return false;
-    }
-
+        const CGff2Record&,
+        CRef<CSeq_align>&)
+{ // DEPRECATED
     return true;
 }
 
 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_UpdateAnnotAlignment(
-    const CGff2Record& gff,
-    CSeq_annot& annot,
-    ILineErrorListener* pEC)
+    const CGff2Record&,
+    CSeq_annot&,
+    ILineErrorListener*)
 //  ----------------------------------------------------------------------------
-{
-    CRef<CSeq_align> pAlign( new CSeq_align );
-    pAlign->SetType(CSeq_align::eType_partial);
-    pAlign->SetDim(2);
-
-    //score
-    if (!xAlignmentSetScore(gff, pAlign)) {
-        return false;
-    }
-    if (!xAlignmentSetSegment(gff, pAlign)) {
-        return false;
-    }
-    annot.SetData().SetAlign().push_back( pAlign ) ;
+{ // DEPRECATED
     return true;
 }
 
 
 
-bool CGff2Reader::xUpdateSplicedAlignment(const CGff2Record& gff,
-                                          CRef<CSeq_align> pAlign) const
-{
-    if (!pAlign->IsSetType()) {
-        pAlign->SetType(CSeq_align::eType_partial);
-    }
-    // Need to set a whole bunch of things
-
-    if (!xUpdateSplicedSegment(gff, pAlign->SetSegs().SetSpliced())) {
-        return false;
-    }
-
+bool CGff2Reader::xUpdateSplicedAlignment(const CGff2Record&,
+                                          CRef<CSeq_align>) const
+{ // DEPRECATED
     return true;
 }
 
 
 
 bool CGff2Reader::xUpdateSplicedSegment(
-        const CGff2Record& gff,
-        CSpliced_seg& segment) const
-{
-    if (segment.IsSetProduct_type()) {
-        segment.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
-    }
-
-    CRef<CSpliced_exon> pExon = Ref(new CSpliced_exon());
-    if (!xSetSplicedExon(gff, pExon)) {
-        return false;
-    }
-
-    segment.SetExons().push_back(pExon);
-
+        const CGff2Record&,
+        CSpliced_seg&) const
+{ // DEPRECATED
     return true;
 }
 
@@ -725,36 +551,10 @@ bool CGff2Reader::xUpdateSplicedSegment(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::xSetSplicedExon(
-        const CGff2Record& gff,
-        CRef<CSpliced_exon> pExon) const
+        const CGff2Record&,
+        CRef<CSpliced_exon>) const
 //  ----------------------------------------------------------------------------
-{
-    vector<string> targetParts;
-    if (!xGetTargetParts(gff, targetParts)) {
-        return false;
-    }
-
-    pExon->SetGenomic_start(static_cast<TSeqPos>(gff.SeqStart()-1));
-    pExon->SetGenomic_end(static_cast<TSeqPos>(gff.SeqStop()-1));
-    if (gff.IsSetStrand()) {
-        pExon->SetGenomic_strand(gff.Strand());
-    }
-
-    const int product_start = NStr::StringToInt(targetParts[1])-1;
-    const int product_end = NStr::StringToInt(targetParts[2])-1;
-
-    // Check to see that product start and product end are
-    // non-negative and that product_end >= product_start
-
-    pExon->SetProduct_start().SetNucpos(product_start);
-    pExon->SetProduct_end().SetNucpos(product_end);
-
-    ENa_strand targetStrand = eNa_strand_plus;
-    if (targetParts[3] == "-") {
-        targetStrand = eNa_strand_minus;
-    }
-    pExon->SetProduct_strand(targetStrand);
-
+{ // DEPRECATED
     return true;
 }
 
@@ -762,7 +562,7 @@ bool CGff2Reader::xSetSplicedExon(
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::xGetTargetParts(const CGff2Record& gff, vector<string>& targetParts) const
 //  ----------------------------------------------------------------------------
-{
+{ // DEPRECATED
     string targetInfo;
     if (!gff.GetAttribute("Target", targetInfo)) {
         return false;
@@ -783,7 +583,7 @@ bool CGff2Reader::xGetStartsOnMinusStrand(TSeqPos offset,
         const bool isTarget,
         vector<int>& starts) const
 //  ----------------------------------------------------------------------------
-{
+{ // DEPRECATED
     starts.clear();
     const size_t gapCount = gapParts.size();
 
@@ -828,7 +628,7 @@ bool CGff2Reader::xGetStartsOnPlusStrand(TSeqPos offset,
         const bool isTarget,
         vector<int>& starts) const
 //  ----------------------------------------------------------------------------
-{
+{ // DEPRECATED
     starts.clear();
 
     for (const auto& gap_part : gapParts) {
@@ -867,240 +667,45 @@ bool CGff2Reader::xGetStartsOnPlusStrand(TSeqPos offset,
 
 
 //  ----------------------------------------------------------------------------
-bool CGff2Reader::xSetDensegStarts(const vector<string>& gapParts,
-                                   const ENa_strand identStrand,
-                                   const ENa_strand targetStrand,
-                                   const TSeqPos targetStart,
-                                   const TSeqPos targetEnd,
-                                   const CGff2Record& gff,
-                                   CSeq_align::C_Segs::TDenseg& denseg)
+bool CGff2Reader::xSetDensegStarts(const vector<string>&,
+                                   const ENa_strand,
+                                   const ENa_strand,
+                                   const TSeqPos,
+                                   const TSeqPos,
+                                   const CGff2Record&,
+                                   CSeq_align::C_Segs::TDenseg&)
 //  ----------------------------------------------------------------------------
-{
-    const size_t gapCount = gapParts.size();
-
-    const bool isTarget = true;
-    vector<int> targetStarts;
-    if (targetStrand == eNa_strand_minus) {
-        if( !xGetStartsOnMinusStrand(targetEnd,
-            gapParts,
-            isTarget,
-            targetStarts)) {
-            return false;
-        }
-    }
-    else {
-        if (!xGetStartsOnPlusStrand(targetStart,
-            gapParts,
-            isTarget,
-            targetStarts)) {
-            return false;
-        }
-    }
-
-    vector<int> identStarts;
-    const bool isIdent = !isTarget;
-
-    if (identStrand == eNa_strand_minus) {
-
-        if ( !xGetStartsOnMinusStrand(
-            static_cast<TSeqPos>(gff.SeqStop()),
-            gapParts,
-            isIdent,
-            identStarts)) {
-            return false;
-        }
-    }
-    else {
-        if ( !xGetStartsOnPlusStrand(
-            static_cast<TSeqPos>(gff.SeqStart()),
-            gapParts,
-            isIdent,
-            identStarts)) {
-            return false;
-        }
-    }
-
-    for (size_t i=0; i<gapCount; ++i) {
-        denseg.SetStarts().push_back(targetStarts[i]);
-        denseg.SetStarts().push_back(identStarts[i]);
-    }
+{ // DEPRECATED
     return true;
 }
 
 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::xAlignmentSetSegment(
-    const CGff2Record& gff,
-    CRef<CSeq_align> pAlign)
+    const CGff2Record&,
+    CRef<CSeq_align>)
 //  ----------------------------------------------------------------------------
-{
-    const string& type = gff.Type();
-
-    if (type == "cDNA_match" ||
-        type == "EST_match"  ||
-        type == "translated_nucleotide_match") {
-        return xAlignmentSetSpliced_seg(gff, pAlign);
-    }
-
-    return xAlignmentSetDenseg(gff, pAlign);
+{ // DEPRECATED
+    return true;
 }
 
 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::xAlignmentSetSpliced_seg(
-    const CGff2Record& gff,
-    CRef<CSeq_align> pAlign)
+    const CGff2Record&,
+    CRef<CSeq_align>)
 //  ----------------------------------------------------------------------------
-{
-    vector<string> targetParts;
-    if (!xGetTargetParts(gff, targetParts)) {
-        return false;
-    }
-
-    CSeq_align::TSegs& segs = pAlign->SetSegs();
-
-    auto& spliced_seg = segs.SetSpliced();
-
-    const string& type = gff.Type();
-    if (type == "translated_nucleotide_match") {
-        spliced_seg.SetProduct_type(CSpliced_seg::eProduct_type_protein);
-    }
-    else {
-        spliced_seg.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
-    }
-    CRef<CSeq_id> product_id = mSeqIdResolve(targetParts[0], 0, true);
-    spliced_seg.SetProduct_id(*product_id);
-
-    CRef<CSeq_id> genomic_id = mSeqIdResolve(gff.Id(), 0, true);
-    spliced_seg.SetGenomic_id(*genomic_id);
-
-    if (targetParts[3] == "+") {
-        spliced_seg.SetProduct_strand(eNa_strand_plus);
-    }
-    else
-    if (targetParts[3] == "-") {
-        spliced_seg.SetProduct_strand(eNa_strand_minus);
-    }
-
-    if (gff.IsSetStrand()) {
-        ENa_strand ident_strand = gff.Strand();
-        spliced_seg.SetGenomic_strand(ident_strand);
-    }
-
-    CRef<CSpliced_exon> exon(new CSpliced_exon());
-    exon->SetProduct_start().SetNucpos(NStr::StringToInt(targetParts[1])-1);
-    exon->SetProduct_end().SetNucpos(NStr::StringToInt(targetParts[2])-1);
-
-    exon->SetGenomic_start(static_cast<TSeqPos>(gff.SeqStart()));
-    exon->SetGenomic_end(static_cast<TSeqPos>(gff.SeqStop()));
-
-    string gapInfo;
-    vector<string> gapParts;
-    if (gff.GetAttribute("Gap", gapInfo)) {
-        NStr::Split(gapInfo, " ", gapParts);
-    }
-    else {
-        gapParts.push_back(string("M") + NStr::NumericToString(gff.SeqStop()-gff.SeqStart()+1));
-    }
-
-
-    for (const auto& gap_part : gapParts) {
-        CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk());
-        char changeType = gap_part[0];
-        int changeSize = NStr::StringToInt(gap_part.substr(1));
-        switch (changeType) {
-        default:
-            return false;
-
-        case 'M':
-            chunk->SetMatch(changeSize);
-            break;
-
-        case 'I':
-            chunk->SetProduct_ins(changeSize);
-            break;
-
-        case 'D':
-            chunk->SetGenomic_ins(changeSize);
-            break;
-
-        }
-        exon->SetParts().push_back(chunk);
-    }
-
-    spliced_seg.SetExons().push_back(exon);
-
+{ // DEPRECATED
     return true;
 }
 
 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::xAlignmentSetDenseg(
-    const CGff2Record& gff,
-    CRef<CSeq_align> pAlign)
+    const CGff2Record&,
+    CRef<CSeq_align>)
 //  ----------------------------------------------------------------------------
-{
-    vector<string> targetParts;
-    if (!xGetTargetParts(gff, targetParts)) {
-        return false;
-    }
-
-    //strands
-    ENa_strand targetStrand = eNa_strand_plus;
-    if (targetParts[3] == "-") {
-        targetStrand = eNa_strand_minus;
-    }
-    ENa_strand identStrand = eNa_strand_plus;
-    if (gff.IsSetStrand()) {
-        identStrand = gff.Strand();
-    }
-
-
-    string gapInfo;
-    vector<string> gapParts;
-    if (gff.GetAttribute("Gap", gapInfo)) {
-        NStr::Split(gapInfo, " ", gapParts);
-    }
-    else {
-        gapParts.push_back(string("M") + NStr::NumericToString(gff.SeqStop()-gff.SeqStart()+1));
-    }
-
-    int gapCount = static_cast<int>(gapParts.size());
-
-    //meta
-    CSeq_align::TSegs& segs = pAlign->SetSegs();
-    CSeq_align::C_Segs::TDenseg& denseg = segs.SetDenseg();
-    denseg.SetDim(2);
-    denseg.SetNumseg(gapCount);
-
-    //ids
-    denseg.SetIds().push_back(
-        mSeqIdResolve(targetParts[0], 0, true));
-    denseg.SetIds().push_back(
-        mSeqIdResolve(gff.Id(), 0, true));
-
-    const TSeqPos targetStart = NStr::StringToInt(targetParts[1])-1;
-    const TSeqPos targetEnd   = NStr::StringToInt(targetParts[2])-1;
-
-    if (!xSetDensegStarts(gapParts,
-                          identStrand,
-                          targetStrand,
-                          targetStart,
-                          targetEnd,
-                          gff,
-                          denseg)) {
-        return false;
-    }
-
-    //lengths
-    for (int i=0; i < gapCount; ++i) {
-        denseg.SetLens().push_back(NStr::StringToInt(CTempString(gapParts[i],1,string::npos)));
-    }
-
-    for (int i=0; i < gapCount; ++i) {
-        denseg.SetStrands().push_back(targetStrand);
-        denseg.SetStrands().push_back(identStrand);
-    }
+{ // DEPRECATED
     return true;
 }
 
@@ -1179,10 +784,10 @@ bool CGff2Reader::xAlignmentSetScore(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_ProcessQualifierSpecialCase(
-    CGff2Record::TAttrCit it,
-    CRef< CSeq_feat > pFeature )
+    CGff2Record::TAttrCit,
+    CRef< CSeq_feat >)
 //  ----------------------------------------------------------------------------
-{
+{ // DEPRECATED
     return false;
 }
 
@@ -1410,17 +1015,17 @@ bool CGff2Reader::IsAlignmentData(
 
 //  ============================================================================
 bool CGff2Reader::xIsIgnoredFeatureType(
-    const CTempString& type)
+    const CTempString&)
 //  ============================================================================
-{
+{ // DEPRECATED
     return false;
 }
 
 //  ============================================================================
 bool CGff2Reader::xIsIgnoredFeatureId(
-    const CTempString& type)
+    const CTempString&)
 //  ============================================================================
-{
+{ // DEPRECATED
     return false;
 }
 
@@ -1458,7 +1063,7 @@ bool CGff2Reader::IsInGenbankMode() const
 bool CGff2Reader::xIsSequenceRegion(
     const CTempString& line)
 //  -------------------------------------------------------------------------------
-{
+{ // DEPRECATED
     if (!NStr::StartsWith(line, "##"))
         return false;
 
@@ -1471,7 +1076,7 @@ bool CGff2Reader::xIsSequenceRegion(
 bool CGff2Reader::xIsFastaMarker(
     const CTempString& line)
 //  -------------------------------------------------------------------------------
-{
+{ // DEPRECATED
     if (!NStr::StartsWith(line, "##"))
         return false;
 

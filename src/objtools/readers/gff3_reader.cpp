@@ -57,6 +57,8 @@
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 
+#include <objects/seqalign/Seq_align.hpp>
+
 #include <objtools/readers/gff3_reader.hpp>
 #include <objtools/readers/gff3_location_merger.hpp>
 
@@ -64,6 +66,7 @@
 
 #include <algorithm>
 #include <util/regexp/ctre/ctre.hpp>
+#include "gff3_align_utils.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -288,7 +291,7 @@ void CGff3Reader::xProcessAlignmentData(
 {
     for (const string& id : mAlignmentData.mIds) {
         CRef<CSeq_align> pAlign = Ref(new CSeq_align());
-        if (x_MergeAlignments(mAlignmentData.mAlignments.at(id), pAlign)) {
+        if (SGff3AlignUtils::MergeAlignments(mAlignmentData.mAlignments.at(id), pAlign)) {
             // if available, add current browser information
             if ( m_CurrentBrowserInfo ) {
                 annot.SetDesc().Set().push_back( m_CurrentBrowserInfo );
@@ -303,6 +306,100 @@ void CGff3Reader::xProcessAlignmentData(
             annot.SetData().SetAlign().push_back(pAlign);
         }
     }
+}
+
+
+static bool s_IsIgnoredFeatureType(const CTempString& featureType, bool in_genbank_mode)
+{
+    typedef CStaticArraySet<string, PNocase> STRINGARRAY;
+
+    string ftype(CSoMap::ResolveSoAlias(featureType));
+
+    static const char* const ignoredTypesAlways_[] = {
+        "protein",
+        "start_codon", // also part of a cds feature
+        "stop_codon", // in GFF3, also part of a cds feature
+    };
+    DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, ignoredTypesAlways, ignoredTypesAlways_);
+    STRINGARRAY::const_iterator cit = ignoredTypesAlways.find(ftype);
+    if (cit != ignoredTypesAlways.end()) {
+        return true;
+    }
+    if (!in_genbank_mode) {
+        return false;
+    }
+
+    /* -genbank mode:*/
+    static const char* const specialTypesGenbank_[] = {
+        "antisense_RNA",
+        "autocatalytically_spliced_intron",
+        "guide_RNA",
+        "hammerhead_ribozyme",
+        "lnc_RNA",
+        "miRNA",
+        "piRNA",
+        "rasiRNA",
+        "ribozyme",
+        "RNase_MRP_RNA",
+        "RNase_P_RNA",
+        "scRNA",
+        "selenocysteine",
+        "siRNA",
+        "snoRNA",
+        "snRNA",
+        "SRP_RNA",
+        "stop_codon_read_through",
+        "telomerase_RNA",
+        "vault_RNA",
+        "Y_RNA"
+    };
+    DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, specialTypesGenbank, specialTypesGenbank_);
+
+    static const char* const ignoredTypesGenbank_[] = {
+        "apicoplast_chromosome",
+        "assembly",
+        "cDNA_match",
+        "chloroplast_chromosome",
+        "chromoplast_chromosome",
+        "chromosome",
+        "contig",
+        "cyanelle_chromosome",
+        "dna_chromosome",
+        "EST_match",
+        "expressed_sequence_match",
+        "intron",
+        "leucoplast_chromosome",
+        "macronuclear_chromosome",
+        "match",
+        "match_part",
+        "micronuclear_chromosome",
+        "mitochondrial_chromosome",
+        "nuclear_chromosome",
+        "nucleomorphic_chromosome",
+        "nucleotide_motif",
+        "nucleotide_to_protein_match",
+        "partial_genomic_sequence_assembly",
+        "protein_match",
+        "replicon",
+        "rna_chromosome",
+        "sequence_assembly",
+        "supercontig",
+        "translated_nucleotide_match",
+        "ultracontig",
+    };
+    DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, ignoredTypesGenbank, ignoredTypesGenbank_);
+
+    cit = specialTypesGenbank.find(ftype);
+    if (cit != specialTypesGenbank.end()) {
+        return false;
+    }
+
+    cit = ignoredTypesGenbank.find(ftype);
+    if (cit != ignoredTypesGenbank.end()) {
+        return true;
+    }
+
+    return false;
 }
 
 //  ----------------------------------------------------------------------------
@@ -347,10 +444,7 @@ cerr << "Parent " << parent << " not yet seen for ID " << id << endl;
     }
 
     //make sure we are interested:
-    if (xIsIgnoredFeatureType(pRecord->Type())) {
-        return true;
-    }
-    if (xIsIgnoredFeatureId(pRecord->Id())) {
+    if (s_IsIgnoredFeatureType(pRecord->Type(), IsInGenbankMode())) {
         return true;
     }
 
@@ -374,6 +468,27 @@ cerr << "Parent " << parent << " not yet seen for ID " << id << endl;
     return true;
 }
 
+
+static bool s_CreateAlignment(
+        const CGff2Record& gff,
+        CReaderBase::SeqIdResolver& SeqIdResolve,
+        CRef<CSeq_align>& pAlign )
+{
+    pAlign = Ref(new CSeq_align());
+    pAlign->SetType(CSeq_align::eType_partial);
+    pAlign->SetDim(2);
+
+    //score
+    if (!SGff3AlignUtils::SetScore(gff, pAlign)) {
+        return false;
+    }
+
+    if (!SGff3AlignUtils::SetSegment(gff, SeqIdResolve, pAlign)) {
+        return false;
+    }
+
+    return true;
+}
 
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xParseAlignment(
@@ -402,7 +517,7 @@ bool CGff3Reader::xParseAlignment(
     }
 
     CRef<CSeq_align> alignment;
-    if (!x_CreateAlignment(*pRecord, alignment)) {
+    if (!s_CreateAlignment(*pRecord, mSeqIdResolve, alignment)) {
         return false;
     }
 
@@ -511,7 +626,7 @@ bool CGff3Reader::xUpdateAnnotExon(
             if (!xInitializeFeature(record, pFeature)) {
                 return false;
             }
-            return xAddFeatureToAnnot(pFeature, annot);
+            return CGff2Reader::xAddFeatureToAnnot(pFeature, annot);
         }
         IdToFeatureMap::iterator fit = m_MapIdToFeature.find(parentId);
         if (fit != m_MapIdToFeature.end()) {
@@ -521,6 +636,21 @@ bool CGff3Reader::xUpdateAnnotExon(
             }
         }
     }
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+static bool s_FeatureSetQualifier(
+    const CTempString& key,
+    const CTempString& value,
+    CRef<CSeq_feat> pTargetFeature)
+//  ----------------------------------------------------------------------------
+{
+    if (!pTargetFeature) {
+        return false;
+    }
+    pTargetFeature->AddOrReplaceQualifier(key, value);
     return true;
 }
 
@@ -553,10 +683,10 @@ bool CGff3Reader::xUpdateAnnotCds(
 
     m_MapIdToFeature[cdsId] = pFeature;
     xInitializeFeature(record, pFeature);
-    xAddFeatureToAnnot(pFeature, annot);
+    CGff2Reader::xAddFeatureToAnnot(pFeature, annot);
 
     if (!parentId.empty()) {
-        xFeatureSetQualifier("Parent", parentId, pFeature);
+        s_FeatureSetQualifier("Parent", parentId, pFeature);
         xFeatureSetXrefParent(parentId, pFeature);
         if (m_iFlags & fGeneXrefs) {
             xFeatureSetXrefGrandParent(parentId, pFeature);
@@ -715,7 +845,7 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     if (!xInitializeFeature(record, pFeature)) {
         return false;
     }
-    if (! xAddFeatureToAnnot(pFeature, annot)) {
+    if (! CGff2Reader::xAddFeatureToAnnot(pFeature, annot)) {
         return false;
     }
     string strId;
@@ -780,7 +910,7 @@ bool CGff3Reader::xUpdateAnnotRna(
     mrnaLoc->Assign(pFeature->GetLocation().GetInt());
     mMrnaLocs[strId] = mrnaLoc;
 
-    if (! xAddFeatureToAnnot(pFeature, annot)) {
+    if (! CGff2Reader::xAddFeatureToAnnot(pFeature, annot)) {
         return false;
     }
     return true;
@@ -802,7 +932,7 @@ bool CGff3Reader::xUpdateAnnotGene(
     if (!xInitializeFeature(record, pFeature)) {
         return false;
     }
-    if (! xAddFeatureToAnnot(pFeature, annot)) {
+    if (! CGff2Reader::xAddFeatureToAnnot(pFeature, annot)) {
         return false;
     }
     string strId;
@@ -824,7 +954,7 @@ bool CGff3Reader::xUpdateAnnotRegion(
         return false;
     }
 
-    if (! xAddFeatureToAnnot(pFeature, annot)) {
+    if (! CGff2Reader::xAddFeatureToAnnot(pFeature, annot)) {
         return false;
     }
     string strId;
@@ -838,7 +968,7 @@ bool CGff3Reader::xUpdateAnnotRegion(
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xAddFeatureToAnnot(
     CRef< CSeq_feat > pFeature,
-    CSeq_annot& annot )
+    CSeq_annot& annot ) // DEPRECATED
 //  ----------------------------------------------------------------------------
 {
     annot.SetData().SetFtable().push_back( pFeature ) ;
@@ -1152,6 +1282,11 @@ void CGff3Reader::xValidateAnnot(
 //  ----------------------------------------------------------------------------
 {
     mpLocations->Validate();
+}
+
+bool CGff3Reader::xIsInsdcMode() const
+{
+    return (m_iFlags & fInsdcMode);
 }
 
 
