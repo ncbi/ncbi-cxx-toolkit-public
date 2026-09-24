@@ -1442,9 +1442,6 @@ void CMultiReaderApp::xSetFlags(
         }
         if (args["genbank"]) {
             m_iFlags |= CGtfReader::fGenbankMode;
-            if (args["locus-tag"]) {
-                m_iFlags |= CGtfReader::fRetainLocusIds;
-            }
         }
         break;
 
@@ -1461,9 +1458,6 @@ void CMultiReaderApp::xSetFlags(
         if ( args["genbank"] ) {
             m_iFlags |= CGff3Reader::fGeneXrefs;
             m_iFlags |= CGff3Reader::fGenbankMode;
-            if (args["locus-tag"]) {
-                m_iFlags |= CGff3Reader::fRetainLocusIds;
-            }
         }
         break;
 

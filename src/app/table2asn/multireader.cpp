@@ -873,7 +873,6 @@ CMultiReader::TAnnots CMultiReader::xReadGFF3(CNcbiIstream& instream, bool post_
 {
     int flags = 0;
     flags |= CGff3Reader::fGenbankMode;
-    flags |= CGff3Reader::fRetainLocusIds;
     flags |= CGff3Reader::fGeneXrefs;
     flags |= CGff3Reader::fAllIdsAsLocal;
 

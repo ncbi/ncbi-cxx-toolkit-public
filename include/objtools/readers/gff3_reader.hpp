@@ -83,13 +83,10 @@ class NCBI_XOBJREAD_EXPORT CGff3Reader
     friend class CGff3ReadRecord;
 
 public:
-    //
-    //  object management:
-    //
-public:
     enum {
         //range 12..23
         fGeneXrefs = (0x1 << 12),
+        fInsdcMode = 1 << 23,
     };
     //typedef unsigned int TReaderFlags;
 
@@ -123,6 +120,8 @@ public:
 private:
     bool xHasCdsChild(const string& id) const;
 
+    bool xIsInsdcMode() const;
+
 protected:
     void xProcessData(
         const TReaderData&,
@@ -139,6 +138,7 @@ protected:
         CSeq_annot&,
         ILineErrorListener*) override;
 
+    [[deprecated]]
     bool xAddFeatureToAnnot(
         CRef< CSeq_feat >,
         CSeq_annot& ) override;
@@ -208,6 +208,7 @@ protected:
         const string&,
         const CGff2Record&);
 
+    [[deprecated]]
     bool xIsIgnoredFeatureType(
         const CTempString&) override;
 
