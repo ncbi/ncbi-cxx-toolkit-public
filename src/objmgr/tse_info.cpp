@@ -1465,7 +1465,7 @@ void CTSE_Info::x_AddFeaturesById(TAnnotObjects& objects,
         }
     }
     const SFeatIdIndex::TIndexInt& index2 = *index.m_IndexInt;
-    for ( SFeatIdIndex::TIndexInt::const_iterator iter2 = index2.find(id);
+    for ( SFeatIdIndex::TIndexInt::const_iterator iter2 = index2.lower_bound(id);
           iter2 != index2.end() && iter2->first == id; ++iter2 ) {
         const SFeatIdInfo& info = iter2->second;
         if ( info.m_Type == id_type ) {
@@ -1538,7 +1538,7 @@ void CTSE_Info::x_AddFeaturesById(TAnnotObjects& objects,
         }
     }
     const SFeatIdIndex::TIndexStr& index2 = *index.m_IndexStr;
-    for ( SFeatIdIndex::TIndexStr::const_iterator iter2 = index2.find(id);
+    for ( SFeatIdIndex::TIndexStr::const_iterator iter2 = index2.lower_bound(id);
           iter2 != index2.end() && iter2->first == id; ++iter2 ) {
         const SFeatIdInfo& info = iter2->second;
         if ( info.m_Type == id_type ) {
