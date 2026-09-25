@@ -534,8 +534,7 @@ NCBIcomponent_report(FTGL)
 
 #############################################################################
 # GLEW
-#NCBI_define_Xcomponent(NAME GLEW INTERFACELIB GLEW::GLEW MODULE glew LIB GLEW)
-NCBI_define_Xcomponent(NAME GLEW INTERFACELIB GLEW::GLEW LIB GLEW)
+NCBI_define_Xcomponent(NAME GLEW INTERFACELIB GLEW::GLEW MODULE glew LIB GLEW)
 if(NCBI_COMPONENT_GLEW_FOUND)
     get_target_property(_inc GLEW::GLEW INTERFACE_INCLUDE_DIRECTORIES)
     NCBI_evaluate_ifcfg_expression("${_inc}" RELEASE _inc)
