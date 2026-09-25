@@ -58,8 +58,8 @@ CPathHook::~CPathHook(void)
 bool CPathHook::SetHook(CObjectStack* stk, const string& path, CObject* hook)
 {
     bool state = false;
-    iterator it = find(stk);
-    for ( ;it != end() && it->first == stk; ++it) {
+    auto r = equal_range(stk);
+    for (auto it = r.first; it != r.second; ++it) {
         if ((it->second).first == path) {
             if ((it->second).second == hook) {
                 return state; // this hook already set - do nothing
@@ -108,8 +108,8 @@ CObject* CPathHook::GetHook(CObjectStack& stk) const
     }
     if (m_Wildcard) {
         for (CObjectStack* stmp = &stk; ; stmp = 0) {
-            const_iterator it;
-            for (it = find(stmp); it != end() && it->first == stmp; ++it) {
+            auto r = equal_range(stmp);
+            for (auto it = r.first; it != r.second; ++it) {
                 if (CPathHook::Match((it->second).first,path)) {
                     return const_cast<CObject*>((it->second).second.GetPointer());
                 }
@@ -125,8 +125,8 @@ CObject* CPathHook::GetHook(CObjectStack& stk) const
 CObject* CPathHook::x_Get(CObjectStack& stk, const string& path) const
 {
     for (CObjectStack* stmp = &stk; ; stmp = 0) {
-        const_iterator it;
-        for ( it = find(stmp); it != end() && it->first == stmp; ++it) {
+        auto r = equal_range(stmp);
+        for (auto it = r.first; it != r.second; ++it) {
             if ((it->second).first == path) {
                 return const_cast<CObject*>((it->second).second.GetPointer());
             }
