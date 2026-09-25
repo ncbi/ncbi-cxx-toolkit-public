@@ -289,8 +289,8 @@ CSoapServerApplication::TListeners*
 CSoapServerApplication::x_FindListenersByName(const string& message_name,
                                               const string& namespace_name)
 {
-    multimap<string, pair<string,TListeners > >::iterator l;
-    for (l = m_Listeners.find(message_name); l != m_Listeners.end(); ++l) {
+    auto r = m_Listeners.equal_range(message_name);
+    for (auto l = r.first; l != r.second; ++l) {
         if ((l->second).first == namespace_name) {
             return &((l->second).second);
         }
