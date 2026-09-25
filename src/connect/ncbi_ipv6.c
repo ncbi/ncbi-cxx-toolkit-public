@@ -712,7 +712,7 @@ static const char* s_StringToAddr(TNCBI_IPv6Addr* addr,
                 const char*    end;
                 TNCBI_IPv6Addr temp;
                 assert(len - n >= m);
-                CORE_TRACEF(("%.*s %.*s", (int) n, str, (int)(len - n), tmp));
+                /*CORE_TRACEF(("%.*s %.*s", (int) n, str, (int) (len - n), tmp));*/
                 if (m >= NCBI_IPV4_DNS_SIZE
                     &&  7/*"x.x.x.x"*/ <= n  &&  n <= 15/*xxx.xxx.xxx.xxx*/
                     &&  ((end = tmp + NCBI_IPV4_DNS_SIZE) == str_end
