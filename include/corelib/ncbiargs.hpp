@@ -1362,10 +1362,11 @@ public:
             const string& param_name = *it;
 
             // find first element in the input multimap
-            typename T::const_iterator vit  = arg_map.find(param_name);
+            typename T::const_iterator vit  = arg_map.lower_bound(param_name);
             typename T::const_iterator vend = arg_map.end();
 
-            if (vit != vend) {   // at least one value found
+            if (vit != vend  &&  vit->first == param_name) {
+                // at least one value found
                 CArgValue* new_arg_value;
                 x_CreateArg(param_name, param_name, 
                             true, /* value is present */
