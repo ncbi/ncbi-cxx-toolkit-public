@@ -40,15 +40,10 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/reader_writer.hpp>
 
-#ifdef NCBI_COMPILER_MIPSPRO
-#  define CRWStreambufBase CMIPSPRO_ReadsomeTolerantStreambuf
-#else
-#  define CRWStreambufBase CNcbiStreambuf
-#  ifdef NCBI_COMPILER_MSVC
-#    pragma warning(push)
-#    pragma warning(disable:4996)
-#  endif //NCBI_COMPILER_MSVC
-#endif //NCBI_COMPILER_MIPSPRO
+#ifdef NCBI_COMPILER_MSVC
+#  pragma warning(push)
+#  pragma warning(disable:4996)
+#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -56,7 +51,7 @@ BEGIN_NCBI_SCOPE
 
 /// Reader-writer-based stream buffer.
 
-class NCBI_XNCBI_EXPORT CRWStreambuf : public CRWStreambufBase
+class NCBI_XNCBI_EXPORT CRWStreambuf : public CNcbiStreambuf
 {
 public:
     /// Which of the objects (passed in the constructor) must be deleted on
