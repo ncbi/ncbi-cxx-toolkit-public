@@ -363,17 +363,6 @@ void CTestDiagApp::x_PrintMessages(int         test_number,
                                             TCase(test_number, 1)), ex);
     }
 
-
-#if defined(NCBI_COMPILER_WORKSHOP)
-# if NCBI_COMPILER_VERSION == 530 || NCBI_COMPILER_VERSION == 550
-    // Workshop 5.3 and 5.5 have MT-unsafe throw. To avoid test failures
-    // use mutex.
-    DEFINE_STATIC_FAST_MUTEX(s_ThrowMutex);
-    CFastMutexGuard guard(s_ThrowMutex);
-# endif
-#endif
-
-
     // two level exceptions
     try {
         try {
