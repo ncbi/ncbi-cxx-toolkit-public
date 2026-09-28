@@ -1207,15 +1207,7 @@ void xml::node::push_back (const node &child) {
 
 
 xml::node::size_type xml::node::size (void) const {
-    #ifdef NCBI_COMPILER_WORKSHOP
-        xml::node::size_type       dist(0);
-        xml::node::const_iterator  first(begin()), last(end());
-        for (; first != last; ++first) { ++dist; }
-        return dist;
-    #else
-        return static_cast<xml::node::size_type>(std::distance(begin(),
-                                                               end()));
-    #endif
+        return static_cast<xml::node::size_type>(std::distance(begin(), end()));
 }
 
 
