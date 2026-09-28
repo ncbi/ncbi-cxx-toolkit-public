@@ -44,12 +44,6 @@
 #include <corelib/stream_utils.hpp>
 #include <corelib/error_codes.hpp>
 
-#ifdef NCBI_COMPILER_MIPSPRO
-#  define CPushback_StreambufBase CMIPSPRO_ReadsomeTolerantStreambuf
-#else
-#  define CPushback_StreambufBase CNcbiStreambuf
-#endif //NCBI_COMPILER_MIPSPRO
-
 
 #define NCBI_USE_ERRCODE_X   Corelib_StreamUtil
 
@@ -62,7 +56,7 @@ BEGIN_NCBI_SCOPE
  *  the original one in the stream, when the data are pushed back.
  */
 
-class CPushback_Streambuf : public CPushback_StreambufBase
+class CPushback_Streambuf : public CNcbiStreambuf
 {
     friend struct CStreamUtils;
 
@@ -225,13 +219,6 @@ CT_INT_TYPE CPushback_Streambuf::underflow(void)
 {
     // we are here because there is no more data in the pushback buffer
     _ASSERT(gptr()  &&  gptr() >= egptr());
-
-#ifdef NCBI_COMPILER_MIPSPRO
-    if (m_MIPSPRO_ReadsomeGptrSetLevel  &&  m_MIPSPRO_ReadsomeGptr != gptr())
-        return CT_EOF;
-    m_MIPSPRO_ReadsomeGptr = (CT_CHAR_TYPE*)(-1L);
-#endif //NCBI_COMPILER_MIPSPRO
-
     x_FillBuffer((size_t) m_Sb->in_avail());
     return gptr() < egptr() ? CT_TO_INT_TYPE(*gptr()) : CT_EOF;
 }
@@ -458,13 +445,6 @@ void CStreamUtils::x_Pushback(CNcbiIstream& is,
      * in CNcbiFstreams and thus making them fully buffered, we can go back
      * to the use of readsome() in MSVC... */
     //#  define NCBI_NO_READSOME 1
-#elif defined(NCBI_COMPILER_MIPSPRO)
-    /* MIPSPro does not comply with the standard and always checks for EOF
-     * doing one extra read from the stream [which might be a killing idea
-     * for network connections].  We introduced an ugly workaround here...
-     * Don't use istream::readsome() but istream::read() instead in order to be
-     * able to clear fake EOF caused by the unnecessary underflow() upcall.*/
-#  define NCBI_NO_READSOME 1
 #endif //NCBI_COMPILER_...
 
 
@@ -473,21 +453,7 @@ static inline streamsize x_Readsome(CNcbiIstream& is,
                                     CT_CHAR_TYPE* buf,
                                     streamsize    buf_size)
 {
-#  ifdef NCBI_COMPILER_WORKSHOP
-    /* Rogue Wave does not always return correct value from is.readsome() :-/
-     * In particular, when streambuf::showmanyc() returns 1 followed by a
-     * failed read() [that implements an extraction from the stream] due to
-     * reaching the EOF, then readsome() will blindly return 1; and in general,
-     * returns always exactly the number of bytes that showmanyc()'s reported,
-     * regardless of the actually extracted ones by a subsequent read.  Bug!!
-     * NOTE that showmanyc() does not guarantee the number of bytes that can
-     * be read, but returns a best guess estimate [C++ Standard, footnote 275].
-     */
-    streamsize n = is.readsome(buf, buf_size);
-    return n ? is.gcount() : 0;
-#  else
     return is.readsome(buf, buf_size);
-#  endif //NCBI_COMPILER_WORKSHOP
 }
 #endif //NCBI_NO_READSOME
 
@@ -561,18 +527,7 @@ streamsize CStreamUtils::Readsome(CNcbiIstream& is,
                                   CT_CHAR_TYPE* buf,
                                   streamsize    buf_size)
 {
-#  ifdef NCBI_COMPILER_MIPSPRO
-    CMIPSPRO_ReadsomeTolerantStreambuf* sb =
-        dynamic_cast<CMIPSPRO_ReadsomeTolerantStreambuf*> (is.rdbuf());
-    if (sb)
-        sb->MIPSPRO_ReadsomeBegin();
-#  endif //NCBI_COMPILER_MIPSPRO
-    streamsize result = s_Readsome(is, buf, buf_size);
-#  ifdef NCBI_COMPILER_MIPSPRO
-    if (sb)
-        sb->MIPSPRO_ReadsomeEnd();
-#  endif //NCBI_COMPILER_MIPSPRO
-    return result;
+    return s_Readsome(is, buf, buf_size);
 }
 
 
@@ -604,11 +559,6 @@ ERW_Result CStreamReader::Read(void*   buf,
     streambuf* sb = m_Stream->rdbuf();
     bool       ok = sb  &&  m_Stream->good();
     streamsize r  = ok ? sb->sgetn(static_cast<char*>(buf), count) : 0;
-#ifdef NCBI_COMPILER_WORKSHOP
-    if (r < 0) {
-        r = 0; // NB: WS6 is known to return -1 from sgetn() :-/
-    }
-#endif //NCBI_COMPILER_WORKSHOP
     ERW_Result result = eRW_Success;
     if ( bytes_read ) {
         *bytes_read = (size_t) r;
