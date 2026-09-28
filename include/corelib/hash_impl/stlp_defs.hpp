@@ -181,31 +181,6 @@ NCBI_USING_NAMESPACE_STD;
 #  define _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
 #endif
 
-#ifdef NCBI_COMPILER_WORKSHOP
-#  define NO_STD_CONSTRUCT
-#  define NO_STD_DESTROY
-#  define _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
-#endif
-
-#ifdef NCBI_COMPILER_COMPAQ
-#  define NO_STD_CONSTRUCT
-#  define NO_STD_DESTROY
-#  define _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
-#endif
-
-#ifdef NCBI_COMPILER_MIPSPRO
-#  define NO_STD_CONSTRUCT
-#  define NO_STD_DESTROY
-// replace cstddef with stddef.h
-#  define _STLP_CSTDDEF
-#  include <stddef.h>
-#  define USE_NO_ALLOC_TRAITS
-#endif
-
-#ifdef NCBI_COMPILER_VISUALAGE
-#  define _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
-#endif
-
 #ifdef _LIBCPP_VERSION
 #  define NO_STD_CONSTRUCT
 #  define NO_STD_DESTROY
