@@ -681,15 +681,7 @@ void document::set_external_subset (const dtd& dtd_) {
 
 //####################################################################
 xml::document::size_type xml::document::size (void) const {
-    #ifdef NCBI_COMPILER_WORKSHOP
-        xml::document::size_type   dist(0);
-        xml::node::const_iterator  first(begin()), last(end());
-        for (; first != last; ++first) { ++dist; }
-        return dist;
-    #else
-        return static_cast<xml::document::size_type>(std::distance(begin(),
-                                                                   end()));
-    #endif
+        return static_cast<xml::document::size_type>(std::distance(begin(), end()));
 }
 //####################################################################
 xml::node::iterator xml::document::begin (void) {
