@@ -4159,6 +4159,13 @@ fi
 
 ### Check for other standard library functions
 
+if test "$OSTYPE" = "darwin"; then
+   orig_CFLAGS=$CFLAGS
+   CFLAGS="$CFLAGS -Werror=unguarded-availability-new"
+   AC_CHECK_DECL(pipe2, [], [ac_cv_func_pipe2=no])
+   CFLAGS=$orig_CFLAGS
+fi
+
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(accept4 alarm asprintf atoll basename \
                bcopy __builtin_mul_overflow dbopen daemon euidaccess \
