@@ -1299,10 +1299,10 @@ private:
 /// The correct syntax for this varies from compiler to compiler:
 /// older versions of GCC (prior to 3.4) require NCBI_DEPRECATED to
 /// follow any relevant constructor declarations, but some other
-/// compilers (Microsoft Visual Studio 2005, IBM Visual Age / XL)
+/// compilers (Microsoft Visual Studio, IBM Visual Age / XL)
 /// require it to precede any relevant declarations, whether or not
 /// they are for constructors.
-#if defined(NCBI_COMPILER_MSVC) || defined(NCBI_COMPILER_VISUALAGE)
+#if defined(NCBI_COMPILER_MSVC)
 #  define NCBI_DEPRECATED_CTOR(decl) NCBI_DEPRECATED decl
 #else
 #  define NCBI_DEPRECATED_CTOR(decl) decl NCBI_DEPRECATED
@@ -1629,12 +1629,6 @@ void swap(ncbi::AutoPtr<P,D>& ptr1,
 }
 
 
-#if defined(NCBI_COMPILER_WORKSHOP)  ||  defined(NCBI_COMPILER_MIPSPRO)
-
-#define ArraySize(array)  (sizeof(array)/sizeof((array)[0]))
-
-#else
-
 template<class Element, size_t Size>
 inline
 constexpr size_t ArraySize(const Element (&)[Size])
@@ -1666,7 +1660,6 @@ struct formatter<ncbi::CStrictId<TKey, TStorage>, TChar>
 #  endif // __has_include(<format>)
 #endif /* NCBI_STRICT_GI */
 
-#endif
 
 END_STD_NAMESPACE;
 
