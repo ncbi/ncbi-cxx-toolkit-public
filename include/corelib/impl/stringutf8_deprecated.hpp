@@ -615,10 +615,8 @@ public:
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
     static TUnicodeSymbol Decode(const char*& src);
-#ifndef NCBI_COMPILER_WORKSHOP
     /// @deprecated  Use utility class CUtf8 instead
     static TUnicodeSymbol Decode(string::const_iterator& src);
-#endif
 #endif
     
     /// Determines if a symbol is whitespace

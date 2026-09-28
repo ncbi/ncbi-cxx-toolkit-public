@@ -429,11 +429,9 @@ inline bool CStringUTF8_DEPRECATED::IsValid(void) const {
 inline TUnicodeSymbol CStringUTF8_DEPRECATED::Decode(const char*& src) {
     return CUtf8::Decode(src);
 }
-#ifndef NCBI_COMPILER_WORKSHOP
 inline TUnicodeSymbol CStringUTF8_DEPRECATED::Decode(string::const_iterator& src) {
     return CUtf8::Decode(src);
 }
-#endif
 #endif
 
 #if  STRINGUTF8_OBSOLETE_STATIC
