@@ -470,7 +470,7 @@ inline void CheckErrSubcodeX(int)
 #define NCBI_ERR_SUBCODE_X(subcode)                     \
     (NCBI_CHECK_ERR_SUBCODE_X(subcode), subcode)
 
-#if defined(NCBI_COMPILER_ICC) || defined(NCBI_COMPILER_MIPSPRO)
+#if defined(NCBI_COMPILER_ICC)
 
 /// Additional not implemented template structure for use in
 /// WRONG_ERROR_SUBCODE_IN_POST_MACRO structure specialization
@@ -506,7 +506,7 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
                        WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO_2<errorCode>)];
 };
 
-#endif  // if defined(NCBI_COMPILER_ICC) || defined(NCBI_COMPILER_MIPSPRO)
+#endif  // if defined(NCBI_COMPILER_ICC)
 
 
 /// Error posting with default error code and given error subcode. Also
