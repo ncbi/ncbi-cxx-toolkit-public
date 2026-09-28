@@ -48,8 +48,7 @@ BEGIN_NCBI_SCOPE
 static inline bool x_IsThrowable(EIO_Status status)
 {
     _ASSERT(status != eIO_Success);
-#if (defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION < 700)  \
-    ||  defined(NCBI_COMPILER_ANY_CLANG)
+#if defined(NCBI_COMPILER_ANY_CLANG)
     // For C++ STLs that have a bug that sentry ctor does not include try/catch
     // so exceptions leak instead of setting badbit as the standard requires.
     // https://bugs.llvm.org/show_bug.cgi?id=48912
@@ -65,9 +64,7 @@ static inline bool x_CheckConn(const CONN conn)
 {
     if (conn)
         return true;
-#if !defined(NCBI_COMPILER_GCC)  ||  NCBI_COMPILER_GCC >= 700
     NCBI_IO_CHECK(eIO_Closed);
-#endif // !NCBI_COMPILER_GCC || NCBI_COMPILER_VERSION>=700
     return false;
 }
 
@@ -612,12 +609,6 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
     // flush output buffer, if tied up to it
     if (m_Tie  &&  x_Sync() != 0)
         return CT_EOF;
-
-#ifdef NCBI_COMPILER_MIPSPRO
-    if (m_MIPSPRO_ReadsomeGptrSetLevel  &&  m_MIPSPRO_ReadsomeGptr != gptr())
-        return CT_EOF;
-    m_MIPSPRO_ReadsomeGptr = (CT_CHAR_TYPE*)(-1L);
-#endif /*NCBI_COMPILER_MIPSPRO*/
 
     // read from connection
     size_t n_read;
