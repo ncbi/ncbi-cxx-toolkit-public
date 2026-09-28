@@ -750,7 +750,7 @@ string CCommentItem::GetStringForRefTrack(const CBioseqContext& ctx, const CUser
         break;
     case eRefTrackStatus_WGS:
         oss << " This record is provided to represent a collection of "
-            << "whole genome shotgun sequences.";
+            << "whole genome sequences.";
         break;
     case eRefTrackStatus_TSA:
         oss << " This record is provided to represent a collection of "
@@ -945,7 +945,7 @@ string CCommentItem::GetStringForWGS(CBioseqContext& ctx)
 
     ostringstream text;
     text << "The " << *taxname
-         << " whole genome shotgun (WGS) project has the project accession "
+         << " whole genome sequence (WGS) project has the project accession "
          << wgsaccn << ".  This version of the project (" << version
          << ") has the accession number " << wgsname << ",";
     if (*first != *last) {
