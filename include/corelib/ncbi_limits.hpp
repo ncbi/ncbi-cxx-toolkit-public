@@ -75,7 +75,7 @@
 #  undef max
 #endif
 
-#if defined(HAVE_LIMITS)  &&  ( !defined(NCBI_COMPILER_WORKSHOP) || NCBI_COMPILER_VERSION >= 550)
+#if defined(HAVE_LIMITS)
 // Ideally, we would use std::numeric_limits<> whenever available.
 // However, certain compiler versions leave out support for extensions such
 // as long long, so we still have to use our implementation with them.
@@ -155,7 +155,7 @@ NCBI_NUMERIC_LIMITS_UNSIGNED (unsigned __int64, UInt64);
 
 END_NCBI_SCOPE
 
-#endif // !HAVE_LIMITS  ||  NCBI_COMPILER_WORKSHOP
+#endif // !HAVE_LIMITS
 
 
 BEGIN_NCBI_SCOPE
