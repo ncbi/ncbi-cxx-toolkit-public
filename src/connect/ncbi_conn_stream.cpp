@@ -1115,11 +1115,6 @@ void CConn_MemoryStream::ToString(string* str)
     if (sb) {
         // Proceed with read even with size == 0
         size_t s = (size_t) sb->sgetn(&(*str)[0], size);
-#ifdef NCBI_COMPILER_WORKSHOP
-        if (s < 0) {
-            s = 0; // WS6 weirdness to sometimes return -1 from sgetn() :-/
-        } else
-#endif //NCBI_COMPILER_WORKSHOP
         _ASSERT(s == size);
         str->resize(s);  // NB: just in case, essentially NOOP when s == size
     }
@@ -1138,11 +1133,6 @@ void CConn_MemoryStream::ToVector(vector<char>* vec)
     if (sb) {
         // Proceed with read even with size == 0
         size_t s = (size_t) sb->sgetn(&(*vec)[0], size);
-#ifdef NCBI_COMPILER_WORKSHOP
-        if (s < 0) {
-            s = 0;  // WS6 weirdness to sometimes return -1 from sgetn() :-/
-        } else
-#endif //NCBI_COMPILER_WORKSHOP
         _ASSERT(s == size);
         vec->resize(s);  // NB: just in case, essentially NOOP when s == size
     }
