@@ -492,16 +492,6 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseCharPtrConverter s)
 }
 
 
-#ifdef NCBI_COMPILER_MSVC
-#  if _MSC_VER >= 1200  &&  _MSC_VER < 1300
-CNcbiOstream& operator<<(CNcbiOstream& out, __int64 val)
-{
-    return (out << NStr::Int8ToString(val));
-}
-#  endif
-#endif
-
-
 string Printable(char c)
 {
     static const char kHex[] = "0123456789ABCDEF";
@@ -610,41 +600,6 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableCharPtrConverter s)
     }
     return out;
 }
-
-
-#if defined(NCBI_COMPILER_WORKSHOP)
-// We have to use two #if's here because KAI C++ cannot handle #if foo == bar
-#  if (NCBI_COMPILER_VERSION == 530)
-// The version that ships with the compiler is buggy.
-// Here's a working (and simpler!) one.
-template<>
-istream& istream::read(char *s, streamsize n)
-{
-    sentry ipfx(*this, 1);
-
-    try {
-        if (rdbuf()->sgetc() == traits_type::eof()) {
-            // Workaround for bug in sgetn.  *SIGH*.
-            __chcount = 0;
-            setstate(eofbit);
-            return *this;
-        }
-        __chcount = rdbuf()->sgetn(s, n);
-        if (__chcount == 0) {
-            setstate(eofbit);
-        } else if (__chcount < n) {
-            setstate(eofbit | failbit);
-        } else if (!ipfx) {
-            setstate(failbit);
-        } 
-    } catch (...) {
-        setstate(badbit | failbit);
-    }
-
-    return *this;
-}
-#  endif  /* NCBI_COMPILER_VERSION == 530 */
-#endif  /* NCBI_COMPILER_WORKSHOP */
 
 
 EEncodingForm ReadIntoUtf8(
@@ -872,7 +827,6 @@ extern ncbi::CNcbiOstream& operator<<(ncbi::CNcbiOstream& os, const std::string&
 {
     return str.empty() ? os : os << str.c_str();
 }
-
 
 extern ncbi::CNcbiIstream& operator>>(ncbi::CNcbiIstream& is, std::string& str)
 {
