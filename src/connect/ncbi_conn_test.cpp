@@ -1185,12 +1185,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                 m_CheckPoint = "Connection timed out";
                 break;
             case eIO_Closed:
-#ifdef NCBI_COMPILER_WORKSHOP
-                k = 0;
-                distance(fwd[n]->begin(), cp, k);
-#else
                 k = distance(fwd[n]->begin(), cp);
-#endif // NCBI_COMPILER_WORKSHOP
                 if (!fwck[k].first)
                     m_CheckPoint = "Connection closed";
                 else
