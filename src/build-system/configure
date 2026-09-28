@@ -7124,11 +7124,11 @@ case "$host_os:/$CXX" in
          else
             case "$d" in
                /*) ;;
-               * ) d=$ncbi_fix_dir_tmp ;;
+               * ) d=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) d=$ncbi_fix_dir_tmp ;;
+    /*) d=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
             # We don't use a dedicated CXXCPPFLAGS variable, but sticking
             # with -isystem rather than -cxx-isystem avoids spurious
@@ -7150,11 +7150,11 @@ case "$host_os:/$CXX" in
          else
             case "$d" in
                /*) ;;
-               * ) d=$ncbi_fix_dir_tmp ;;
+               * ) d=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) d=$ncbi_fix_dir_tmp ;;
+    /*) d=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
          LDFLAGS="-L$d -Wl,-rpath,$d $LDFLAGS"
          crtbegin=`$gccdir/bin/g++ --print-file-name=crtbegin.o`
@@ -7167,11 +7167,11 @@ case "$host_os:/$CXX" in
          else
             case "$d" in
                /*) ;;
-               * ) d=$ncbi_fix_dir_tmp ;;
+               * ) d=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) d=$ncbi_fix_dir_tmp ;;
+    /*) d=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
          LDFLAGS="-L$d -B$d $LDFLAGS"
       fi
@@ -13066,11 +13066,11 @@ case "${build_root}" in
          else
             case "$build_root" in
                /*) ;;
-               * ) build_root=$ncbi_fix_dir_tmp ;;
+               * ) build_root=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) build_root=$ncbi_fix_dir_tmp ;;
+    /*) build_root=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
       fi
    ;;
@@ -13082,11 +13082,11 @@ case "${build_root}" in
          else
             case "$build_root" in
                /*) ;;
-               * ) build_root=$ncbi_fix_dir_tmp ;;
+               * ) build_root=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) build_root=$ncbi_fix_dir_tmp ;;
+    /*) build_root=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac ;;
 esac
 if test -n "$with_fake_root"; then
@@ -13481,11 +13481,11 @@ case "${srcdir}" in
          else
             case "$srcdir" in
                /*) ;;
-               * ) srcdir=$ncbi_fix_dir_tmp ;;
+               * ) srcdir=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) srcdir=$ncbi_fix_dir_tmp ;;
+    /*) srcdir=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
       fi
    ;;
@@ -13497,11 +13497,11 @@ case "${srcdir}" in
          else
             case "$srcdir" in
                /*) ;;
-               * ) srcdir=$ncbi_fix_dir_tmp ;;
+               * ) srcdir=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) srcdir=$ncbi_fix_dir_tmp ;;
+    /*) srcdir=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac ;;
 esac
 real_srcdir=$srcdir
@@ -18668,11 +18668,11 @@ if test -d "$LZO_PATH"; then
          else
             case "$LZO_PATH" in
                /*) ;;
-               * ) LZO_PATH=$ncbi_fix_dir_tmp ;;
+               * ) LZO_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) LZO_PATH=$ncbi_fix_dir_tmp ;;
+    /*) LZO_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 if test "$with_lzo" != "no"; then
@@ -18835,11 +18835,11 @@ done
          else
             case "$ZSTD_PATH" in
                /*) ;;
-               * ) ZSTD_PATH=$ncbi_fix_dir_tmp ;;
+               * ) ZSTD_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) ZSTD_PATH=$ncbi_fix_dir_tmp ;;
+    /*) ZSTD_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 if test "$with_zstd" != "no"; then
@@ -19471,11 +19471,11 @@ if test "x${with_mbedtls-no}" != xno; then
          else
             case "$MBEDTLS_PATH" in
                /*) ;;
-               * ) MBEDTLS_PATH=$ncbi_fix_dir_tmp ;;
+               * ) MBEDTLS_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) MBEDTLS_PATH=$ncbi_fix_dir_tmp ;;
+    /*) MBEDTLS_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    fi
    if test "$with_mbedtls" != "no"; then
@@ -19642,11 +19642,11 @@ if test "x$with_gmp" != xno; then
          else
             case "$GMP_PATH" in
                /*) ;;
-               * ) GMP_PATH=$ncbi_fix_dir_tmp ;;
+               * ) GMP_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) GMP_PATH=$ncbi_fix_dir_tmp ;;
+    /*) GMP_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    fi
    if test "$with_gmp" != "no"; then
@@ -19800,11 +19800,11 @@ if test -d "$GCRYPT_PATH"; then
          else
             case "$GCRYPT_PATH" in
                /*) ;;
-               * ) GCRYPT_PATH=$ncbi_fix_dir_tmp ;;
+               * ) GCRYPT_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) GCRYPT_PATH=$ncbi_fix_dir_tmp ;;
+    /*) GCRYPT_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 # Extract the first word of "libgcrypt-config", so it can be a program name with args.
@@ -20068,11 +20068,11 @@ if test "x$with_nettle" != xno; then
          else
             case "$NETTLE_PATH" in
                /*) ;;
-               * ) NETTLE_PATH=$ncbi_fix_dir_tmp ;;
+               * ) NETTLE_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) NETTLE_PATH=$ncbi_fix_dir_tmp ;;
+    /*) NETTLE_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    fi
    if test -d "$NETTLE_PATH/lib$bit64_sfx"; then
@@ -20096,11 +20096,11 @@ if test "x$with_nettle" != xno; then
          else
             case "$NETTLE_LIBDIR" in
                /*) ;;
-               * ) NETTLE_LIBDIR=$ncbi_fix_dir_tmp ;;
+               * ) NETTLE_LIBDIR=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) NETTLE_LIBDIR=$ncbi_fix_dir_tmp ;;
+    /*) NETTLE_LIBDIR=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
       ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
@@ -20292,11 +20292,11 @@ if test -d "$GNUTLS_PATH"; then
          else
             case "$GNUTLS_PATH" in
                /*) ;;
-               * ) GNUTLS_PATH=$ncbi_fix_dir_tmp ;;
+               * ) GNUTLS_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) GNUTLS_PATH=$ncbi_fix_dir_tmp ;;
+    /*) GNUTLS_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    gnutls_config_path=${GNUTLS_BIN-$GNUTLS_PATH/bin${bit64_sfx}}:$GNUTLS_PATH/bin
 else
@@ -20942,11 +20942,11 @@ if test -d "$CURL_PATH"; then
          else
             case "$CURL_PATH" in
                /*) ;;
-               * ) CURL_PATH=$ncbi_fix_dir_tmp ;;
+               * ) CURL_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) CURL_PATH=$ncbi_fix_dir_tmp ;;
+    /*) CURL_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    CURL_ARCH_PATH=$CURL_PATH
 for d in "$CURL_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
@@ -20966,11 +20966,11 @@ done
          else
             case "$CURL_ARCH_PATH" in
                /*) ;;
-               * ) CURL_ARCH_PATH=$ncbi_fix_dir_tmp ;;
+               * ) CURL_ARCH_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) CURL_ARCH_PATH=$ncbi_fix_dir_tmp ;;
+    /*) CURL_ARCH_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 # Extract the first word of "curl-config", so it can be a program name with args.
@@ -21863,11 +21863,11 @@ if test "$with_bdb" != "no" ; then
          else
             case "$BERKELEYDB_PATH" in
                /*) ;;
-               * ) BERKELEYDB_PATH=$ncbi_fix_dir_tmp ;;
+               * ) BERKELEYDB_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) BERKELEYDB_PATH=$ncbi_fix_dir_tmp ;;
+    /*) BERKELEYDB_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
       : ${BERKELEYDB_INCLUDE:="-I$BERKELEYDB_PATH/include"}
    fi
@@ -21891,11 +21891,11 @@ if test "$with_bdb" != "no" ; then
          else
             case "$BERKELEYDB_LIBPATH" in
                /*) ;;
-               * ) BERKELEYDB_LIBPATH=$ncbi_fix_dir_tmp ;;
+               * ) BERKELEYDB_LIBPATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) BERKELEYDB_LIBPATH=$ncbi_fix_dir_tmp ;;
+    /*) BERKELEYDB_LIBPATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
       if test -z "${BERKELEYDB_LIBS:+set}"; then
     ncbi_rp_L_flags=
@@ -23357,11 +23357,11 @@ if test "$with_boost" != "no"; then
          else
             case "$BOOST_PATH" in
                /*) ;;
-               * ) BOOST_PATH=$ncbi_fix_dir_tmp ;;
+               * ) BOOST_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) BOOST_PATH=$ncbi_fix_dir_tmp ;;
+    /*) BOOST_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
       : ${BOOST_INCLUDE=-I$BOOST_PATH/include}
    fi
@@ -24312,11 +24312,11 @@ done
          else
             case "$NCBICRYPT_PATH" in
                /*) ;;
-               * ) NCBICRYPT_PATH=$ncbi_fix_dir_tmp ;;
+               * ) NCBICRYPT_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) NCBICRYPT_PATH=$ncbi_fix_dir_tmp ;;
+    /*) NCBICRYPT_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 if test "$with_ncbicrypt" != "no"; then
@@ -25293,11 +25293,11 @@ if test "$with_opengl" != "no"; then
          else
             case "$OPENGL_PATH" in
                /*) ;;
-               * ) OPENGL_PATH=$ncbi_fix_dir_tmp ;;
+               * ) OPENGL_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) OPENGL_PATH=$ncbi_fix_dir_tmp ;;
+    /*) OPENGL_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    fi
    case "$OSTYPE" in
@@ -25661,11 +25661,11 @@ fi
          else
             case "$GLEW_PATH" in
                /*) ;;
-               * ) GLEW_PATH=$ncbi_fix_dir_tmp ;;
+               * ) GLEW_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) GLEW_PATH=$ncbi_fix_dir_tmp ;;
+    /*) GLEW_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
          GLEW_LIBDIR=$GLEW_PATH/lib
          if test -n "$bit64_sfx" -a -d $GLEW_LIBDIR$bit64_sfx; then
@@ -26198,11 +26198,11 @@ if test "$with_fastcgi" != "no" ; then
          else
             case "$FASTCGI_PATH" in
                /*) ;;
-               * ) FASTCGI_PATH=$ncbi_fix_dir_tmp ;;
+               * ) FASTCGI_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) FASTCGI_PATH=$ncbi_fix_dir_tmp ;;
+    /*) FASTCGI_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
       FASTCGI_ARCH_PATH=$FASTCGI_PATH
 for d in "$FASTCGI_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
@@ -26230,11 +26230,11 @@ done
          else
             case "$FASTCGI_LIBDIR" in
                /*) ;;
-               * ) FASTCGI_LIBDIR=$ncbi_fix_dir_tmp ;;
+               * ) FASTCGI_LIBDIR=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) FASTCGI_LIBDIR=$ncbi_fix_dir_tmp ;;
+    /*) FASTCGI_LIBDIR=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
@@ -26350,11 +26350,11 @@ done
          else
             case "$FASTCGIPP_PATH" in
                /*) ;;
-               * ) FASTCGIPP_PATH=$ncbi_fix_dir_tmp ;;
+               * ) FASTCGIPP_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) FASTCGIPP_PATH=$ncbi_fix_dir_tmp ;;
+    /*) FASTCGIPP_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 if test "$with_fastcgipp" != "no"; then
@@ -26768,11 +26768,11 @@ if test "$with_orbacus" != no; then
          else
             case "$ORBACUS_PATH" in
                /*) ;;
-               * ) ORBACUS_PATH=$ncbi_fix_dir_tmp ;;
+               * ) ORBACUS_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) ORBACUS_PATH=$ncbi_fix_dir_tmp ;;
+    /*) ORBACUS_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    fi
    fullpath=${ORBACUS_PATH}/${DEBUG_SFX}${mt_sfx}${bit64_sfx}
@@ -27210,11 +27210,11 @@ if test -d "$SABLOT_PATH"; then
          else
             case "$SABLOT_PATH" in
                /*) ;;
-               * ) SABLOT_PATH=$ncbi_fix_dir_tmp ;;
+               * ) SABLOT_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) SABLOT_PATH=$ncbi_fix_dir_tmp ;;
+    /*) SABLOT_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 if test "$with_sablot" != "no"; then
@@ -27374,11 +27374,11 @@ if test "$with_libxml" != "no"; then
          else
             case "$LIBXML_PATH" in
                /*) ;;
-               * ) LIBXML_PATH=$ncbi_fix_dir_tmp ;;
+               * ) LIBXML_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) LIBXML_PATH=$ncbi_fix_dir_tmp ;;
+    /*) LIBXML_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
       in_path=" in $LIBXML_PATH"
       if test -n "$LIBXML_INCLUDE"; then
@@ -27835,11 +27835,11 @@ if test "$with_xerces" != no; then
          else
             case "$XERCES_PATH" in
                /*) ;;
-               * ) XERCES_PATH=$ncbi_fix_dir_tmp ;;
+               * ) XERCES_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) XERCES_PATH=$ncbi_fix_dir_tmp ;;
+    /*) XERCES_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    fi
    vpath="$XERCES_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
@@ -27853,11 +27853,11 @@ if test "$with_xerces" != no; then
          else
             case "$XERCES_PATH" in
                /*) ;;
-               * ) XERCES_PATH=$ncbi_fix_dir_tmp ;;
+               * ) XERCES_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) XERCES_PATH=$ncbi_fix_dir_tmp ;;
+    /*) XERCES_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    elif test -d "$vpath"; then
       : ${XERCES_LIBPATH=$vpath}
@@ -27869,11 +27869,11 @@ if test "$with_xerces" != no; then
          else
             case "$XERCES_LIBPATH" in
                /*) ;;
-               * ) XERCES_LIBPATH=$ncbi_fix_dir_tmp ;;
+               * ) XERCES_LIBPATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) XERCES_LIBPATH=$ncbi_fix_dir_tmp ;;
+    /*) XERCES_LIBPATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    else
       vpath="$XERCES_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
@@ -27887,11 +27887,11 @@ if test "$with_xerces" != no; then
          else
             case "$XERCES_PATH" in
                /*) ;;
-               * ) XERCES_PATH=$ncbi_fix_dir_tmp ;;
+               * ) XERCES_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) XERCES_PATH=$ncbi_fix_dir_tmp ;;
+    /*) XERCES_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
       elif test -d "$vpath"; then
          XERCES_LIBPATH=$vpath
@@ -27903,11 +27903,11 @@ if test "$with_xerces" != no; then
          else
             case "$XERCES_LIBPATH" in
                /*) ;;
-               * ) XERCES_LIBPATH=$ncbi_fix_dir_tmp ;;
+               * ) XERCES_LIBPATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) XERCES_LIBPATH=$ncbi_fix_dir_tmp ;;
+    /*) XERCES_LIBPATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
       fi
    fi
@@ -28015,11 +28015,11 @@ if test "$with_xalan" != no; then
          else
             case "$XALAN_PATH" in
                /*) ;;
-               * ) XALAN_PATH=$ncbi_fix_dir_tmp ;;
+               * ) XALAN_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) XALAN_PATH=$ncbi_fix_dir_tmp ;;
+    /*) XALAN_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    fi
    vpath="$XALAN_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
@@ -28033,11 +28033,11 @@ if test "$with_xalan" != no; then
          else
             case "$XALAN_PATH" in
                /*) ;;
-               * ) XALAN_PATH=$ncbi_fix_dir_tmp ;;
+               * ) XALAN_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) XALAN_PATH=$ncbi_fix_dir_tmp ;;
+    /*) XALAN_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    elif test -d "$vpath"; then
       : ${XALAN_LIBPATH=$vpath}
@@ -28049,11 +28049,11 @@ if test "$with_xalan" != no; then
          else
             case "$XALAN_LIBPATH" in
                /*) ;;
-               * ) XALAN_LIBPATH=$ncbi_fix_dir_tmp ;;
+               * ) XALAN_LIBPATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) XALAN_LIBPATH=$ncbi_fix_dir_tmp ;;
+    /*) XALAN_LIBPATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    else
       vpath="$XALAN_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
@@ -28067,11 +28067,11 @@ if test "$with_xalan" != no; then
          else
             case "$XALAN_PATH" in
                /*) ;;
-               * ) XALAN_PATH=$ncbi_fix_dir_tmp ;;
+               * ) XALAN_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) XALAN_PATH=$ncbi_fix_dir_tmp ;;
+    /*) XALAN_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
       elif test -d "$vpath"; then
          XALAN_LIBPATH=$vpath
@@ -28083,11 +28083,11 @@ if test "$with_xalan" != no; then
          else
             case "$XALAN_LIBPATH" in
                /*) ;;
-               * ) XALAN_LIBPATH=$ncbi_fix_dir_tmp ;;
+               * ) XALAN_LIBPATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) XALAN_LIBPATH=$ncbi_fix_dir_tmp ;;
+    /*) XALAN_LIBPATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
       fi
    fi
@@ -28193,11 +28193,11 @@ if test "$with_zorba" != no; then
          else
             case "$ZORBA_PATH" in
                /*) ;;
-               * ) ZORBA_PATH=$ncbi_fix_dir_tmp ;;
+               * ) ZORBA_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) ZORBA_PATH=$ncbi_fix_dir_tmp ;;
+    /*) ZORBA_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    fi
    vpath="$ZORBA_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
@@ -28211,11 +28211,11 @@ if test "$with_zorba" != no; then
          else
             case "$ZORBA_PATH" in
                /*) ;;
-               * ) ZORBA_PATH=$ncbi_fix_dir_tmp ;;
+               * ) ZORBA_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) ZORBA_PATH=$ncbi_fix_dir_tmp ;;
+    /*) ZORBA_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    elif test -d "$vpath"; then
       : ${ZORBA_LIBPATH=$vpath}
@@ -28227,11 +28227,11 @@ if test "$with_zorba" != no; then
          else
             case "$ZORBA_LIBPATH" in
                /*) ;;
-               * ) ZORBA_LIBPATH=$ncbi_fix_dir_tmp ;;
+               * ) ZORBA_LIBPATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) ZORBA_LIBPATH=$ncbi_fix_dir_tmp ;;
+    /*) ZORBA_LIBPATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    else
       vpath="$ZORBA_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
@@ -28245,11 +28245,11 @@ if test "$with_zorba" != no; then
          else
             case "$ZORBA_PATH" in
                /*) ;;
-               * ) ZORBA_PATH=$ncbi_fix_dir_tmp ;;
+               * ) ZORBA_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) ZORBA_PATH=$ncbi_fix_dir_tmp ;;
+    /*) ZORBA_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
       elif test -d "$vpath"; then
          ZORBA_LIBPATH=$vpath
@@ -28261,11 +28261,11 @@ if test "$with_zorba" != no; then
          else
             case "$ZORBA_LIBPATH" in
                /*) ;;
-               * ) ZORBA_LIBPATH=$ncbi_fix_dir_tmp ;;
+               * ) ZORBA_LIBPATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) ZORBA_LIBPATH=$ncbi_fix_dir_tmp ;;
+    /*) ZORBA_LIBPATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
       fi
    fi
@@ -28384,11 +28384,11 @@ if test -d "$SQLITE3_PATH"; then
          else
             case "$SQLITE3_PATH" in
                /*) ;;
-               * ) SQLITE3_PATH=$ncbi_fix_dir_tmp ;;
+               * ) SQLITE3_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) SQLITE3_PATH=$ncbi_fix_dir_tmp ;;
+    /*) SQLITE3_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 if test -d "$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib"; then
@@ -28649,11 +28649,11 @@ $as_echo "$as_me: WARNING: $message" >&2;}  ;;
          else
             case "$vdb_parent" in
                /*) ;;
-               * ) vdb_parent=$ncbi_fix_dir_tmp ;;
+               * ) vdb_parent=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) vdb_parent=$ncbi_fix_dir_tmp ;;
+    /*) vdb_parent=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
          VDB_PATH=$vdb_parent/`basename "$VDB_PATH"`
          in_path=" in $VDB_PATH"
@@ -29621,11 +29621,11 @@ if test -d "$MUPARSER_PATH"; then
          else
             case "$MUPARSER_PATH" in
                /*) ;;
-               * ) MUPARSER_PATH=$ncbi_fix_dir_tmp ;;
+               * ) MUPARSER_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) MUPARSER_PATH=$ncbi_fix_dir_tmp ;;
+    /*) MUPARSER_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 if test -d "$MUPARSER_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}/lib"; then
@@ -29785,11 +29785,11 @@ if test -d "$HDF5_PATH"; then
          else
             case "$HDF5_PATH" in
                /*) ;;
-               * ) HDF5_PATH=$ncbi_fix_dir_tmp ;;
+               * ) HDF5_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) HDF5_PATH=$ncbi_fix_dir_tmp ;;
+    /*) HDF5_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 
@@ -30755,11 +30755,11 @@ if test "$with_gl2ps" != "no"; then
          else
             case "$GL2PS_PATH" in
                /*) ;;
-               * ) GL2PS_PATH=$ncbi_fix_dir_tmp ;;
+               * ) GL2PS_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) GL2PS_PATH=$ncbi_fix_dir_tmp ;;
+    /*) GL2PS_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    fi
    if test "$with_gl2ps" != "no"; then
@@ -31085,11 +31085,11 @@ if test -d "$FTGL_PATH"; then
          else
             case "$FTGL_PATH" in
                /*) ;;
-               * ) FTGL_PATH=$ncbi_fix_dir_tmp ;;
+               * ) FTGL_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) FTGL_PATH=$ncbi_fix_dir_tmp ;;
+    /*) FTGL_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 if test -d "$FTGL_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}/lib"; then
@@ -31105,11 +31105,11 @@ ncbi_fix_dir_tmp=`if cd $FTGL_LIBDIR; then { PWD=; unset PWD;}; /bin/pwd; fi`
          else
             case "$FTGL_LIBDIR" in
                /*) ;;
-               * ) FTGL_LIBDIR=$ncbi_fix_dir_tmp ;;
+               * ) FTGL_LIBDIR=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) FTGL_LIBDIR=$ncbi_fix_dir_tmp ;;
+    /*) FTGL_LIBDIR=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
@@ -31418,11 +31418,11 @@ if test -d "$MIMETIC_PATH"; then
          else
             case "$MIMETIC_PATH" in
                /*) ;;
-               * ) MIMETIC_PATH=$ncbi_fix_dir_tmp ;;
+               * ) MIMETIC_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) MIMETIC_PATH=$ncbi_fix_dir_tmp ;;
+    /*) MIMETIC_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 for d in "$MIMETIC_LIBDIR" \
@@ -31613,11 +31613,11 @@ if test -d "$GSOAP_PATH"; then
          else
             case "$GSOAP_PATH" in
                /*) ;;
-               * ) GSOAP_PATH=$ncbi_fix_dir_tmp ;;
+               * ) GSOAP_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) GSOAP_PATH=$ncbi_fix_dir_tmp ;;
+    /*) GSOAP_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 for d in "$GSOAP_LIBDIR" \
@@ -31637,11 +31637,11 @@ for d in "$GSOAP_LIBDIR" \
          else
             case "$GSOAP_LIBDIR" in
                /*) ;;
-               * ) GSOAP_LIBDIR=$ncbi_fix_dir_tmp ;;
+               * ) GSOAP_LIBDIR=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) GSOAP_LIBDIR=$ncbi_fix_dir_tmp ;;
+    /*) GSOAP_LIBDIR=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
       break
    fi
@@ -31950,11 +31950,11 @@ done
          else
             case "$AVRO_PATH" in
                /*) ;;
-               * ) AVRO_PATH=$ncbi_fix_dir_tmp ;;
+               * ) AVRO_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) AVRO_PATH=$ncbi_fix_dir_tmp ;;
+    /*) AVRO_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    fi
 fi
@@ -32158,11 +32158,11 @@ if test "$with_cereal" != no; then
          else
             case "$CEREAL_PATH" in
                /*) ;;
-               * ) CEREAL_PATH=$ncbi_fix_dir_tmp ;;
+               * ) CEREAL_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) CEREAL_PATH=$ncbi_fix_dir_tmp ;;
+    /*) CEREAL_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
       in_cereal=" in $CEREAL_PATH"
    fi
@@ -32353,11 +32353,11 @@ if test -d "$MONGODB_PATH"; then
          else
             case "$MONGODB_PATH" in
                /*) ;;
-               * ) MONGODB_PATH=$ncbi_fix_dir_tmp ;;
+               * ) MONGODB_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) MONGODB_PATH=$ncbi_fix_dir_tmp ;;
+    /*) MONGODB_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 if test -d $MONGODB_PATH/lib${bit64_sfx}; then
@@ -32565,11 +32565,11 @@ done
          else
             case "$MONGODB3_PATH" in
                /*) ;;
-               * ) MONGODB3_PATH=$ncbi_fix_dir_tmp ;;
+               * ) MONGODB3_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) MONGODB3_PATH=$ncbi_fix_dir_tmp ;;
+    /*) MONGODB3_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    fi
 fi
@@ -32786,11 +32786,11 @@ done
          else
             case "$LEVELDB_PATH" in
                /*) ;;
-               * ) LEVELDB_PATH=$ncbi_fix_dir_tmp ;;
+               * ) LEVELDB_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) LEVELDB_PATH=$ncbi_fix_dir_tmp ;;
+    /*) LEVELDB_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    fi
 fi
@@ -32957,11 +32957,11 @@ done
          else
             case "$LIBURING_PATH" in
                /*) ;;
-               * ) LIBURING_PATH=$ncbi_fix_dir_tmp ;;
+               * ) LIBURING_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) LIBURING_PATH=$ncbi_fix_dir_tmp ;;
+    /*) LIBURING_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    fi
 fi
@@ -33126,11 +33126,11 @@ done
          else
             case "$ROCKSDB_PATH" in
                /*) ;;
-               * ) ROCKSDB_PATH=$ncbi_fix_dir_tmp ;;
+               * ) ROCKSDB_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) ROCKSDB_PATH=$ncbi_fix_dir_tmp ;;
+    /*) ROCKSDB_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    fi
 fi
@@ -33285,11 +33285,11 @@ if test -d "$GMOCK_PATH"; then
          else
             case "$GMOCK_PATH" in
                /*) ;;
-               * ) GMOCK_PATH=$ncbi_fix_dir_tmp ;;
+               * ) GMOCK_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) GMOCK_PATH=$ncbi_fix_dir_tmp ;;
+    /*) GMOCK_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    GMOCK_ARCH_PATH=$GMOCK_PATH
 for d in "$GMOCK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
@@ -33310,11 +33310,11 @@ done
          else
             case "$GMOCK_LIBDIR" in
                /*) ;;
-               * ) GMOCK_LIBDIR=$ncbi_fix_dir_tmp ;;
+               * ) GMOCK_LIBDIR=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) GMOCK_LIBDIR=$ncbi_fix_dir_tmp ;;
+    /*) GMOCK_LIBDIR=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 ncbi_rp_L_flags=
@@ -33502,11 +33502,11 @@ if test -d "$LAPACK_PATH"; then
          else
             case "$LAPACK_PATH" in
                /*) ;;
-               * ) LAPACK_PATH=$ncbi_fix_dir_tmp ;;
+               * ) LAPACK_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) LAPACK_PATH=$ncbi_fix_dir_tmp ;;
+    /*) LAPACK_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    CPPFLAGS="-I$LAPACK_PATH/include $CPPFLAGS"
 fi
@@ -33852,11 +33852,11 @@ if test -d "$LIBUV_PATH"; then
          else
             case "$LIBUV_PATH" in
                /*) ;;
-               * ) LIBUV_PATH=$ncbi_fix_dir_tmp ;;
+               * ) LIBUV_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) LIBUV_PATH=$ncbi_fix_dir_tmp ;;
+    /*) LIBUV_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    for d in "$LIBUV_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx/lib" \
             "$LIBUV_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx/lib" \
@@ -33873,11 +33873,11 @@ if test -d "$LIBUV_PATH"; then
          else
             case "$LIBUV_LIBDIR" in
                /*) ;;
-               * ) LIBUV_LIBDIR=$ncbi_fix_dir_tmp ;;
+               * ) LIBUV_LIBDIR=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) LIBUV_LIBDIR=$ncbi_fix_dir_tmp ;;
+    /*) LIBUV_LIBDIR=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
          break
       fi
@@ -34062,11 +34062,11 @@ if test -d "$LIBSSH_PATH"; then
          else
             case "$LIBSSH_PATH" in
                /*) ;;
-               * ) LIBSSH_PATH=$ncbi_fix_dir_tmp ;;
+               * ) LIBSSH_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) LIBSSH_PATH=$ncbi_fix_dir_tmp ;;
+    /*) LIBSSH_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    for d in "$LIBSSH_PATH/$compiler_vpfx$DEBUG_SFX$bit64_sfx/lib" \
             "$LIBSSH_PATH/$compiler_pfx$DEBUG_SFX$bit64_sfx/lib" \
@@ -34083,11 +34083,11 @@ if test -d "$LIBSSH_PATH"; then
          else
             case "$LIBSSH_LIBDIR" in
                /*) ;;
-               * ) LIBSSH_LIBDIR=$ncbi_fix_dir_tmp ;;
+               * ) LIBSSH_LIBDIR=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) LIBSSH_LIBDIR=$ncbi_fix_dir_tmp ;;
+    /*) LIBSSH_LIBDIR=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
          break
       fi
@@ -34272,11 +34272,11 @@ if test -d "$LIBSSH2_PATH"; then
          else
             case "$LIBSSH2_PATH" in
                /*) ;;
-               * ) LIBSSH2_PATH=$ncbi_fix_dir_tmp ;;
+               * ) LIBSSH2_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) LIBSSH2_PATH=$ncbi_fix_dir_tmp ;;
+    /*) LIBSSH2_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    for d in "$LIBSSH2_PATH/$compiler_vpfx$DEBUG_SFX$bit64_sfx/lib" \
             "$LIBSSH2_PATH/$compiler_pfx$DEBUG_SFX$bit64_sfx/lib" \
@@ -34293,11 +34293,11 @@ if test -d "$LIBSSH2_PATH"; then
          else
             case "$LIBSSH2_LIBDIR" in
                /*) ;;
-               * ) LIBSSH2_LIBDIR=$ncbi_fix_dir_tmp ;;
+               * ) LIBSSH2_LIBDIR=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) LIBSSH2_LIBDIR=$ncbi_fix_dir_tmp ;;
+    /*) LIBSSH2_LIBDIR=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
          break
       fi
@@ -34493,11 +34493,11 @@ done
          else
             case "$CASSANDRA_PATH" in
                /*) ;;
-               * ) CASSANDRA_PATH=$ncbi_fix_dir_tmp ;;
+               * ) CASSANDRA_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) CASSANDRA_PATH=$ncbi_fix_dir_tmp ;;
+    /*) CASSANDRA_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 if test "$with_cassandra" != "no"; then
@@ -34650,11 +34650,11 @@ if test -d "$NGHTTP2_PATH"; then
          else
             case "$NGHTTP2_PATH" in
                /*) ;;
-               * ) NGHTTP2_PATH=$ncbi_fix_dir_tmp ;;
+               * ) NGHTTP2_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) NGHTTP2_PATH=$ncbi_fix_dir_tmp ;;
+    /*) NGHTTP2_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    NGHTTP2_ARCH_PATH=$NGHTTP2_PATH
 for d in "$NGHTTP2_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
@@ -34675,11 +34675,11 @@ done
          else
             case "$NGHTTP2_LIBDIR" in
                /*) ;;
-               * ) NGHTTP2_LIBDIR=$ncbi_fix_dir_tmp ;;
+               * ) NGHTTP2_LIBDIR=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) NGHTTP2_LIBDIR=$ncbi_fix_dir_tmp ;;
+    /*) NGHTTP2_LIBDIR=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 ncbi_rp_L_flags=
@@ -34873,11 +34873,11 @@ done
          else
             case "$H2O_PATH" in
                /*) ;;
-               * ) H2O_PATH=$ncbi_fix_dir_tmp ;;
+               * ) H2O_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) H2O_PATH=$ncbi_fix_dir_tmp ;;
+    /*) H2O_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 if test "$with_h2o" != "no"; then
@@ -35212,11 +35212,11 @@ if test -d "$GRPC_PATH"; then
          else
             case "$GRPC_PATH" in
                /*) ;;
-               * ) GRPC_PATH=$ncbi_fix_dir_tmp ;;
+               * ) GRPC_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) GRPC_PATH=$ncbi_fix_dir_tmp ;;
+    /*) GRPC_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    found=no
    for a in $san_sfx ""; do
@@ -35234,11 +35234,11 @@ if test -d "$GRPC_PATH"; then
          else
             case "$GRPC_PATH" in
                /*) ;;
-               * ) GRPC_PATH=$ncbi_fix_dir_tmp ;;
+               * ) GRPC_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) GRPC_PATH=$ncbi_fix_dir_tmp ;;
+    /*) GRPC_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
                found=yes
                break
@@ -35985,11 +35985,11 @@ done
          else
             case "$AWS_SDK_PATH" in
                /*) ;;
-               * ) AWS_SDK_PATH=$ncbi_fix_dir_tmp ;;
+               * ) AWS_SDK_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) AWS_SDK_PATH=$ncbi_fix_dir_tmp ;;
+    /*) AWS_SDK_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 AWS_SDK_LDEP=
@@ -36177,11 +36177,11 @@ done
          else
             case "$CRC32C_PATH" in
                /*) ;;
-               * ) CRC32C_PATH=$ncbi_fix_dir_tmp ;;
+               * ) CRC32C_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) CRC32C_PATH=$ncbi_fix_dir_tmp ;;
+    /*) CRC32C_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 if test "$with_crc32c" != "no"; then
@@ -36483,11 +36483,11 @@ done
          else
             case "$THRIFT_PATH" in
                /*) ;;
-               * ) THRIFT_PATH=$ncbi_fix_dir_tmp ;;
+               * ) THRIFT_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) THRIFT_PATH=$ncbi_fix_dir_tmp ;;
+    /*) THRIFT_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 
@@ -36657,11 +36657,11 @@ if test -d "$APACHE_ARROW_PATH"; then
          else
             case "$APACHE_ARROW_PATH" in
                /*) ;;
-               * ) APACHE_ARROW_PATH=$ncbi_fix_dir_tmp ;;
+               * ) APACHE_ARROW_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) APACHE_ARROW_PATH=$ncbi_fix_dir_tmp ;;
+    /*) APACHE_ARROW_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
    for d in "$APACHE_ARROW_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx$san_sfx" \
             "$APACHE_ARROW_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx$san_sfx" \
@@ -36681,11 +36681,11 @@ if test -d "$APACHE_ARROW_PATH"; then
          else
             case "$APACHE_ARROW_PATH" in
                /*) ;;
-               * ) APACHE_ARROW_PATH=$ncbi_fix_dir_tmp ;;
+               * ) APACHE_ARROW_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) APACHE_ARROW_PATH=$ncbi_fix_dir_tmp ;;
+    /*) APACHE_ARROW_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
          break
       fi
@@ -36857,11 +36857,11 @@ done
          else
             case "$LIBRDKAFKA_PATH" in
                /*) ;;
-               * ) LIBRDKAFKA_PATH=$ncbi_fix_dir_tmp ;;
+               * ) LIBRDKAFKA_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) LIBRDKAFKA_PATH=$ncbi_fix_dir_tmp ;;
+    /*) LIBRDKAFKA_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 
@@ -37029,11 +37029,11 @@ done
          else
             case "$CPPKAFKA_PATH" in
                /*) ;;
-               * ) CPPKAFKA_PATH=$ncbi_fix_dir_tmp ;;
+               * ) CPPKAFKA_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) CPPKAFKA_PATH=$ncbi_fix_dir_tmp ;;
+    /*) CPPKAFKA_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 
@@ -37189,11 +37189,11 @@ if test "$with_nlohmann_json" != no; then
          else
             case "$NLOHMANN_JSON_PATH" in
                /*) ;;
-               * ) NLOHMANN_JSON_PATH=$ncbi_fix_dir_tmp ;;
+               * ) NLOHMANN_JSON_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) NLOHMANN_JSON_PATH=$ncbi_fix_dir_tmp ;;
+    /*) NLOHMANN_JSON_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
       in_nlohmann_json=" in $NLOHMANN_JSON_PATH"
    fi
@@ -37259,11 +37259,11 @@ done
          else
             case "$YAML_CPP_PATH" in
                /*) ;;
-               * ) YAML_CPP_PATH=$ncbi_fix_dir_tmp ;;
+               * ) YAML_CPP_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) YAML_CPP_PATH=$ncbi_fix_dir_tmp ;;
+    /*) YAML_CPP_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 if test "$with_yaml_cpp" != "no"; then
@@ -37427,11 +37427,11 @@ done
          else
             case "$OPENTRACING_PATH" in
                /*) ;;
-               * ) OPENTRACING_PATH=$ncbi_fix_dir_tmp ;;
+               * ) OPENTRACING_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) OPENTRACING_PATH=$ncbi_fix_dir_tmp ;;
+    /*) OPENTRACING_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 if test "$with_opentracing" != "no"; then
@@ -37598,11 +37598,11 @@ done
          else
             case "$JAEGER_PATH" in
                /*) ;;
-               * ) JAEGER_PATH=$ncbi_fix_dir_tmp ;;
+               * ) JAEGER_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) JAEGER_PATH=$ncbi_fix_dir_tmp ;;
+    /*) JAEGER_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 if test -d $JAEGER_PATH/lib${bit64_sfx}; then
@@ -37777,11 +37777,11 @@ done
          else
             case "$OPENTELEMETRY_PATH" in
                /*) ;;
-               * ) OPENTELEMETRY_PATH=$ncbi_fix_dir_tmp ;;
+               * ) OPENTELEMETRY_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) OPENTELEMETRY_PATH=$ncbi_fix_dir_tmp ;;
+    /*) OPENTELEMETRY_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 # pkg-config covers only a few of these libraries, but still helps
@@ -37988,11 +37988,11 @@ done
          else
             case "$GOOGLE_CLOUD_PATH" in
                /*) ;;
-               * ) GOOGLE_CLOUD_PATH=$ncbi_fix_dir_tmp ;;
+               * ) GOOGLE_CLOUD_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) GOOGLE_CLOUD_PATH=$ncbi_fix_dir_tmp ;;
+    /*) GOOGLE_CLOUD_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 if test -d $GOOGLE_CLOUD_PATH/lib${bit64_sfx}; then
@@ -38161,11 +38161,11 @@ done
          else
             case "$TBB_PATH" in
                /*) ;;
-               * ) TBB_PATH=$ncbi_fix_dir_tmp ;;
+               * ) TBB_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) TBB_PATH=$ncbi_fix_dir_tmp ;;
+    /*) TBB_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 if test -d $TBB_PATH/lib${bit64_sfx}; then
@@ -38330,11 +38330,11 @@ if test -d "$IPS4O_PATH"; then
          else
             case "$IPS4O_PATH" in
                /*) ;;
-               * ) IPS4O_PATH=$ncbi_fix_dir_tmp ;;
+               * ) IPS4O_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) IPS4O_PATH=$ncbi_fix_dir_tmp ;;
+    /*) IPS4O_PATH=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac
 fi
 if test -d "$IPS4O_PATH"; then

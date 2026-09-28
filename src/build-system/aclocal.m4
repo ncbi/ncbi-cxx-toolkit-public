@@ -47,11 +47,11 @@ AC_DEFUN(NCBI_FIX_DIR,
          else
             case "$[$1]" in
                /*) ;;
-               * ) $1=$ncbi_fix_dir_tmp ;;
+               * ) $1=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
             esac
          fi
          ;;
-    /*) $1=$ncbi_fix_dir_tmp ;;
+    /*) $1=${ncbi_fix_dir_tmp#/System/Volumes/Data} ;;
  esac])
 
 
