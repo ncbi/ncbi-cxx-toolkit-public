@@ -4312,7 +4312,6 @@ public:
     ///   Unicode code point
     static TUnicodeSymbol Decode(const char*& src);
 
-#ifndef NCBI_COMPILER_WORKSHOP
     /// Convert sequence of UTF8 code units into Unicode code point
     ///
     /// @param src
@@ -4320,7 +4319,6 @@ public:
     /// @return
     ///   Unicode code point
     static TUnicodeSymbol Decode(string::const_iterator& src);
-#endif
 
     /// Begin converting first character of UTF8 sequence into Unicode
     ///
@@ -5637,11 +5635,9 @@ inline SIZE_TYPE CUtf8::GetValidBytesCount(const CTempString& src) {
 inline TUnicodeSymbol CUtf8::Decode(const char*& src) {
     return x_Decode(src);
 }
-#ifndef NCBI_COMPILER_WORKSHOP
 inline TUnicodeSymbol CUtf8::Decode(string::const_iterator& src) {
     return x_Decode(src);
 }
-#endif
 
 template <typename TIterator> inline TUnicodeSymbol
 CUtf8::x_Decode(TIterator& src)
