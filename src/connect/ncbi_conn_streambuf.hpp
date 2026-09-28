@@ -35,17 +35,11 @@
 
 #include <connect/ncbi_conn_stream.hpp>
 
-#ifdef NCBI_COMPILER_MIPSPRO
-#  define CConn_StreambufBase CMIPSPRO_ReadsomeTolerantStreambuf
-#else
-#  define CConn_StreambufBase CNcbiStreambuf
-#endif //NCBI_COMPILER_MIPSPRO
-
 
 BEGIN_NCBI_SCOPE
 
 
-class CConn_Streambuf : public CConn_StreambufBase
+class CConn_Streambuf : public CNcbiStreambuf
 {
 public:
     CConn_Streambuf(CONNECTOR connector, EIO_Status status,
