@@ -167,15 +167,8 @@ public:
 
     int CompareNocase(const CTempXStr<_TChar>& pattern) const
     {
-        const ctype<_TChar>& ct =
+        const ctype<_TChar>& ct = use_facet< ctype<_TChar> >(locale());
 
-#if defined(NCBI_COMPILER_WORKSHOP)
-//#if !defined(_RWSTD_NOTEMPLATE_ON_RETURN_TYPE)
-// Old style; on newer compilers this is deprecated
-            use_facet( locale(), (ctype<_TChar>*)0);
-#else
-            use_facet< ctype<_TChar> >(locale());
-#endif
 #  define CT_TOLOWER(x) ct.tolower(x)
 
         size_t n = length();
