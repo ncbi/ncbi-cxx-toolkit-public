@@ -4445,19 +4445,12 @@ void CDiagBuffer::Flush(void)
         PrintMessage(mess, *m_Diag);
     }
 
-#if defined(NCBI_COMPILER_KCC)
-    // KCC's implementation of "freeze(false)" makes the ostrstream buffer
-    // stuck.  We need to replace the frozen stream with the new one.
-    delete ostr;
-    m_Stream = new CNcbiOstrstream;
-#else
     // reset flags to initial value
     m_Stream->flags(m_InitialStreamFlags);
 #  ifdef NCBI_SHUN_OSTRSTREAM
     // m_Stream->rdbuf()->PUBSEEKOFF(0, IOS_BASE::beg);
     m_Stream->str(kEmptyStr);
 #  endif
-#endif
 
     Reset(*m_Diag);
 
