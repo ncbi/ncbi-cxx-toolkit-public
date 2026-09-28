@@ -246,19 +246,6 @@ CNcbiApplicationAPI::~CNcbiApplicationAPI(void)
     if (m_CinBuffer) {
         delete [] m_CinBuffer;
     }
-
-#if defined(NCBI_COMPILER_WORKSHOP)
-    // At least under these conditions:
-    //  1) WorkShop 5.5 on Solaris 10/SPARC, Release64MT,    and
-    //  2) when IOS_BASE::sync_with_stdio(false) is called,  and
-    //  3) the contents of 'cout' is not flushed
-    // some applications crash on exit() while apparently trying to
-    // flush 'cout' and getting confused by its own guts, with error:
-    //   "*** libc thread failure: _thread_setschedparam_main() fails"
-    //
-    // This forced pre-flush trick seems to fix the problem.
-    NcbiCout.flush();
-#endif
 }
 
 
@@ -446,18 +433,7 @@ void CNcbiApplicationAPI::x_TryInit(EAppDiagStream diag, const char* conf)
     }}
 
     // Do init
-#if (defined(NCBI_COMPILER_ICC) && NCBI_COMPILER_VERSION < 900)
-    // ICC 8.0 have an optimization bug in exceptions handling,
-    // so workaround it here
-    try {
-        Init();
-    }
-    catch (const CArgHelpException&) {
-        throw;
-    }
-#else
     Init();
-#endif
 
     // If the app still has no arg description - provide default one
     if (!m_DisableArgDesc  &&  !m_ArgDesc.get()) {
@@ -1348,6 +1324,7 @@ void CNcbiApplicationAPI::x_SetupStdio(void)
 #endif
         ) {
 #if defined(NCBI_COMPILER_GCC)  &&  defined(NCBI_OS_SOLARIS)
+        // OUTDATED: This is very old code, and we cannot confirm whether it is still required.
         _ASSERT(!m_CinBuffer);
         // Ugly workaround for ugly interaction between g++ and Solaris C RTL
         const size_t kCinBufSize = 5120;
