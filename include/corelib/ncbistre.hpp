@@ -721,29 +721,6 @@ extern bool NcbiStreamCompareText(CNcbiIstream& is, const string& str,
 #  define CT_EQ_INT_TYPE   std::char_traits<char>::eq_int_type
 
 
-#ifdef NCBI_COMPILER_MIPSPRO
-/// Special workaround for MIPSPro 1-byte look-ahead issues
-class CMIPSPRO_ReadsomeTolerantStreambuf : public CNcbiStreambuf
-{
-public:
-    /// NB: Do not use these two ugly, weird, ad-hoc methods, ever!!!
-    void MIPSPRO_ReadsomeBegin(void)
-    {
-        if (!m_MIPSPRO_ReadsomeGptrSetLevel++)
-            m_MIPSPRO_ReadsomeGptr = gptr();
-    }
-    void MIPSPRO_ReadsomeEnd  (void)
-    {
-        --m_MIPSPRO_ReadsomeGptrSetLevel;
-    }
-protected:
-    CMIPSPRO_ReadsomeTolerantStreambuf() : m_MIPSPRO_ReadsomeGptrSetLevel(0) {}
-    
-    const CT_CHAR_TYPE* m_MIPSPRO_ReadsomeGptr;
-    unsigned int        m_MIPSPRO_ReadsomeGptrSetLevel;
-};
-#endif // NCBI_COMPILER_MIPSPRO
-
 
 /// Convert stream position to 64-bit int
 ///
