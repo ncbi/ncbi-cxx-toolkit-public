@@ -64,8 +64,6 @@ using namespace ncbi;
 using namespace ncbi::objects;
 using namespace ncbi::blast;
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 int compare_offsets(const void *x, const void *y)
 {
     BlastOffsetPair *xx = (BlastOffsetPair *)x;
@@ -836,4 +834,3 @@ BOOST_AUTO_TEST_CASE(CompressedSkipMaskedRanges)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-#endif
