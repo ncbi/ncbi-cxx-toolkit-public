@@ -557,11 +557,8 @@ CBlastDBCmdApp::x_PrintBlastDatabaseInformation()
 
     out << "BLASTDB Version: " << kVersion << endl;
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     // Print filtering algorithms supported
     out << m_BlastDb->GetAvailableMaskAlgorithmDescriptions();
-#endif
 
     // Print volume names
     vector<string> volumes;
