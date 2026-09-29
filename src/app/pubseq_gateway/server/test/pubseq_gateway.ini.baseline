@@ -19,7 +19,7 @@ port={port}
 ; Number of HTTP workers (1...100)
 ; Default: 32
 workers=32
-http_max_running=128
+http_max_running={http_max_running}
 
 ; Listener backlog (5...2048)
 ; Default: 256
