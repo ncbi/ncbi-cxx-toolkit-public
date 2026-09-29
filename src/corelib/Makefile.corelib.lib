@@ -19,12 +19,6 @@ LIBS = $(LIBDW_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(BACKWARD_CPP_INCLUDE) $(LIBUNWIND_INCLUDE) $(ORIG_CPPFLAGS)
 
-# Special build rules for WorkShop
-ncbicntr_workshop.o: $(srcdir)/ncbicntr_workshop.il $(srcdir)/ncbicntr_workshop.cpp
-	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL:-O%=) $(srcdir)/ncbicntr_workshop.il $(srcdir)/ncbicntr_workshop.cpp -o $@ $(CXX_FILTER)
-ncbiatomic_workshop.o: $(srcdir)/ncbicntr_workshop.il $(srcdir)/ncbiatomic_workshop.c
-	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL:-O%=) $(srcdir)/ncbicntr_workshop.il $(srcdir)/ncbiatomic_workshop.c -o $@ $(CC_FILTER)
-
 WATCHERS = vakatov
 USES_LIBRARIES =  \
     $(ORIG_LIBS)
