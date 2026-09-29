@@ -148,8 +148,6 @@ public:
                          vector<int>               & column_ids,
                          vector<CTempString>       & column_blobs);
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     virtual void GetColumnNames(vector<string> & names)
     {
         names = m_ColumnNames;
@@ -164,7 +162,6 @@ public:
     {
         return m_Source->GetColumnMetaData(id);
     }
-#endif
 
 private:
 
@@ -196,14 +193,11 @@ private:
     vector<CRef<CCluster> > & m_Clusters;
     uint64_t m_CurrentCluster;
     CNcbiOfstream *  m_ClusterMetadata;
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     vector<CBlastDbBlob> m_Blobs;
     vector<int> m_ColumnIds;
     vector<string> m_ColumnNames;
     vector<int> m_MaskIds;
     map<int, int> m_MaskIdMap;
-#endif
 };
 
 CClusterDBSource::CClusterDBSource(CRef<CSeqDBExpert> & source_db,
@@ -211,8 +205,6 @@ CClusterDBSource::CClusterDBSource(CRef<CSeqDBExpert> & source_db,
                                    CNcbiOfstream * cluster_metadata)
     : m_Source(source_db), m_Clusters(cluster), m_CurrentCluster(0), m_ClusterMetadata(cluster_metadata)
 {
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     // Process mask meta data
     m_Source->GetAvailableMaskAlgorithms(m_MaskIds);
     ITERATE(vector<int>, algo_id, m_MaskIds) {
@@ -229,7 +221,6 @@ CClusterDBSource::CClusterDBSource(CRef<CSeqDBExpert> & source_db,
     for(int i = 0; i < (int)m_ColumnNames.size(); i++) {
         m_ColumnIds.push_back(m_Source->GetColumnId(m_ColumnNames[i]));
     }
-#endif
     for (m_CurrentCluster=0; m_CurrentCluster< m_Clusters.size(); m_CurrentCluster++) {
         if(m_Clusters[m_CurrentCluster]->GetRefSeqOid() < 0) {
             LOG_POST(Warning << m_Clusters[m_CurrentCluster]->GetRefSeqId() + " not in source db");
@@ -525,8 +516,6 @@ CClusterDBSource::GetNext(CTempString               & sequence,
     deflines.Reset(new CBlast_def_line_set());
     deflines->Set().push_back(bf);
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     // process masks
     ITERATE(vector<int>, algo_id, m_MaskIds) {
 
@@ -553,7 +542,6 @@ CClusterDBSource::GetNext(CTempString               & sequence,
         m_Source->GetColumnBlob(column_ids[i], ref_oid, m_Blobs[i]);
         column_blobs[i] = m_Blobs[i].Str();
     }
-#endif
 
     m_Source->RetSequence(&seq_ptr);
     m_CurrentCluster++;
