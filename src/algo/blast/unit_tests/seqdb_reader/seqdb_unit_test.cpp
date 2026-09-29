@@ -3693,8 +3693,6 @@ BOOST_AUTO_TEST_CASE(PdbIdWithChain)
     BOOST_REQUIRE(oids.size());
 }
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 BOOST_AUTO_TEST_CASE(UserDefinedColumns)
 {
 
@@ -3781,7 +3779,6 @@ BOOST_AUTO_TEST_CASE(UserDefinedColumns)
         BOOST_REQUIRE(cr_blob.Str() == column_data[oid]);
     }
 }
-#endif
 
 BOOST_AUTO_TEST_CASE(VersionedSparseId)
 {
@@ -3802,8 +3799,6 @@ BOOST_AUTO_TEST_CASE(VersionedSparseId)
     BOOST_REQUIRE(o3.size() == 1);
 }
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 BOOST_AUTO_TEST_CASE(MaskDataColumn)
 {
 
@@ -3861,7 +3856,6 @@ BOOST_AUTO_TEST_CASE(EmptyMaskData)
     db.GetMaskData(0, algos.front(), ranges);
     BOOST_REQUIRE(ranges.empty());
 }
-#endif
 
 struct SDbSumInfo {
 public:
