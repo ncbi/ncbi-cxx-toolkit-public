@@ -117,8 +117,6 @@ public:
     /// @return The number of bytes read.
     Int8 ReadVarInt(int offset) const;
     
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// Read a 1 byte integer at the pointer (and move the pointer).
     int ReadInt1();
     
@@ -150,7 +148,6 @@ public:
     /// @param off The offset from which to read the integer.
     /// @return The eight byte value read from the data.
     Int8 ReadInt8(int offset) const;
-#endif
     
     /// Move the read pointer to a specific location.
     /// @param offset The new read offset.
@@ -173,9 +170,6 @@ public:
     /// @return The number of bytes that would be written.
     static int VarIntSize(Int8 x);
     
-    
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// Write a 1 byte integer to the blob.
     /// @param x The integer to write.
     void WriteInt1(int x);
@@ -222,7 +216,6 @@ public:
     /// @param offset The offset to write the integer at.
     void WriteInt8(Int8 x, int offset);
     void WriteInt8_LE(Int8 x, int offset);
-#endif
     
     /// Seek write pointer to a specific location.
     /// @param offset The new write offset.
@@ -237,8 +230,6 @@ public:
         eSizeVar  ///< Write string length as VarInt, then string data.
     };
     
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// Read string data from the blob (moving the read pointer).
     /// @param str The string to read.
     /// @param fmt String termination criteria.
@@ -264,7 +255,6 @@ public:
     /// @param offset The offset to write at.
     /// @return The number of bytes written.
     int WriteString(CTempString str, EStringFormat fmt, int offset);
-#endif
     
     /// Padding style.
     enum EPadding {
@@ -367,8 +357,6 @@ private:
     /// @return The integer value.
     Int8 x_ReadVarInt(int * offsetp) const;
     
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// Write string data to the blob.
     /// @param str The string to write.
     /// @param fmt String termination criteria.
@@ -479,8 +467,6 @@ private:
 
         x_WriteRaw((char*)(buf), TBytes, offsetp);
     }
-   
-#endif
     
     
     // Data
