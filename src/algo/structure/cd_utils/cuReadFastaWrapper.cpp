@@ -134,11 +134,6 @@ unsigned int CFastaIOWrapper::GetNumRead() const
     return n;
 
 /*
-#ifdef NCBI_COMPILER_WORKSHOP
-    unsigned int n = 0;
-    count(m_activeFastaString.begin(), m_activeFastaString.end(), gt, n);
-    return n;
-#else
     cerr << "m_activeFastaString:  " << m_activeFastaString << endl;
     vector<string> tokenizedString;
     string delim(&gt);
@@ -155,7 +150,6 @@ unsigned int CFastaIOWrapper::GetNumRead() const
     return counter;
 
 //    return count(m_activeFastaString.begin(), m_activeFastaString.end(), gt);
-#endif
 */
 }
 
