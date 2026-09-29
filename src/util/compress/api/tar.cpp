@@ -1690,34 +1690,13 @@ const char* CTar::x_ReadArchive(size_t& n)
             streamsize xread;
             IOS_BASE::iostate iostate = m_Stream.rdstate();
             if (!iostate) {  // NB: good()
-#ifdef NCBI_COMPILER_MIPSPRO
-                try {
-                    // Work around a bug in MIPSPro 7.3's streambuf::xsgetn()
-                    CNcbiIstream* is = dynamic_cast<CNcbiIstream*>(&m_Stream);
-                    _ASSERT(is);
-                    is->read (m_Buffer                  + nread,
-                              (streamsize)(m_BufferSize - nread));
-                    xread = is->gcount();
-                    if (xread > 0) {
-                        is->clear();
-                    }
-                } catch (IOS_BASE::failure&) {
-                    xread = m_Stream.rdstate() & NcbiEofbit ? 0 : -1;
-                }
-#else
                 try {
                     xread = m_Stream.rdbuf()->
                         sgetn(m_Buffer                  + nread,
                               (streamsize)(m_BufferSize - nread));
-#  ifdef NCBI_COMPILER_WORKSHOP
-                    if (xread < 0) {
-                        xread = 0;  // NB: WS6 is known to return -1 :-/
-                    }
-#  endif //NCBI_COMPILER_WORKSHOP
                 } catch (IOS_BASE::failure&) {
                     xread = -1;
                 }
-#endif //NCBI_COMPILER_MIPSPRO
             } else {
                 xread = iostate == NcbiEofbit ? 0 : -1;
             }
@@ -3555,9 +3534,6 @@ void CTar::x_Skip(Uint8 blocks)
 {
     _ASSERT(!OFFSET_OF(m_StreamPos));
     while (blocks) {
-#ifndef NCBI_COMPILER_WORKSHOP
-        // RogueWave RTL is buggy in seeking pipes -- it clobbers
-        // (discards) streambuf data instead of leaving it alone..
         if (!(m_Flags & (fSlowSkipWithRead | fStreamPipeThrough))
             &&  m_BufferPos == 0  &&  blocks >= BLOCK_OF(m_BufferSize)) {
             CT_OFF_TYPE fskip =
@@ -3576,7 +3552,6 @@ void CTar::x_Skip(Uint8 blocks)
             }
             m_Flags |= fSlowSkipWithRead;
         }
-#endif //NCBI_COMPILER_WORKSHOP
         size_t nskip = (blocks < BLOCK_OF(m_BufferSize)
                         ? (size_t) SIZE_OF(blocks)
                         : m_BufferSize);
