@@ -349,9 +349,6 @@ class CSRSearch : public CObject
             TSRPairedResults pres;
         };
 
-#ifdef NCBI_COMPILER_MIPSPRO
-    public:
-#endif
         class InternalException : public CException
         {
             public:
