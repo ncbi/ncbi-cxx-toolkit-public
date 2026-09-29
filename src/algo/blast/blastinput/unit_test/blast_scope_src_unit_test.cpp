@@ -43,11 +43,8 @@
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 #include <algo/blast/api/sseqloc.hpp>
 #include "blast_input_unit_test_aux.hpp"
-#if defined(NCBI_COMPILER_WORKSHOP) && defined(NDEBUG) && defined(NCBI_WITHOUT_MT) && defined(__i386) && NCBI_COMPILER_VERSION == 550
-#  define BUGGY_COMPILER
-#endif
 
-#if !defined(SKIP_DOXYGEN_PROCESSING) && !defined(BUGGY_COMPILER)
+#if !defined(SKIP_DOXYGEN_PROCESSING)
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
