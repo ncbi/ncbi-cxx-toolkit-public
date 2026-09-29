@@ -2340,8 +2340,6 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     }
 
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     // Masking of database
     if (m_SupportsDatabaseMasking) {
         arg_desc.AddOptionalKey(kArgDbSoftMask,
@@ -2358,7 +2356,6 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                 "masking",
                 CArgDescriptions::eString);
     }
-#endif
 
     // There is no RPS-BLAST 2 sequences
     if ( !m_IsRpsBlast && !m_IsKBlast && !m_IsIgBlast) {
@@ -2517,14 +2514,11 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
         if (args.Exist(kArgEntrezQuery) && args[kArgEntrezQuery])
             m_SearchDb->SetEntrezQueryLimitation(args[kArgEntrezQuery].AsString());
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
         if (args.Exist(kArgDbSoftMask) && args[kArgDbSoftMask]) {
             m_SearchDb->SetFilteringAlgorithm(args[kArgDbSoftMask].AsString(), eSoftSubjMasking);
         } else if (args.Exist(kArgDbHardMask) && args[kArgDbHardMask]) {
             m_SearchDb->SetFilteringAlgorithm(args[kArgDbHardMask].AsString(), eHardSubjMasking);
         }
-#endif
     } else if (args.Exist(kArgSubject) && args[kArgSubject]) {
 
         CNcbiIstream* subj_input_stream = NULL;
