@@ -548,21 +548,8 @@ public:
     void push_back(void); //null value
 
     /// Add primitive type element to the end of the array.
-#ifndef NCBI_COMPILER_WORKSHOP
     template <typename T> void push_back(const T&); // primitive and string
     template <typename T> void push_back(const T*);
-#else
-    void push_back(const bool& v);
-    void push_back(const Int4& v);
-    void push_back(const Uint4& v);
-    void push_back(const Int8& v);
-    void push_back(const Uint8& v);
-    void push_back(const float& v);
-    void push_back(const double& v);
-    void push_back(const CJson_Node::TCharType* v);
-    void push_back(const CJson_Node::TStringType& v);
-    void push_back(const CJson_ConstNode& v);
-#endif
 
     /// Add array type element to the end of the array.
     CJson_Array  push_back_array(void);
@@ -823,11 +810,6 @@ public:
     /// Insert primitive type element into the object
     template <typename T> void insert(const CJson_Node::TKeyType& name, const T&);
     template <typename T> void insert(const CJson_Node::TKeyType& name, const T*);
-
-#ifdef NCBI_COMPILER_WORKSHOP
-    void insert(const CJson_Node::TKeyType& name,
-                const CJson_Node::TStringType& value);
-#endif
 
     /// Insert array type element into the object
     CJson_Array  insert_array( const CJson_Node::TKeyType& name);
@@ -1510,7 +1492,6 @@ inline CJson_Node CJson_Array::back(void) {
 }
 
 // Implicit conversions are prohibited
-#ifndef NCBI_COMPILER_WORKSHOP
 // this may fail to compile
 //template <typename T> void CJson_Array::push_back(T) =delete;
 // this will compile:
@@ -1520,71 +1501,67 @@ template <typename T> inline void CJson_Array::push_back(const T&) {
 template <typename T> inline void CJson_Array::push_back(const T*) {
     CProhibited<T>::Implicit_conversions_are_prohibited();
 }
-#define JSW_EMPTY_TEMPLATE template<>
-#else
-#define JSW_EMPTY_TEMPLATE
-#endif
+
 inline void CJson_Array::push_back(void) {
     rapidjson::Value::AllocatorType* a = m_Impl->GetValueAllocator();
     m_Impl->PushBack( rapidjson::Value().SetValueAllocator(a), *a);
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const bool& v) {
+template<> inline void CJson_Array::push_back(const bool& v) {
     rapidjson::Value::AllocatorType* a = m_Impl->GetValueAllocator();
     m_Impl->PushBack( rapidjson::Value().SetBool(v).SetValueAllocator(a), *a);
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const Int4& v) {
+template<> inline void CJson_Array::push_back(const Int4& v) {
     rapidjson::Value::AllocatorType* a = m_Impl->GetValueAllocator();
     m_Impl->PushBack( rapidjson::Value().SetInt(v).SetValueAllocator(a), *a);
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const Uint4& v) {
+template<> inline void CJson_Array::push_back(const Uint4& v) {
     rapidjson::Value::AllocatorType* a = m_Impl->GetValueAllocator();
     m_Impl->PushBack( rapidjson::Value().SetUint(v).SetValueAllocator(a), *a);
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const Int8& v) {
+template<> inline void CJson_Array::push_back(const Int8& v) {
     rapidjson::Value::AllocatorType* a = m_Impl->GetValueAllocator();
     m_Impl->PushBack( rapidjson::Value().SetInt64(v).SetValueAllocator(a), *a);
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const Uint8& v) {
+template<> inline void CJson_Array::push_back(const Uint8& v) {
     rapidjson::Value::AllocatorType* a = m_Impl->GetValueAllocator();
     m_Impl->PushBack( rapidjson::Value().SetUint64(v).SetValueAllocator(a), *a);
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const float& v) {
+template<> inline void CJson_Array::push_back(const float& v) {
     rapidjson::Value::AllocatorType* a = m_Impl->GetValueAllocator();
     m_Impl->PushBack( rapidjson::Value().SetDouble(v).SetValueAllocator(a), *a);
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const double& v) {
+template<> inline void CJson_Array::push_back(const double& v) {
     rapidjson::Value::AllocatorType* a = m_Impl->GetValueAllocator();
     m_Impl->PushBack( rapidjson::Value().SetDouble(v).SetValueAllocator(a), *a);
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(
+template<> inline void CJson_Array::push_back(
     const CJson_Node::TCharType* v) {
     rapidjson::Value sv(v, *(m_Impl->GetValueAllocator()));
     m_Impl->PushBack( sv, *(m_Impl->GetValueAllocator()));
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(
+template<> inline void CJson_Array::push_back(
     const CJson_Node::TStringType& value) {
     push_back(value.c_str());
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const CJson_ConstNode& v) {
+template<> inline void CJson_Array::push_back(const CJson_ConstNode& v) {
     rapidjson::Value::AllocatorType* a = m_Impl->GetValueAllocator();
     m_Impl->PushBack( rapidjson::Value().SetValueAllocator(a).CopyFrom( *v.m_Impl, *a), *a);
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const CJson_Node& v) {
+template<> inline void CJson_Array::push_back(const CJson_Node& v) {
     push_back<CJson_ConstNode>(v);
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const CJson_ConstArray& v) {
+template<> inline void CJson_Array::push_back(const CJson_ConstArray& v) {
     push_back<CJson_ConstNode>(v);
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const CJson_Array& v) {
+template<> inline void CJson_Array::push_back(const CJson_Array& v) {
     push_back<CJson_ConstNode>(v);
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const CJson_ConstObject& v) {
+template<> inline void CJson_Array::push_back(const CJson_ConstObject& v) {
     push_back<CJson_ConstNode>(v);
 }
-JSW_EMPTY_TEMPLATE inline void CJson_Array::push_back(const CJson_Object& v) {
+template<> inline void CJson_Array::push_back(const CJson_Object& v) {
     push_back<CJson_ConstNode>(v);
 }
-#undef JSW_EMPTY_TEMPLATE
 
 inline CJson_Array CJson_Array::push_back_array(void) {
     rapidjson::Value::AllocatorType* a = m_Impl->GetValueAllocator();
@@ -1918,10 +1895,7 @@ CJson_Object::insert(const CJson_Node::TKeyType& name,
     rapidjson::Value sv_value(value, a);
     m_Impl->AddMember( sv_name, sv_value, a);
 }
-#ifndef NCBI_COMPILER_WORKSHOP
-template<>
-#endif
-inline void
+template<> inline void
 CJson_Object::insert(const CJson_Node::TKeyType& name,
                      const CJson_Node::TStringType& value) {
     insert(name, value.c_str());
