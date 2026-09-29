@@ -85,12 +85,6 @@ USING_SCOPE(objects);
         BOOST_CHECK(!(loc).IsSetFuzz_to()); \
     }
 
-// Workaround for internal compiler error on MSVC7 with using original
-// kInvalidSeqPos with BOOST_CHECK_EQUAL.
-#if NCBI_COMPILER_MSVC && (_MSC_VER < 1400) // 1400 == VC++ 8.0 
-#   undef  kInvalidSeqPos
-#   define kInvalidSeqPos  -1
-#endif
 
 NCBITEST_AUTO_INIT()
 {
