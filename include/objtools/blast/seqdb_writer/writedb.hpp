@@ -382,8 +382,6 @@ public:
     /// @param masked Letters to disinclude. [in]
     void SetMaskedLetters(const string & masked);
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// Find an existing column.
     ///
     /// This looks for an existing column with the specified title and
@@ -440,7 +438,6 @@ public:
     /// @param column_id Identifier for a user-defined column.
     /// @return Blob data should be written to this object.
     CBlastDbBlob & SetBlobData(int column_id);
-#endif
 
 protected:
     /// Implementation object.
@@ -571,8 +568,6 @@ public:
     /// Destructor.
     ~CWriteDB_ColumnBuilder();
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// Add a blob to the column.
     ///
     /// The data described by `blob' is added to the column.  If the
@@ -580,7 +575,6 @@ public:
     ///
     /// @param blob The blob to add to the column.
     void AddBlob(const CBlastDbBlob & blob);
-#endif
 
     /// Complete and close the column files.
     void Close();
