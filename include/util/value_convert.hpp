@@ -256,63 +256,11 @@ public:
     }
 
 public:
-#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
-    operator bool(void) const
-    { 
-        return m_Value ? 1 : 0;
-    }
-    operator Uint1(void) const
-    {
-        return m_Value ? 1 : 0;
-    }
-    operator Int1(void) const
-    {
-        return m_Value ? 1 : 0;
-    }
-    operator Uint2(void) const
-    {
-        return m_Value ? 1 : 0;
-    }
-    operator Int2(void) const
-    {
-        return m_Value ? 1 : 0;
-    }
-    operator Uint4(void) const
-    {
-        return m_Value ? 1 : 0;
-    }
-    operator Int4(void) const
-    {
-        return m_Value ? 1 : 0;
-    }
-    operator Uint8(void) const
-    {
-        return m_Value ? 1 : 0;
-    }
-    operator Int8(void) const
-    {
-        return m_Value ? 1 : 0;
-    }
-    operator float(void) const
-    {
-        return m_Value ? 1.0 : 0.0;
-    }
-    operator double(void) const
-    {
-        return m_Value ? 1.0 : 0.0;
-    }
-    operator long double(void) const
-    {
-        return m_Value ? 1.0 : 0.0;
-    }
-#else
     template <typename TO>
     operator TO(void) const
     {
         return m_Value ? static_cast<TO>(1) : static_cast<TO>(0);
     }
-#endif
-
     operator string(void) const
     {
         return NStr::BoolToString(m_Value);
@@ -334,62 +282,11 @@ public:
     }
 
 public:
-#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
-    operator bool(void) const
-    { 
-        return m_Value != 0;
-    }
-    operator Uint1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator float(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator long double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#else
     template <typename TO>
     operator TO(void) const
     {
         return MakeCP<CP>(m_Value);
     }
-#endif
     operator string(void) const
     {
         return NStr::UIntToString(m_Value);
@@ -415,62 +312,11 @@ public:
     }
 
 public:
-#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
-    operator bool(void) const
-    { 
-        return m_Value != 0;
-    }
-    operator Uint1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator float(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator long double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#else
     template <typename TO>
     operator TO(void) const
     {
         return MakeCP<CP>(m_Value);
     }
-#endif
     operator string(void) const
     {
         return NStr::IntToString(m_Value);
@@ -496,62 +342,11 @@ public:
     }
 
 public:
-#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
-    operator bool(void) const
-    { 
-        return m_Value != 0;
-    }
-    operator Uint1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator float(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator long double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#else
     template <typename TO>
     operator TO(void) const
     {
         return MakeCP<CP>(m_Value);
     }
-#endif
     operator string(void) const
     {
         return NStr::UIntToString(m_Value);
@@ -577,68 +372,11 @@ public:
     }
 
 public:
-#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
-    operator bool(void) const
-    { 
-        return m_Value != 0;
-    }
-    operator Uint1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#if NCBI_PLATFORM_BITS == 32
-    operator time_t(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#endif
-    operator Uint8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator float(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator long double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#else
     template <typename TO>
     operator TO(void) const
     {
         return MakeCP<CP>(m_Value);
     }
-#endif
     operator string(void) const
     {
         return NStr::IntToString(m_Value);
@@ -664,62 +402,11 @@ public:
     }
 
 public:
-#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
-    operator bool(void) const
-    { 
-        return m_Value != 0;
-    }
-    operator Uint1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator float(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator long double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#else
     template <typename TO>
     operator TO(void) const
     {
         return MakeCP<CP>(m_Value);
     }
-#endif
     operator string(void) const
     {
         return NStr::UIntToString(m_Value);
@@ -745,68 +432,11 @@ public:
     }
 
 public:
-#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
-    operator bool(void) const
-    { 
-        return m_Value != 0;
-    }
-    operator Uint1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#if NCBI_PLATFORM_BITS == 32
-    operator time_t(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#endif
-    operator Uint8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator float(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator long double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#else
     template <typename TO>
     operator TO(void) const
     {
         return MakeCP<CP>(m_Value);
     }
-#endif
     operator string(void) const
     {
         return NStr::IntToString(m_Value);
@@ -893,62 +523,11 @@ public:
     }
 
 public:
-#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
-    operator bool(void) const
-    { 
-        return m_Value != 0;
-    }
-    operator Uint1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator float(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator long double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#else
     template <typename TO>
     operator TO(void) const
     {
         return MakeCP<CP>(m_Value);
     }
-#endif
     operator string(void) const
     {
         return NStr::UInt8ToString(m_Value);
@@ -974,68 +553,11 @@ public:
     }
 
 public:
-#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
-    operator bool(void) const
-    { 
-        return m_Value != 0;
-    }
-    operator Uint1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#if NCBI_PLATFORM_BITS == 32
-    operator time_t(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#endif
-    operator Uint8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator float(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator long double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#else
     template <typename TO>
     operator TO(void) const
     {
         return MakeCP<CP>(m_Value);
     }
-#endif
     operator string(void) const
     {
         return NStr::Int8ToString(m_Value);
@@ -1061,62 +583,11 @@ public:
     }
 
 public:
-#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
-    operator bool(void) const
-    { 
-        return m_Value != 0;
-    }
-    operator Uint1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator float(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator long double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#else
     template <typename TO>
     operator TO(void) const
     {
         return MakeCP<CP>(m_Value);
     }
-#endif
     operator string(void) const
     {
         return NStr::UInt8ToString(m_Value);
@@ -1142,68 +613,11 @@ public:
     }
 
 public:
-#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
-    operator bool(void) const
-    { 
-        return m_Value != 0;
-    }
-    operator Uint1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#if NCBI_PLATFORM_BITS == 32
-    operator time_t(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#endif
-    operator Uint8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator float(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator long double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#else
     template <typename TO>
     operator TO(void) const
     {
         return MakeCP<CP>(m_Value);
     }
-#endif
     operator string(void) const
     {
         return NStr::Int8ToString(m_Value);
@@ -1236,68 +650,11 @@ public:
         return m_Value != 0.0F;
     }
 #endif
-#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
-    operator bool(void) const
-    { 
-        return m_Value != 0.0F;
-    }
-    operator Uint1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#if NCBI_PLATFORM_BITS == 32
-    operator time_t(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#endif
-    operator Uint8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator float(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator long double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#else
     template <typename TO>
     operator TO(void) const
     {
         return MakeCP<CP>(m_Value);
     }
-#endif
     operator string(void) const
     {
         string value;
@@ -1328,68 +685,11 @@ public:
         return m_Value != 0.0;
     }
 #endif
-#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
-    operator bool(void) const
-    { 
-        return m_Value != 0.0;
-    }
-    operator Uint1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#if NCBI_PLATFORM_BITS == 32
-    operator time_t(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#endif
-    operator Uint8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator float(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator long double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#else
     template <typename TO>
     operator TO(void) const
     {
         return MakeCP<CP>(m_Value);
     }
-#endif
     operator string(void) const
     {
         string value;
@@ -1414,62 +714,11 @@ public:
     }
 
 public:
-#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
-    operator bool(void) const
-    { 
-        return m_Value != 0.0L;
-    }
-    operator Uint1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int2(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int4(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Int8(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator float(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator long double(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-#else
     template <typename TO>
     operator TO(void) const
     {
         return MakeCP<CP>(m_Value);
     }
-#endif
 
 private:
     const obj_type  m_Value;
@@ -1487,59 +736,11 @@ public:
     }
 
 public:
-#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
-    operator bool(void) const
-    { 
-        return !m_Value->IsEmpty();
-    }
-    operator Uint1(void) const
-    {
-        return MakeCP<CP>(*m_Value);
-    }
-    operator Int1(void) const
-    {
-        return MakeCP<CP>(m_Value);
-    }
-    operator Uint2(void) const
-    {
-        return MakeCP<CP>(*m_Value);
-    }
-    operator Int2(void) const
-    {
-        return MakeCP<CP>(*m_Value);
-    }
-    operator Uint4(void) const
-    {
-        return MakeCP<CP>(*m_Value);
-    }
-    operator Int4(void) const
-    {
-        return MakeCP<CP>(*m_Value);
-    }
-    operator Uint8(void) const
-    {
-        return MakeCP<CP>(*m_Value);
-    }
-    operator Int8(void) const
-    {
-        return MakeCP<CP>(*m_Value);
-    }
-    operator float(void) const
-    {
-        return MakeCP<CP>(*m_Value);
-    }
-    operator double(void) const
-    {
-        return MakeCP<CP>(*m_Value);
-    }
-#else
     template <typename TO>
     operator TO(void) const
     {
         return MakeCP<CP>(*m_Value);
     }
-#endif
-
     // Convert to itself.
     operator const obj_type&(void) const
     {
@@ -1556,7 +757,7 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 // Specializations for conversion to bool.
-#if !(defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550)
+
 template <> template <>
 inline
 CValueConvert<SSafeCP, Uint1>::operator bool(void) const
@@ -1707,100 +908,8 @@ CValueConvert<SRunTimeCP, CTime>::operator bool(void) const
     return !m_Value->IsEmpty();
 }
 
-#endif
-
 } // namespace value_slice
 
-#if defined(NCBI_COMPILER_WORKSHOP) || \
-    (defined(NCBI_COMPILER_MSVC) && (_MSC_VER < 1400))
-namespace value_slice
-{
-
-template <typename CP, typename FROM>
-inline
-bool operator !(CValueConvert<CP, FROM> const& value)
-{
-    const bool bool_expr = value;
-    return !bool_expr;
-}
-
-template <
-    typename CP1, 
-    typename CP2, 
-    typename FROM1, 
-    typename FROM2
-    >
-inline
-bool operator &&(CValueConvert<CP1, FROM1> const& l, CValueConvert<CP2, FROM2> const& r)
-{
-    const bool l_expr = l;
-
-    if (!l) {
-        return false;
-    }
-
-    return r;
-}
-
-template <
-    typename CP1, 
-    typename CP2, 
-    typename FROM1,
-    typename FROM2
-    >
-inline
-bool operator ||(CValueConvert<CP1, FROM1> const& l, CValueConvert<CP2, FROM2> const& r)
-{
-    const bool l_expr = l;
-
-    if (l) {
-        return true;
-    }
-
-    return r;
-}
-
-template <typename CP, typename FROM>
-inline
-bool operator &&(bool l, CValueConvert<CP, FROM> const& r)
-{
-    if (!l) {
-        return false;
-    }
-
-    return r;
-}
-
-template <typename CP, typename FROM>
-inline
-bool operator &&(CValueConvert<CP, FROM> const& l, bool r)
-{
-    const bool l_expr = l;
-    return l_expr && r;
-}
-
-template <typename CP, typename FROM>
-inline
-bool operator ||(bool l, CValueConvert<CP, FROM> const& r)
-{
-    if (l) {
-        return true;
-    }
-
-    return r;
-}
-
-template <typename CP, typename FROM>
-inline
-bool operator ||(CValueConvert<CP, FROM> const& l, bool r)
-{
-    const bool l_expr = l;
-    return l_expr || r;
-}
-
-}
-
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 template <typename CP, typename FROM>
