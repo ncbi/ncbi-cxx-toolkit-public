@@ -250,13 +250,7 @@ s_ConvertionNotSupported(const char* one_type, EDB_Type other_type)
                + " is not supported");
 }
 
-#ifdef NCBI_COMPILER_WORKSHOP
-#define CONVERTVALUE_STATIC
-#else
-#define CONVERTVALUE_STATIC static
-#endif
-
-CONVERTVALUE_STATIC void
+static void
 s_ConvertValue(const CTime& from_val, CVariant& to_var)
 {
     switch (to_var.GetType()) {
@@ -283,7 +277,7 @@ s_ConvertValue(const CTime& from_val, CVariant& to_var)
     }
 }
 
-CONVERTVALUE_STATIC void
+static void
 s_ConvertValue(Int8 from_val, CVariant& to_var)
 {
     switch (to_var.GetType()) {
@@ -308,7 +302,7 @@ s_ConvertValue(Int8 from_val, CVariant& to_var)
     }
 }
 
-CONVERTVALUE_STATIC void
+static void
 s_ConvertValue(Int4 from_val, CVariant& to_var)
 {
     switch (to_var.GetType()) {
@@ -336,7 +330,7 @@ s_ConvertValue(Int4 from_val, CVariant& to_var)
     }
 }
 
-CONVERTVALUE_STATIC void
+static void
 s_ConvertValue(short from_val, CVariant& to_var)
 {
     switch (to_var.GetType()) {
@@ -367,7 +361,7 @@ s_ConvertValue(short from_val, CVariant& to_var)
     }
 }
 
-CONVERTVALUE_STATIC void
+static void
 s_ConvertValue(unsigned char from_val, CVariant& to_var)
 {
     switch (to_var.GetType()) {
@@ -401,7 +395,7 @@ s_ConvertValue(unsigned char from_val, CVariant& to_var)
     }
 }
 
-CONVERTVALUE_STATIC void
+static void
 s_ConvertValue(bool from_val, CVariant& to_var)
 {
     switch (to_var.GetType()) {
@@ -438,7 +432,7 @@ s_ConvertValue(bool from_val, CVariant& to_var)
     }
 }
 
-CONVERTVALUE_STATIC void
+static void
 s_ConvertValue(const float& from_val, CVariant& to_var)
 {
     switch (to_var.GetType()) {
@@ -466,7 +460,7 @@ s_ConvertValue(const float& from_val, CVariant& to_var)
     }
 }
 
-CONVERTVALUE_STATIC void
+static void
 s_ConvertValue(const double& from_val, CVariant& to_var)
 {
     switch (to_var.GetType()) {
@@ -491,7 +485,7 @@ s_ConvertValue(const double& from_val, CVariant& to_var)
     }
 }
 
-CONVERTVALUE_STATIC void
+static void
 s_ConvertValue(const string& from_val, CVariant& to_var)
 {
     switch (to_var.GetType()) {
@@ -549,13 +543,13 @@ s_ConvertValue(const string& from_val, CVariant& to_var)
     }
 }
 
-CONVERTVALUE_STATIC void
+static void
 s_ConvertValue(const char* from_val, CVariant& to_var)
 {
     s_ConvertValue(string(from_val), to_var);
 }
 
-CONVERTVALUE_STATIC void
+static void
 s_ConvertValue(const TStringUCS2& from_val, CVariant& to_var)
 {
     switch (to_var.GetType()) {
@@ -595,8 +589,6 @@ s_ConvertValue(const TStringUCS2& from_val, CVariant& to_var)
         s_ConvertionNotSupported("UCS2 string", to_var.GetType());
     }
 }
-
-#undef CONVERTVALUE_STATIC
 
 static void
 s_ConvertValue(const CVariant& from_var, CTime& to_val)
