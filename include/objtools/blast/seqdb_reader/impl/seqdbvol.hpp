@@ -1446,11 +1446,8 @@ private:
     mutable CFastMutex m_MtxHdr;
     mutable CFastMutex m_MtxCachedRange;
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// Set of columns defined for this volume.
     vector< CRef<CSeqDBColumn> > m_Columns;
-#endif
 };
 
 END_NCBI_SCOPE
