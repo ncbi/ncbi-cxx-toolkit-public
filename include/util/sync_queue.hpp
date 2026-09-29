@@ -640,17 +640,8 @@ public:
     /// For convinience - type of constant iterator
     typedef TIterator                                   TConstIterator;
 
-#ifdef NCBI_COMPILER_WORKSHOP
-    typedef typename TQueue::TNativeConstIter           TNativeConstIter;
-    /// Type of reverse iterator returned from this guard
-    typedef
-    reverse_iterator<TIterator,
-        typename TNativeConstIter::iterator_category,
-        const TValue>                                   TRevIterator;
-#else
     /// Type of reverse iterator returned from this guard
     typedef reverse_iterator<TIterator>                 TRevIterator;
-#endif
     /// For convinience - type of reverse constant iterator
     typedef TRevIterator                                TRevConstIterator;
 
@@ -741,17 +732,8 @@ public:
     /// Type of constant iterator returned from this guard
     typedef typename TQueue::TConstIterator                TConstIterator;
 
-#ifdef NCBI_COMPILER_WORKSHOP
-    typedef typename TQueue::TNativeIter                   TNativeIter;
-    /// Type of reverse iterator returned from this guard
-    typedef
-    reverse_iterator<TIterator,
-                typename TNativeIter::iterator_category,
-                TValue>                                    TRevIterator;
-#else
     /// Type of reverse iterator returned from this guard
     typedef reverse_iterator<TIterator>                    TRevIterator;
-#endif
     /// Type of reverse constant iterator returned from this guard
     typedef typename TBaseType::TRevIterator               TRevConstIterator;
 
