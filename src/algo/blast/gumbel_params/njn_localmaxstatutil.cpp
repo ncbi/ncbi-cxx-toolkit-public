@@ -44,12 +44,6 @@ Contents:
 
 #include "sls_alp_data.hpp"
 
-// Kludge: limit optimization by ICC 10.x to avoid undesired references to
-// __svml_exp2 (problematic to use from DLLs on x86_64 or at all on ia32).
-#if defined(NCBI_COMPILER_ICC)  &&  defined(__OPTIMIZE__) \
-    &&  NCBI_COMPILER_VERSION >= 1000  &&  NCBI_COMPILER_VERSION < 1100
-#  define NEED_ICC_OPTIMIZATION_LIMITS 1
-#endif
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
@@ -190,9 +184,6 @@ const double *q_) // q_ [0...dimension_) : distribution of independent letters
       n_entry = entry_;
    }
 
-#ifdef NEED_ICC_OPTIMIZATION_LIMITS
-#  pragma optimization_level 1
-#endif
    double n_totalProbAssoc (double x_)
    {
       double sum = 0.0;
@@ -310,9 +301,6 @@ double thetaMin_) // argument of rate
    return n_totalProbAssoc (thetaMin_);
 }
 
-#ifdef NEED_ICC_OPTIMIZATION_LIMITS
-#  pragma optimization_level 1
-#endif
 double LocalMaxStatUtil::r ( // r (theta)
 size_t dimension_, // #(distinct values)          
 const Int4 *score_, // scores in increasing order
