@@ -149,7 +149,7 @@ void CPSGS_CassProcessorBase::UnlockWaitingProcessor(void)
     if (!m_Unlocked) {
         m_Unlocked = true;
         if (IPSGS_Processor::m_Request) {
-            IPSGS_Processor::m_Request->Unlock(kCassandraProcessorEvent);
+            IPSGS_Processor::m_Request->UnlockAsync(kCassandraProcessorEvent);
         }
     }
 }

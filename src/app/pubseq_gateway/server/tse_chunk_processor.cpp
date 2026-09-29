@@ -239,7 +239,7 @@ void CPSGS_TSEChunkProcessor::Process(void)
 {
     // Lock the request for all the cassandra processors so that the other
     // processors may wait on the event
-    IPSGS_Processor::m_Request->Lock(kCassandraProcessorEvent);
+    IPSGS_Processor::m_Request->LockAsync(kCassandraProcessorEvent);
 
     if (m_SatInfoChunkVerId2Info.get() != nullptr) {
         x_ProcessSatInfoChunkVerId2Info();

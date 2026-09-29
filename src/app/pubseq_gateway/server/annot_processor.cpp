@@ -166,7 +166,7 @@ void CPSGS_AnnotProcessor::Process(void)
 
     // Lock the request for all the cassandra processors so that the other
     // processors may wait on the event
-    IPSGS_Processor::m_Request->Lock(kCassandraProcessorEvent);
+    IPSGS_Processor::m_Request->LockAsync(kCassandraProcessorEvent);
 
     // In both cases: sync or async resolution --> a callback will be called
     ResolveInputSeqId();
