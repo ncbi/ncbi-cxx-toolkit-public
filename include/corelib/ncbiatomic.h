@@ -51,8 +51,6 @@
 #  endif
 #elif defined(__cplusplus)
      inline
-#elif defined(NCBI_COMPILER_WORKSHOP)
-     static
 #elif defined(__GNUC__)
      static __inline__
 #elif __STDC_VERSION__ >= 199901

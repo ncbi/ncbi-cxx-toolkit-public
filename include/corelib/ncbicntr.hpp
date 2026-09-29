@@ -187,14 +187,8 @@ void CAtomicCounter::Set(CAtomicCounter::TValue new_value) noexcept
     m_Value = new_value;
 }
 
-
-// With WorkShop, sanely inlining assembly requires the use of ".il" files.
-// In order to keep the toolkit's external interface sane, we therefore
-// force this method out-of-line and into ncbicntr_workshop.o.
-#if defined(NCBI_COUNTER_USE_ASM) && (!defined(NCBI_COMPILER_WORKSHOP) || defined(NCBI_COUNTER_IMPLEMENTATION))
-#  ifndef NCBI_COMPILER_WORKSHOP
+#if defined(NCBI_COUNTER_USE_ASM)
 inline
-#  endif
 CAtomicCounter::TValue
 CAtomicCounter::x_Add(volatile CAtomicCounter::TValue* value_p, int delta)
 noexcept
@@ -208,12 +202,8 @@ noexcept
         result = old_value + delta;
         // Atomic compare-and-swap: if *value_p == old_value, swap it
         // with result; otherwise, just put the current value in result.
-#    ifdef NCBI_COMPILER_WORKSHOP
-        result = NCBICORE_asm_cas(result, nv_value_p, old_value);
-#    else
         asm volatile("cas [%3], %2, %1" : "=m" (*nv_value_p), "+r" (result)
                      : "r" (old_value), "r" (nv_value_p), "m" (*nv_value_p));
-#    endif
         if (result == old_value) { // We win
             break;
         }
@@ -224,12 +214,8 @@ noexcept
     result = NCBI_COUNTER_RESERVED_VALUE;
     NCBI_SCHED_SPIN_INIT();
     for (;;) {
-#    ifdef NCBI_COMPILER_WORKSHOP
-        result = NCBICORE_asm_swap(result, nv_value_p);
-#    else
         asm volatile("swap [%2], %1" : "=m" (*nv_value_p), "+r" (result)
                      : "r" (nv_value_p), "m" (*nv_value_p));
-#    endif
         if (result != NCBI_COUNTER_RESERVED_VALUE) {
             break;
         }
