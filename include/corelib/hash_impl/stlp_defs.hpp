@@ -122,7 +122,7 @@ NCBI_USING_NAMESPACE_STD;
 #define _STLP_PLACEMENT_NEW               new
 #define __STATIC_CAST(__x,__y)            static_cast<__x>(__y)
 #define __REINTERPRET_CAST(__x,__y)       reinterpret_cast<__x>(__y)
-#define _STLP_TEMPLATE_NULL               EMPTY_TEMPLATE
+#define _STLP_TEMPLATE_NULL               template<>
 #define _STLP_TEMPLATE                    template
 #define _STLP_TYPENAME_ON_RETURN_TYPE     typename
 #define __vector__                        vector
