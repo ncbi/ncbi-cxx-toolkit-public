@@ -253,8 +253,6 @@ void CMakeBlastDBApp::Init()
     arg_desc->AddFlag("randomize",
                       "Randomize input db seqs", true,  CArgDescriptions::fHidden);
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     arg_desc->SetCurrentGroup("Sequence masking options");
     arg_desc->AddOptionalKey("mask_data", "mask_data_files",
                              "Comma-separated list of input files containing "
@@ -287,7 +285,6 @@ void CMakeBlastDBApp::Init()
     arg_desc->SetDependency("gi_mask_name", CArgDescriptions::eRequires, "mask_data");
     arg_desc->SetDependency("gi_mask_name", CArgDescriptions::eRequires, "gi_mask");
 
-#endif
 
     arg_desc->SetCurrentGroup("Output options");
     arg_desc->AddOptionalKey(kOutput, "database_name",
@@ -575,8 +572,6 @@ public:
                          vector<int>               & column_ids,
                          vector<CTempString>       & column_blobs);
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     virtual void GetColumnNames(vector<string> & names)
     {
         names = m_ColumnNames;
@@ -591,7 +586,6 @@ public:
     {
         return m_Source->GetColumnMetaData(id);
     }
-#endif
 
     void ClearSequence()
     {
@@ -606,14 +600,11 @@ private:
     const char * m_Sequence;
     int m_Oid;
     vector<int> m_RandomOids;
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     vector<CBlastDbBlob> m_Blobs;
     vector<int> m_ColumnIds;
     vector<string> m_ColumnNames;
     vector<int> m_MaskIds;
     map<int, int> m_MaskIdMap;
-#endif
 };
 
 CRawSeqDBSource::CRawSeqDBSource(const string & name, bool protein, CBuildDatabase * outdb, bool randomize)
@@ -623,8 +614,6 @@ CRawSeqDBSource::CRawSeqDBSource(const string & name, bool protein, CBuildDataba
         protein ? CSeqDB::eProtein : CSeqDB::eNucleotide;
 
     m_Source.Reset(new CSeqDBExpert(name, seqtype));
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     // Process mask meta data
     m_Source->GetAvailableMaskAlgorithms(m_MaskIds);
     ITERATE(vector<int>, algo_id, m_MaskIds) {
@@ -651,7 +640,6 @@ CRawSeqDBSource::CRawSeqDBSource(const string & name, bool protein, CBuildDataba
     	std::shuffle (m_RandomOids.begin(), m_RandomOids.end(), rng);
     	m_RandomOids.push_back(num_oids);
     }
-#endif
 }
 
 bool
@@ -680,8 +668,6 @@ CRawSeqDBSource::GetNext(CTempString               & sequence,
 
     deflines = m_Source->GetHdr(oid);
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     // process masks
     ITERATE(vector<int>, algo_id, m_MaskIds) {
 
@@ -708,7 +694,6 @@ CRawSeqDBSource::GetNext(CTempString               & sequence,
         m_Source->GetColumnBlob(column_ids[i], oid, m_Blobs[i]);
         column_blobs[i] = m_Blobs[i].Str();
     }
-#endif
 
     if (m_RandomOids.size()== 0) {
     	m_Oid = oid;
@@ -849,9 +834,6 @@ void CMakeBlastDBApp::x_AddSequenceData(CNcbiIstream & input,
     }
 }
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
-
 void CMakeBlastDBApp::x_ProcessMaskData()
 {
     const CArgs & args = GetArgs();
@@ -979,7 +961,6 @@ void CMakeBlastDBApp::x_ProcessMaskData()
         }
     }
 }
-#endif
 
 bool CMakeBlastDBApp::x_ShouldParseSeqIds(void)
 {
@@ -1264,11 +1245,7 @@ void CMakeBlastDBApp::x_BuildDatabase()
         m_DB->SetTaxids(*taxids);
     }
 
-
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     x_ProcessMaskData();
-#endif
     x_ProcessInputData(args[kInput].AsString(), is_protein);
 
     bool success = m_DB->EndBuild();
