@@ -633,13 +633,7 @@ void CProSplignText::Output(const CSeq_align& seqalign, CScope& scope, ostream& 
             width = apos-i+1;
         }
 
-#ifdef NCBI_COMPILER_WORKSHOP
-        int gaps = 0;
-        count(dna.begin()+i, dna.begin()+(i+width), GAP_CHAR, gaps);
-        int real_bases = width-gaps;
-#else
         int real_bases = static_cast<int>(width-count(dna.begin()+i, dna.begin()+(i+width), GAP_CHAR));
-#endif
 
         int npos2 = is_plus_strand?npos1+real_bases-1:npos1-(real_bases-1);
 
