@@ -181,6 +181,17 @@ public:
     // The WaitFor() call blocks the processor till the event is unlocked
     void WaitFor(const string &  event_name, size_t  timeout_sec = 10);
 
+
+    // Async interface for waiting for an event. All the calls must be from a
+    // worker thread which is assigned to execute this particular request
+    using async_wait_callback = function<void(bool is_timeout)>;
+
+    void LockAsync(const string &  event_name);
+    void UnlockAsync(const string &  event_name);
+    void WaitForAsync(const string &  event_name,
+                      async_wait_callback  cb,
+                      size_t  timeout_sec = 10);
+
     template<typename TRequest> TRequest& GetRequest(void)
     {
         if (m_Request) {
@@ -245,6 +256,33 @@ private:
     uint64_t                        m_BacklogTimeMks;
 
 private:
+    struct SWaiterContext;
+
+    struct SEventState
+    {
+        CPSGS_Request *                     m_RequestInstance;
+        list<shared_ptr<SWaiterContext>>    m_Waiters;
+    };
+
+    struct SWaiterContext
+    {
+        uv_timer_t                                  m_Timer;
+        async_wait_callback                         m_Callback;
+        shared_ptr<SEventState>                     m_ParentState;
+        list<shared_ptr<SWaiterContext>>::iterator  m_Iterator;
+
+        // Trick: reference to itself to prolong the lifetime.
+        //        it keeps the object in memory till libuv calls a closing
+        //        callback on the next iteration
+        shared_ptr<SWaiterContext>                  m_SelfRef;
+    };
+
+    unordered_map<string, shared_ptr<SEventState>>  m_ActiveEvents;
+
+    void x_HandleIndividualTimeout(SWaiterContext *  context);
+    static void x_UVCloseAndReleaseCb(uv_handle_t *  h);
+    static void x_UVTimerStartCb(uv_timer_t *  h);
+
     struct SWaitData
     {
         enum EPSGS_WaitObjectState {
