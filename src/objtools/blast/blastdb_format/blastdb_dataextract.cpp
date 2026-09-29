@@ -550,10 +550,6 @@ string CBlastDBExtractor::ExtractSuperKingdom() {
 
     static const string kNoMasksFound = "none";
 string CBlastDBExtractor::ExtractMaskingData() {
-#if ((defined(NCBI_COMPILER_WORKSHOP) && (NCBI_COMPILER_VERSION <= 550))  ||  \
-     defined(NCBI_COMPILER_MIPSPRO))
-    return kNoMasksFound;
-#else
     CSeqDB::TSequenceRanges masked_ranges;
     x_ExtractMaskingData(masked_ranges, m_FmtAlgoId);
     if (masked_ranges.empty())  return kNoMasksFound;
@@ -563,7 +559,6 @@ string CBlastDBExtractor::ExtractMaskingData() {
         out << range->first << "-" << range->second << SEPARATOR;
     }
     return CNcbiOstrstreamToString(out);
-#endif
 }
 
 string CBlastDBExtractor::ExtractSeqData() {
