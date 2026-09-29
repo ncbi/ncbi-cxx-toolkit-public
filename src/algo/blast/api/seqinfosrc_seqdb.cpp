@@ -117,8 +117,6 @@ bool CSeqDbSeqInfoSrc::GetMasks(Uint4 index,
     CRef<CSeq_id> id(GetId(index).front());
     const CSeqLocInfo::ETranslationFrame kFrame = CSeqLocInfo::eFrameNotSet;
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     CSeqDB::TSequenceRanges ranges;
     m_iSeqDb->GetMaskData(index, m_FilteringAlgoId, ranges);
     ITERATE(CSeqDB::TSequenceRanges, itr, ranges) {
@@ -133,8 +131,6 @@ bool CSeqDbSeqInfoSrc::GetMasks(Uint4 index,
             }
         }
     }
-#endif
-
     return (retval.empty() ? false : true);
 }
 
