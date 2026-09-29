@@ -98,8 +98,6 @@ public:
                          vector<int>               & column_ids,
                          vector<CTempString>       & column_blobs) = 0;
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// Get the names of all columns defined by this sequence source.
     /// @param names A list of column names. [out]
     virtual void GetColumnNames(vector<string> & names) = 0;
@@ -113,7 +111,6 @@ public:
     /// @param id The column-id for which to get meta-data. [in]
     /// @return All meta-data for this column-id.
     virtual const map<string,string> & GetColumnMetaData(int id) = 0;
-#endif
 };
 
 /// An interface providing lookups of mask-data by Seq-id.
