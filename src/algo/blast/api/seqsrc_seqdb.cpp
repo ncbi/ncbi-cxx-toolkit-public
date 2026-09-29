@@ -96,11 +96,8 @@ struct SSeqDB_SeqSrc_Data {
     bool copied;
     bool isProtein;
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// Ranges of the sequence to include (for masking).
     CSeqDB::TSequenceRanges seq_ranges;
-#endif
 };
 
 typedef SSeqDB_SeqSrc_Data TSeqDBData;
@@ -313,13 +310,10 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
         }
     }
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     if (datap->mask_type != eNoSubjMasking) {
         ASSERT(datap->mask_algo_id != -1);
         seqdb.GetMaskData(oid, datap->mask_algo_id, datap->seq_ranges);
     }
-#endif
 
     datap->copied = false;
 
@@ -393,8 +387,6 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
 
     args->seq->oid = oid;
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     /* If masks have not been consumed (scanning phase), pass on to engine */
     if (datap->mask_type != eNoSubjMasking) {
         if (BlastSeqBlkSetSeqRanges(args->seq,
@@ -403,7 +395,6 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
             return BLAST_SEQSRC_ERROR;
         }
     }
-#endif
 
     return BLAST_SEQSRC_SUCCESS;
 }
