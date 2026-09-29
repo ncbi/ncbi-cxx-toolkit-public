@@ -1251,9 +1251,6 @@ public:
                              string & output,
                              TSeqRange range = TSeqRange()) const;
 
-
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// List columns titles found in this database.
     ///
     /// This returns a list of the column titles of all user created
@@ -1404,7 +1401,6 @@ public:
     void GetMaskData(int              oid,
                      int              algo_id,
                      TSequenceRanges &ranges);
-#endif
 
     /***********************************************************************/
     /* BEGIN: support for partial sequence fetching                        */
