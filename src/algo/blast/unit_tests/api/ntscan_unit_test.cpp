@@ -65,8 +65,6 @@ using namespace ncbi;
 using namespace ncbi::objects;
 using namespace ncbi::blast;
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 static Uint1 template_11_16[] =     {1,1,0,1,1,0,1,1,0,1,1,0,1,1,0,1};
 static Uint1 template_11_18[] =     {1,0,1,1,0,1,1,0,0,1,0,1,1,0,1,1,0,1};
 static Uint1 template_11_21[] =     {1,0,0,1,0,1,1,0,0,1,0,1,1,0,0,1,0,1,1,0,1};
@@ -905,4 +903,3 @@ DECLARE_TEST(Disco_2Templ_18_, MED_GI, 18, eMBWordTwoTemplates, 12)
 DECLARE_TEST(Disco_2Templ_21_, MED_GI, 21, eMBWordTwoTemplates, 12)
 
 BOOST_AUTO_TEST_SUITE_END()
-#endif
