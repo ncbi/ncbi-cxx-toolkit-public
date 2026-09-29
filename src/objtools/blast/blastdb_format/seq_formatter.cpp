@@ -48,12 +48,7 @@ USING_SCOPE(objects);
 
 static void s_GetSeqMask(CSeqDB & db, CSeqDB::TOID oid, int algo_id, CSeqDB::TSequenceRanges & masks)
 {
-#if ((defined(NCBI_COMPILER_WORKSHOP) && (NCBI_COMPILER_VERSION <= 550))  ||  \
-     defined(NCBI_COMPILER_MIPSPRO))
-    return;
-#else
     db.GetMaskData(oid, algo_id, masks);
-#endif
 }
 
 CBlastDB_SeqFormatter::CBlastDB_SeqFormatter(const string& format_spec, CSeqDB& blastdb, CNcbiOstream& out)
