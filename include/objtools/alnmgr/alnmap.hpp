@@ -260,8 +260,6 @@ public:
     private:
 #if defined(NCBI_COMPILER_MSVC) || defined(NCBI_COMPILER_ANY_CLANG) // kludge
         friend class CAlnMap;
-#elif defined(NCBI_COMPILER_WORKSHOP)  &&  NCBI_COMPILER_VERSION >= 550
-        friend class CAlnMap;        
 #else
         friend
         CRef<CAlnChunkVec> CAlnMap::GetAlnChunks(TNumrow row,
