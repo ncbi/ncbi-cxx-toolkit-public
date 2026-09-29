@@ -3325,13 +3325,7 @@ bool CScope_Impl::IsTransactionActive() const
 
 static size_t sx_CountFalse(const vector<bool>& loaded)
 {
-#ifdef NCBI_COMPILER_WORKSHOP
-    int tmp_count = 0;
-    std::count(loaded.begin(), loaded.end(), false, tmp_count);
-    return size_t(tmp_count);
-#else
     return std::count(loaded.begin(), loaded.end(), false);
-#endif
 }
 
 
