@@ -274,7 +274,7 @@ static int/*tri-state-bool,inverted*/s_Shmem_WLock(int which, int/*bool*/ wait)
             CORE_LOGF_X(19, eLOG_Warning,
                         ("LBSM lock[%d] %s revoked from PID %lu (%s)",
                          which + 1, killed || !wait ? "is being" : "has to be",
-                         (long) pid, self  ? "self" :
+                         (long) pid, self ? "self" :
                          other ? (killed ? "killed" : "hanging") : "zombie?"));
         } else if (pid < 0) {
             return errno == EFBIG  ||  semget(LBSM_MUTEX_KEY, 0, 0) != s_Muxid
@@ -298,7 +298,7 @@ static int/*tri-state-bool,inverted*/s_Shmem_WLock(int which, int/*bool*/ wait)
             CORE_LOGF_X(20, eLOG_Warning,
                         ("LBSM shmem[%d] has %s stuck %s%s", which + 1, num,
                          !locked ? "process" : val > 1 ? "readers" : "reader",
-                         wait ? "" : ", revoking lock"));
+                         !locked  ||  wait ? "" : ", revoking lock"));
         } else
             rv = -1/*bad*/;
     }
