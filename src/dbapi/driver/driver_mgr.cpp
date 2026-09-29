@@ -196,11 +196,9 @@ private:
 C_xDriverMgr::C_xDriverMgr(void)
 {
     m_ContextManager.Reset( TContextManagerStore::Get() );
-#ifndef NCBI_COMPILER_COMPAQ
     // For some reason, Compaq's compiler thinks m_ContextManager is
     // inaccessible here!
     _ASSERT( m_ContextManager );
-#endif
 }
 
 
