@@ -794,7 +794,7 @@ BOOST_AUTO_TEST_CASE(Test_LocationMitochondrion)
     CFastaOstream fasta_os(os);
     fasta_os.Write(seh);
     auto s = string(CNcbiOstrstreamToString(os));
-    string expected = ">lcl|id1 Mitochondrion, whole genome shotgun sequence\n"
+    string expected = ">lcl|id1 Mitochondrion, whole genome sequence\n"
     "ACTGCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCTAGC\n";
 
     BOOST_CHECK_EQUAL(s, expected);
