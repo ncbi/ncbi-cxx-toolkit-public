@@ -175,6 +175,7 @@ private:
     mutable shared_ptr<CWGSClient> m_Client;
     psg_time_point_t m_Start;
     EPSGS_Status m_Status;
+    bool m_NeedTrace = false;
     bool m_Canceled;
     CRef<objects::CSeq_id> m_SeqId; // requested seq-id
     string m_PSGBlobId; // requested blob-id
