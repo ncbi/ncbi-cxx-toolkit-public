@@ -162,8 +162,6 @@ void CWriteDB::ListFiles(vector<string> & files)
     m_Impl->ListFiles(files);
 }
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 int CWriteDB::
 RegisterMaskAlgorithm(EBlast_filter_program   program,
                       const string          & options,
@@ -205,7 +203,6 @@ CBlastDbBlob & CWriteDB::SetBlobData(int col_id)
 {
     return m_Impl->SetBlobData(col_id);
 }
-#endif
 
 CBinaryListBuilder::CBinaryListBuilder(EIdType id_type)
     : m_IdType(id_type)
