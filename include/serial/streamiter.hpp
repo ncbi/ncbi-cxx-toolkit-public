@@ -1185,11 +1185,7 @@ public:
 
 protected:
     typedef queue< CRef<TRoot> > TObjectsQueue;
-#if NCBI_COMPILER_MSVC && _MSC_VER < 1900
-    typedef function<TObjectsQueue(CRef<CByteSource>, ESerialDataFormat, const CParams&, TObjectsQueue)> FParserFunction;
-#else
     typedef function<TObjectsQueue(CRef<CByteSource>, ESerialDataFormat, const CParams&, TObjectsQueue&&)> FParserFunction;
-#endif
     CObjectIStreamAsyncIterator( CObjectIStream& istr,
                                  EOwnership deleteInStream,
                                  FParserFunction parser,
@@ -1198,11 +1194,7 @@ private:
     static TObjectsQueue sx_ClearGarbageAndParse(
             CRef<CByteSource> bytesource,  ESerialDataFormat format,
             const CParams& params,
-#if NCBI_COMPILER_MSVC && _MSC_VER < 1900
-            TObjectsQueue garbage
-#else
             TObjectsQueue&& garbage
-#endif
             );
     
     struct CData {
@@ -1273,11 +1265,7 @@ private:
     static TObjectsQueue sx_ClearGarbageAndParse(
             CRef<CByteSource> bytesource,  ESerialDataFormat format,
             const CParams& params,
-#if NCBI_COMPILER_MSVC && _MSC_VER < 1900
-            TObjectsQueue garbage
-#else
             TObjectsQueue&& garbage
-#endif
             );
 };
 
@@ -1392,11 +1380,7 @@ CObjectIStreamAsyncIterator<TRoot>::sx_ClearGarbageAndParse(
         CRef<CByteSource> bytesource, 
         ESerialDataFormat format,
         const CParams& params,
-#if NCBI_COMPILER_MSVC && _MSC_VER < 1900
-        TObjectsQueue garbage
-#else
         TObjectsQueue&& garbage
-#endif
         )
 {
     {{
@@ -1671,11 +1655,7 @@ CObjectIStreamAsyncIterator<TRoot, TChild>::sx_ClearGarbageAndParse(
         CRef<CByteSource> bytesource, 
         ESerialDataFormat format,
         const CParams& params,
-#if NCBI_COMPILER_MSVC && _MSC_VER < 1900
-        TObjectsQueue garbage
-#else
         TObjectsQueue&& garbage
-#endif
         )
 {
     {{
