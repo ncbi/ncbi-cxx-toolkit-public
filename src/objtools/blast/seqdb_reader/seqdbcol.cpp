@@ -38,8 +38,6 @@
 
 BEGIN_NCBI_SCOPE
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 // CSeqDB_ColumnReader
 
 CSeqDB_ColumnReader::
@@ -373,7 +371,6 @@ void CSeqDB_ColumnEntry::SetMapValue(const string & k, const string & v)
         m_Map[k] = v;
     }
 }
-#endif
 
 END_NCBI_SCOPE
 
