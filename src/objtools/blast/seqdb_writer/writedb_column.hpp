@@ -46,8 +46,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 /// CWriteDB_ColumnData class
 /// 
 /// Manufacture column data files from input data.
@@ -316,7 +314,6 @@ private:
     bool m_UseBothByteOrder;
     CRef<CWriteDB_ColumnData> m_DFile2;
 };
-#endif
 
 END_NCBI_SCOPE
 

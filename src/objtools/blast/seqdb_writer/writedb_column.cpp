@@ -40,8 +40,6 @@ USING_SCOPE(std);
 
 // CWriteDB_Column
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 CWriteDB_Column::CWriteDB_Column(const string      & dbname,
                                  const string      & extn1,
                                  const string      & extn2,
@@ -417,7 +415,6 @@ void CWriteDB_ColumnBuilder::Close()
     m_Impl->RenameSingle();
     m_Impl->Close();
 }
-#endif
 
 END_NCBI_SCOPE
 
