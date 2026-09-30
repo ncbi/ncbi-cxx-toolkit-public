@@ -38,8 +38,6 @@ BEGIN_NCBI_SCOPE
 /// Import C++ std namespace.
 USING_SCOPE(std);
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 
 // CWriteDB_GiMask
 
@@ -314,7 +312,6 @@ void CWriteDB_GiMaskData::WriteMask(const TPairVector & mask)
     m_DataLength += (1+2*mask.size()) * 4;
 }
 
-#endif
 
 END_NCBI_SCOPE
 

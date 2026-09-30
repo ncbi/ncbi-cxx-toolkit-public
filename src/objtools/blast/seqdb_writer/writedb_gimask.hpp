@@ -47,8 +47,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 /// CWriteDB_GiMaskData class
 ///
 /// Manufacture gi based mask data files from input data.
@@ -278,7 +276,6 @@ private:
     /// Sorted list of (GI, offset) pairs
     TGiOffset m_GiOffset;
 };
-#endif
 
 END_NCBI_SCOPE
 
