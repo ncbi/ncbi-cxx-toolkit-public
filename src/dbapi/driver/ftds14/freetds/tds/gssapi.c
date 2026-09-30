@@ -266,7 +266,7 @@ tds_gss_get_auth(TDSSOCKET * tds)
 	auth->last_stat = GSS_S_COMPLETE;
 
 	server_name = tds_dstr_cstr(&tds->login->server_host_name);
-	if (IS_TDS7_PLUS(tds->conn) && strchr(server_name, '.') == NULL) {
+        {
 		struct addrinfo hints;
 		memset(&hints, 0, sizeof(hints));
 		hints.ai_family = AF_UNSPEC;
@@ -279,20 +279,17 @@ tds_gss_get_auth(TDSSOCKET * tds)
 
 	if (!tds_dstr_isempty(&tds->login->server_spn)) {
 		auth->sname = strdup(tds_dstr_cstr(&tds->login->server_spn));
-	} else if (IS_TDS7_PLUS(tds->conn)) {
-		if (tds_dstr_isempty(&tds->login->server_realm_name)) {
-			len = asprintf(&auth->sname, "MSSQLSvc/%s:%d", server_name, tds->login->port);
-		} else {
-			len = asprintf(&auth->sname, "MSSQLSvc/%s:%d@%s", server_name, tds->login->port,
-				       tds_dstr_cstr(&tds->login->server_realm_name));
-		}
 	} else {
-		/* TDS 5.0, Sybase */
-		server_name = tds_dstr_cstr(&tds->login->server_name);
-		if (tds_dstr_isempty(&tds->login->server_realm_name)) {
-			len = asprintf(&auth->sname, "%s", server_name);
-		} else {
-			len = asprintf(&auth->sname, "%s@%s", server_name,
+                const char *at =
+                        tds_dstr_isempty(&tds->login->server_realm_name) ? ""
+                        : "@";
+                if (IS_TDS7_PLUS(tds->conn)) {
+                        len = asprintf(&auth->sname, "MSSQLSvc/%s:%d%s%s",
+                                       server_name, tds->login->port, at,
+                                       tds_dstr_cstr(&tds->login->server_realm_name));
+                } else {
+                        len = asprintf(&auth->sname, "TDS/%s%s%s",
+                                       server_name, at,
 				       tds_dstr_cstr(&tds->login->server_realm_name));
 		}
 	}
