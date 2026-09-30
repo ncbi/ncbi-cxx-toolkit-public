@@ -1725,8 +1725,6 @@ BOOST_AUTO_TEST_CASE(FourAndEightByteTis)
     BOOST_REQUIRE(data8 == d8);
 }
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 void s_WrapUpColumn(CWriteDB_ColumnBuilder & cb)
 {
     vector<string> files;
@@ -2124,7 +2122,6 @@ BOOST_AUTO_TEST_CASE(MaskDataBoundsError)
     W.Close();
     s_WrapUpDb(W);
 }
-#endif
 
 /// Auxiliary class to parse the contents of an alias file
 struct SAliasFileData {
