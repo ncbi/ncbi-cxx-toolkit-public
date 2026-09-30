@@ -264,6 +264,7 @@ void CPSGS_Request::WaitForAsync(const string &  event_name,
 {
     if (m_ConcurrentProcessorCount < 2) {
         // No parallel processors so there is no point to wait
+        cb(false);
         return;
     }
 
