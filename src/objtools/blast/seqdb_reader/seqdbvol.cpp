@@ -3270,8 +3270,6 @@ void CSeqDBVol::HashToOids(unsigned         hash,
     m_IsamHash->HashToOids(hash, oids);
 }
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 void CSeqDBVol::GetColumnBlob(int              col_id,
                               int              oid,
                               CBlastDbBlob   & blob,
@@ -3407,7 +3405,6 @@ int CSeqDBVol::GetColumnId(const string   & title,
 
     return -1;
 }
-#endif
 
 
 END_NCBI_SCOPE
