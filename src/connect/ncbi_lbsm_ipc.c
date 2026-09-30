@@ -710,7 +710,7 @@ pid_t LBSM_UnLBSMD(int/*bool*/ undaemon)
                     if (shmid != -1 && shmctl(shmid, IPC_STAT, &shm_ds) != -1)
                         pid = shm_ds.shm_cpid;
                     s_Shmem_RUnlock(which);
-                    if ((int) pid < 0)
+                    if ((long) pid < 0)
                         pid = 0;
                     if (pid  ||  !which)
                         break;
@@ -742,6 +742,6 @@ pid_t LBSM_UnLBSMD(int/*bool*/ undaemon)
         }
     }
 
-    assert((int) pid >= 0);
+    assert((long) pid >= 0);
     return pid;
 }
