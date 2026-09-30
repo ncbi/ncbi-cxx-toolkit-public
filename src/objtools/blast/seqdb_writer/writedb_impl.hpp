@@ -394,8 +394,6 @@ private:
     /// Column titles.
     vector<string> m_ColumnTitles;
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// Per-column metadata.
     typedef CWriteDB_Column::TColumnMeta TColumnMeta;
 
@@ -404,7 +402,6 @@ private:
 
     /// Gi-based masks
     vector< CRef<CWriteDB_GiMask> > m_GiMasks;
-#endif
 
     // Functions
 

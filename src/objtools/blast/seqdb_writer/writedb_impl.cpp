@@ -128,12 +128,9 @@ void CWriteDB_Impl::x_ResetSequenceData()
     NON_CONST_ITERATE(vector<int>, iter, m_HaveBlob) {
         *iter = 0;
     }
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     NON_CONST_ITERATE(vector< CRef<CBlastDbBlob> >, iter, m_Blobs) {
         (**iter).Clear();
     }
-#endif
 }
 
 void CWriteDB_Impl::AddSequence(const CTempString & seq,
@@ -1197,8 +1194,6 @@ void CWriteDB_Impl::x_Publish()
 
             m_VolumeList.push_back(m_Volume);
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
             _ASSERT(m_Blobs.size() == m_ColumnTitles.size() * 2);
             _ASSERT(m_Blobs.size() == m_ColumnMetas.size() * 2);
             _ASSERT(m_Blobs.size() == m_HaveBlob.size() * 2);
@@ -1208,7 +1203,6 @@ void CWriteDB_Impl::x_Publish()
                                        m_ColumnMetas[i],
                                        m_MaxFileSize);
             }
-#endif
         }
 
         // need to reset OID,  hense recalculate the header and id
@@ -1333,8 +1327,6 @@ void s_WriteRanges(CBlastDbBlob  & blob,
 
 #endif
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 
 void CWriteDB_Impl::SetMaskData(const CMaskedRangesVector & ranges,
                                 const vector <TGi>        & gis)
@@ -1553,7 +1545,6 @@ CBlastDbBlob & CWriteDB_Impl::SetBlobData(int col_id)
 
     return *m_Blobs[col_id * 2 + m_HaveBlob[col_id] - 1];
 }
-#endif
 
 void CWriteDB_Impl::SetPig(int pig)
 {
@@ -1900,8 +1891,6 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
     deflines = bdls;
 }
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 int CWriteDB_Impl::x_GetMaskDataColumnId()
 {
     if (m_MaskDataColumn == -1) {
@@ -1909,7 +1898,6 @@ int CWriteDB_Impl::x_GetMaskDataColumnId()
     }
     return m_MaskDataColumn;
 }
-#endif
 
 END_NCBI_SCOPE
 
