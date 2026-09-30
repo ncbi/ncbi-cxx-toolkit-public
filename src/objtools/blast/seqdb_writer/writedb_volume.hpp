@@ -244,8 +244,6 @@ public:
     /// @param files The filenames will be appended to this vector.
     void ListFiles(vector<string> & files) const;
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// Type used for database column meta-data.
     typedef CWriteDB_Column::TColumnMeta TColumnMeta;
 
@@ -275,7 +273,6 @@ public:
     void AddColumnMetaData(int            col_id,
                            const string & key,
                            const string & value);
-#endif
 
 private:
     // Configuration.
@@ -309,11 +306,8 @@ private:
     CRef<CWriteDB_GiIndex> m_GiIndex;///< OID->GI lookup (pgx or ngx).
     CRef<CWriteDB_OidList> m_ExModelList;
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// Database columns.
     vector< CRef<CWriteDB_Column> > m_Columns;
-#endif
 
     /// Included Seq_ids
     set<string> m_IdSet;

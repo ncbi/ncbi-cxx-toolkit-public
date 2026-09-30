@@ -204,8 +204,6 @@ bool CWriteDB_Volume::WriteSequence(const string      & seq,
         }
     }
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     for(int blob_i = 0; blob_i < (int) blobs.size(); blob_i++) {
         _ASSERT(blob_i / 2 < (int) m_Columns.size());
 
@@ -214,7 +212,6 @@ bool CWriteDB_Volume::WriteSequence(const string      & seq,
             break;
         }
     }
-#endif
 
     // Exception - if volume has no data, ignore the file size limits;
     // otherwise there would be either a hard failure or an infinite
@@ -306,8 +303,6 @@ bool CWriteDB_Volume::WriteSequence(const string      & seq,
     		m_ExModelList->AddOid(m_OID);
     	}
     }
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     for(int col_i = 0; col_i < (int)m_Columns.size(); col_i++) {
         _ASSERT(col_i * 2 < (int) blobs.size());
         if (col_i == maskcol_id) {
@@ -316,7 +311,6 @@ bool CWriteDB_Volume::WriteSequence(const string      & seq,
              m_Columns[col_i]->AddBlob(*blobs[col_i * 2]);
         }
     }
-#endif
 
     m_OID ++;
 
@@ -364,13 +358,9 @@ void CWriteDB_Volume::Close()
     	m_ExModelList->Close(GetOID());
     }
 
-
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     NON_CONST_ITERATE(vector< CRef<CWriteDB_Column> >, iter, m_Columns) {
         (**iter).Close();
     }
-#endif
 }
 
 void CWriteDB_Volume::RenameSingle()
@@ -404,13 +394,9 @@ void CWriteDB_Volume::RenameSingle()
     	m_ExModelList->RenameSingle();
     }
 
-
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     NON_CONST_ITERATE(vector< CRef<CWriteDB_Column> >, iter, m_Columns) {
         (**iter).RenameSingle();
     }
-#endif
 }
 
 
@@ -448,12 +434,9 @@ void CWriteDB_Volume::RenameFileIndex(unsigned int num_digits)
     	m_ExModelList->RenameFileIndex(num_digits);
     }
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     NON_CONST_ITERATE(vector< CRef<CWriteDB_Column> >, iter, m_Columns) {
         (**iter).RenameFileIndex(num_digits);
     }
-#endif
 }
 
 
@@ -492,16 +475,11 @@ void CWriteDB_Volume::ListFiles(vector<string> & files) const
     	files.push_back(m_ExModelList->GetFilename());
     }
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     ITERATE(vector< CRef<CWriteDB_Column> >, iter, m_Columns) {
         (**iter).ListFiles(files, true);
     }
-#endif
 }
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 int CWriteDB_Volume::CreateColumn(const string      & title,
                                   const TColumnMeta & meta,
                                   Uint8               max_sz,
@@ -567,7 +545,6 @@ void CWriteDB_Volume::AddColumnMetaData(int            col_id,
 
     m_Columns[col_id]->AddMetaData(key, value);
 }
-#endif
 
 CWriteDB_OidList::CWriteDB_OidList(const string & dbname,
                      	 	       bool           protein,
