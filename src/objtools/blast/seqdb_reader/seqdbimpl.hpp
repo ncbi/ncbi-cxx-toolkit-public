@@ -895,8 +895,6 @@ public:
     /// @param oids OIDs of sequences with this hash. [out]
     void HashToOids(unsigned hash, vector<int> & oids);
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// List columns titles found in this database.
     ///
     /// This returns a list of the column titles of all user created
@@ -1030,7 +1028,6 @@ public:
     void GetMaskData(int                         oid,
                      int                         algo_id,
                      CSeqDB::TSequenceRanges   & ranges);
-#endif
 
     /// Invoke the garbage collector to free up memory
     //void GarbageCollect(void);
@@ -1244,8 +1241,6 @@ private:
                       int            * min_count,
                       CSeqDBLockHold & locked);
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// Get the Column ID for the column with the specified title.
     /// @param title  The column title.
     /// @param locked The lock hold object for this thread. [in]
@@ -1271,7 +1266,6 @@ private:
     ///
     /// @param locked The lock hold object for this thread. [in]
     void x_BuildMaskAlgorithmList(CSeqDBLockHold & locked);
-#endif
 
     /// Get the sequence length.
     ///
@@ -1375,11 +1369,8 @@ private:
     /// Cached most recent date string for GetDate().
     mutable string m_Date;
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// Map assigned global column IDs to column information.
     vector< CRef<CSeqDB_ColumnEntry> > m_ColumnInfo;
-#endif
 
     /// Map string column titles to global column IDs.
     map<string, int> m_ColumnTitleMap;

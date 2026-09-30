@@ -2015,8 +2015,6 @@ CSeqDBIdSet CSeqDBImpl::GetIdSet()
 	return m_IdSet;
 }
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 void CSeqDBImpl::ListColumns(vector<string> & titles)
 {
     CHECK_MARKER();
@@ -2191,7 +2189,6 @@ int CSeqDBImpl::x_GetMaskDataColumn(CSeqDBLockHold & locked)
 
     return m_MaskDataColumn;
 }
-#endif
 
 
 template<class K, class C>
@@ -2333,8 +2330,6 @@ int CSeqDB_IdRemapper::GetAlgoId(const string & id)
     return m_DescToId[id];
 }
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 void CSeqDBImpl::GetAvailableMaskAlgorithms(vector<int> & algorithms)
 {
     if (m_UseGiMask) {
@@ -2622,7 +2617,7 @@ void CSeqDBImpl::GetMaskData(int                       oid,
 
     //int seq_length = 0;
 }
-#endif
+
 /// Call this api in main thread before and after multi-threading
 void CSeqDBImpl::SetNumberOfThreads(int num_threads, bool force_mt)
 {
