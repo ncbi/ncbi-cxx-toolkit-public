@@ -325,11 +325,8 @@ void CPSGS_WGSProcessor::x_ProcessResolveRequest(void)
         SendTrace(kWGSProcessorName +
                   " processor is resolving seq-id " + m_SeqId->AsFastaString());
     }
-    x_SetState("task_pending");
     m_ReqType = "resolve";
-    sm_QueuedTasks++;
-    m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::ResolveSeqId));
-    m_ThreadPool->AddTask(m_PoolTask);
+    x_WaitForOtherProcessors(&CPSGS_WGSProcessor::ResolveSeqId);
 }
 
 
@@ -337,10 +334,8 @@ void CPSGS_WGSProcessor::ResolveSeqId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    x_SetState("task_waiting");
     sm_QueuedTasks--;
     sm_RunningTasks++;
-    x_WaitForOtherProcessors();
     if ( !m_Canceled ) {
         x_SetState("task_running");
         try {
@@ -436,11 +431,8 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySeqIdRequest(void)
             SendTrace(kWGSProcessorName +
                       " processor is getting info for seq-id " + m_SeqId->AsFastaString());
         }
-        x_SetState("task_pending");
         m_ReqType = "resolve";
-        sm_QueuedTasks++;
-        m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::ResolveSeqId));
-        m_ThreadPool->AddTask(m_PoolTask);
+        x_WaitForOtherProcessors(&CPSGS_WGSProcessor::ResolveSeqId);
     }
     else {
         if ( GetRequest()->NeedTrace() ) {
@@ -449,11 +441,8 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySeqIdRequest(void)
         }
         m_ExcludedBlobs = get_request.m_ExcludeBlobs;
         m_ResendTimeoutMks = get_request.m_ResendTimeoutMks;
-        x_SetState("task_pending");
         m_ReqType = "blob_by_seq_id";
-        sm_QueuedTasks++;
-        m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::GetBlobBySeqId));
-        m_ThreadPool->AddTask(m_PoolTask);
+        x_WaitForOtherProcessors(&CPSGS_WGSProcessor::GetBlobBySeqId);
     }
 }
 
@@ -462,10 +451,8 @@ void CPSGS_WGSProcessor::GetBlobBySeqId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    x_SetState("task_waiting");
     sm_QueuedTasks--;
     sm_RunningTasks++;
-    x_WaitForOtherProcessors();
     if ( !m_Canceled ) {
         x_SetState("task_running");
         try {
@@ -559,7 +546,7 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySatSatKeyRequest(void)
     x_SetState("task_pending");
     m_ReqType = "blob_by_sat_satkey";
     sm_QueuedTasks++;
-    m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::GetBlobByBlobId));
+    m_PoolTask.Reset(new TThreadPoolTask(*this, &CPSGS_WGSProcessor::GetBlobByBlobId));
     m_ThreadPool->AddTask(m_PoolTask);
 }
 
@@ -653,7 +640,7 @@ void CPSGS_WGSProcessor::x_ProcessTSEChunkRequest(void)
     x_SetState("task_pending");
     m_ReqType = "chunk";
     sm_QueuedTasks++;
-    m_PoolTask.Reset(new CPSGS_ThreadPoolTask(*this, &CPSGS_WGSProcessor::GetChunk));
+    m_PoolTask.Reset(new TThreadPoolTask(*this, &CPSGS_WGSProcessor::GetChunk));
     m_ThreadPool->AddTask(m_PoolTask);
 }
 
@@ -1042,10 +1029,29 @@ void CPSGS_WGSProcessor::x_WriteData(CID2_Reply_Data& data,
 }
 
 
-void CPSGS_WGSProcessor::x_WaitForOtherProcessors(void)
+void CPSGS_WGSProcessor::x_OnAsyncWaitResult(TMethod method, bool is_timeout)
+{
+    if (is_timeout) {
+        x_SendError("Timeout waiting for other processors");
+        x_Finish(ePSGS_Error);
+        return;
+    }
+    if ( x_IsCanceled() ) { // This may need different processing depending on the new wait API
+        return;
+    }
+    x_SetState("task_pending");
+    sm_QueuedTasks++;
+    m_PoolTask.Reset(new TThreadPoolTask(*this, method));
+    m_ThreadPool->AddTask(m_PoolTask);
+}
+
+
+void CPSGS_WGSProcessor::x_WaitForOtherProcessors(TMethod method)
 {
     if (m_Canceled) return;
-    GetRequest()->WaitFor(kCassandraProcessorEvent);
+    x_SetState("task_waiting");
+    GetRequest()->WaitForAsync(kCassandraProcessorEvent,
+        bind(&CPSGS_WGSProcessor::x_OnAsyncWaitResult, this, method, placeholders::_1));
 }
 
 

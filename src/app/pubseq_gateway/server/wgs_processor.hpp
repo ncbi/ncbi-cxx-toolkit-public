@@ -159,7 +159,10 @@ private:
         return obj.IsSetBlob_state() ? obj.GetBlob_state() : 0;
     }
 
-    void x_WaitForOtherProcessors(void);
+    using TThreadPoolTask = CPSGS_ThreadPoolTask<CPSGS_WGSProcessor>;
+    using TMethod = TThreadPoolTask::TMethod;
+    void x_OnAsyncWaitResult(TMethod, bool is_timeout);
+    void x_WaitForOtherProcessors(TMethod method);
     void x_Finish(EPSGS_Status status);
     bool x_IsCanceled();
     bool x_SignalStartProcessing();
