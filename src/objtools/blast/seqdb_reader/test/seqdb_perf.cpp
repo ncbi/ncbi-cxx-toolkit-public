@@ -259,11 +259,8 @@ CSeqDBPerfApp::x_PrintBlastDatabaseInformation()
         << NStr::IntToString(m_BlastDb->GetMaxLength(), kFlags) << " "
         << kLetters << endl;
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     // Print filtering algorithms supported
     out << m_BlastDb->GetAvailableMaskAlgorithmDescriptions();
-#endif
     x_UpdateMemoryUsage();
 
     // Print volume names
