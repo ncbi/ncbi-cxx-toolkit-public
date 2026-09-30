@@ -441,8 +441,6 @@ void CBuildDatabase::x_EditHeaders(CRef<objects::CBlast_def_line_set> headers)
     x_SetLinkAndMbit(headers);
 }
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 void
 CBuildDatabase::x_AddMasksForSeqId(const list< CRef<CSeq_id> >& ids)
 {
@@ -464,7 +462,6 @@ CBuildDatabase::x_AddMasksForSeqId(const list< CRef<CSeq_id> >& ids)
     m_OutputDb->SetMaskData(rng, gis);
     m_FoundMatchingMasks = true;
 }
-#endif
 
 bool CBuildDatabase::x_EditAndAddBioseq(CConstRef<objects::CBioseq>   bs,
                                         objects::CSeqVector         * sv,
@@ -496,11 +493,8 @@ bool CBuildDatabase::x_EditAndAddBioseq(CConstRef<objects::CBioseq>   bs,
 
     m_OutputDb->SetDeflines(*headers);
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     const list< CRef<CSeq_id> > & ids = bs->GetId();
     x_AddMasksForSeqId(ids);
-#endif
     return true;
 }
 
@@ -908,8 +902,6 @@ bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
     bool done = false;
     bool rv = false;
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     // Get all column names.
 
     vector<string> all_names;
@@ -942,7 +934,7 @@ bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
 
         in2out[in_id] = out_id;
     }
-#endif
+
     // Copy all data.
 
     vector<CTempString> column_blobs;
@@ -988,8 +980,6 @@ bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
             x_AddPig(deflines);
             m_OutputDb->SetDeflines(*deflines);
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
             for(int i = 0; i < (int)column_ids.size(); i++) {
                 int in_id = column_ids[i];
                 if (in_id == mask_id) continue;
@@ -1029,7 +1019,6 @@ bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
             if (!mask_data.empty()) {
                 m_OutputDb->SetMaskData(mask_data, gis);
             }
-#endif
 
             rv = true;
             count ++;
@@ -1585,12 +1574,7 @@ CBuildDatabase::RegisterMaskingAlgorithm(EBlast_filter_program program,
                                          const string        & options,
                                          const string        & name)
 {
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     return m_OutputDb->RegisterMaskAlgorithm(program, options, name);
-#else
-    return 0;
-#endif
 }
 
 int
@@ -1598,12 +1582,7 @@ CBuildDatabase::RegisterMaskingAlgorithm(const string        & program,
                                          const string        & description,
                                          const string        & options)
 {
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
     return m_OutputDb->RegisterMaskAlgorithm(program, description, options);
-#else
-    return 0;
-#endif
 }
 
 void CBuildDatabase::SetMaskDataSource(IMaskDataSource & ranges)
