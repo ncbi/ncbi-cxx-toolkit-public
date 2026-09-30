@@ -2929,6 +2929,7 @@ void CDeflineGenerator::x_SetSuffix (
     string type;
     string study;
     string comp;
+    size_t pos;
 
     switch (m_MITech) {
         case NCBI_TECH(htgs_0):
@@ -2990,11 +2991,20 @@ void CDeflineGenerator::x_SetSuffix (
             }
             break;
         case NCBI_TECH(wgs):
+            pos = m_MainTitle.find (", whole genome shotgun sequencing project");
+            if (pos != NPOS) {
+                m_MainTitle.erase (pos);
+            }
+            pos = m_MainTitle.find (", whole genome shotgun sequence");
+            if (pos != NPOS) {
+                m_MainTitle.erase (pos);
+            }
+
             if (m_WGSMaster) {
-                if (m_MainTitle.find ("whole genome shotgun sequencing project") == NPOS){
-                    type = ", whole genome shotgun sequencing project";
+                if (m_MainTitle.find ("whole genome sequencing project") == NPOS){
+                    type = ", whole genome sequencing project";
                 }
-            } else if (m_MainTitle.find ("whole genome shotgun sequence") == NPOS) {
+            } else if (m_MainTitle.find ("whole genome sequence") == NPOS) {
                 if (! m_Organelle.empty()  &&  m_MainTitle.find(m_Organelle) == NPOS) {
                     if ((NStr::EqualNocase (m_Organelle, "mitochondrial") || NStr::EqualNocase (m_Organelle, "mitochondrion")) &&
                         (m_MainTitle.find("mitochondrial") != NPOS || m_MainTitle.find("mitochondrion") != NPOS)) {
@@ -3005,7 +3015,7 @@ void CDeflineGenerator::x_SetSuffix (
                       type += m_Organelle;
                     }
                 }
-                type += ", whole genome shotgun sequence";
+                type += ", whole genome sequence";
             }
             break;
         case NCBI_TECH(tsa):
