@@ -47,8 +47,6 @@ BEGIN_NCBI_SCOPE
 /// Import definitions from the objects namespace.
 USING_SCOPE(objects);
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 
 /// CSeqDBGiMask class.
 ///
@@ -302,8 +300,6 @@ private:
     string m_Date;
 
 };
-
-#endif
 
 END_NCBI_SCOPE
 

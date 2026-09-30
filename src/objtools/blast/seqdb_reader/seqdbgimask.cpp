@@ -38,8 +38,6 @@
 
 BEGIN_NCBI_SCOPE
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 
 CSeqDBGiMask::CSeqDBGiMask(CSeqDBAtlas           & atlas,
                            const vector <string> & mask_name)
@@ -250,7 +248,6 @@ void CSeqDBGiMask::x_ReadFields(void)//
               m_IndexFile.GetFileDataPtr(m_IndexLease, begin, end);
 }
 
-#endif
 
 END_NCBI_SCOPE
 
