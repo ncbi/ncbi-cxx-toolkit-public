@@ -114,8 +114,6 @@ Int8 CBlastDbBlob::x_ReadVarInt(int * offsetp) const
                "CBlastDbBlob::ReadVarInt: eof while reading integer.");
 }
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 int CBlastDbBlob::ReadInt1()
 {
     return x_ReadIntFixed<int,1>(& m_ReadOffset);
@@ -204,7 +202,6 @@ CTempString CBlastDbBlob::x_ReadString(EStringFormat fmt, int * offsetp) const
     
     return CTempString(datap, sz);
 }
-#endif
 
 const char * CBlastDbBlob::x_ReadRaw(int size, int * offsetp) const
 {
@@ -298,8 +295,6 @@ int CBlastDbBlob::VarIntSize(Int8 x)
     return bytes;
 }
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 void CBlastDbBlob::WriteInt1(int x)
 {
     x_WriteIntFixed<int,1>(x, NULL);
@@ -411,7 +406,6 @@ int CBlastDbBlob::x_WriteString(CTempString str, EStringFormat fmt, int * offset
     
     return end_off - start_off;
 }
-#endif
 
 const char * CBlastDbBlob::ReadRaw(int size)
 {
@@ -590,10 +584,7 @@ void CBlastDbBlob::WritePadBytes(int align, EPadding fmt)
 void CBlastDbBlob::SkipPadBytes(int align, EPadding fmt)
 {
     if (fmt == eString) {
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
         ReadString(eNUL);
-#endif
     } else {
         _ASSERT(fmt == eSimple);
         
