@@ -1196,8 +1196,6 @@ void CSeqDB::GetSequenceAsString(int                 oid,
     output.swap(result);
 }
 
-#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
-     (!defined(NCBI_COMPILER_MIPSPRO)) )
 void CSeqDB::ListColumns(vector<string> & titles)
 {
     m_Impl->ListColumns(titles);
@@ -1298,8 +1296,6 @@ void CSeqDB::GetMaskData(int                 oid,
 {
     m_Impl->GetMaskData(oid, algo_id, ranges);
 }
-
-#endif
 
 
 void CSeqDB::SetOffsetRanges(int                        oid,
