@@ -99,8 +99,7 @@ public:
                                 CWGSClient::TID2SplitVersion split_version);
 
 private:
-    CPSGS_WGSProcessor(const shared_ptr<CWGSClient>& client,
-                       shared_ptr<ncbi::CThreadPool> thread_pool,
+    CPSGS_WGSProcessor(const CPSGS_WGSProcessor& parent,
                        shared_ptr<CPSGS_Request> request,
                        shared_ptr<CPSGS_Reply> reply,
                        TProcessorPriority priority);
@@ -185,6 +184,7 @@ private:
     string m_ClientId;
     unsigned long m_ResendTimeoutMks = 0;
     unsigned long m_SentMksAgo = 0;
+    size_t m_AsyncWaitTimeoutSec = 1;
     bool m_AddedToExcludedCache = false;
     shared_ptr<SWGSData> m_WGSData;
     string m_WGSDataError;

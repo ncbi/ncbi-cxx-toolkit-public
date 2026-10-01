@@ -146,12 +146,14 @@ static void s_FormatBlobId(ostream& s, const CID2_Blob_Id& blob_id)
 #define PARAM_FILE_REOPEN_TIME "file_reopen_time"
 #define PARAM_FILE_RECHECK_TIME "file_recheck_time"
 #define PARAM_COMPRESS_DATA "compress_data"
+#define PARAM_ASYNC_WAIT_TIMEOUT "cassandra_processor_timeout"
 
 #define DEFAULT_VDB_CACHE_SIZE 100
 #define DEFAULT_INDEX_UPDATE_TIME 600
 #define DEFAULT_FILE_REOPEN_TIME 3600
 #define DEFAULT_FILE_RECHECK_TIME 600
 #define DEFAULT_COMPRESS_DATA SWGSProcessor_Config::eCompressData_some
+#define DEFAULT_ASYNC_WAIT_TIMEOUT 1
 
 
 CPSGS_WGSProcessor::CPSGS_WGSProcessor(void)
@@ -167,18 +169,18 @@ CPSGS_WGSProcessor::CPSGS_WGSProcessor(void)
 
 
 CPSGS_WGSProcessor::CPSGS_WGSProcessor(
-    const shared_ptr<CWGSClient>& client,
-    shared_ptr<ncbi::CThreadPool> thread_pool,
+    const CPSGS_WGSProcessor& parent,
     shared_ptr<CPSGS_Request> request,
     shared_ptr<CPSGS_Reply> reply,
     TProcessorPriority priority)
-    : m_Client(client),
+    : m_Client(parent.m_Client),
       m_Start(psg_clock_t::now()),
       m_Status(ePSGS_InProgress),
       m_Canceled(false),
       m_ChunkId(0),
+      m_AsyncWaitTimeoutSec(parent.m_AsyncWaitTimeoutSec),
       m_OutputFormat(SPSGS_ResolveRequest::ePSGS_NativeFormat),
-      m_ThreadPool(thread_pool)
+      m_ThreadPool(parent.m_ThreadPool)
 {
     m_Request = request;
     m_Reply = reply;
@@ -215,6 +217,8 @@ void CPSGS_WGSProcessor::x_LoadConfig(void)
     m_ThreadPool.reset(new CThreadPool(kMax_UInt,
                                        new CPSGS_ThreadPool_Controller(
                                            min(3u, max_conn), max_conn)));
+
+    m_AsyncWaitTimeoutSec = registry.GetInt(kWGSProcessorSection, PARAM_ASYNC_WAIT_TIMEOUT, DEFAULT_ASYNC_WAIT_TIMEOUT);
 }
 
 
@@ -234,7 +238,7 @@ CPSGS_WGSProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
 {
     if ( !x_IsEnabled(*request) ) return nullptr;
     _ASSERT(m_Client);
-    return new CPSGS_WGSProcessor(m_Client, m_ThreadPool, request, reply, priority);
+    return new CPSGS_WGSProcessor(*this, request, reply, priority);
 }
 
 
@@ -1029,14 +1033,18 @@ void CPSGS_WGSProcessor::x_WriteData(CID2_Reply_Data& data,
 void CPSGS_WGSProcessor::x_OnAsyncWaitResult(TMethod method, bool is_timeout)
 {
     if (is_timeout) {
-        x_SendError("Timeout waiting for other processors");
-        x_Finish(ePSGS_Error);
-        return;
+        PSG_WARNING(kWGSProcessorName +
+                    " processor timeout while waiting for other processors");
+        if ( m_NeedTrace ) {
+            SendTrace(kWGSProcessorName +
+                    " processor timeout while waiting for other processors");
+        }
+        // Proceed to normal processing anyway.
     }
     if ( m_Canceled ) {
         if ( m_NeedTrace ) {
             SendTrace(kWGSProcessorName +
-                    " processor was canceled while waiting");
+                    " processor was canceled while waiting for other processors");
         }
         x_Finish(ePSGS_Canceled);
         return;
@@ -1061,7 +1069,8 @@ void CPSGS_WGSProcessor::x_WaitForOtherProcessors(TMethod method)
                   " processor is waiting for other processors");
     }
     GetRequest()->WaitForAsync(kCassandraProcessorEvent,
-        bind(&CPSGS_WGSProcessor::x_OnAsyncWaitResult, this, method, placeholders::_1));
+        bind(&CPSGS_WGSProcessor::x_OnAsyncWaitResult, this, method, placeholders::_1),
+        m_AsyncWaitTimeoutSec);
 }
 
 
