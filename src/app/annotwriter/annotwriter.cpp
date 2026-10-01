@@ -245,6 +245,7 @@ void CAnnotWriterApp::Init()
         &(*new CArgAllow_Strings,
             "gvf",
             "gff3",
+            "insdc-gff",
             "gtf",
             "wig", "wiggle",
             "bed",
@@ -368,13 +369,18 @@ void CAnnotWriterApp::Init()
     SetupArgDescriptions(arg_desc.release());
 }
 
+static bool s_CleanupEnabledFormat(const string& format)
+{
+    return (format == "gtf" || format == "gff3" || format == "insdc-gff");
+}
+
 //  ----------------------------------------------------------------------------
 int CAnnotWriterApp::Run()
 //  ----------------------------------------------------------------------------
 {
     const CArgs& args = GetArgs();
     auto format = args["format"].AsString();
-    m_Cleanup = !args["nocleanup"] && (format == "gtf" || format == "gff3");
+    m_Cleanup = !args["nocleanup"] && s_CleanupEnabledFormat(format);
 
     CONNECT_Init(&GetConfig());
     m_pObjMngr = CObjectManager::GetInstance();
@@ -810,6 +816,10 @@ unsigned int CAnnotWriterApp::xGffFlags(
 //  -----------------------------------------------------------------------------
 {
    unsigned int eFlags = CGff2Writer::fNormal;
+
+    if (args["format"].AsString() == "insdc-gff") {
+        eFlags |= CGff3Writer::fInsdcMode;
+    }
     if (args["structibutes"]) {
         eFlags |= CGtfWriter::fStructibutes;
     }
@@ -878,7 +888,7 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
     }
 
     const string strFormat = args["format"].AsString();
-    if (strFormat == "gff3") {
+    if (strFormat == "gff3" || strFormat == "insdc-gff") {
         const bool sortAlignments = args["no-sort"] ? false : true;
         if (args["flybase"]) {
             CGff3FlybaseWriter* pWriter = new CGff3FlybaseWriter(*m_pScope, *pOs, sortAlignments);

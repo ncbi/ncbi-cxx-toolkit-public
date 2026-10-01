@@ -1085,8 +1085,13 @@ bool CGff3Writer::WriteHeader()
 //  ----------------------------------------------------------------------------
 {
     if (!m_bHeaderWritten) {
-        m_Os << "##gff-version 3" << '\n';
-        m_Os << "#!gff-spec-version 1.21" << '\n';
+        if (xIsInsdcMode()) {
+            m_Os << "##gff-version 3.1.26" << '\n';
+            m_Os << "#!insdc-gff-version 0.5" << '\n';
+        } else {
+            m_Os << "##gff-version 3" << '\n';
+            m_Os << "#!gff-spec-version 1.21" << '\n';
+        }
         m_Os << "#!processor NCBI annotwriter" << '\n';
         m_bHeaderWritten = true;
     }
