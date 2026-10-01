@@ -596,9 +596,9 @@ public:
     /// http_proxy_host:http_proxy_port -- HTTP proxy server to tunnel thru
     /// http_proxy_user:http_proxy_pass -- credentials for the proxy, if needed
     /// http_proxy_leak                 -- ignore bad proxy and connect direct
+    /// http_push_auth                  -- whether to push credentials at once
     /// timeout                         -- timeout to connect to HTTP proxy
     /// debug_printout                  -- how to log socket data by default
-    /// http_push_auth                  -- whether to push credentials at once
     ///
     /// @param net_info
     ///   Connection point and proxy tunnel location
