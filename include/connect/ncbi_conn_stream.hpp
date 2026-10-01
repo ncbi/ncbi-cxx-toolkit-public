@@ -537,7 +537,7 @@ public:
     /// This variant uses an existing socket "sock" to build a stream upon it.
     /// The caller may retain the ownership of "sock" by passing "if_to_own" as
     /// "eNoOwnership" to the stream constructor -- in that case, the socket
-    /// "sock" will not be closed / destroyed upon stream destruction, and can
+    /// "sock" is not be closed / destroyed upon stream destruction, and can
     /// further be used (including proper closing when no longer needed).
     /// Otherwise, "sock" becomes invalid once the stream is closed/destroyed.
     /// NOTE:  To maintain data integrity and consistency, "sock" should not
