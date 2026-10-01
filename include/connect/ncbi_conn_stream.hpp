@@ -597,8 +597,6 @@ public:
     /// http_proxy_user:http_proxy_pass -- credentials for the proxy, if needed
     /// http_proxy_leak                 -- ignore bad proxy and connect direct
     /// timeout                         -- timeout to connect to HTTP proxy
-    /// firewall                        -- if true then look at proxy_server
-    /// proxy_server                    -- use as "host" if non-empty and FW
     /// debug_printout                  -- how to log socket data by default
     /// http_push_auth                  -- whether to push credentials at once
     ///
