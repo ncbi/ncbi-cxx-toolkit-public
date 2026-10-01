@@ -746,7 +746,7 @@ public:
      */
     EOwnership SetOwnership(EOwnership if_to_own);
 
-    /** Get the underlying C API socket handle. */
+    /** Get the underlying C API socket handle, without assuming ownership. */
     SOCK GetSOCK(void) const;
 
     /** Check whether no underlying socket is assigned. */
