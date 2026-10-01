@@ -53,6 +53,8 @@
 #include <objtools/writers/writer_exception.hpp>
 #include <objtools/writers/gff3_writer.hpp>
 #include "error_logger.hpp"
+#include <sstream>
+
 
 #include <cstdio>
 
@@ -457,4 +459,17 @@ BOOST_AUTO_TEST_CASE(RunTests)
 
         BOOST_CHECK_NO_THROW(sRunTest(sName, testInfo, args["keep-diffs"]));
     }
+}
+
+
+BOOST_AUTO_TEST_CASE(RW_2735)
+{
+    auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
+    stringstream ss;
+    CGff3Writer gff3_writer(*pScope, ss, CGff3Writer::fInsdcMode);
+    gff3_writer.WriteHeader();
+    vector<string> lines;
+    lines = NStr::Split(ss.str(), "\n", lines, NStr::fSplit_Tokenize);
+    BOOST_CHECK_EQUAL(lines[0], "##gff-version 3.1.26");
+    BOOST_CHECK_EQUAL(lines[1], "#!insdc-gff-version 0.5");
 }
