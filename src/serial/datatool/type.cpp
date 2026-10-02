@@ -382,8 +382,8 @@ void  CDataType::ForbidVar(const string& var, const string& value)
 {
     typedef multimap<string, string> TMultimap;
     if (!var.empty() && !value.empty()) {
-        TMultimap::const_iterator it = m_ForbidVar.find(var);
-        for ( ; it != m_ForbidVar.end() && it->first == var; ++it) {
+        auto r = m_ForbidVar.equal_range(var);
+        for (auto it = r.first; it != r.second; ++it) {
             if (it->second == value) {
                 return;
             }
@@ -395,8 +395,8 @@ void  CDataType::ForbidVar(const string& var, const string& value)
 void  CDataType::AllowVar(const string& var, const string& value)
 {
     if (!var.empty() && !value.empty()) {
-        multimap<string,string>::iterator it = m_ForbidVar.find(var);
-        for ( ; it != m_ForbidVar.end() && it->first == var; ++it) {
+        auto r = m_ForbidVar.equal_range(var);
+        for (auto it = r.first; it != r.second; ++it) {
             if (it->second == value) {
                 m_ForbidVar.erase(it);
                 return;
@@ -409,8 +409,8 @@ const string CDataType::GetAndVerifyVar(const string& var) const
 {
     const string tmp = GetVar(var);
     if (!tmp.empty()) {
-        multimap<string,string>::const_iterator it = m_ForbidVar.find(var);
-        for ( ; it != m_ForbidVar.end() && it->first == var; ++it) {
+        auto r = m_ForbidVar.equal_range(var);
+        for (auto it = r.first; it != r.second; ++it) {
             if (it->second == tmp) {
                 NCBI_THROW(CDatatoolException,eForbidden,
                     IdName()+": forbidden "+var+"="+tmp);
