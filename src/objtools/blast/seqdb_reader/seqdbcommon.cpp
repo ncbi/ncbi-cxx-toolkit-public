@@ -2538,7 +2538,7 @@ ESeqDBIdType SeqDB_SimplifySeqid(CSeq_id       & bestid,
             str_id = NStr::ToLower(str_id);
             found = true;
 
-            if (tsip->CanGetVersion()) {
+            if (tsip->HasNonzeroVersion()) {
                 str_id += ".";
                 str_id += NStr::UIntToString(tsip->GetVersion());
             }
