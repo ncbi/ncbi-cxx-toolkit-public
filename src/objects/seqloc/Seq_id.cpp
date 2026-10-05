@@ -1545,7 +1545,8 @@ bool SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         }
         return true;
     } else if (hints.current_thread > 0) {
-        if (rule.size() > 2  &&  NStr::StartsWith(rule, ": ")
+        if ((hints.flags & CSeq_id::fFullyLoadSpecials) == 0
+            &&  rule.size() > 2  &&  NStr::StartsWith(rule, ": ")
             &&  !isspace(rule[2])) {
             // crude but sufficient in practice, and just an optimization
             hints.threads[hints.current_thread-1]
