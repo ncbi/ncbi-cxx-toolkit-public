@@ -9,7 +9,7 @@
 
 ## # # # # # # # # # #    Service mapper testing      # # # # # # # # # # #
 #
-## DT_I_UP on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.104 (1433)
+## DT_I_UP on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.210 (1433)
 ##: DBAPI SVC TEST: not in LBSM/namerd; 1-server setup; server up
 DT_I_UP
 	query  tcp ether mssql56.be-md.ncbi.nlm.nih.gov 1433
@@ -29,7 +29,7 @@ DT_I_NE
 DT_I_BK
 	query  tcp ether servicetest.be-md.ncbi.nlm.nih.gov 1433
 	master  tcp ether servicetest.be-md.ncbi.nlm.nih.gov 1433
-## DT_LB_I_UP on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.104 (1433)
+## DT_LB_I_UP on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.210 (1433)
 ##: DBAPI SVC TEST: in LBSM/namerd, no reverse DNS; 1-server setup; server up
 DT_LB_I_UP
 	query  tcp ether mssql56.be-md.ncbi.nlm.nih.gov 1433
@@ -49,7 +49,7 @@ DT_LB_I_NE
 DT_LB_I_BK
 	query  tcp ether servicetest.be-md.ncbi.nlm.nih.gov 1433
 	master  tcp ether servicetest.be-md.ncbi.nlm.nih.gov 1433
-## DT_LBR_I_UP on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.104 (1433)
+## DT_LBR_I_UP on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.210 (1433)
 ##: DBAPI SVC TEST: in LBSM with reverse DNS; in namerd; 1-server setup; server up
 DT_LBR_I_UP
 	query  tcp ether mssql56.be-md.ncbi.nlm.nih.gov 1433
@@ -69,7 +69,7 @@ DT_LBR_I_NE
 DT_LBR_I_BK
 	query  tcp ether servicetest.be-md.ncbi.nlm.nih.gov 1433
 	master  tcp ether servicetest.be-md.ncbi.nlm.nih.gov 1433
-## DT_LBR_I_UP_1 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.104 (1433)
+## DT_LBR_I_UP_1 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.210 (1433)
 ##: Reverse DNS for DT_LBR_I_UP
 DT_LBR_I_UP_1
 	query  tcp ether mssql56.be-md.ncbi.nlm.nih.gov 1433
@@ -94,7 +94,7 @@ DT_LBR_I_BK_1
 DT_I_DN_UP_1
 	query  tcp ether servicedev21.be-md.ncbi.nlm.nih.gov 1433
 	master  tcp ether servicedev21.be-md.ncbi.nlm.nih.gov 1433
-## DT_I_DN_UP_2 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.104 (1433)
+## DT_I_DN_UP_2 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.210 (1433)
 ##: DBAPI SVC TEST: not in LBSM/namerd; 2-server setup; 1st server down, 2nd server up
 DT_I_DN_UP_2
 	query  tcp ether mssql56.be-md.ncbi.nlm.nih.gov 1433
@@ -104,7 +104,7 @@ DT_I_DN_UP_2
 DT_I_NE_UP_1
 	query  tcp ether nosuchhost.be-md.ncbi.nlm.nih.gov 1433
 	master  tcp ether nosuchhost.be-md.ncbi.nlm.nih.gov 1433
-## DT_I_NE_UP_2 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.104 (1433)
+## DT_I_NE_UP_2 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.210 (1433)
 ##: DBAPI SVC TEST: not in LBSM/namerd; 2-server setup; 1st server nonexistent, 2nd server up
 DT_I_NE_UP_2
 	query  tcp ether mssql56.be-md.ncbi.nlm.nih.gov 1433
@@ -114,7 +114,7 @@ DT_I_NE_UP_2
 DT_I_BK_UP_1
 	query  tcp ether servicetest.be-md.ncbi.nlm.nih.gov 1433
 	master  tcp ether servicetest.be-md.ncbi.nlm.nih.gov 1433
-## DT_I_BK_UP_2 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.104 (1433)
+## DT_I_BK_UP_2 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.210 (1433)
 ##: DBAPI SVC TEST: not in LBSM/namerd; 2-server setup; 1st server broken, 2nd server up
 DT_I_BK_UP_2
 	query  tcp ether mssql56.be-md.ncbi.nlm.nih.gov 1433
@@ -124,7 +124,7 @@ DT_I_BK_UP_2
 DT_LB_I_DN_UP_1
 	query  tcp ether servicedev21.be-md.ncbi.nlm.nih.gov 1433
 	master  tcp ether servicedev21.be-md.ncbi.nlm.nih.gov 1433
-## DT_LB_I_DN_UP_2 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.104 (1433)
+## DT_LB_I_DN_UP_2 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.210 (1433)
 ##: DBAPI SVC TEST: in LBSM/namerd, no reverse DNS; 2-server setup; 1st server down, 2nd server up
 DT_LB_I_DN_UP_2
 	query  tcp ether mssql56.be-md.ncbi.nlm.nih.gov 1433
@@ -134,7 +134,7 @@ DT_LB_I_DN_UP_2
 DT_LB_I_NE_UP_1
 	query  tcp ether nosuchhost.be-md.ncbi.nlm.nih.gov 1433
 	master  tcp ether nosuchhost.be-md.ncbi.nlm.nih.gov 1433
-## DT_LB_I_NE_UP_2 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.104 (1433)
+## DT_LB_I_NE_UP_2 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.210 (1433)
 ##: DBAPI SVC TEST: in LBSM/namerd, no reverse DNS; 2-server setup; 1st server nonexistent, 2nd server up
 DT_LB_I_NE_UP_2
 	query  tcp ether mssql56.be-md.ncbi.nlm.nih.gov 1433
@@ -144,7 +144,7 @@ DT_LB_I_NE_UP_2
 DT_LB_I_BK_UP_1
 	query  tcp ether servicetest.be-md.ncbi.nlm.nih.gov 1433
 	master  tcp ether servicetest.be-md.ncbi.nlm.nih.gov 1433
-## DT_LB_I_BK_UP_2 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.104 (1433)
+## DT_LB_I_BK_UP_2 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.210 (1433)
 ##: DBAPI SVC TEST: in LBSM/namerd, no reverse DNS; 2-server setup; 1st server broken, 2nd server up
 DT_LB_I_BK_UP_2
 	query  tcp ether mssql56.be-md.ncbi.nlm.nih.gov 1433
@@ -154,7 +154,7 @@ DT_LB_I_BK_UP_2
 DT_LBR_I_DN_UP_1
 	query  tcp ether servicedev21.be-md.ncbi.nlm.nih.gov 1433
 	master  tcp ether servicedev21.be-md.ncbi.nlm.nih.gov 1433
-## DT_LBR_I_DN_UP_2 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.104 (1433)
+## DT_LBR_I_DN_UP_2 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.210 (1433)
 ##: DBAPI SVC TEST: in LBSM with reverse DNS; in namerd; 2-server setup; 1st server down, 2nd server up
 DT_LBR_I_DN_UP_2
 	query  tcp ether mssql56.be-md.ncbi.nlm.nih.gov 1433
@@ -164,7 +164,7 @@ DT_LBR_I_DN_UP_2
 DT_LBR_I_NE_UP_1
 	query  tcp ether nosuchhost.be-md.ncbi.nlm.nih.gov 1433
 	master  tcp ether nosuchhost.be-md.ncbi.nlm.nih.gov 1433
-## DT_LBR_I_NE_UP_2 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.104 (1433)
+## DT_LBR_I_NE_UP_2 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.210 (1433)
 ##: DBAPI SVC TEST: in LBSM with reverse DNS; in namerd; 2-server setup; 1st server nonexistent, 2nd server up
 DT_LBR_I_NE_UP_2
 	query  tcp ether mssql56.be-md.ncbi.nlm.nih.gov 1433
@@ -174,7 +174,7 @@ DT_LBR_I_NE_UP_2
 DT_LBR_I_BK_UP_1
 	query  tcp ether servicetest.be-md.ncbi.nlm.nih.gov 1433
 	master  tcp ether servicetest.be-md.ncbi.nlm.nih.gov 1433
-## DT_LBR_I_BK_UP_2 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.104 (1433)
+## DT_LBR_I_BK_UP_2 on mssql56.be-md.ncbi.nlm.nih.gov / 130.14.18.210 (1433)
 ##: DBAPI SVC TEST: in LBSM with reverse DNS; in namerd; 2-server setup; 1st server broken, 2nd server up
 DT_LBR_I_BK_UP_2
 	query  tcp ether mssql56.be-md.ncbi.nlm.nih.gov 1433
