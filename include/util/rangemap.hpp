@@ -361,8 +361,8 @@ void CRangeMapIterator<Traits>::Find(const range_type& key, TSelectMapRef select
         TSelectIter selectIter = selectMap.find(TTraits::get_max_length(key));
         // now selectIter->first >= key.length
         if ( selectIter != selectIterEnd ) {
-            TLevelIter levelIter = selectIter->second.find(key);
-            if ( levelIter != selectIter->second.end() ) {
+            TLevelIter levelIter = selectIter->second.lower_bound(key);
+            if ( levelIter != selectIter->second.end() && levelIter->first == key ) {
                 // found the key
                 m_Range = range_type::GetWhole();
                 m_SelectIter = selectIter;
