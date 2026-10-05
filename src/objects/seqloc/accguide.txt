@@ -1830,13 +1830,13 @@ version  1 # of file format
 2+6  RA  unreserved_nuc
 2+8  RA  unreserved_nuc
 2+10 RA  unreserved_nuc
-2+6  RB  ddbj_other_nuc
+2+6  RB  ddbj_patent
 2+8  RB  ddbj_other_nuc
 2+10 RB  ddbj_other_nuc
-2+6  RC  ddbj_other_nuc
+2+6  RC  ddbj_patent
 2+8  RC  ddbj_other_nuc
 2+10 RC  ddbj_other_nuc
-2+6  RD  ddbj_other_nuc
+2+6  RD  ddbj_patent
 2+8  RD  ddbj_other_nuc
 2+10 RD  ddbj_other_nuc
 2+6  RE  ddbj_other_nuc
