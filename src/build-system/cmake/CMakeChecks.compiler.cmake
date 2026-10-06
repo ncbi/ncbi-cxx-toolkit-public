@@ -168,6 +168,7 @@ set(NCBI_PTBCFG_KNOWN_FEATURES
     OptDebug
     Symbols
     StaticComponents
+    SwapDepConfigs
     BinRelease
     AVX2
     OpenMP
@@ -242,6 +243,15 @@ if(StaticComponents IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
 endif()
 if(-StaticComponents IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     set(NCBI_PTBCFG_COMPONENT_StaticComponents OFF)
+endif()
+if(SwapDepConfigs IN_LIST NCBI_PTBCFG_PROJECT_FEATURES AND "${NCBI_CONFIGURATION_TYPES_COUNT}" EQUAL 1)
+    if("${STD_BUILD_TYPE}" STREQUAL "Debug")
+        set(NCBI_PTBCFG_COMPONENT_USECONFIG Release)
+    else()
+        set(NCBI_PTBCFG_COMPONENT_USECONFIG Debug)
+    endif()
+else()
+    set(NCBI_PTBCFG_COMPONENT_SWAPCONFIGS OFF)
 endif()
 
 if(BinRelease IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
