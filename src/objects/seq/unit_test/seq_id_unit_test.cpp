@@ -2582,6 +2582,20 @@ BOOST_AUTO_TEST_CASE(TestPDB)
         set<CSeq_id_Handle> idh_set_ne(begin(idh_ne), end(idh_ne));
         BOOST_CHECK_EQUAL(idh_set_ne.size(), size(idh_ne));
     }}
+
+    BOOST_CHECK_EQUAL(CPDB_mol_id::Format("4XNU", ePDB_Legacy), "4XNU");
+    BOOST_CHECK_EQUAL(CPDB_mol_id::Format("4XNU", ePDB_Extended),
+                      "pdb_00004XNU");
+    BOOST_CHECK_EQUAL(CPDB_mol_id::Format("PDB_00004XNU", ePDB_Legacy),
+                      "4XNU");
+    BOOST_CHECK_EQUAL(CPDB_mol_id::Format("pdb_00004XNU", ePDB_Extended),
+                      "pdb_00004XNU");
+    NCBI_CHECK_THROW_SEQID(CPDB_mol_id::Format("pdb_00014XNU", ePDB_Legacy));
+    BOOST_CHECK_EQUAL(CPDB_mol_id::Format("pdb_00014XNU", ePDB_Minimal),
+                      "pdb_00014XNU");
+
+    BOOST_CHECK_EQUAL(CPDB_mol_id::GetFormat("4XNU"), ePDB_Legacy);
+    BOOST_CHECK_EQUAL(CPDB_mol_id::GetFormat("pdb_00004XNU"), ePDB_Extended);
 }
 
 BOOST_AUTO_TEST_CASE(s_TestAssessment)
