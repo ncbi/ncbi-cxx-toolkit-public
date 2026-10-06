@@ -133,7 +133,9 @@ typedef NCBI_PARAM_TYPE(server, nonexist_port) TParamServerNonexistPort;
 static CSafeStatic<TParamServerNonexistPort> s_NonexistPort;
 
 NCBI_PARAM_DECL(string, server, up_host);
+// See also: https://intranet.ncbi.nlm.nih.gov/projects/db_utils/UserDbSrvRequirements/index.cgi?showid=10
 NCBI_PARAM_DEF_EX(string, server, up_host, "cxx_testsuite2"/*CNAME for MSSQL56 at present*/, 0, DBAPI_SVC_TEST_UP_HOST);
+// Do NOT use CXX_TESTSUITE because it's _also_ an LBSMD svc (which can be misleading, esp. when the test fails)
 typedef NCBI_PARAM_TYPE(server, up_host) TParamServerUpHost;
 static CSafeStatic<TParamServerUpHost> s_UpHost;
 
