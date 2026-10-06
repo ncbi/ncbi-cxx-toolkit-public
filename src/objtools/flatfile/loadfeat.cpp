@@ -2988,7 +2988,8 @@ static void fta_check_non_tpa_tsa_tls_locations(TDataBlkList& dbl,
 }
 
 /**********************************************************/
-static bool fta_perform_operon_checks(TSeqFeatList& feats, IndexblkPtr ibp)
+static bool fta_perform_operon_checks(TSeqFeatList& feats, IndexblkPtr ibp,
+                                      Parser::ESource source)
 {
     using FTAOperonList = list<FTAOperon*>;
     FTAOperonList operonList;
@@ -3033,9 +3034,14 @@ static bool fta_perform_operon_checks(TSeqFeatList& feats, IndexblkPtr ibp)
                 if (pLatest->mOperon != operon->mOperon) {
                     continue;
                 }
-                FtaErrPost(SEV_REJECT, ERR_FEATURE_OperonQualsNotUnique,
-                           "The operon features at \"{}\" and \"{}\" utilize the same /operon qualifier : \"{}\".", operon->LocationStr(), pLatest->LocationStr(), pLatest->mOperon);
-                success = false;
+                if (source == Parser::ESource::EMBL) {
+                    FtaErrPost(SEV_WARNING, ERR_FEATURE_OperonQualsNotUnique,
+                               "The operon features at \"{}\" and \"{}\" utilize the same /operon qualifier : \"{}\".", operon->LocationStr(), pLatest->LocationStr(), pLatest->mOperon);
+                } else {
+                    FtaErrPost(SEV_REJECT, ERR_FEATURE_OperonQualsNotUnique,
+                               "The operon features at \"{}\" and \"{}\" utilize the same /operon qualifier : \"{}\".", operon->LocationStr(), pLatest->LocationStr(), pLatest->mOperon);
+                    success = false;
+                }
             }
         }
 
@@ -3062,9 +3068,14 @@ static bool fta_perform_operon_checks(TSeqFeatList& feats, IndexblkPtr ibp)
             sequence::ECompare compare = sequence::Compare(
                 *resident->mLocation, *operon->mLocation, nullptr, sequence::fCompareOverlapping);
             if (compare != sequence::eContained && compare != sequence::eSame) {
-                FtaErrPost(SEV_REJECT, ERR_FEATURE_OperonLocationMisMatch,
-                           "Feature \"{}\" at \"{}\" with /operon qualifier \"{}\" does not fall within the span of the operon feature at \"{}\".", resident->mFeatname, resident->LocationStr(), resident->mOperon, operon->LocationStr());
-                success = false;
+                if (source == Parser::ESource::EMBL) {
+                    FtaErrPost(SEV_WARNING, ERR_FEATURE_OperonLocationMisMatch,
+                               "Feature \"{}\" at \"{}\" with /operon qualifier \"{}\" does not fall within the span of the operon feature at \"{}\".", resident->mFeatname, resident->LocationStr(), resident->mOperon, operon->LocationStr());
+                } else {
+                    FtaErrPost(SEV_REJECT, ERR_FEATURE_OperonLocationMisMatch,
+                               "Feature \"{}\" at \"{}\" with /operon qualifier \"{}\" does not fall within the span of the operon feature at \"{}\".", resident->mFeatname, resident->LocationStr(), resident->mOperon, operon->LocationStr());
+                    success = false;
+                }
             }
         }
         if (! matched) {
@@ -4955,7 +4966,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     if (pp->format == Parser::EFormat::XML)
         temp_xml_chain.clear();
 
-    if (! fta_perform_operon_checks(seq_feats, ibp)) {
+    if (! fta_perform_operon_checks(seq_feats, ibp, pp->source)) {
         ibp->drop = true;
         seq_feats.clear();
         xinstall_gbparse_range_func(nullptr, nullptr);
