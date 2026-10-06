@@ -34,7 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <algo/gnomon/gnomon_exception.hpp>
-#include "score.hpp"
+#include "hmm.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)

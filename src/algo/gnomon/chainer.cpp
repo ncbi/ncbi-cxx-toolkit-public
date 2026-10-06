@@ -46,17 +46,12 @@
 #include <algo/gnomon/annot.hpp>
 
 #include <map>
-#include <sstream>
 #include <tuple>
-#include <unordered_set>
-#include <unordered_map>
 
 #include <objects/general/Object_id.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/sequence.hpp>
-
-#include "gnomon_seq.hpp"
 
 BEGIN_SCOPE(ncbi)
 BEGIN_SCOPE(gnomon)
@@ -314,7 +309,7 @@ struct SChainMember
 class CChain : public CGeneModel
 {
 private:
-    typedef map<int, double> TIDMap;
+    typedef map<TSignedSeqPos, double> TIDMap;
     tuple<TIDMap, TSignedSeqRange> PeaksAndLimits(EStatus determinant, int min_blob_weight, int max_empty_dist, int min_splice_dist);
     tuple<TIVec, TSignedSeqRange> MainPeaks(TIDMap& peak_weights, double secondary_peak, double tertiary_peak, double tertiary_peak_coverage, bool right_end);
 public:
@@ -3296,12 +3291,14 @@ void CChainer::CChainerImpl::CreateFlexibleAligns(TGeneModelList& clust) {
 			CGeneModel galign(it->Strand(), it->ID(), CGeneModel::eSR);
 			galign.SetWeight(it->Weight());
 			
-			int pos;
+			TSignedSeqPos pos;
 			int status = CGeneModel::eCap;
 			if(it->Strand() == ePlus) {
 				pos = it->Limits().GetFrom();
-				galign.AddExon(TSignedSeqRange(pos, pos+spec_extend));
-				status |= CGeneModel::eRightFlexible;
+                if(pos+spec_extend < 0)   // check for overflow
+                    continue;
+                galign.AddExon(TSignedSeqRange(pos, pos+spec_extend));
+                status |= CGeneModel::eRightFlexible;
 			} else {
 				pos = it->Limits().GetTo();
 				galign.AddExon(TSignedSeqRange(pos-spec_extend, pos));
@@ -3323,10 +3320,12 @@ void CChainer::CChainerImpl::CreateFlexibleAligns(TGeneModelList& clust) {
 			CGeneModel galign(it->Strand(), it->ID(), CGeneModel::eSR);
 			galign.SetWeight(it->Weight());
 			
-			int pos;
+			TSignedSeqPos pos;
 			int status = CGeneModel::ePolyA;
 			if(it->Strand() == eMinus) {
 				pos = it->Limits().GetFrom();
+                if(pos+spec_extend < 0)   // check for overflow
+                    continue;
 				galign.AddExon(TSignedSeqRange(pos, pos+spec_extend));
 				status |= CGeneModel::eRightFlexible;
 			} else {
@@ -5283,7 +5282,7 @@ bool CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
     if(ReadingFrame().Empty())
         return false;
 
-	CAlignMap amap = GetAlignMap();
+    CAlignMap amap = GetAlignMap();
 	TSignedSeqPos llimit_on_transcript = -1;
 	for(auto& stp : GetCdsInfo().PStops()) {
 		if(stp.m_status != CCDSInfo::eGenomeNotCorrect && stp.m_status != CCDSInfo::eSelenocysteine) {
@@ -5923,7 +5922,8 @@ tuple<CChain::TIDMap, TSignedSeqRange> CChain::PeaksAndLimits(EStatus determinan
     if(raw_weights.empty())
         return make_tuple(peak_weights,real_limits);
 
-    int last_allowed = right_end ? real_limits.GetTo()+flex_len : -(real_limits.GetFrom()-flex_len);
+    TSignedSeqPos last_allowed = right_end ? min<int64_t>(numeric_limits<TSignedSeqPos>::max(), (int64_t)real_limits.GetTo()+flex_len) : 
+                                            -max(0, real_limits.GetFrom()-flex_len);
     auto ipeak = raw_weights.begin();
     double w = ipeak->second;
     for(auto it = next(raw_weights.begin()); it != raw_weights.end(); ++it) {
@@ -8846,7 +8846,7 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
     m_contig_acc = CIdHandler::ToString(contig);
 
     CResidueVec seq;
-    int length;
+    TSignedSeqPos length;
 
     CBioseq_Handle bh(scope.GetBioseqHandle(contig));
     {
@@ -8858,11 +8858,11 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
         }
         int GC_RANGE = 200000;
         limits.SetFrom(max(0, limits.GetFrom()-GC_RANGE/2));
-        limits.SetTo(min(length-1, limits.GetTo()+GC_RANGE/2));
+        limits.SetTo((TSignedSeqPos)min<int64_t>(length-1, (int64_t)limits.GetTo()+GC_RANGE/2));
         length = limits.GetLength();
         m_limits = limits;
         seq.reserve(length);
-        for(int i = limits.GetFrom(); i <= limits.GetTo(); ++i)
+        for(TSignedSeqPos i = limits.GetFrom(); i <= limits.GetTo(); ++i)
             seq.push_back(sv[i]);
     }
 
@@ -8880,7 +8880,7 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
             .SetAdaptiveDepth(true);
         for (CFeat_CI it(bh, sel);  it;  ++it) {
             TSeqRange range = it->GetLocation().GetTotalRange();
-            for(unsigned int i = range.GetFrom(); i <= range.GetTo(); ++i) {
+            for(TSeqPos i = range.GetFrom(); i <= range.GetTo(); ++i) {
                 if(Include(limits, i))
                     seq[i-limits.GetFrom()] = tolower(seq[i-limits.GetFrom()]);
             }

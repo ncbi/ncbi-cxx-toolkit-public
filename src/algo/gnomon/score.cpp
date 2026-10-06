@@ -35,7 +35,6 @@
 #include <algo/gnomon/gnomon_exception.hpp>
 #include "score.hpp"
 #include "hmm.hpp"
-#include "hmm_inlines.hpp"
 #include "gnomon_engine.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -44,7 +43,7 @@ BEGIN_SCOPE(gnomon)
 bool CSeqScores::isStart(int i, int strand) const
 {
     const CEResidueVec& ss = m_seq[strand];
-    int ii = (strand == ePlus) ? i : SeqLen()-1-i;
+    TSignedSeqPos ii = (strand == ePlus) ? i : SeqLen()-1-i;
     if(ii < 0 || ii+2 >= SeqLen()) return false;  //out of range
     else if(ss[ii] != enA || ss[ii+1] != enT || ss[ii+2] != enG) return false;
     else return true;
@@ -53,7 +52,7 @@ bool CSeqScores::isStart(int i, int strand) const
 bool CSeqScores::isStop(int i, int strand) const
 {
     const CEResidueVec& ss = m_seq[strand];
-    int ii = (strand == ePlus) ? i : SeqLen()-1-i;
+    TSignedSeqPos ii = (strand == ePlus) ? i : SeqLen()-1-i;
     if(ii < 0 || ii+2 >= SeqLen()) return false;  //out of range
     if((ss[ii] != enT || ss[ii+1] != enA || ss[ii+2] != enA) &&
         (ss[ii] != enT || ss[ii+1] != enA || ss[ii+2] != enG) &&
@@ -82,7 +81,7 @@ bool CSeqScores::isReadingFrameRightEnd(int i, int strand) const
 bool CSeqScores::isAG(int i, int strand) const
 {
     const CEResidueVec& ss = m_seq[strand];
-    int ii = (strand == ePlus) ? i : SeqLen()-1-i;
+    TSignedSeqPos ii = (strand == ePlus) ? i : SeqLen()-1-i;
     if(ii-1 < 0 || ii >= SeqLen()) return false;  //out of range
     if(ss[ii-1] != enA || ss[ii] != enG) return false;
     else return true;
@@ -91,7 +90,7 @@ bool CSeqScores::isAG(int i, int strand) const
 bool CSeqScores::isGT(int i, int strand) const
 {
     const CEResidueVec& ss = m_seq[strand];
-    int ii = (strand == ePlus) ? i : SeqLen()-1-i;
+    TSignedSeqPos ii = (strand == ePlus) ? i : SeqLen()-1-i;
     if(ii < 0 || ii+1 >= SeqLen()) return false;  //out of range
     if(ss[ii] != enG || ss[ii+1] != enT) return false;
     else return true;
@@ -108,7 +107,7 @@ bool CSeqScores::isConsensusIntron(int i, int j, int strand) const
 const EResidue* CSeqScores::SeqPtr(int i, int strand) const
 {
     const CEResidueVec& ss = m_seq[strand];
-    int ii = (strand == ePlus) ? i : SeqLen()-1-i;
+    TSignedSeqPos ii = (strand == ePlus) ? i : SeqLen()-1-i;
     return &ss.front()+ii;
 }
 
@@ -238,34 +237,7 @@ const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& in
     m_align_list.sort(s_AlignLeftLimitOrder);
     NON_CONST_ITERATE(TGeneModelList, it, m_align_list) {
         CGeneModel& align = *it;
-        CCDSInfo cds_info = align.GetCdsInfo();
-        bool fixed = false;
-        for(unsigned int i = 1; i < align.Exons().size(); ++i) {
-            if (!align.Exons()[i-1].m_ssplice || !align.Exons()[i].m_fsplice) {
-                int hole_len = align.Exons()[i].GetFrom()-align.Exons()[i-1].GetTo()-1;
-                if(hole_len <= intron_params.MinLen()) {
-                    fixed = true;
-                    TSignedSeqRange pstop(align.Exons()[i-1].GetTo(),align.Exons()[i].GetFrom());     // to make sure GetScore doesn't complain about "new" pstops
-                    cds_info.AddPStop(pstop, CCDSInfo::eUnknown);
-                    if(hole_len%3 != 0) {
-                        TSignedSeqPos p = align.Exons()[i-1].GetTo();
-                        p = (p+align.Exons()[i].GetFrom())/2;
-                        align.FrameShifts().push_back(CInDelInfo(p, hole_len%3, CInDelInfo::eIns));
-                    }
-
-                    CGeneModel a(align.Strand());
-                    a.AddExon(TSignedSeqRange(align.Exons()[i-1].GetTo(),align.Exons()[i].GetFrom()));
-                    align.Extend(a);
-
-                    --i;
-                }
-            }
-        }
-        if(fixed) {
-            align.SetCdsInfo(cds_info);
-            sort(align.FrameShifts().begin(),align.FrameShifts().end());
-            gnomon.GetScore(align);                                                        // calculate possible new pstops
-        }
+        align.RemoveShortHolesAndRescore(gnomon);
     }
 }
 
@@ -436,8 +408,8 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
                 al.ExtendLeft(extrabases);
             }
             int extraNs3p = 0;                   // extra Ns if too close to the end of contig  
-            if(al.Limits().GetTo()+extrabases > len-1) {
-                extraNs3p = al.Limits().GetTo()+extrabases-(len-1);
+            if(al.Limits().GetTo() > len-1-extrabases) {
+                extraNs3p = al.Limits().GetTo()-(len-1-extrabases);
                 if(al.Limits().GetTo() < len-1) al.ExtendRight(len-1-al.Limits().GetTo());
             } else {
                 al.ExtendRight(extrabases);
@@ -453,7 +425,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
             // Here we are after splitted start/stops but this loop will score nonsplitted starts/stops as well 
             // "starts/stops" crossing a hole will get some score also but they will be ignored because a hole is alwais incide CDS 
             for(int k = extraNs5p; k < (int)mRNA.size()-extraNs3p; ++k) {
-                int i;
+                TSignedSeqPos i;
                 if(strand == ePlus) {
                     i = mrnamap.MapEditedToOrig(k-extraNs5p+1)-1;      // the position of G or right before the first coding exon if start is completely in another exon
                     if(align.MaxCdsLimits().Empty() || Include(align.MaxCdsLimits(),i))
@@ -591,13 +563,13 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
             m_notinintron[eMinus][pnt] = pnt;
         }
 
-	const int RepeatFreeMargin = 75;
+	    const int RepeatFreeMargin = 75;
         // restricting prediction to MaxCdsLimits if not infinite
         if(align.GetCdsInfo().MaxCdsLimits().NotEmpty()) {
-	    bool left_open = (align.ConfirmedStart() && align.Strand() == ePlus) ? false : true;
-	    bool right_open = (align.ConfirmedStart() && align.Strand() == eMinus) ? false : true;
+            bool left_open = (align.ConfirmedStart() && align.Strand() == ePlus) ? false : true;
+            bool right_open = (align.ConfirmedStart() && align.Strand() == eMinus) ? false : true;
             if(TSignedSeqRange::GetWholeFrom() < align.GetCdsInfo().MaxCdsLimits().GetFrom()) {
-		left_open = false;
+                left_open = false;
                 m_notinexon[ePlus][0][limits.GetFrom()] = limits.GetFrom();
                 m_notinexon[ePlus][1][limits.GetFrom()] = limits.GetFrom();
                 m_notinexon[ePlus][2][limits.GetFrom()] = limits.GetFrom();
@@ -608,7 +580,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
                 m_notinintron[eMinus][limits.GetFrom()] = limits.GetFrom();
             }
             if(align.GetCdsInfo().MaxCdsLimits().GetTo() < TSignedSeqRange::GetWholeTo()) {
-		right_open = false;
+                right_open = false;
                 m_notinexon[ePlus][0][limits.GetTo()] = limits.GetTo();
                 m_notinexon[ePlus][1][limits.GetTo()] = limits.GetTo();
                 m_notinexon[ePlus][2][limits.GetTo()] = limits.GetTo();
@@ -618,19 +590,19 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
                 m_notinexon[eMinus][2][limits.GetTo()] = limits.GetTo();
                 m_notinintron[eMinus][limits.GetTo()] = limits.GetTo();
             }
-	    if(left_open) {
-		for(int i = max(0, limits.GetFrom()-RepeatFreeMargin); i < limits.GetFrom(); ++i)
-		    repeats[align.Strand()].erase(i);
-	    }
-	    if(right_open) {
-		for(int i = limits.GetTo()+1; i <= min(limits.GetTo()+RepeatFreeMargin, len-1); ++i)
-		    repeats[align.Strand()].erase(i);
-	    }
+            if(left_open) {
+                for(TSignedSeqPos i = max(0, limits.GetFrom()-RepeatFreeMargin); i < limits.GetFrom(); ++i)
+                    repeats[align.Strand()].erase(i);
+            }
+            if(right_open && limits.GetTo() <= len-2) {
+                for(TSignedSeqPos i = limits.GetTo()+1; i <= min<int64_t>((int64_t)limits.GetTo()+RepeatFreeMargin, len-1); ++i)
+                    repeats[align.Strand()].erase(i);
+            }
         }
     }
 
     for(int strand = 0; strand < 2; ++strand) {  // mask repeats
-	for(int i : repeats[strand]) {
+	for(TSignedSeqPos i : repeats[strand]) {
 	    m_laststop[strand][0][i] = i;
 	    m_laststop[strand][1][i] = i;
 	    m_laststop[strand][2][i] = i;
@@ -667,13 +639,13 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
         {
             if(algn.Exons()[k-1].m_ssplice)
             {
-                int i = algn.Exons()[k-1].GetTo();
+                TSignedSeqPos i = algn.Exons()[k-1].GetTo();
                 if(strand == ePlus) m_dscr[strand][i] = 0;  // donor score on the last base of exon
                 else m_ascr[strand][i] = 0;                 // acceptor score on the last base of exon
             }
             if(algn.Exons()[k].m_fsplice)
             {
-                int i = algn.Exons()[k].GetFrom();
+                TSignedSeqPos i = algn.Exons()[k].GetFrom();
                 if(strand == ePlus) m_ascr[strand][i-1] = 0; // acceptor score on the last base of intron
                 else m_dscr[strand][i-1] = 0;                // donor score on the last base of intron 
             }
@@ -681,8 +653,8 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
             
         for(unsigned int k = 1; k < algn.Exons().size(); ++k) // enforsing introns
         {
-            int introna = algn.Exons()[k-1].GetTo()+1;
-            int intronb = algn.Exons()[k].GetFrom()-1;
+            TSignedSeqPos introna = algn.Exons()[k-1].GetTo()+1;
+            TSignedSeqPos intronb = algn.Exons()[k].GetFrom()-1;
             
             if(algn.Exons()[k-1].m_ssplice)
             {
@@ -792,7 +764,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
         {
             for(TSignedSeqPos i = 0; i < len; ++i)
             {
-                int ii = len-2-i;   // extra -1 because ii is point on the "right"
+                TSignedSeqPos ii = len-2-i;   // extra -1 because ii is point on the "right"
                 m_ascr[strand][i] = max(m_ascr[strand][i],m_acceptor.Score(s,ii));
                 m_dscr[strand][i] = max(m_dscr[strand][i],m_donor.Score(s,ii));
                 /*
@@ -1205,7 +1177,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
             }
         } else {
             for(TSignedSeqPos i = 0; i < len; ++i) {
-                int ii = len-2-i;   // extra -1 because ii is point on the "right"
+                TSignedSeqPos ii = len-2-i;   // extra -1 because ii is point on the "right"
                 if(m_ascr[strand][i] != BadScore()) {
                     if(s[ii+1] == enA && s[ii+2] == enA) m_asplit[strand][0][i] |= stpT;
                     if(s[ii+1] == enA && s[ii+2] == enG) m_asplit[strand][0][i] |= stpT; 
