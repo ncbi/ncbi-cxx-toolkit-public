@@ -211,10 +211,14 @@ void SIdAnnotPieces::Add(const SAnnotPiece& piece)
 
 void SIdAnnotPieces::Remove(const SAnnotPiece& piece)
 {
-    m_Size -= piece.m_Size;
-    TPieces::iterator iter = m_Pieces.find(piece);
-    _ASSERT(iter != m_Pieces.end());
-    m_Pieces.erase(iter);
+    for ( TPieces::iterator iter = m_Pieces.lower_bound(piece);
+          iter != m_Pieces.end() && !(*iter < piece); ++iter ) {
+        if ( *iter == piece ) {
+            Erase(iter);
+            return;
+        }
+    }
+    _ASSERT(0 && "piece not found");
 }
 
 
