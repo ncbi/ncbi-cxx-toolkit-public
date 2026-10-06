@@ -2991,18 +2991,9 @@ void CDeflineGenerator::x_SetSuffix (
             }
             break;
         case NCBI_TECH(wgs):
-            pos = m_MainTitle.find (", whole genome shotgun sequencing project");
-            if (pos != NPOS) {
-                m_MainTitle.erase (pos);
-            }
-            pos = m_MainTitle.find (", whole genome shotgun sequence");
-            if (pos != NPOS) {
-                m_MainTitle.erase (pos);
-            }
-
             if (m_WGSMaster) {
-                if (m_MainTitle.find ("whole genome sequencing project") == NPOS){
-                    type = ", whole genome sequencing project";
+                if (m_MainTitle.find (" whole genome sequencing project") == NPOS){
+                    type = " whole genome sequencing project";
                 }
             } else if (m_MainTitle.find ("whole genome sequence") == NPOS) {
                 if (! m_Organelle.empty()  &&  m_MainTitle.find(m_Organelle) == NPOS) {
@@ -4264,6 +4255,17 @@ string CDeflineGenerator::GenerateDefline (
 
     // strip leading spaces remaining after removal of old TPA or TSA prefixes
     m_MainTitle.erase (0, m_MainTitle.find_first_not_of (' '));
+
+    if (m_MITech == NCBI_TECH(wgs)) {
+        size_t pos = m_MainTitle.find (" whole genome shotgun sequencing project");
+        if (pos != NPOS) {
+            m_MainTitle.erase (pos);
+        }
+        pos = m_MainTitle.find (" whole genome shotgun sequence");
+        if (pos != NPOS) {
+            m_MainTitle.erase (pos);
+        }
+    }
 
     CStringUTF8 decoded = NStr::HtmlDecode (m_MainTitle);
 
