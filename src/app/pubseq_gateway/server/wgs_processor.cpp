@@ -126,16 +126,6 @@ static bool s_SimulateError()
 }
 
 
-static const char kSubSatSeparator = '/';
-
-static void s_FormatBlobId(ostream& s, const CID2_Blob_Id& blob_id)
-{
-    s << blob_id.GetSat()
-      << kSubSatSeparator << blob_id.GetSub_sat()
-      << '.' << blob_id.GetSat_key();
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 // CPSGS_WGSProcessor
 /////////////////////////////////////////////////////////////////////////////
@@ -1134,7 +1124,7 @@ void CPSGS_WGSProcessor::x_Finish(EPSGS_Status status)
 void CPSGS_WGSProcessor::x_SendError(shared_ptr<CPSGS_Reply> reply,
                                      const string& msg)
 {
-    reply->PrepareProcessorMessage(reply->GetItemId(), "WGS", msg,
+    reply->PrepareProcessorMessage(reply->GetItemId(), kWGSProcessorName, msg,
                                    CRequestStatus::e500_InternalServerError,
                                    ePSGS_UnknownError,
                                    eDiag_Error);
@@ -1163,13 +1153,12 @@ void CPSGS_WGSProcessor::x_SendError(const string& msg, const exception& exc)
 string CPSGS_WGSProcessor::GetPSGId2Info(const CID2_Blob_Id& tse_id,
                                          CWGSClient::TID2SplitVersion split_version)
 {
-    ostringstream s;
-    if ( CWGSClient::IsOSGBlob(tse_id) ) {
-        s_FormatBlobId(s, tse_id);
+    string s = CWGSClient::GetPSGBlobId(tse_id);
+    if ( !s.empty() ) {
         CWGSClient::TID2BlobVersion blob_version = tse_id.IsSetVersion()? tse_id.GetVersion(): 0;
-        s << '.' << blob_version << '.' << split_version;
+        s += '.' + to_string(blob_version) + '.' + to_string(split_version);
     }
-    return s.str();
+    return s;
 }
 
 

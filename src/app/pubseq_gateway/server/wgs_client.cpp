@@ -253,13 +253,6 @@ static bool s_ParseOSGBlob(CTempString& s,
     return s_IsOSGBlob(sat, subsat, satkey);
 }
 
-static void s_FormatBlobId(ostream& s, const CID2_Blob_Id& blob_id)
-{
-    s << blob_id.GetSat()
-      << kSubSatSeparator << blob_id.GetSub_sat()
-      << '.' << blob_id.GetSat_key();
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
 // WGS seq-ids
@@ -1944,11 +1937,13 @@ bool CWGSClient::CanBeWGS(int seq_id_type, const string& seq_id)
 
 string CWGSClient::GetPSGBlobId(const CID2_Blob_Id& blob_id)
 {
-    ostringstream s;
+    string s;
     if ( IsOSGBlob(blob_id) ) {
-        s_FormatBlobId(s, blob_id);
+        s = to_string(blob_id.GetSat()) + kSubSatSeparator
+            + to_string(blob_id.GetSub_sat()) + '.'
+            + to_string(blob_id.GetSat_key());
     }
-    return s.str();
+    return s;
 }
 
 
