@@ -2929,7 +2929,6 @@ void CDeflineGenerator::x_SetSuffix (
     string type;
     string study;
     string comp;
-    size_t pos;
 
     switch (m_MITech) {
         case NCBI_TECH(htgs_0):
@@ -2993,7 +2992,7 @@ void CDeflineGenerator::x_SetSuffix (
         case NCBI_TECH(wgs):
             if (m_WGSMaster) {
                 if (m_MainTitle.find (" whole genome sequencing project") == NPOS){
-                    type = " whole genome sequencing project";
+                    type = ", whole genome sequencing project";
                 }
             } else if (m_MainTitle.find ("whole genome sequence") == NPOS) {
                 if (! m_Organelle.empty()  &&  m_MainTitle.find(m_Organelle) == NPOS) {
@@ -4265,12 +4264,17 @@ string CDeflineGenerator::GenerateDefline (
         if (pos != NPOS) {
             m_MainTitle.erase (pos);
         }
+
+        // strip trailing commas and spaces, will then need leading comma in suffix
+        pos = m_MainTitle.find_last_not_of (", ");
+        if (pos != NPOS) {
+            m_MainTitle.erase (pos + 1);
+        }
     }
 
     CStringUTF8 decoded = NStr::HtmlDecode (m_MainTitle);
 
-    // strip trailing commas, semicolons, and spaces (period may be an sp.
-    // species)
+    // strip trailing commas, semicolons, and spaces (period may be an sp. species)
     size_t pos = decoded.find_last_not_of (",;~ ");
     if (pos != NPOS) {
         decoded.erase (pos + 1);
