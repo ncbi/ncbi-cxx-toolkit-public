@@ -37,7 +37,6 @@
 #include "gnomon_seq.hpp"
 #include "parse.hpp"
 #include "hmm.hpp"
-#include "hmm_inlines.hpp"
 #include "gnomon_engine.hpp"
 #include <corelib/ncbifile.hpp>
 
@@ -108,14 +107,13 @@ void CGnomonEngine::ResetRange(TSignedSeqRange range)
     // compute the GC content of the sequence
     m_data->m_gccontent = 0;
 
-    TSignedSeqPos middle = (m_data->m_range.GetFrom()+m_data->m_range.GetTo())/2;
+    TSignedSeqPos middle = m_data->m_range.GetFrom()+(m_data->m_range.GetTo()-m_data->m_range.GetFrom())/2;
     const int GC_RANGE_SIZE = 200000;
-    TSignedSeqRange gc_range(middle-GC_RANGE_SIZE/2, middle+GC_RANGE_SIZE/2);
-    gc_range &= TSignedSeqRange(0,(TSignedSeqPos)m_data->m_seq.size()-1);
+    TSignedSeqRange gc_range(max(0, middle-GC_RANGE_SIZE/2), (TSignedSeqPos)min<int64_t>(m_data->m_seq.size()-1, (int64_t)middle+GC_RANGE_SIZE/2));
     gc_range += m_data->m_range;
 
-    int length = 0;
-    for (TSignedSeqPos i = gc_range.GetFrom();i<=gc_range.GetTo(); ++i) {
+    TSignedSeqPos length = 0;
+    for (TSignedSeqPos i = gc_range.GetFrom(); i <= gc_range.GetTo(); ++i) {
         EResidue c = m_data->m_ds[ePlus][i];
         if (c == enC  ||  c == enG) {
             ++m_data->m_gccontent;
@@ -207,7 +205,7 @@ TSignedSeqPos CGnomonEngine::PartialModelStepBack(list<CGeneModel>& genes) const
         if(!genes.empty()) { // end of the last complete gene
             right = genes.back().Limits().GetTo();
         } else {
-            if(int(partial_start) > seq_map.MapEditedToOrig(0)+1000) {
+            if(partial_start > (int64_t)seq_map.MapEditedToOrig(0)+1000) {
                 right = partial_start-100;
             } else {
                 return -1;   // calling program MUST be aware of this!!!!!!!

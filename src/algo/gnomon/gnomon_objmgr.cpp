@@ -36,7 +36,6 @@
 #include <algo/gnomon/gnomon_exception.hpp>
 #include <algo/gnomon/id_handler.hpp>
 #include "hmm.hpp"
-#include "hmm_inlines.hpp"
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -51,8 +50,6 @@
 #include <objmgr/object_manager.hpp>
 
 #include <stdio.h>
-
-#include <functional>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
@@ -747,7 +744,7 @@ double CCodingPropensity::GetScore(CConstRef<CHMMParameters> hmm_params, const C
     seq.reserve(vec.size());
     CSeqVector_CI iter(vec);
     for( ;  iter;  ++iter) {
-	seq.push_back(fromACGT(*iter));
+	    seq.push_back(fromACGT(*iter));
     }
 
     // Sum coding and non-coding scores across coding sequence.

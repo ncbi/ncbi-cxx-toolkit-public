@@ -35,7 +35,6 @@
 #include <objects/general/Object_id.hpp>
 #include "hmm.hpp"
 #include "parse.hpp"
-#include "hmm_inlines.hpp"
 
 
 BEGIN_NCBI_SCOPE

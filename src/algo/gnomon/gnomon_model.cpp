@@ -32,10 +32,8 @@
 #include <ncbi_pch.hpp>
 #include <algo/gnomon/gnomon_model.hpp>
 #include <algo/gnomon/gnomon.hpp>
-#include "gnomon_seq.hpp"
 #include <algo/gnomon/id_handler.hpp>
 #include <set>
-#include <functional>
 #include <corelib/ncbiutil.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -160,7 +158,7 @@ bool CGeneModel::isNMD(int limit) const
         cds = amap.MapRangeOrigToEdited(cds);
     }
         
-    int l = -1;
+    TSignedSeqPos l = -1;
     if (Strand() == ePlus) {
         for(int i = (int)Exons().size()-1; i > 0; --i) {
             if(Exons()[i].m_fsplice && Exons()[i-1].m_ssplice && Exons()[i].m_fsplice_sig != "XX" && Exons()[i-1].m_ssplice_sig != "XX") {
@@ -176,7 +174,7 @@ bool CGeneModel::isNMD(int limit) const
             }                
         }
     }
-    return l > cds.GetTo()+limit;
+    return l > (int64_t)cds.GetTo()+limit;
 }
 
 

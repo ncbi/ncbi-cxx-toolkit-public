@@ -37,7 +37,6 @@
 #include <corelib/ncbiargs.hpp>
 
 #include <algo/gnomon/annot.hpp>
-#include "gnomon_engine.hpp"
 #include <algo/gnomon/gnomon_model.hpp>
 #include <algo/gnomon/gnomon.hpp>
 #include <algo/gnomon/id_handler.hpp>
@@ -77,8 +76,8 @@ double CGnomonAnnotator::ExtendJustThisChain(CGeneModel& chain,
 {
     TGeneModelList test_align;
     test_align.push_back(chain);
-    int l = max((int)left,(int)chain.Limits().GetFrom()-10000);
-    int r = min(right,chain.Limits().GetTo()+10000);
+    TSignedSeqPos l = max(left, chain.Limits().GetFrom()-10000);
+    TSignedSeqPos r = min<int64_t>(right, (int64_t)chain.Limits().GetTo()+10000);
     cerr << "Testing alignment " << chain.ID() << " in fragment " << l << ' ' << r << endl;
                     
     m_gnomon->ResetRange(l,r);
@@ -194,7 +193,7 @@ void CGnomonAnnotator::Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGene
     bool rightwall = false;
     bool rightanchor = false;
 
-    Int8 prev_bad_right = rlimit+1;
+    int64_t prev_bad_right = rlimit+1;
     bool do_it_again = false;
         
     m_gnomon->ResetRange(static_cast<TSignedSeqPos>(left), static_cast<TSignedSeqPos>(right));
@@ -206,9 +205,9 @@ void CGnomonAnnotator::Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGene
 
     TIVec busy_spots(rlimit+1,0);
     ITERATE(TGeneModelList, it_c, aligns) {
-        int a = max(0,it_c->Limits().GetFrom()-margin);
-        int b = min(rlimit,it_c->Limits().GetTo()+margin);
-        for(int i = a; i<=b; ++i)
+        TSignedSeqPos a = max(0,it_c->Limits().GetFrom()-margin);
+        TSignedSeqPos b = min<int64_t>(rlimit, (int64_t)it_c->Limits().GetTo()+margin);
+        for(TSignedSeqPos i = a; i <= b; ++i)
             busy_spots[i] = 1;
     }
 

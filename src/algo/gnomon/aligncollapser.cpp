@@ -38,7 +38,6 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
-#include "gnomon_seq.hpp"
 
 
 BEGIN_SCOPE(ncbi)
@@ -262,18 +261,18 @@ void CAlignCollapser::InitContig(string contig, CScope* scope) {
             NCBI_THROW(CException, eUnknown, "contig '"+contig+"' retrieval failed");
         }
         CSeqVector sv (bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac));
-        int length (sv.size());
+        TSignedSeqPos length(sv.size());
 
-        int from = 0;
-        int to = length-1;
+        TSignedSeqPos from = 0;
+        TSignedSeqPos to = length-1;
         if(m_range !=  TSignedSeqRange::GetWhole()) {            
             from = max(0,m_range.GetFrom()-2*MAX_DIST_TO_FLANK_GAP);
-            to = min(length-1,m_range.GetTo()+2*MAX_DIST_TO_FLANK_GAP);
+            to = min<int64_t>(length-1, (int64_t)m_range.GetTo()+2*MAX_DIST_TO_FLANK_GAP);
         }
         m_contig.Init(sv, from, to);
 
         TIntMap::iterator current_gap = m_genomic_gaps_len.end();
-        for(int i = from; i <=to; ++i) {
+        for(TSignedSeqPos i = from; i <= to; ++i) {
             if(sv.IsInGap(i)) {
                 if(current_gap == m_genomic_gaps_len.end())
                     current_gap = m_genomic_gaps_len.insert(TIntMap::value_type(i,1)).first;
@@ -2543,7 +2542,7 @@ CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlign
 
     if(!right_seq.empty() && (fill&efill_right) != 0 && !chainer_tsa) {
         TIntMap::iterator ig = m_genomic_gaps_len.upper_bound(align.Limits().GetTo());
-        if(ig != m_genomic_gaps_len.end() && ig->first < align.Limits().GetTo()+MAX_DIST_TO_FLANK_GAP) {  // there is gap on right
+        if(ig != m_genomic_gaps_len.end() && ig->first < (int64_t)align.Limits().GetTo()+MAX_DIST_TO_FLANK_GAP) {  // there is gap on right
             transcript_exons.push_back(right_texon);
             editedmodel.AddExon(TSignedSeqRange::GetEmpty(), "XX", "XX", 1, right_seq, right_src);
                     
@@ -2567,9 +2566,11 @@ void CAlignCollapser::AddFlexible(int status, TSignedSeqPos pos, EStrand strand,
     int spec_extend = SPECIAL_ALIGN_LEN-1;
     CGeneModel galign(strand, id, CGeneModel::eSR);
     galign.SetWeight(weight);
-    if(status&CGeneModel::eRightFlexible)
+    if(status&CGeneModel::eRightFlexible) {
+        if(pos+spec_extend < 0) // check for overflow
+            return;
 		galign.AddExon(TSignedSeqRange(pos, pos+spec_extend));
-    else
+    } else
 		galign.AddExon(TSignedSeqRange(pos-spec_extend, pos));
     if(galign.Limits().GetFrom() >= 0) { // can't check right end because we don't know the contig length yet (will check in chainer)   
 		galign.Status() |= status;
