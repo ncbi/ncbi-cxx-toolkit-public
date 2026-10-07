@@ -66,6 +66,18 @@ NCBI_PARAM_ENUM_DEF(EPDBMolFormat, PDB, DfltIntMolFmt, ePDB_Legacy);
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+int CPDB_mol_id::Compare(const CPDB_mol_id& id) const
+{
+    auto fmt = GetFormat();
+    if (fmt == id.GetFormat()) {
+        return NStr::CompareNocase(Get(), id.Get());
+    } else if (fmt == ePDB_Extended) {
+        return NStr::CompareNocase(Get(), id.Format(fmt));
+    } else {
+        return NStr::CompareNocase(Format(ePDB_Extended), id.Get());
+    }
+}
+
 string CPDB_mol_id::Format(const string_view& s, TFormat format)
 {
     string_view result = s;
