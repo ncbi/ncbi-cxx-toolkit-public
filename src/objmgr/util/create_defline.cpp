@@ -2922,7 +2922,8 @@ void CDeflineGenerator::x_SetPrefix (
 void CDeflineGenerator::x_SetSuffix (
     string& suffix,
     const CBioseq_Handle& bsh,
-    bool appendComplete
+    bool appendComplete,
+    bool isEMBLorDDBJ
 )
 
 {
@@ -2990,7 +2991,9 @@ void CDeflineGenerator::x_SetSuffix (
             }
             break;
         case NCBI_TECH(wgs):
-            if (m_WGSMaster) {
+            if (isEMBLorDDBJ && m_MainTitle.find (" shotgun ") != NPOS) {
+                // do not add new suffix to old form of title on EMBL or DDBJ record
+            } else if (m_WGSMaster) {
                 if (m_MainTitle.find (" whole genome sequencing project") == NPOS){
                     type = ", whole genome sequencing project";
                 }
@@ -4255,8 +4258,21 @@ string CDeflineGenerator::GenerateDefline (
     // strip leading spaces remaining after removal of old TPA or TSA prefixes
     m_MainTitle.erase (0, m_MainTitle.find_first_not_of (' '));
 
+    // cannot change EBI or DDBJ deflines even if they incorrectly have old or incorrect genome shotgun suffix
+    bool isEMBLorDDBJ = false;
+    for (auto& sid : bsh.GetId()) {
+        switch (sid.Which()) {
+            case NCBI_SEQID(Embl):
+            case NCBI_SEQID(Ddbj):
+                isEMBLorDDBJ = true;
+                break;
+            default:
+                break;
+        }
+    }
+
     // fix old whole genome shotgun suffix phrases (RW-2789)
-    if (m_MITech == NCBI_TECH(wgs)) {
+    if (m_MITech == NCBI_TECH(wgs) && ! isEMBLorDDBJ) {
         size_t pos = m_MainTitle.find (" whole genome shotgun sequencing project");
         if (pos != NPOS) {
             m_MainTitle.erase (pos);
@@ -4287,7 +4303,7 @@ string CDeflineGenerator::GenerateDefline (
         x_SetPrefix(prefix, bsh);
 
         // calculate suffix
-        x_SetSuffix (suffix, bsh, appendComplete);
+        x_SetSuffix (suffix, bsh, appendComplete, isEMBLorDDBJ);
 
         if (! m_MetaGenomeSource.empty()) {
             if ( prefix.empty() ) {
