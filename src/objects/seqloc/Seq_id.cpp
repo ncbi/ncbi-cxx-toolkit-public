@@ -2458,7 +2458,7 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
     } else {
         static const ct::packed_fixed_string<4> kPDB_{"PDB_"};
         if ((main_size == 12  ||  (main_size > 13  &&  ucdata[12] == '_'))
-            &&  !has_version  &&  main_acc.substr(0, 4) == kPDB_) {
+            &&  !has_version  &&  string_view(main_acc.data(), 4) == kPDB_) {
             bool valid = true;
             for (int i = 4;  i < 12;  ++i) {
                 if ( !isalnum(ucdata[i]) ) {
