@@ -172,25 +172,15 @@ public:
         return m_ConcurrentProcessorCount;
     }
 
-    // The Lock() call makes it possible for the other processors to wait for
-    // the event name
-    void Lock(const string &  event_name);
-    // The Unlock() call signals for the waiting processors that they can
-    // continue
-    void Unlock(const string &  event_name);
-    // The WaitFor() call blocks the processor till the event is unlocked
-    void WaitFor(const string &  event_name, size_t  timeout_sec = 10);
-
-
     // Async interface for waiting for an event. All the calls must be from a
-    // worker thread which is assigned to execute this particular request
+    // worker thread which is assigned to execute the particular request
     using async_wait_callback = function<void(bool is_timeout)>;
 
     void LockAsync(const string &  event_name);
     void UnlockAsync(const string &  event_name);
     void WaitForAsync(const string &  event_name,
                       async_wait_callback  cb,
-                      size_t  timeout_sec = 10);
+                      uint64_t  timeout_ms = 1000);
 
     template<typename TRequest> TRequest& GetRequest(void)
     {
@@ -260,21 +250,18 @@ private:
 
     struct SEventState
     {
-        CPSGS_Request *                     m_RequestInstance;
-        list<shared_ptr<SWaiterContext>>    m_Waiters;
+        CPSGS_Request *             m_RequestInstance;
+        list<SWaiterContext *>      m_Waiters;
     };
 
     struct SWaiterContext
     {
-        uv_timer_t                                  m_Timer;
-        async_wait_callback                         m_Callback;
-        shared_ptr<SEventState>                     m_ParentState;
-        list<shared_ptr<SWaiterContext>>::iterator  m_Iterator;
+        uv_timer_t                          m_Timer;
+        async_wait_callback                 m_Callback;
+        SEventState *                       m_ParentState;
+        list<SWaiterContext *>::iterator    m_Iterator;
 
-        // Trick: reference to itself to prolong the lifetime.
-        //        it keeps the object in memory till libuv calls a closing
-        //        callback on the next iteration
-        shared_ptr<SWaiterContext>                  m_SelfRef;
+        SWaiterContext() : m_ParentState(nullptr) {}
     };
 
     unordered_map<string, shared_ptr<SEventState>>  m_ActiveEvents;
@@ -283,27 +270,8 @@ private:
     static void x_UVCloseAndReleaseCb(uv_handle_t *  h);
     static void x_UVTimerStartCb(uv_timer_t *  h);
 
-    struct SWaitData
-    {
-        enum EPSGS_WaitObjectState {
-            ePSGS_LockedNobodyWaits,
-            ePSGS_LockedSomebodyWaits,
-            ePSGS_Unlocked
-        };
-
-        SWaitData() :
-            m_State(ePSGS_LockedNobodyWaits), m_WaitCount(0)
-        {}
-
-        EPSGS_WaitObjectState   m_State;
-        size_t                  m_WaitCount;
-        condition_variable      m_WaitObject;
-    };
-
     // Number of processors serving the request
     size_t                          m_ConcurrentProcessorCount;
-    mutex                           m_WaitLock;
-    map<string, SWaitData *>        m_Wait;
 
     // Processors which have not been instantiated due to a concurrency limit
     // together with the actual limit

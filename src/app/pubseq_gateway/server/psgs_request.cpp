@@ -65,38 +65,21 @@ CPSGS_Request::CPSGS_Request() :
 CPSGS_Request::~CPSGS_Request()
 {
     for (auto &  event : m_ActiveEvents) {
-        for (auto &  waiter : event.second->m_Waiters) {
-            uv_timer_stop(&waiter->m_Timer);
-            uv_close(reinterpret_cast<uv_handle_t *>(&waiter->m_Timer),
-                     x_UVCloseAndReleaseCb);
-        }
-    }
+        auto &  state = event.second;
+        if (!state)
+            continue;
 
-    for (auto it: m_Wait) {
-        switch (it.second->m_State) {
-            case SWaitData::ePSGS_Unlocked:
-                delete it.second;
-                break;
-            case SWaitData::ePSGS_LockedNobodyWaits:
-                // This is rather strange: a processor has not unlocked an
-                // event and at the same time a request is going to be
-                // destroyed.
-                PSG_ERROR("Reply is going to be deleted when a processor has "
-                          "not unlocked an event");
-                delete it.second;
-                break;
-            case SWaitData::ePSGS_LockedSomebodyWaits:
-                // This is rather strange: a processor is still waiting on the
-                // condition variable and at the same time the request is going
-                // to be destroyed.
-                // Just in case, lets unlock the condition variable and then
-                // delete the associated data
-                PSG_ERROR("Reply is going to be deleted when a processor is "
-                          "locked on a condition variable");
-                it.second->m_WaitObject.notify_all();
-                delete it.second;
-                break;
+        for (auto *  waiter : state->m_Waiters) {
+            if (waiter) {
+                waiter->m_ParentState = nullptr;
+
+                if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(&waiter->m_Timer))) {
+                    uv_close(reinterpret_cast<uv_handle_t*>(&waiter->m_Timer), x_UVCloseAndReleaseCb);
+                }
+            }
         }
+
+        state->m_Waiters.clear();
     }
 }
 
@@ -121,25 +104,6 @@ CPSGS_Request::EPSGS_Type  CPSGS_Request::GetRequestType(void) const
 }
 
 
-void CPSGS_Request::Lock(const string &  event_name)
-{
-    if (m_ConcurrentProcessorCount < 2)
-        return;     // No parallel processors so there is no point to wait
-
-    unique_lock<mutex>   scope_lock(m_WaitLock);
-
-    if (m_Wait.find(event_name) != m_Wait.end()) {
-        // Double locking; it is rather an error
-        NCBI_THROW(CPubseqGatewayException, eLogic,
-                   "Multiple lock of the same event is not supported");
-    }
-
-    m_Wait[event_name] = new SWaitData();
-    m_Wait[event_name]->m_State = SWaitData::ePSGS_LockedNobodyWaits;
-}
-
-
-
 void CPSGS_Request::LockAsync(const string &  event_name)
 {
     if (m_ConcurrentProcessorCount < 2)
@@ -153,35 +117,6 @@ void CPSGS_Request::LockAsync(const string &  event_name)
         // Double locking; it is rather an error
         NCBI_THROW(CPubseqGatewayException, eLogic,
                    "Multiple lock of the same event is not supported");
-    }
-}
-
-
-void CPSGS_Request::Unlock(const string &  event_name)
-{
-    if (m_ConcurrentProcessorCount < 2)
-        return;     // No parallel processors so there is no point to wait
-
-    unique_lock<mutex>   scope_lock(m_WaitLock);
-
-    auto it = m_Wait.find(event_name);
-    if (it == m_Wait.end()) {
-        // Unlocking something which was not locked
-        return;
-    }
-
-    switch (it->second->m_State) {
-        case SWaitData::ePSGS_LockedNobodyWaits:
-            it->second->m_State = SWaitData::ePSGS_Unlocked;
-            break;
-        case SWaitData::ePSGS_Unlocked:
-            // Double unlocking; it's OK
-            break;
-        case SWaitData::ePSGS_LockedSomebodyWaits:
-            it->second->m_WaitCount = 0;
-            it->second->m_State = SWaitData::ePSGS_Unlocked;
-            it->second->m_WaitObject.notify_all();
-            break;
     }
 }
 
@@ -200,67 +135,29 @@ void CPSGS_Request::UnlockAsync(const string &  event_name)
     auto    state = it->second;
     m_ActiveEvents.erase(it);
 
-    for (auto &  waiter : state->m_Waiters) {
+    for (auto *  waiter : state->m_Waiters) {
+        if (!waiter)
+            continue;
+
+        waiter->m_ParentState = nullptr;
         uv_timer_stop(&waiter->m_Timer);
 
-        uv_close(reinterpret_cast<uv_handle_t *>(&waiter->m_Timer), x_UVCloseAndReleaseCb);
-        waiter->m_Callback(false);
-    }
-}
+        if (!uv_is_closing(reinterpret_cast<uv_handle_t *>(&waiter->m_Timer))) {
+            uv_close(reinterpret_cast<uv_handle_t *>(&waiter->m_Timer), x_UVCloseAndReleaseCb);
+        }
 
-
-void CPSGS_Request::WaitFor(const string &  event_name, size_t  timeout_sec)
-{
-    if (m_ConcurrentProcessorCount < 2) {
-        // No parallel processors so there is no point to wait
-        return;
+        if (waiter->m_Callback) {
+            waiter->m_Callback(false);
+        }
     }
 
-    unique_lock<mutex>   scope_lock(m_WaitLock);
-
-    auto it = m_Wait.find(event_name);
-    if (it == m_Wait.end()) {
-        // There was no Lock() call for that event
-        return;
-    }
-
-    switch (it->second->m_State) {
-        case SWaitData::ePSGS_LockedNobodyWaits:
-        case SWaitData::ePSGS_LockedSomebodyWaits:
-            // The logic to initiate waiting is below
-            break;
-        case SWaitData::ePSGS_Unlocked:
-            // It has already been unlocked
-            return;
-    }
-
-    ++it->second->m_WaitCount;
-    it->second->m_State = SWaitData::ePSGS_LockedSomebodyWaits;
-    auto    status = it->second->m_WaitObject.wait_for(scope_lock,
-                                                       chrono::seconds(timeout_sec));
-    if (status == cv_status::timeout) {
-        // Note: decrementing the count only in case of a timeout. In case of a
-        // normal Unlock() the count will be reset there.
-        if (--it->second->m_WaitCount == 0)
-            it->second->m_State = SWaitData::ePSGS_LockedNobodyWaits;
-
-        string  message = "Timeout (" + to_string(timeout_sec) +
-                          " seconds) waiting on event '" + event_name + "'";
-
-        PSG_WARNING(message);
-        NCBI_THROW(CPubseqGatewayException, eTimeout, message);
-    }
-
-    // Here:
-    // - waiting has completed within the timeout
-    // - there is no need to change the state because it is done in Unlock()
-    //   by unlocking processor and the state here is ePSGS_Unlocked
+    state->m_Waiters.clear();
 }
 
 
 void CPSGS_Request::WaitForAsync(const string &  event_name,
                                  async_wait_callback  cb,
-                                 size_t  timeout_sec)
+                                 uint64_t  timeout_ms)
 {
     if (m_ConcurrentProcessorCount < 2) {
         // No parallel processors so there is no point to wait
@@ -275,30 +172,25 @@ void CPSGS_Request::WaitForAsync(const string &  event_name,
         return;
     }
 
-    auto    state = it->second;
+    auto    state = it->second.get();
 
-    auto    waiter = make_shared<SWaiterContext>();
+    auto *  waiter = new SWaiterContext();
     waiter->m_Callback = cb;
     waiter->m_ParentState = state;
 
     uv_timer_init(m_HttpRequest.GetUVLoop(), &waiter->m_Timer);
-    waiter->m_Timer.data = waiter.get();
-
-    // Protect context from deletion using a cyclic reference to itself.
-    // This will be reset in the x_UVCloseAndReleaseCb() closing handle
-    waiter->m_SelfRef = waiter;
+    waiter->m_Timer.data = waiter;
 
     state->m_Waiters.push_front(waiter);
     waiter->m_Iterator = state->m_Waiters.begin();
 
-    uint64_t    timeout_ms = static_cast<uint64_t>(timeout_sec) * 1000;
     uv_timer_start(&waiter->m_Timer, x_UVTimerStartCb, timeout_ms, 0);
 }
 
 
 void CPSGS_Request::x_HandleIndividualTimeout(SWaiterContext *  context)
 {
-    auto    parent = context->m_ParentState;
+    auto *      parent = context->m_ParentState;
 
     parent->m_Waiters.erase(context->m_Iterator);
     uv_close(reinterpret_cast<uv_handle_t *>(&context->m_Timer), x_UVCloseAndReleaseCb);
@@ -309,11 +201,7 @@ void CPSGS_Request::x_HandleIndividualTimeout(SWaiterContext *  context)
 void CPSGS_Request::x_UVCloseAndReleaseCb(uv_handle_t *  h)
 {
     auto *  context = static_cast<SWaiterContext *>(h->data);
-
-    // Resets the pointer to itself.
-    // When the ref counter becomes 0 the memory allocated for SWaiterContext
-    // is deallocated safely
-    context->m_SelfRef.reset(); 
+    delete context;
 }
 
 
