@@ -4255,6 +4255,7 @@ string CDeflineGenerator::GenerateDefline (
     // strip leading spaces remaining after removal of old TPA or TSA prefixes
     m_MainTitle.erase (0, m_MainTitle.find_first_not_of (' '));
 
+    // fix old whole genome shotgun suffix phrases (RW-2789)
     if (m_MITech == NCBI_TECH(wgs)) {
         size_t pos = m_MainTitle.find (" whole genome shotgun sequencing project");
         if (pos != NPOS) {
