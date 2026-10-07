@@ -3431,7 +3431,7 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
                     chain = the_id[4];
                 }
             }
-            return Set(type, mol, chain, flags);
+            return Set(type, mol, chain, 0, kEmptyStr, flags);
         }
         default:
         {
