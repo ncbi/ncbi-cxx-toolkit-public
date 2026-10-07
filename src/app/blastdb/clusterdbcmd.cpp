@@ -51,7 +51,7 @@ USING_SCOPE(blast);
 #endif
 
 /// Default name of the SQLite database with the clustered nr metadata
-static const string kDefaultDb("nr_cluster_seq.sqlite3");
+static const string kDefaultDb("clustered_nr.sqlite3");
 
 /// @name Command line argument names
 /// @{
