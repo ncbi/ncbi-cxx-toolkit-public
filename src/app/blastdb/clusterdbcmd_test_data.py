@@ -27,7 +27,7 @@
 # Author: Christiam Camacho
 #
 """Creates small, deterministic SQLite databases used to test clusterdbcmd,
-mirroring the schemas of the production nr_cluster_seq.sqlite3 and
+mirroring the schemas of the production clustered_nr.sqlite3 and
 taxonomy4blast.sqlite3 databases.
 
 Usage: clusterdbcmd_test_data.py <cluster_db_path> <taxonomy_db_path>
@@ -55,8 +55,9 @@ def create_cluster_db(path: str) -> None:
             representative_id       INTEGER REFERENCES Representative(id),
             member_accession        TEXT NOT NULL,
             member_taxid            INTEGER CHECK(member_taxid >= 0),
+            pig                     INTEGER CHECK(pig > 0),
             title_id                INTEGER REFERENCES Title(id),
-            PRIMARY KEY(representative_id, member_accession)
+            PRIMARY KEY(representative_id, member_accession, member_taxid)
         );
         CREATE TABLE ClusterCommonAncestor (
             representative_id       INTEGER PRIMARY KEY REFERENCES Representative(id),
@@ -67,6 +68,7 @@ def create_cluster_db(path: str) -> None:
             R.accession as representative,
             C.member_accession,
             C.member_taxid,
+            C.pig,
             T.title as member_title
         FROM ClusterInfo C JOIN Representative R ON C.representative_id = R.id
         LEFT JOIN Title T ON C.title_id = T.id;
@@ -81,7 +83,8 @@ def create_cluster_db(path: str) -> None:
 
     # Cluster 'REPR_A' has 3 members (itself and two others), taxid 100 is
     # the representative's own taxid, which is a descendant of taxid 90 in
-    # the taxonomy test database created below.
+    # the taxonomy test database created below. MEMBER_A1 has two taxids
+    # (200 and 202, both descendants of taxid 199), hence two rows.
     # Cluster 'REPR_B' only contains itself, with taxid 300 (no ancestors in
     # the taxonomy test database).
     cur.executemany(
@@ -95,12 +98,13 @@ def create_cluster_db(path: str) -> None:
          (4, "Protein B representative")])
     cur.executemany(
         "INSERT INTO ClusterInfo "
-        "(representative_id, member_accession, member_taxid, title_id) "
-        "VALUES (?,?,?,?)",
-        [(1, "REPR_A", 100, 1),
-         (1, "MEMBER_A1", 200, 2),
-         (1, "MEMBER_A2", 201, 3),
-         (2, "REPR_B", 300, 4)])
+        "(representative_id, member_accession, member_taxid, pig, title_id) "
+        "VALUES (?,?,?,?,?)",
+        [(1, "REPR_A", 100, 10, 1),
+         (1, "MEMBER_A1", 200, 11, 2),
+         (1, "MEMBER_A1", 202, 11, 2),
+         (1, "MEMBER_A2", 201, 12, 3),
+         (2, "REPR_B", 300, 20, 4)])
     cur.executemany(
         "INSERT INTO ClusterCommonAncestor (representative_id, taxid) "
         "VALUES (?,?)",
@@ -122,10 +126,12 @@ def create_taxonomy_db(path: str) -> None:
         CREATE INDEX TaxidInfoCompositeIdx_parent ON TaxidInfo(parent,taxid);
     """)
     # taxid 100 (REPR_A's own taxid) is a descendant of taxid 90.
+    # taxids 200 and 202 (MEMBER_A1's taxids) are descendants of taxid 199.
     # taxid 300 (REPR_B's own taxid) has no descendants.
     cur.executemany(
         "INSERT INTO TaxidInfo (taxid, parent) VALUES (?,?)",
-        [(90, None), (100, 90), (300, None)])
+        [(90, None), (100, 90), (199, None), (200, 199), (202, 199),
+         (300, None)])
     conn.commit()
     conn.close()
 

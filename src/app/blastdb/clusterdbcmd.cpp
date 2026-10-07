@@ -80,8 +80,11 @@ struct SClusterRow
     TTaxId taxid;
     /// Sequence title (not populated for -get-common-ancestor)
     string title;
+    /// Protein Identity Group of the member (not populated for
+    /// -get-common-ancestor)
+    Int8 pig;
 
-    SClusterRow() : taxid(INVALID_TAX_ID) {}
+    SClusterRow() : taxid(INVALID_TAX_ID), pig(0) {}
 };
 
 /// The application class
@@ -131,6 +134,30 @@ private:
     /// -accession
     /// @return 0 on success, 1 if no matches were found
     int x_ProcessAccession(CNcbiOstream& out, const string& outfmt);
+
+    /// Builds a SELECT DISTINCT statement on ClusterInfoView over the
+    /// key column and the columns referenced by the output format, so that
+    /// rows which only differ in columns that are not printed (e.g.: the
+    /// taxids of a member with several taxids) are printed once
+    /// @param outfmt validated output format string [in]
+    /// @param key_spec format specifier of the column identifying each
+    /// result row, always selected first [in]
+    /// @param key_order sort order for the key column, "ASC" or "DESC" [in]
+    /// @param where SQL WHERE clause condition [in]
+    /// @param specs format specifiers of the selected columns, in order [out]
+    /// @return SQL statement
+    string x_BuildClusterInfoQuery(const string& outfmt, char key_spec,
+                                   const string& key_order,
+                                   const string& where, vector<char>& specs);
+
+    /// Prints all rows produced by a statement built with
+    /// x_BuildClusterInfoQuery
+    /// @param stmt statement to execute [in]
+    /// @param specs format specifiers of the selected columns [in]
+    /// @return true if at least one row was printed
+    bool x_PrintClusterInfoRows(CNcbiOstream& out, const string& outfmt,
+                                CSQLITE_Statement& stmt,
+                                const vector<char>& specs);
 
     /// Formats and prints a single row using the provided output format
     /// string
@@ -195,7 +222,8 @@ void CClusterDBCmdApp::Init()
                             "one of its descendant taxids, unless "
                             "-exact-match is specified). If -outfmt is used "
                             "to customize the output, '%m' is not "
-                            "applicable. Default outfmt is '%r'",
+                            "applicable and '%T', '%t' and '%p' refer to the "
+                            "matching member. Default outfmt is '%r'",
                             CArgDescriptions::eInteger);
     arg_desc->SetConstraint(kArgTaxid, new CArgAllow_Integers(0, INT_MAX));
 
@@ -239,9 +267,13 @@ void CClusterDBCmdApp::Init()
             "\t\t%T means taxid\n"
             "\t\t%m means cluster member\n"
             "\t\t%t means the sequence title\n"
+            "\t\t%p means the Protein Identity Group (PIG)\n"
             "\tDefault format depends on the retrieval option used: "
             "'%m %t' for -representative, '%T' for -get-common-ancestor, "
-            "'%r' for -taxid, and '%r %t' for -accession.",
+            "'%r' for -taxid, and '%r %t' for -accession.\n"
+            "\tIdentical output lines are printed once, e.g.: a member "
+            "with several taxids is printed once per taxid only if '%T' "
+            "is used.",
             CArgDescriptions::eString);
 
     SetupArgDescriptions(arg_desc.release());
@@ -286,6 +318,16 @@ void CClusterDBCmdApp::x_OpenDb()
                        "Failed to check for " + type + " " + name + " in '" +
                        m_DbName + "'");
         }
+    }
+
+    CSQLITE_Statement s(&*m_DbConn,
+        "SELECT COUNT(*) FROM pragma_table_info('ClusterInfoView') "
+        "WHERE name = 'pig';");
+    if (!s.Step() || s.GetInt(0) != 1) {
+        NCBI_THROW(CSeqDBException, eArgErr,
+                   "Database '" + m_DbName + "' was created with an older "
+                   "schema that lacks Protein Identity Groups (PIGs). "
+                   "Please use a newer clustered metadata database.");
     }
 }
 
@@ -351,6 +393,9 @@ void CClusterDBCmdApp::x_PrintRow(CNcbiOstream& out, const string& outfmt,
         case 't':
             out << (x_IsCsv() ? NStr::Quote(row.title) : row.title);
             break;
+        case 'p':
+            out << row.pig;
+            break;
         default:
             // Should not happen, x_ValidateOutFmt() should have caught this
             out << '%' << outfmt[i];
@@ -360,31 +405,80 @@ void CClusterDBCmdApp::x_PrintRow(CNcbiOstream& out, const string& outfmt,
     out << NcbiEndl;
 }
 
+/// ClusterInfoView column printed by each output format specifier
+static const map<char, string> kClusterInfoColumns {
+    { 'r', "representative" },
+    { 'm', "member_accession" },
+    { 'T', "member_taxid" },
+    { 't', "member_title" },
+    { 'p', "pig" }
+};
+
+string CClusterDBCmdApp::x_BuildClusterInfoQuery(const string& outfmt,
+                                                 char key_spec,
+                                                 const string& key_order,
+                                                 const string& where,
+                                                 vector<char>& specs)
+{
+    specs.assign(1, key_spec);
+    for (SIZE_TYPE i = 0; i + 1 < outfmt.size(); i++) {
+        if (outfmt[i] != '%') {
+            continue;
+        }
+        const char spec = outfmt[++i];
+        if (spec != '%') {
+            specs.push_back(spec);
+        }
+    }
+
+    vector<string> columns;
+    for (char spec : specs) {
+        columns.push_back(kClusterInfoColumns.at(spec));
+    }
+    vector<string> order_by(columns);
+    order_by.front() += " " + key_order;
+
+    return "SELECT DISTINCT " + NStr::Join(columns, ", ") +
+           " FROM ClusterInfoView WHERE " + where +
+           " ORDER BY " + NStr::Join(order_by, ", ") + ";";
+}
+
+bool CClusterDBCmdApp::x_PrintClusterInfoRows(CNcbiOstream& out,
+                                              const string& outfmt,
+                                              CSQLITE_Statement& stmt,
+                                              const vector<char>& specs)
+{
+    bool found = false;
+    while (stmt.Step()) {
+        found = true;
+        SClusterRow row;
+        for (int col = 0; col < static_cast<int>(specs.size()); col++) {
+            switch (specs[col]) {
+            case 'r': row.representative = stmt.GetString(col); break;
+            case 'm': row.member_accession = stmt.GetString(col); break;
+            case 'T': row.taxid = static_cast<TTaxId>(stmt.GetInt(col)); break;
+            case 't': row.title = stmt.GetString(col); break;
+            case 'p': row.pig = stmt.GetInt8(col); break;
+            }
+        }
+        x_PrintRow(out, outfmt, row);
+    }
+    return found;
+}
+
 int CClusterDBCmdApp::x_ProcessRepresentative(CNcbiOstream& out,
                                               const string& outfmt)
 {
     const CArgs& args = GetArgs();
     const string& repr = args[kArgRepresentative].AsString();
 
-    const string kSqlStmt =
-        "SELECT member_accession, member_taxid, member_title "
-        "FROM ClusterInfoView WHERE representative = ? "
-        "ORDER BY member_accession DESC;";
-    CSQLITE_Statement stmt(&*m_DbConn, kSqlStmt);
+    vector<char> specs;
+    CSQLITE_Statement stmt(&*m_DbConn,
+        x_BuildClusterInfoQuery(outfmt, 'm', "DESC", "representative = ?",
+                                specs));
     stmt.Bind(1, repr);
 
-    bool found = false;
-    while (stmt.Step()) {
-        found = true;
-        SClusterRow row;
-        row.representative = repr;
-        row.member_accession = stmt.GetString(0);
-        row.taxid = static_cast<TTaxId>(stmt.GetInt(1));
-        row.title = stmt.GetString(2);
-        x_PrintRow(out, outfmt, row);
-    }
-
-    if (!found) {
+    if (!x_PrintClusterInfoRows(out, outfmt, stmt, specs)) {
         ERR_POST(Error << "No cluster found for representative '" << repr << "'");
         return 1;
     }
@@ -437,25 +531,12 @@ int CClusterDBCmdApp::x_ProcessTaxid(CNcbiOstream& out, const string& outfmt)
         }
     }
 
-    CNcbiOstrstream oss;
-    oss << "SELECT DISTINCT representative, member_taxid, member_title "
-           "FROM ClusterInfoView WHERE member_accession = representative "
-           "AND member_taxid IN (" << NStr::Join(taxids, ",") << ");";
-    const string kSqlStmt = CNcbiOstrstreamToString(oss);
+    vector<char> specs;
+    CSQLITE_Statement stmt(&*m_DbConn,
+        x_BuildClusterInfoQuery(outfmt, 'r', "ASC",
+            "member_taxid IN (" + NStr::Join(taxids, ",") + ")", specs));
 
-    CSQLITE_Statement stmt(&*m_DbConn, kSqlStmt);
-
-    bool found = false;
-    while (stmt.Step()) {
-        found = true;
-        SClusterRow row;
-        row.representative = stmt.GetString(0);
-        row.taxid = static_cast<TTaxId>(stmt.GetInt(1));
-        row.title = stmt.GetString(2);
-        x_PrintRow(out, outfmt, row);
-    }
-
-    if (!found) {
+    if (!x_PrintClusterInfoRows(out, outfmt, stmt, specs)) {
         ERR_POST(Error << "No cluster representative found for taxid " << taxid);
         return 1;
     }
@@ -467,23 +548,13 @@ int CClusterDBCmdApp::x_ProcessAccession(CNcbiOstream& out, const string& outfmt
     const CArgs& args = GetArgs();
     const string& accession = args[kArgAccession].AsString();
 
-    const string kSqlStmt =
-        "SELECT representative, member_taxid, member_title "
-        "FROM ClusterInfoView WHERE member_accession = ?;";
-    CSQLITE_Statement stmt(&*m_DbConn, kSqlStmt);
+    vector<char> specs;
+    CSQLITE_Statement stmt(&*m_DbConn,
+        x_BuildClusterInfoQuery(outfmt, 'r', "ASC", "member_accession = ?",
+                                specs));
     stmt.Bind(1, accession);
 
-    bool found = false;
-    while (stmt.Step()) {
-        found = true;
-        SClusterRow row;
-        row.representative = stmt.GetString(0);
-        row.taxid = static_cast<TTaxId>(stmt.GetInt(1));
-        row.title = stmt.GetString(2);
-        x_PrintRow(out, outfmt, row);
-    }
-
-    if (!found) {
+    if (!x_PrintClusterInfoRows(out, outfmt, stmt, specs)) {
         ERR_POST(Error << "No cluster found for accession '" << accession << "'");
         return 1;
     }
@@ -523,20 +594,20 @@ int CClusterDBCmdApp::Run(void)
             } else {
                 const string outfmt = args[kArgOutFmt].HasValue() ?
                     args[kArgOutFmt].AsString() : "%m %t";
-                x_ValidateOutFmt(outfmt, "rTmt", "for -representative");
+                x_ValidateOutFmt(outfmt, "rTmtp", "for -representative");
                 x_DetectFieldDelimiter(outfmt);
                 status = x_ProcessRepresentative(out, outfmt);
             }
         } else if (args[kArgTaxid].HasValue()) {
             const string outfmt = args[kArgOutFmt].HasValue() ?
                 args[kArgOutFmt].AsString() : "%r";
-            x_ValidateOutFmt(outfmt, "rTt", "for -taxid");
+            x_ValidateOutFmt(outfmt, "rTtp", "for -taxid");
             x_DetectFieldDelimiter(outfmt);
             status = x_ProcessTaxid(out, outfmt);
         } else if (args[kArgAccession].HasValue()) {
             const string outfmt = args[kArgOutFmt].HasValue() ?
                 args[kArgOutFmt].AsString() : "%r %t";
-            x_ValidateOutFmt(outfmt, "rTt", "for -accession");
+            x_ValidateOutFmt(outfmt, "rTtp", "for -accession");
             x_DetectFieldDelimiter(outfmt);
             status = x_ProcessAccession(out, outfmt);
         }

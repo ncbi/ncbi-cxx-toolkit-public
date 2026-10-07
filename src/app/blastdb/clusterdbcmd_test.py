@@ -106,23 +106,34 @@ class TestClusterDBCmd(unittest.TestCase):
                     "MEMBER_A1 Protein A member 1",
                     "-db", self.cluster_db, "-representative", "REPR_A")
 
-    # --- -representative with a custom outfmt ---
+    # --- -representative with a custom outfmt: one row per member taxid ---
     def test_representative_custom_outfmt(self) -> None:
         self._check(0,
                     "REPR_A|100|Protein A representative\n"
                     "MEMBER_A2|201|Protein A member 2\n"
-                    "MEMBER_A1|200|Protein A member 1",
+                    "MEMBER_A1|200|Protein A member 1\n"
+                    "MEMBER_A1|202|Protein A member 1",
                     "-db", self.cluster_db, "-representative", "REPR_A",
                     "-outfmt", "%m|%T|%t")
 
     # --- -representative with a comma-delimited outfmt: titles get quoted ---
     def test_representative_csv_outfmt(self) -> None:
         self._check(0,
-                    'REPR_A,100,"Protein A representative"\n'
-                    'MEMBER_A2,201,"Protein A member 2"\n'
-                    'MEMBER_A1,200,"Protein A member 1"',
+                    'REPR_A,100,10,"Protein A representative"\n'
+                    'MEMBER_A2,201,12,"Protein A member 2"\n'
+                    'MEMBER_A1,200,11,"Protein A member 1"\n'
+                    'MEMBER_A1,202,11,"Protein A member 1"',
                     "-db", self.cluster_db, "-representative", "REPR_A",
-                    "-outfmt", "%m,%T,%t")
+                    "-outfmt", "%m,%T,%p,%t")
+
+    # --- -representative with PIGs: members with several taxids are printed once ---
+    def test_representative_pig_outfmt(self) -> None:
+        self._check(0,
+                    "REPR_A 10\n"
+                    "MEMBER_A2 12\n"
+                    "MEMBER_A1 11",
+                    "-db", self.cluster_db, "-representative", "REPR_A",
+                    "-outfmt", "%m %p")
 
     # --- -representative -get-common-ancestor (default outfmt '%T') ---
     def test_get_common_ancestor(self) -> None:
@@ -135,7 +146,19 @@ class TestClusterDBCmd(unittest.TestCase):
         self._check(0, "REPR_A Protein A member 1",
                     "-db", self.cluster_db, "-accession", "MEMBER_A1")
 
-    # --- -taxid -exact-match: only the representative's own taxid matches ---
+    # --- -accession for a member with several taxids is printed once ---
+    def test_accession_csv_outfmt_with_pig(self) -> None:
+        self._check(0, 'REPR_A,11,"Protein A member 1"',
+                    "-db", self.cluster_db, "-accession", "MEMBER_A1",
+                    "-outfmt", "%r,%p,%t")
+
+    # --- -accession with %T: one row per member taxid ---
+    def test_accession_one_row_per_taxid(self) -> None:
+        self._check(0, "REPR_A 200 11\nREPR_A 202 11",
+                    "-db", self.cluster_db, "-accession", "MEMBER_A1",
+                    "-outfmt", "%r %T %p")
+
+    # --- -taxid -exact-match with the representative's own taxid ---
     def test_taxid_exact_match(self) -> None:
         self._check(0, "REPR_A 100",
                     "-db", self.cluster_db, "-taxid", "100", "-exact-match",
@@ -152,6 +175,28 @@ class TestClusterDBCmd(unittest.TestCase):
         self._check(1, "",
                     "-db", self.cluster_db, "-taxid", "90", "-exact-match",
                     "-outfmt", "%r %T")
+
+    # --- -taxid matches non-representative cluster members too ---
+    def test_taxid_exact_match_member(self) -> None:
+        self._check(0, "REPR_A",
+                    "-db", self.cluster_db, "-taxid", "200", "-exact-match")
+
+    # --- -taxid expanding to several taxids of one member: one row per cluster ---
+    def test_taxid_with_expansion_deduplicated(self) -> None:
+        self._check(0, "REPR_A",
+                    "-db", self.cluster_db, "-taxid", "199")
+
+    # --- -taxid expanding to several taxids of one member, with %T ---
+    def test_taxid_with_expansion_one_row_per_taxid(self) -> None:
+        self._check(0, "REPR_A 200\nREPR_A 202",
+                    "-db", self.cluster_db, "-taxid", "199",
+                    "-outfmt", "%r %T")
+
+    # --- -taxid with PIG ---
+    def test_taxid_pig_outfmt(self) -> None:
+        self._check(0, "REPR_B 20",
+                    "-db", self.cluster_db, "-taxid", "300", "-exact-match",
+                    "-outfmt", "%r %p")
 
     # --- -taxid -exact-match for a cluster with no taxonomy descendants ---
     def test_taxid_exact_match_no_descendants(self) -> None:
@@ -182,6 +227,12 @@ class TestClusterDBCmd(unittest.TestCase):
         self._check(1, "",
                     "-db", self.cluster_db, "-representative", "REPR_A",
                     "-get-common-ancestor", "-outfmt", "%r")
+
+    # --- error: '%p' is not applicable for -get-common-ancestor ---
+    def test_invalid_pig_outfmt_for_common_ancestor(self) -> None:
+        self._check(1, "",
+                    "-db", self.cluster_db, "-representative", "REPR_A",
+                    "-get-common-ancestor", "-outfmt", "%p")
 
     # --- error: missing database file ---
     def test_missing_database(self) -> None:
