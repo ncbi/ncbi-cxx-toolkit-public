@@ -78,6 +78,10 @@ public:
     typedef NCBI_PARAM_TYPE(PDB, DfltIntMolFmt) TDfltIntFmt;
     typedef EPDBMolFormat TFormat;
 
+    bool Match(const CPDB_mol_id& id) const
+        { return Compare(id) == 0; }
+    int Compare(const CPDB_mol_id& id) const;
+
     static string Format(const string_view& s, TFormat format);
     string Format(TFormat format) const
         { return Format(Get(), format); }
