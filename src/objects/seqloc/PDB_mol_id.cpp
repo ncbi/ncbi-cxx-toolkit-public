@@ -64,39 +64,37 @@ NCBI_PARAM_ENUM_DEF(EPDBMolFormat, PDB, DfltIntMolFmt, ePDB_Legacy);
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-string CPDB_mol_id::Format(const CTempString& s, TFormat format)
+string CPDB_mol_id::Format(const string_view& s, TFormat format)
 {
+    string_view result = s;
     switch (format) {
     case ePDB_Legacy:
         if (s.size() == 12) {
             if (NStr::StartsWith(s, "pdb_0000", NStr::eNocase)) {
-                return s.substr(8);
+                result = s.substr(8);
             } else {
                 NCBI_THROW(CSeqIdException, eFormat,
                            s + " has no legacy equivalent");
             }
-        } else {
-            return s;
         }
+        break;
     case ePDB_Minimal:
         if (s.size() == 12
             &&  NStr::StartsWith(s, "pdb_0000", NStr::eNocase)) {
-            return s.substr(8);
-        } else {
-            return s;
+            result = s.substr(8);
         }
+        break;
     case ePDB_Extended:
         if (s.size() == 4) {
             return "pdb_0000" + s;
-        } else {
-            return s;
         }
+        break;
     case ePDB_Public:
         return Format(s, TDfltPubFmt::GetDefault());
     case ePDB_Internal:
         return Format(s, TDfltIntFmt::GetDefault());
     }
-    return s; // should be unreachable
+    return string(result);
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

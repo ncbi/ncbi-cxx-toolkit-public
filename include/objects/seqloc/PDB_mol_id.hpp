@@ -77,10 +77,10 @@ public:
     typedef NCBI_PARAM_TYPE(PDB, DfltIntMolFmt) TDfltIntFmt;
     typedef EPDBMolFormat TFormat;
 
-    static string Format(const CTempString& s, TFormat format);
+    static string Format(const string_view& s, TFormat format);
     string Format(TFormat format) const
         { return Format(Get(), format); }
-    static TFormat GetFormat(const CTempString& s)
+    static TFormat GetFormat(const string_view& s)
         { return s.size() == 4 ? ePDB_Legacy : ePDB_Extended; }
     TFormat GetFormat() const
         { return GetFormat(Get()); }
