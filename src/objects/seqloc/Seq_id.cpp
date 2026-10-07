@@ -2456,6 +2456,20 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
     if (digit_pos == NPOS) {
         return eAcc_unknown;
     } else {
+        static const ct::packed_fixed_string<4> kPDB_{"PDB_"};
+        if ((main_size == 12  ||  (main_size > 13  &&  ucdata[12] == '_'))
+            &&  !has_version  &&  main_acc.substr(0, 4) == kPDB_) {
+            bool valid = true;
+            for (int i = 4;  i < 12;  ++i) {
+                if ( !isalnum(ucdata[i]) ) {
+                    valid = false;
+                    break;
+                }
+            }
+            if (valid) {
+                return eAcc_pdb;
+            }
+        }
         SIZE_TYPE non_dig_pos = main_acc.find_first_not_of(kDigits, digit_pos);
         if (main_size == 6  &&  digit_pos == 1
             &&  (flags & fParse_RawText) != 0) {
@@ -3403,11 +3417,19 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
         case e_Pdb:
         {
             string mol(the_id, 0, 4), chain;
-            // NStr::SplitInTwo(the_id, "|", mol, chain);
-            if (the_id.size() > 5) {
-                chain = the_id.substr(5);
-            } else if (the_id.size() == 5  &&  the_id[4] != '|') {
-                chain = the_id[4];
+            if (NStr::StartsWith(the_id, "pdb_", NStr::eNocase)) {
+                mol = the_id.substr(0, 12);
+                if (the_id.size() > 13) {
+                    chain = the_id.substr(13);
+                }
+            } else {
+                // NStr::SplitInTwo(the_id, "|", mol, chain);
+                mol = the_id.substr(0, 4);
+                if (the_id.size() > 5) {
+                    chain = the_id.substr(5);
+                } else if (the_id.size() == 5  &&  the_id[4] != '|') {
+                    chain = the_id[4];
+                }
             }
             return Set(type, mol, chain, flags);
         }
@@ -3730,14 +3752,26 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
         break;
 
     case e_Pdb:
-        if (fields[0].size() < 4
+        if (fields[0].size() >= 12
+            &&  NStr::StartsWith(fields[0], "pdb_", NStr::eNocase)) {
+            if (fields[0].size() == 13
+                ||  (fields[0].size() > 13
+                     &&  (!fields[1].empty()  ||  fields[0][12] != '_'))) {
+                REJECT_X(33, flags,
+                         "Malformatted PDB ID " + string(fields[0]));
+                return next_type;
+            } else if (fields[0].size() > 13) { // misdelimited
+                fields[1] = fields[0].substr(13);
+                fields[0] = fields[0].substr(0, 12);
+            }
+        } else if (fields[0].size() < 4
             ||  (fields[0].size() > 5
                  &&  ( !fields[1].empty()
                        ||  strchr("|-_", fields[0][4]) == NULL))) {
             REJECT_X(33, flags, "Malformatted PDB ID " + string(fields[0]));
             return next_type;
-        }
-        if (fields[0].size() > 4  &&  fields[1].empty()) { // misdelimited
+        } else if (fields[0].size() > 4  &&  fields[1].empty()) {
+            // misdelimited
             if (fields[0].size() > 5) {
                 fields[1] = fields[0].substr(5);
             } else {

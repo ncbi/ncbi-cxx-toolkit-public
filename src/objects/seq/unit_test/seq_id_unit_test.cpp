@@ -415,6 +415,14 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromPDBAcc)
                       CSeq_id::eAcc_unknown);
     BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("1GAV|@BCDEFGHIJKL"),
                       CSeq_id::eAcc_unknown);
+
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pdb_00001GA")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb_00001GAV")));
+    BOOST_CHECK(id->IsPdb());
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pdb_00001GAV.1")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pdb_00001GAVX")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("PDb_00001GAV_X")));
+    BOOST_CHECK(id->IsPdb());
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromPIRAcc)
@@ -805,6 +813,12 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaPdb)
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|AAA")));
     BOOST_CHECK( !id->GetPdb().IsSetChain() );
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "AAA");
+
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pdb|pdb_00001GA")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|pdb_00001GAV")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pdb|pdb_00001GAVX")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|pdb_00001GAV|X")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|pdb_00001GAV_X")));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaTpa)
@@ -972,6 +986,7 @@ static const char* kTestFastaStrings[] = {
     "pdb|1GAV|XX",
     "pdb|1GAV|!",
     "pdb|1GAV|VB",
+    "pdb|pdb_00001GAV|X",
     "tpg|BK003456|",
     "tpe|BN000123|",
     "tpd|FAA00017|",
