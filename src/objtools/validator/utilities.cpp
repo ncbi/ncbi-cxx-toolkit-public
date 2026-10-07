@@ -2141,7 +2141,7 @@ static bool s_IsCommonName(const string& val, CTaxon1& taxon1)
     }
 
     list<CRef<CTaxon1_name>> names;
-    auto taxid = taxon1.SearchTaxIdByName(val, CTaxon1::eSearch_Exact, &names);
+    [[maybe_unused]] auto taxid = taxon1.SearchTaxIdByName(val, CTaxon1::eSearch_Exact, &names);
 
     if (! names.empty()) {
         return s_IsCommonName(*names.front());
