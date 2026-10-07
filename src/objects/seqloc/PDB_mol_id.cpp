@@ -48,6 +48,7 @@ BEGIN_NCBI_SCOPE
 
 NCBI_PARAM_ENUM_ARRAY(EPDBMolFormat, PDB, DfltPubMolFmt)
 {
+    {"as-is",    ePDB_AsIs},
     {"legacy",   ePDB_Legacy},
     {"minimal",  ePDB_Minimal},
     {"extended", ePDB_Extended}
@@ -56,6 +57,7 @@ NCBI_PARAM_ENUM_DEF(EPDBMolFormat, PDB, DfltPubMolFmt, ePDB_Legacy);
 
 NCBI_PARAM_ENUM_ARRAY(EPDBMolFormat, PDB, DfltIntMolFmt)
 {
+    {"as-is",    ePDB_AsIs},
     {"legacy",   ePDB_Legacy},
     {"minimal",  ePDB_Minimal},
     {"extended", ePDB_Extended}
@@ -68,6 +70,8 @@ string CPDB_mol_id::Format(const string_view& s, TFormat format)
 {
     string_view result = s;
     switch (format) {
+    case ePDB_AsIs:
+        break;
     case ePDB_Legacy:
         if (s.size() == 12) {
             if (NStr::StartsWith(s, "pdb_0000", NStr::eNocase)) {

@@ -50,6 +50,7 @@
 BEGIN_NCBI_SCOPE
 
 enum EPDBMolFormat {
+    ePDB_AsIs,     
     ePDB_Legacy,   ///< Four alphanumerics; equivalent to pdb_0000????
     ePDB_Minimal,  ///< Legacy when possible, else extended
     ePDB_Extended, ///< pdb_ followed by eight alphanumerics
