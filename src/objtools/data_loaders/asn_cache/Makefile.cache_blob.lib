@@ -18,4 +18,4 @@ WATCHERS = marksc2
 
 
 USES_LIBRARIES =  \
-    bdb cache_blob seqset
+    bdb seqset
