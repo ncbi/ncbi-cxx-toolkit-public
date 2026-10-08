@@ -1036,18 +1036,24 @@ private:
     static const int kDayBits = 5; // 1-31, 0 means not set
     static const int kMonthBits = 4; // 1-12, 0 means not set
     static const int kYearBits = 12; // 1-4095
-    static const int kMolLowerCaseBits = 3; // up to 3 'mol' letters
+    // Long mol format: pdb_00001XXX
+    // If mol is a long equivalent of an old-style mol (starts with pdb_0000)
+    // then the pdb_0000 prefix is removed and kToLongMolOffset bit is set.
+    static const int kMolLowerCaseBits = 12; // up to 12 letters in mol
 
     // derived constants
     static const int kNoChainOffset = 0;
     static const int kNoChain_idOffset = kNoChainOffset + 1;
-    static const int kSecondOffset = kNoChain_idOffset + 1;
+    static const int kToLongMolOffset = kNoChain_idOffset + 1;
+    static const int kSecondOffset = kToLongMolOffset + 1;
     static const int kMinuteOffset = kSecondOffset + kSecondBits;
     static const int kHourOffset = kMinuteOffset + kMinuteBits;
     static const int kDayOffset = kHourOffset + kHourBits;
     static const int kMonthOffset = kDayOffset + kDayBits;
     static const int kYearOffset = kMonthOffset + kMonthBits;
     static const int kMolLowerCaseOffset = kYearOffset + kYearBits;
+    static const int kTotalBits = kMolLowerCaseOffset + kMolLowerCaseBits;
+    static_assert(kTotalBits <= numeric_limits<TVariant>::digits);
 };
 
 

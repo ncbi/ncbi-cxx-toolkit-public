@@ -3294,6 +3294,7 @@ CSeq_id_PDB_Info::CSeq_id_PDB_Info(const CConstRef<CSeq_id>& seq_id, CSeq_id_Map
 {
 }
 
+static constexpr string_view kStandardLongMolPrefix{"PDB_0000"};
 
 CConstRef<CSeq_id> CSeq_id_PDB_Info::GetPackedSeqId(TPacked /*packed*/, TVariant variant) const
 {
@@ -3311,8 +3312,12 @@ CConstRef<CSeq_id> CSeq_id_PDB_Info::GetPackedSeqId(TPacked /*packed*/, TVariant
     if ( variant & (TVariant(1)<<kNoChain_idOffset) ) {
         pdb_id.ResetChain_id();
     }
+    if ( variant & (TVariant(1)<<kToLongMolOffset) ) {
+        pdb_id.SetMol().Set(kStandardLongMolPrefix+pdb_id.GetMol().Get());
+    }
     variant &= ~((TVariant(1)<<kNoChainOffset) |
-                 (TVariant(1)<<kNoChain_idOffset));
+                 (TVariant(1)<<kNoChain_idOffset)|
+                 (TVariant(1)<<kToLongMolOffset));
     const TVariant kMolLowerCaseMask =
         (TVariant(1) << (kMolLowerCaseOffset+kMolLowerCaseBits)) -
         (TVariant(1) << (kMolLowerCaseOffset));
@@ -3320,7 +3325,7 @@ CConstRef<CSeq_id> CSeq_id_PDB_Info::GetPackedSeqId(TPacked /*packed*/, TVariant
         string& mol = pdb_id.SetMol().Set();
         for ( int i = 0; i < kMolLowerCaseBits; ++i ) {
             if ( variant & (TVariant(1) << (kMolLowerCaseOffset+i)) ) {
-                mol[i+1] = tolower(mol[i+1]);
+                mol[i] = tolower(mol[i]);
             }
         }
         variant &= ~kMolLowerCaseMask;
@@ -3430,23 +3435,45 @@ pair<CConstRef<CSeq_id>, CSeq_id_Info::TVariant> CSeq_id_PDB_Info::Normalize(con
         pdb_id.IsSetChain() || (pdb_id.IsSetChain_id() && pdb_id.GetChain_id().size() == 1);
     bool normal_has_chain_id =
         pdb_id.IsSetChain_id() || pdb_id.IsSetChain();
-    bool need_upcase = !NStr::IsUpper(pdb_id.GetMol().Get());
+    bool need_upcase = false;
+    bool has_standard_long_prefix;
+    {{
+        const string& mol = pdb_id.GetMol().Get();
+        has_standard_long_prefix = mol.size() >= kStandardLongMolPrefix.size();
+        for ( size_t i = 0; i < kMolLowerCaseBits && i < mol.size(); ++i ) {
+            char c = mol[i];
+            if ( islower(c) ) {
+                need_upcase = true;
+            }
+            if ( i < kStandardLongMolPrefix.size() && toupper(c) != kStandardLongMolPrefix[i] ) {
+                has_standard_long_prefix = false;
+            }
+        }
+    }}
     if ( ret.second ||
          need_upcase ||
+         has_standard_long_prefix ||
          pdb_id.IsSetChain() != normal_has_chain ||
          pdb_id.IsSetChain_id() != normal_has_chain_id ) {
         // create normalized PDB id
         CRef<CSeq_id> new_seq_id(new CSeq_id());
         CPDB_seq_id& new_pdb_id = new_seq_id->SetPdb();
         new_pdb_id.SetMol(pdb_id.GetMol());
-        if ( need_upcase ) {
+        if ( need_upcase || has_standard_long_prefix ) {
             string& mol = new_pdb_id.SetMol().Set();
-            for ( int i = 0; i < kMolLowerCaseBits && size_t(i+1) < mol.size(); ++i ) {
-                char c = mol[i+1];
-                if ( islower(c) ) {
-                    mol[i+1] = toupper(c);
-                    ret.second |= TVariant(1) << (kMolLowerCaseOffset + i);
+            if ( need_upcase ) {
+                for ( int i = 0; i < kMolLowerCaseBits && size_t(i) < mol.size(); ++i ) {
+                    char c = mol[i];
+                    if ( islower(c) ) {
+                        mol[i] = toupper(c);
+                        ret.second |= TVariant(1) << (kMolLowerCaseOffset + i);
+                    }
                 }
+            }
+            if ( has_standard_long_prefix ) {
+                _ASSERT(NStr::StartsWith(mol, kStandardLongMolPrefix));
+                mol = mol.substr(kStandardLongMolPrefix.size());
+                ret.second |= TVariant(1) << kToLongMolOffset;
             }
         }
         if ( normal_has_chain_id ) {
