@@ -139,4 +139,3 @@ END_NCBI_SCOPE
 
 
 #endif // OBJECTS_SEQLOC_PDB_SEQ_ID_HPP
-/* Original file checksum: lines: 85, chars: 2258, CRC32: 8edce8b4 */

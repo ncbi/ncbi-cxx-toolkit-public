@@ -116,5 +116,3 @@ string CPDB_mol_id::Format(const string_view& s, TFormat format)
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
-
-/* Original file checksum: lines: 52, chars: 1679, CRC32: 73d8c325 */
