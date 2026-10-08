@@ -6442,11 +6442,11 @@ OSU<USA-OK>	s	Oklahoma State University, Collection of Vertebrates
 OSUF	s	Oregon State University, Department of Wood Science and Engineering			
 OSUFW	s	Oregon State University, Department of Fisheries and Wildlife Mammal Collection			
 OSUMZ	s	Ohio State University Museum			
-OSUMZ:Amphibian	s	Ohio State University Museum, Amphibian collection	OSUM:Amphibian		
+OSUMZ:AMPH	s	Ohio State University Museum, Amphibian collection	OSUM:Amphibian		
 OSUMZ:Bird	s	Ohio State University Museum, Bird Collection	OSUM:Bird		
 OSUMZ:Fish	s	Ohio State University Museum, Fish collection	OSUM:Fish		
-OSUMZ:Mammal 	c	Ohio State University Museum, Mammal collection			
-OSUMZ:Reptile	s	Ohio State University Museum, Reptile Collection	OSUM:Reptile		
+OSUMZ:Mammal 	s	Ohio State University Museum, Mammal collection			
+OSUMZ:REP	s	Ohio State University Museum, Reptile Collection	OSUM:Reptile		
 OSUO	s	Oregon State University, School of Oceanography			
 OSUS	s	Oklahoma State University			
 OSW	s	State University of New York at Oswego			
