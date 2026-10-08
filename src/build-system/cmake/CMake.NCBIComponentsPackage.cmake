@@ -36,27 +36,38 @@ endforeach()
 
 #############################################################################
 #############################################################################
-
-NCBI_define_Pkgcomponent(NAME OpenSSL PACKAGE OpenSSL)
-
-#############################################################################
-# NCBICRYPT
-NCBI_define_Pkgcomponent(NAME NCBICRYPT PACKAGE ncbicrypt)
-
-#############################################################################
-# BACKWARD, UNWIND
-NCBI_define_Pkgcomponent(NAME BACKWARD PACKAGE Backward)
-list(REMOVE_ITEM NCBI_ALL_COMPONENTS BACKWARD)
-if(NCBI_COMPONENT_BACKWARD_FOUND)
-    set(HAVE_LIBBACKWARD_CPP YES)
-    set(HAVE_BACKWARD_HPP YES)
+# Z
+NCBI_define_Pkgcomponent(NAME Z PACKAGE ZLIB)
+if(NOT NCBI_COMPONENT_Z_FOUND)
+    set(NCBI_COMPONENT_Z_FOUND ${NCBI_COMPONENT_LocalZ_FOUND})
+    set(NCBI_COMPONENT_Z_INCLUDE ${NCBI_COMPONENT_LocalZ_INCLUDE})
+    set(NCBI_COMPONENT_Z_NCBILIB ${NCBI_COMPONENT_LocalZ_NCBILIB})
+    set(HAVE_LIBZ ${NCBI_COMPONENT_Z_FOUND})
 endif()
-NCBI_define_Pkgcomponent(NAME UNWIND PACKAGE libunwind)
-#list(REMOVE_ITEM NCBI_ALL_COMPONENTS UNWIND)
 
-##############################################################################
-# CURL
-NCBI_define_Pkgcomponent(NAME CURL PACKAGE CURL)
+#############################################################################
+# BZ2
+NCBI_define_Pkgcomponent(NAME BZ2 PACKAGE BZip2)
+if(NOT NCBI_COMPONENT_BZ2_FOUND)
+    set(NCBI_COMPONENT_BZ2_FOUND ${NCBI_COMPONENT_LocalBZ2_FOUND})
+    set(NCBI_COMPONENT_BZ2_INCLUDE ${NCBI_COMPONENT_LocalBZ2_INCLUDE})
+    set(NCBI_COMPONENT_BZ2_NCBILIB ${NCBI_COMPONENT_LocalBZ2_NCBILIB})
+    set(HAVE_LIBBZ2 ${NCBI_COMPONENT_BZ2_FOUND})
+endif()
+
+#############################################################################
+# ZSTD
+NCBI_define_Pkgcomponent(NAME ZSTD PACKAGE zstd)
+if(NCBI_COMPONENT_ZSTD_FOUND AND
+    (DEFINED NCBI_COMPONENT_ZSTD_VERSION AND "${NCBI_COMPONENT_ZSTD_VERSION}" VERSION_LESS "1.4"))
+    message("ZSTD: Version requirement not met (required at least v1.4)")
+    set(NCBI_COMPONENT_ZSTD_FOUND NO)
+    set(HAVE_LIBZSTD 0)
+endif()
+
+#############################################################################
+# LibLZMA (xz_utils)
+NCBI_define_Pkgcomponent(NAME LZMA PACKAGE LibLZMA)
 
 #############################################################################
 # Iconv
@@ -86,6 +97,10 @@ if(NOT NCBI_COMPONENT_LMDB_FOUND)
 endif()
 
 #############################################################################
+# LZO
+NCBI_define_Pkgcomponent(NAME LZO PACKAGE lzo)
+
+#############################################################################
 # PCRE
 NCBI_define_Pkgcomponent(NAME PCRE PACKAGE PCRE)
 NCBI_define_Pkgcomponent(NAME PCRE2 PACKAGE PCRE2)
@@ -104,38 +119,27 @@ if(NOT NCBI_COMPONENT_PCRE_FOUND AND NOT NCBI_COMPONENT_PCRE2_FOUND)
 endif()
 
 #############################################################################
-# Z
-NCBI_define_Pkgcomponent(NAME Z PACKAGE ZLIB)
-if(NOT NCBI_COMPONENT_Z_FOUND)
-    set(NCBI_COMPONENT_Z_FOUND ${NCBI_COMPONENT_LocalZ_FOUND})
-    set(NCBI_COMPONENT_Z_INCLUDE ${NCBI_COMPONENT_LocalZ_INCLUDE})
-    set(NCBI_COMPONENT_Z_NCBILIB ${NCBI_COMPONENT_LocalZ_NCBILIB})
-    set(HAVE_LIBZ ${NCBI_COMPONENT_Z_FOUND})
-endif()
+# NCBICRYPT
+NCBI_define_Pkgcomponent(NAME NCBICRYPT PACKAGE ncbicrypt)
 
 #############################################################################
-# BZ2
-NCBI_define_Pkgcomponent(NAME BZ2 PACKAGE BZip2)
-if(NOT NCBI_COMPONENT_BZ2_FOUND)
-    set(NCBI_COMPONENT_BZ2_FOUND ${NCBI_COMPONENT_LocalBZ2_FOUND})
-    set(NCBI_COMPONENT_BZ2_INCLUDE ${NCBI_COMPONENT_LocalBZ2_INCLUDE})
-    set(NCBI_COMPONENT_BZ2_NCBILIB ${NCBI_COMPONENT_LocalBZ2_NCBILIB})
-    set(HAVE_LIBBZ2 ${NCBI_COMPONENT_BZ2_FOUND})
+# BACKWARD, UNWIND
+NCBI_define_Pkgcomponent(NAME BACKWARD PACKAGE Backward)
+list(REMOVE_ITEM NCBI_ALL_COMPONENTS BACKWARD)
+if(NCBI_COMPONENT_BACKWARD_FOUND)
+    set(HAVE_LIBBACKWARD_CPP YES)
+    set(HAVE_BACKWARD_HPP YES)
 endif()
+NCBI_define_Pkgcomponent(NAME UNWIND PACKAGE libunwind)
+#list(REMOVE_ITEM NCBI_ALL_COMPONENTS UNWIND)
 
 #############################################################################
-# LZO
-NCBI_define_Pkgcomponent(NAME LZO PACKAGE lzo)
+# OpenSSL
+NCBI_define_Pkgcomponent(NAME OpenSSL PACKAGE OpenSSL)
 
-#############################################################################
-# ZSTD
-NCBI_define_Pkgcomponent(NAME ZSTD PACKAGE zstd)
-if(NCBI_COMPONENT_ZSTD_FOUND AND
-    (DEFINED NCBI_COMPONENT_ZSTD_VERSION AND "${NCBI_COMPONENT_ZSTD_VERSION}" VERSION_LESS "1.4"))
-    message("ZSTD: Version requirement not met (required at least v1.4)")
-    set(NCBI_COMPONENT_ZSTD_FOUND NO)
-    set(HAVE_LIBZSTD 0)
-endif()
+##############################################################################
+# CURL
+NCBI_define_Pkgcomponent(NAME CURL PACKAGE CURL)
 
 #############################################################################
 # Boost
@@ -242,7 +246,7 @@ NCBI_define_Pkgcomponent(NAME NGHTTP2 PACKAGE libnghttp2)
 if(NOT APPLE)
     NCBI_util_disable_find_use_path()
 endif()
-NCBI_define_Pkgcomponent(NAME PROTOBUF PACKAGE Protobuf)
+NCBI_define_Pkgcomponent(NAME PROTOBUF PACKAGE protobuf)
 if(NOT NCBI_PROTOC_APP)
     if(TARGET protobuf::protoc)
         foreach( _type IN ITEMS "" "_RELEASE" "_DEBUG")
