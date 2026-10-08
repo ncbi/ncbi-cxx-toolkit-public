@@ -706,7 +706,7 @@ NCBI_define_Xcomponent(NAME Abseil INTERFACELIB abseil::abseil
 ##############################################################################
 # GRPC/PROTOBUF
 NCBI_define_Xcomponent(NAME PROTOBUF INTERFACELIB protobuf::protobuf
-    CMAKE_PACKAGE Protobuf CMAKE_LIB libprotobuf
+    CMAKE_PACKAGE protobuf CMAKE_LIB libprotobuf
     PACKAGE Protobuf LIB protobuf CHECK_INCLUDE google/protobuf/stubs/platform_macros.h)
 NCBIcomponent_report(PROTOBUF)
 if(NOT NCBI_PROTOC_APP)
