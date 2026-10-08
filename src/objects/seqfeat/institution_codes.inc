@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed Sep 23 05:33:05 EDT 2026; formally
+/* time_t value corresponding to Thu Oct  8 05:33:04 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1790155985UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1791451984UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -6478,11 +6478,11 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "OSUF\ts\tOregon State University, Department of Wood Science and Engineering\t\t\t",
 "OSUFW\ts\tOregon State University, Department of Fisheries and Wildlife Mammal Collection\t\t\t",
 "OSUMZ\ts\tOhio State University Museum\t\t\t",
-"OSUMZ:Amphibian\ts\tOhio State University Museum, Amphibian collection\tOSUM:Amphibian\t\t",
+"OSUMZ:AMPH\ts\tOhio State University Museum, Amphibian collection\tOSUM:Amphibian\t\t",
 "OSUMZ:Bird\ts\tOhio State University Museum, Bird Collection\tOSUM:Bird\t\t",
 "OSUMZ:Fish\ts\tOhio State University Museum, Fish collection\tOSUM:Fish\t\t",
-"OSUMZ:Mammal \tc\tOhio State University Museum, Mammal collection\t\t\t",
-"OSUMZ:Reptile\ts\tOhio State University Museum, Reptile Collection\tOSUM:Reptile\t\t",
+"OSUMZ:Mammal \ts\tOhio State University Museum, Mammal collection\t\t\t",
+"OSUMZ:REP\ts\tOhio State University Museum, Reptile Collection\tOSUM:Reptile\t\t",
 "OSUO\ts\tOregon State University, School of Oceanography\t\t\t",
 "OSUS\ts\tOklahoma State University\t\t\t",
 "OSW\ts\tState University of New York at Oswego\t\t\t",
