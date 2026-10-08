@@ -6,7 +6,7 @@ import subprocess
 class NCBIToolkitWithConanRecipe(ConanFile):
     name = "ncbi-cxx-toolkit"
     settings = "os", "compiler", "build_type", "arch"
-    generators = "CMakeDeps", "VirtualBuildEnv", "VirtualRunEnv"
+    generators = "CMakeConfigDeps", "VirtualBuildEnv", "VirtualRunEnv"
     options = {
         "with_req": ["ANY"]
     }
