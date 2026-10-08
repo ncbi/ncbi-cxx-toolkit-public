@@ -2523,12 +2523,17 @@ BOOST_AUTO_TEST_CASE(TestPDB)
             "{mol\"4XNU\",chain 65,chain-id \"A\"}",
             "{mol\"4XNU\",chain-id \"A\"}",
             "{mol\"4XNU\",chain 65}",
+            "{mol\"pdb_00004XNU\",chain 65}",
+            "{mol\"PDB_00004xnu\",chain 65}",
             "{mol\"4XNU\",chain 65,rel std {year 2017},chain-id \"A\"}",
             "{mol\"4XNU\",chain 65,rel std {year 2017,month 6,day 2},chain-id \"A\"}",
             "{mol\"4XNU\",chain 65,rel std {year 2017,month 6,day 2,hour 12,minute 22,second 33},chain-id \"A\"}",
         };
         const char* str_ne[] = {
             "{mol\"4XNU\"}",
+            "{mol\"pdb_10004XNU\"}",
+            "{mol\"pdb_00014XNU\"}",
+            "{mol\"pdb_00005XNU\"}",
             "{mol\"4XNU\",chain 66,chain-id \"A\"}",
             "{mol\"4XNU\",chain 65,chain-id \"B\"}",
             "{mol\"4XNV\",chain 65,chain-id \"A\"}",
