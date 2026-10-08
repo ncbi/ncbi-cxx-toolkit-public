@@ -126,11 +126,6 @@ public:
             finish_threads();
     }
 
-    void wait()
-    {
-        finish_threads();
-    }
-
     // start task and return std::future which is used to deliver results
     template<typename _Function, typename...TArgs,
         typename _Token = std::invoke_result_t<_Function, TArgs...>,
@@ -240,6 +235,10 @@ private:
         void join()
         {
             if (m_thread.valid()) {
+                {
+                    std::lock_guard<std::mutex> lock(m_mutex);
+                    m_canceled = true;
+                }
                 m_cv.notify_one();
                 m_thread.wait();
             }
@@ -264,27 +263,28 @@ private:
     private:
         CThreadPoolCore*        m_owner = nullptr;
         std::optional<TWork>    m_work;
+        std::atomic_bool        m_canceled{false};
         std::mutex              m_mutex;
         std::condition_variable m_cv;
         std::future<void>       m_thread;
 
         void x_setwork(TWork&& work)
         {
-            if (m_owner->m_cancelled)
+            if (m_canceled)
                 throw std::runtime_error("Thread pool already cancelled");
 
             if (!m_thread.valid()) {
                 m_owner->m_running_threads++;
-                m_thread = std::async([this]()
+                m_thread = std::async(std::launch::async, [this]()
                 {
                     x_run();
                 });
             }
 
             {
-                std::unique_lock<std::mutex> lock(m_mutex);
+                std::lock_guard<std::mutex> lock(m_mutex);
 
-                if (!m_owner->m_cancelled) {
+                if (! m_canceled) {
                     m_work = std::move(work);
                 }
             }
@@ -293,14 +293,14 @@ private:
 
         void x_run()
         {
-            while(!m_owner->m_cancelled)
+            while(! m_canceled)
             {
                 std::optional<TWork> work;
                 {
                     std::unique_lock<std::mutex> lock(m_mutex);
                     m_cv.wait(lock, [this]()->bool
                     {
-                        return m_work || m_owner->m_cancelled;
+                        return m_work || m_canceled;
                     });
 
                     if (m_work) {

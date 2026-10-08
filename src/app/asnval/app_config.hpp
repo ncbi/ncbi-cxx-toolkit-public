@@ -69,6 +69,7 @@ public:
     unsigned int mNumInstances;
     CValidatorThreadPool* m_thread_pool1 = nullptr;
     CValidatorThreadPool* m_thread_pool2 = nullptr;
+    CValidatorThreadPool* m_writer_thread_pool = nullptr;
 };
 
 #endif

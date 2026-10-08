@@ -775,7 +775,7 @@ void CAsnvalThreadState::ValidateBlobAsync(const string& loader_name, edit::CHug
 {
     auto& reader = process.GetReader();
 
-    auto writer_task = mAppConfig.m_thread_pool1->launch(
+    auto writer_task = mAppConfig.m_writer_thread_pool->launch(
         [&msgHandler] {
             if(msgHandler.InvokeWrite())
                 {
@@ -784,6 +784,7 @@ void CAsnvalThreadState::ValidateBlobAsync(const string& loader_name, edit::CHug
             return true;
         }
     );
+
 
     CMessageQueue<std::future<CThreadExitData>> val_queue{ mAppConfig.mNumInstances };
     // start a loop in a separate thread
