@@ -49,8 +49,8 @@ When BLAST+ applications are invoked with the `-remote` command line option, the
 
 On initial execution you will see this privacy notice and be given the choice to take part:
 
-* *Installers* display the notice on screen and ask for your permission to collect usage data interactively.
-* *Command-line binaries* print the data collection notice to standard error and continue.
+- *Installers* display the notice on screen and ask for your permission to collect usage data interactively.
+- *Command-line binaries* print the data collection notice to standard error and continue.
 
 ## How do I opt in?
 
@@ -134,8 +134,8 @@ Pass whichever variable you need with `-e` . The same variables enable or disabl
 BLAST+ checks your preference in this order and stops at the first one it finds:
 
 1. *`DO_NOT_TRACK`* : if set to anything other than `0`/`FALSE`/`NO`/`OFF`, disables sharing. This one only ever turns sharing *off*.
-2. *`BLAST_USAGE_REPORT`* and *`NCBI_USAGE_REPORT_ENABLED`* : two-way switches; a value of `1,` `ON`, `TRUE`, `YES` (case-insensitive) turns sharing *on*, a value of `0`, `FALSE`, `NO`, or `OFF` (case-insensitive) turns it *off*.
-3. *Configuration file* : your saved preference. It lives in a standard NCBI configuration file (for a single user, `${HOME}/.ncbirc` under a `[BLAST]` section); machine-wide defaults can be set in the system configuration (`/etc/ncbirc.ini`). Settings from these files are layered rather than replaced, so a per-user choice and site-wide defaults can coexist. Let the `blast_usage_report` utility manage this for you rather than editing by hand.
+1. *`BLAST_USAGE_REPORT`* and *`NCBI_USAGE_REPORT_ENABLED`* : two-way switches; a value of `1,` `ON`, `TRUE`, `YES` (case-insensitive) turns sharing *on*, a value of `0`, `FALSE`, `NO`, or `OFF` (case-insensitive) turns it *off*.
+1. *Configuration file* : your saved preference. It lives in a standard NCBI configuration file (for a single user, `${HOME}/.ncbirc` under a `[BLAST]` section); machine-wide defaults can be set in the system configuration (`/etc/ncbirc.ini`). Settings from these files are layered rather than replaced, so a per-user choice and site-wide defaults can coexist. Let the `blast_usage_report` utility manage this for you rather than editing by hand.
 
 Because the environment variables come first, they win over a stored preference, either to enable or to disable.
 
@@ -143,12 +143,12 @@ Because the environment variables come first, they win over a stored preference,
 
 If the data BLAST+ collects changes, you will be able to find it documented in these places:
 
-* *BLAST+ release notes* : [https://www.ncbi.nlm.nih.gov/books/NBK131777/](https://www.ncbi.nlm.nih.gov/books/NBK131777/)
-* *`[BLAST_PRIVACY.md](http://BLAST_PRIVACY.md)`* in the source tree : [https://github.com/ncbi/ncbi-cxx-toolkit-public/tree/main/include/algo/blast/PRIVACY.md](https://github.com/ncbi/ncbi-cxx-toolkit-public/tree/main/include/algo/blast/PRIVACY.md)
-* *BLAST+ User Manual* : [https://www.ncbi.nlm.nih.gov/books/NBK569851/](https://www.ncbi.nlm.nih.gov/books/NBK569851/)
+- *BLAST+ release notes*: [https://www.ncbi.nlm.nih.gov/books/NBK131777/](https://www.ncbi.nlm.nih.gov/books/NBK131777/)
+- *BLAST_PRIVACY.md* in the source tree: [https://github.com/ncbi/ncbi-cxx-toolkit-public/tree/main/include/algo/blast/PRIVACY.md](https://github.com/ncbi/ncbi-cxx-toolkit-public/tree/main/include/algo/blast/PRIVACY.md)
+- *BLAST+ User Manual*: [https://www.ncbi.nlm.nih.gov/books/NBK569851/](https://www.ncbi.nlm.nih.gov/books/NBK569851/)
 
 Updated information will also reference the applicable NLM privacy policies.
 
 ## More information
 
-*NLM Web Policies:* [https://www.nlm.nih.gov/web\_policies.html](https://www.nlm.nih.gov/web_policies.html)
+*NLM Web Policies*: [https://www.nlm.nih.gov/web\_policies.html](https://www.nlm.nih.gov/web_policies.html)
