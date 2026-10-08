@@ -78,7 +78,7 @@ int CPDB_mol_id::Compare(const CPDB_mol_id& id) const
     }
 }
 
-string CPDB_mol_id::Format(const string_view& s, TFormat format)
+string CPDB_mol_id::Format(string_view s, TFormat format)
 {
     string_view result = s;
     switch (format) {

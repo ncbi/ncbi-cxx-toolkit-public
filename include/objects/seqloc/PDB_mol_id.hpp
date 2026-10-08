@@ -82,10 +82,10 @@ public:
         { return Compare(id) == 0; }
     int Compare(const CPDB_mol_id& id) const;
 
-    static string Format(const string_view& s, TFormat format);
+    static string Format(string_view s, TFormat format);
     string Format(TFormat format) const
         { return Format(Get(), format); }
-    static TFormat GetFormat(const string_view& s)
+    static TFormat GetFormat(string_view s)
         { return s.size() == 4 ? ePDB_Legacy : ePDB_Extended; }
     TFormat GetFormat() const
         { return GetFormat(Get()); }
