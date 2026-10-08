@@ -100,6 +100,7 @@ private:
     TMainPoolEx m_queue{8};
     CValidatorThreadPool m_thread_pool1{4};
     CValidatorThreadPool m_thread_pool2{8};
+    CValidatorThreadPool m_writer_thread_pool{4};
 
     unique_ptr<CAppConfig> mAppConfig;
     unique_ptr<edit::CTaxonomyUpdater> mTaxUpdater;
@@ -570,6 +571,7 @@ void CAsnvalApp::Setup(const CArgs& args)
     mAppConfig.reset(new CAppConfig(args, GetConfig()));
     mAppConfig->m_thread_pool1 = &m_thread_pool1;
     mAppConfig->m_thread_pool2 = &m_thread_pool2;
+    mAppConfig->m_writer_thread_pool = &m_writer_thread_pool;
 
     // Create object manager
     CDataLoadersUtil::SetupObjectManager(args, *CObjectManager::GetInstance(),
