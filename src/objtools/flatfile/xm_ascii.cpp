@@ -1174,7 +1174,7 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
         NCBI_THROW(CException, eUnknown, "Unable to load entry");
     }
 
-    XMLGetDivision(entry, ibp);
+    XMLGetDivision(entry->c_str(), ibp);
 
     if (StringEqu(ibp->division, "TSA")) {
         if (ibp->tsa_allowed == false)
@@ -1185,7 +1185,6 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
     XMLCheckContigEverywhere(ibp, mParser.source);
     if (ibp->drop) {
         FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
-        MemFree(entry);
         mTotals.Dropped++;
         // continue;
         mParser.curindx++;
@@ -1200,14 +1199,13 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
 
     unique_ptr<DataBlk> dbp(new DataBlk());
     dbp->SetEntryData(ebp);
-    dbp->mBuf.ptr = entry;
-    dbp->mBuf.len = StringLen(entry);
+    dbp->mBuf.ptr = entry->data();
+    dbp->mBuf.len = entry->size();
 
     if (! XMLGetInst(&mParser, *dbp, ibp->is_prot ? GetProtConvTable() : GetDNAConvTable(), *bioseq)) {
         ibp->drop = true;
         FtaErrPost(SEV_REJECT, ERR_SEQUENCE_BadData, "Bad sequence data. Entry dropped.");
         FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
-        MemFree(entry);
         mTotals.Dropped++;
         mParser.curindx++;
         return result;
@@ -1221,7 +1219,6 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
 
     if (! bioseq->IsSetAnnot() && ibp->drop) {
         FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
-        MemFree(entry);
         mTotals.Dropped++;
         mParser.curindx++;
         return result;
@@ -1231,7 +1228,6 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
 
     if (ibp->drop) {
         FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
-        MemFree(entry);
         mTotals.Dropped++;
         mParser.curindx++;
         return result;
@@ -1262,7 +1258,6 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
         ibp->drop = true;
         FtaErrPost(SEV_ERROR, ERR_DATE_IllegalDate, "Illegal create date. Entry dropped.");
         FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
-        MemFree(entry);
         mTotals.Dropped++;
         mParser.curindx++;
         return result;
@@ -1282,7 +1277,6 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
             ibp->drop = true;
             FtaErrPost(SEV_ERROR, ERR_QSCORE_FailedToParse, "Error while parsing QScore. Entry dropped.");
             FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
-            MemFree(entry);
             mTotals.Dropped++;
             mParser.curindx++;
             return result;
@@ -1305,7 +1299,6 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
             ibp->drop = true;
             FtaErrPost(SEV_ERROR, ERR_REFERENCE_No_references, "No references. Entry dropped.");
             FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
-            MemFree(entry);
             mTotals.Dropped++;
             mParser.curindx++;
             return result;
@@ -1323,7 +1316,6 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
     if (ebp->seq_entry.Empty()) {
         FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
         mTotals.Dropped++;
-        MemFree(entry);
         GetScope().ResetDataAndHistory();
         mParser.curindx++;
         return result;
@@ -1394,7 +1386,6 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
 
     FtaErrPost(SEV_INFO, ERR_ENTRY_Parsed, "OK - entry parsed successfully: \"{}|{}\".", ibp->locusname, ibp->acnum);
 
-    MemFree(entry);
     GetScope().ResetDataAndHistory();
 
     mParser.curindx++;
