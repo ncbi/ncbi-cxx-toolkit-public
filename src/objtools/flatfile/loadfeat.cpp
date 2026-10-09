@@ -1495,18 +1495,16 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
             p += 9;
             continue;
         }
-        if (StringEquN(p + 9, " RNA", 4)) {
-            p += 13;
-            continue;
-        }
-        len = p - qval + 14;
         p += 9;
+        if (ConsumeStr(p, " RNA"))
+            continue;
+        len = p - qval;
         string s(qval, p);
         s.append(" RNA");
         s.append(p);
         MemFree(qval);
         qval = StringSave(s);
-        p    = qval + len;
+        p    = qval + len + 5;
     }
 
     for (p = qval;;) {
@@ -1646,10 +1644,7 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const string& 
     for (p = end; *p == ' ' || *p == ')' || *p == '(';)
         p++;
     q = p;
-    if (StringEquN(p, "F MET", 5))
-        p += 5;
-    else if (StringEquN(p, "F MT", 4))
-        p += 4;
+    ConsumeStr(p, "F MET") || ConsumeStr(p, "F MT");
     while (IS_UPPER(*p))
         p++;
     if (p > q) {
@@ -1769,8 +1764,8 @@ static CRef<CTrna_ext> fta_get_trna_from_comment(const string& comment, unsigned
     }
     ShrinkSpaces(comm);
 
-    if (StringEquN(comm, "CODON RECOGNIZED ", 17)) {
-        p = comm + 17;
+    p = comm;
+    if (ConsumeStr(p, "CODON RECOGNIZED ")) {
         q = StringChr(p, ' ');
         if (q && StringEqu(q + 1, "PUTATIVE"))
             *q = '\0';
@@ -1779,14 +1774,14 @@ static CRef<CTrna_ext> fta_get_trna_from_comment(const string& comment, unsigned
             *remove = q ? 2 : 1;
             return ret;
         }
-    }
-
-    if (StringEquN(comm, "PUTATIVE ", 9) && comm[10] == ' ' &&
-        comm[14] == ' ' && StringEquN(&comm[15], "TRNA", 4)) {
-        ret->SetAa().SetNcbieaa(fta_get_aa_from_symbol(comm[9]));
-        if (get_aa_from_trna(*ret) != 0) {
-            MemFree(comm);
-            return ret;
+    } else if (ConsumeStr(p, "PUTATIVE ")) {
+        if (p[1] == ' ' &&
+            p[5] == ' ' && StringEquN(&p[6], "TRNA", 4)) {
+            ret->SetAa().SetNcbieaa(fta_get_aa_from_symbol(p[0]));
+            if (get_aa_from_trna(*ret) != 0) {
+                MemFree(comm);
+                return ret;
+            }
         }
     }
 
@@ -5525,11 +5520,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
         if (tRNA != string_view::npos) {
             for (p = offset + tRNA + 4; *p == ' ' || *p == '\t';)
                 p++;
-            if (*p == '\n') {
-                p++;
-                if (StringEquN(p, "DE   ", 5))
-                    p += 5;
-            }
+            ConsumeChar(p, '\n') && ConsumeStr(p, "DE   ");
             if (NStr::StartsWith(p, "Synthetase"sv, NStr::eNocase))
                 return;
         }

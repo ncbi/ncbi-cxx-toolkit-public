@@ -162,13 +162,12 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
     if (! gi)
         return;
 
-    if (! StringEquN(p, "GI:", 3)) {
+    if (! ConsumeStr(p, "GI:")) {
         FtaErrPost(SEV_FATAL, ERR_VERSION_IncorrectGIInVersion, "Incorrect GI entry in VERSION line: \"{}\".", line);
         entry->drop = true;
         return;
     }
-    p += 3;
-    for (q = p; *q >= '0' && *q <= '9';)
+    for (q = p; IS_DIGIT(*q);)
         q++;
     if (*q != '\0') {
         FtaErrPost(SEV_FATAL, ERR_VERSION_NonDigitGI, "Incorrect GI number in VERSION line: \"{}\".", line);

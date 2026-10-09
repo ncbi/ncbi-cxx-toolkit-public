@@ -649,15 +649,15 @@ static bool GetCitSubmit(ParRefBlkPtr prbp, CCit_sub& sub)
 
     for (s = bptr; *s != ')' && *s != '\0';)
         s++;
+    ++s;
 
 #ifdef DIFF
 
-    if (StringEquN(s + 1, " TO ", 4))
-        s += 4;
+    ConsumeString(s, " TO ");
 
 #endif
 
-    sub.SetImp().SetPub().SetStr(NStr::Sanitize(s + 1));
+    sub.SetImp().SetPub().SetStr(NStr::Sanitize(s));
     sub.SetMedium(CCit_sub::eMedium_other);
 
     return true;
