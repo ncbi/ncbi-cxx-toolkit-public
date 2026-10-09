@@ -633,6 +633,10 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkList& sfbl, Int
                 variety = val_ptr;
                 continue;
             }
+            if (qual_str == "chromosome") {
+                sfbp->genome = CBioSource::eGenome_chromosome;
+                continue;
+            }
             if (qual_str == "submitter_seqid") {
                 if (sfbp->submitter_seqid) {
                     MemFree(sfbp->submitter_seqid);
