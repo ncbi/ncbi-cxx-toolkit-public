@@ -2038,12 +2038,9 @@ static void CheckDivCode(TEntryList& seq_entries, ParserPtr pp)
     for (auto& entry : seq_entries) {
         for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             ispat = false;
-            if(bioseq->IsSetId())
-            {
-                for(const auto& id : bioseq->GetId())
-                {
-                    if(id->IsPatent())
-                    {
+            if(bioseq->IsSetId()) {
+                for(const auto& id : bioseq->GetId()) {
+                    if(id->IsPatent()) {
                         ispat = true;
                         break;
                     }
@@ -2075,14 +2072,12 @@ static void CheckDivCode(TEntryList& seq_entries, ParserPtr pp)
                     NStr::EqualNocase(ibp->division, "TSA"))
                     continue;
 
-                if (! gb_block->IsSetDiv() && (!ispat ||
-                   ! NStr::EqualCase(ibp->division, "PAT")) ) {
+                if (! gb_block->IsSetDiv() && (! ispat ||
+                                               ! NStr::EqualCase(ibp->division, "PAT"))) {
                     FtaErrPost(SEV_WARNING, ERR_DIVISION_GBBlockDivision, "input division code is preserved in GBBlock");
                     gb_block->SetDiv(ibp->division);
-                }
-                else if(gb_block->IsSetDiv() && ispat &&
-                        NStr::EqualCase(gb_block->GetDiv(), "PAT"))
-                {
+                } else if (gb_block->IsSetDiv() && ispat &&
+                           NStr::EqualCase(gb_block->GetDiv(), "PAT")) {
                     gb_block->ResetDiv();
                 }
             }
@@ -2129,40 +2124,36 @@ void EntryCheckDivCode(TEntryList& seq_entries, ParserPtr pp)
 /**********************************************************/
 void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int2 ori, bool cancelled)
 {
-    const char** b;
-    char*        tmp;
-    char*        p;
-    char*        q;
-    char*        r;
-    Int2         count;
-
     const DataBlk* dbp = TrackNodeType(entry, what);
-    if (! dbp || ! dbp->mBuf.ptr || dbp->mBuf.len < 1)
-        p = nullptr;
-    else {
-        tmp = StringSave(string_view(dbp->mBuf.ptr, dbp->mBuf.len - 1));
-        for (q = tmp; *q != '\0'; q++) {
+    bool in_progress = false;
+    if (dbp && dbp->mBuf.ptr && dbp->mBuf.len > 0) {
+        char* tmp = StringSave(string_view(dbp->mBuf.ptr, dbp->mBuf.len - 1));
+        for (char* q = tmp; *q != '\0'; q++) {
             if (*q == '\n' && fta_StartsWith(q + 1, "DE   "sv))
                 fta_StringCpy(q, q + 5);
             else if (*q == '\n' || *q == '\t')
                 *q = ' ';
         }
-        for (q = tmp, p = tmp; *p != '\0'; p++) {
+        char* q = tmp;
+        for (const char* p = tmp; *p != '\0'; p++) {
             if (*p == ' ' && p[1] == ' ')
                 continue;
             *q++ = *p;
         }
         *q = '\0';
-        for (b = magic_phrases, p = nullptr; *b && ! p; b++)
-            p = StringStr(tmp, *b);
+        for (const char** b = magic_phrases; *b; b++)
+            if (StringStr(tmp, *b)) {
+                in_progress = true;
+                break;
+            }
         MemFree(tmp);
     }
 
     if ((tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1 ||
          tech == CMolInfo::eTech_htgs_2) &&
-        ! p && ! cancelled) {
+        ! in_progress && ! cancelled) {
         FtaErrPost(SEV_WARNING, ERR_DEFINITION_HTGNotInProgress, "This Phase 0, 1 or 2 HTGS sequence is lacking an indication that sequencing is still in progress on its definition/description line.");
-    } else if (tech == CMolInfo::eTech_htgs_3 && p) {
+    } else if (tech == CMolInfo::eTech_htgs_3 && in_progress) {
         FtaErrPost(SEV_ERROR, ERR_DEFINITION_HTGShouldBeComplete, "This complete Phase 3 sequence has a definition/description line indicating that its sequencing is still in progress.");
     }
 
@@ -2170,76 +2161,72 @@ void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int
         return;
 
     dbp = TrackNodeType(entry, ori);
-    if (! dbp || ! dbp->mBuf.ptr || dbp->mBuf.len < 1)
-        return;
-    r = new char[dbp->mBuf.len + 1];
-    if (! r)
-        return;
-    StringNCpy(r, dbp->mBuf.ptr, dbp->mBuf.len);
-    r[dbp->mBuf.len] = '\0';
-    for (p = r, q = r; *p != '\0'; p++)
-        if (IS_LOWER(*p))
-            *q++ = *p;
-    *q = '\0';
+    if (dbp && dbp->mBuf.ptr && dbp->mBuf.len > 0) {
+        char* r = StringSave(string_view(dbp->mBuf.ptr, dbp->mBuf.len));
+        if (! r)
+            return;
 
-    for (count = 0, p = r; *p != '\0'; p++) {
-        if (*p != 'n')
-            count = 0;
-        else if (++count > 10) {
-            FtaErrPost(SEV_WARNING, ERR_SEQUENCE_UnknownBaseHTG3, "This complete Phase 3 HTGS sequence has one or more runs of 10 contiguous unknown ('n') bases.");
-            break;
+        char* q = r;
+        for (const char* p = r; *p != '\0'; p++)
+            if (IS_LOWER(*p))
+                *q++ = *p;
+        *q = '\0';
+
+        unsigned count = 0;
+        for (const char* p = r; *p != '\0'; p++) {
+            if (*p != 'n')
+                count = 0;
+            else if (++count > 10) {
+                FtaErrPost(SEV_WARNING, ERR_SEQUENCE_UnknownBaseHTG3, "This complete Phase 3 HTGS sequence has one or more runs of 10 contiguous unknown ('n') bases.");
+                break;
+            }
         }
+        MemFree(r);
     }
-    delete[] r;
 }
 
 /**********************************************************/
 void XMLDefVsHTGKeywords(CMolInfo::TTech tech, const char* entry, const TXmlIndexList& xil, bool cancelled)
 {
-    const char** b;
-    char*        tmp;
-    char*        p;
-    char*        q;
-    char*        r;
-    Int2         count;
-
     if (! entry || xil.empty())
         return;
-
-    tmp = StringSave(XMLFindTagValue(entry, xil, INSDSEQ_DEFINITION));
-    if (! tmp)
-        p = nullptr;
-    else {
-        for (q = tmp; *q != '\0'; q++)
+    bool in_progress = false;
+    if (char* tmp = StringSave(XMLFindTagValue(entry, xil, INSDSEQ_DEFINITION))) {
+        for (char* q = tmp; *q != '\0'; q++)
             if (*q == '\n' || *q == '\t')
                 *q = ' ';
-        for (q = tmp, p = tmp; *p != '\0'; p++) {
+        char* q = tmp;
+        for (const char* p = tmp; *p != '\0'; p++) {
             if (*p == ' ' && p[1] == ' ')
                 continue;
             *q++ = *p;
         }
         *q = '\0';
-        for (b = magic_phrases, p = nullptr; *b && ! p; b++)
-            p = StringStr(tmp, *b);
+        for (const char** b = magic_phrases; *b; b++)
+            if (StringStr(tmp, *b)) {
+                in_progress = true;
+                break;
+            }
         MemFree(tmp);
     }
 
     if ((tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1 ||
          tech == CMolInfo::eTech_htgs_2) &&
-        ! p && ! cancelled) {
+        ! in_progress && ! cancelled) {
         FtaErrPost(SEV_WARNING, ERR_DEFINITION_HTGNotInProgress, "This Phase 0, 1 or 2 HTGS sequence is lacking an indication that sequencing is still in progress on its definition/description line.");
-    } else if (tech == CMolInfo::eTech_htgs_3 && p) {
+    } else if (tech == CMolInfo::eTech_htgs_3 && in_progress) {
         FtaErrPost(SEV_ERROR, ERR_DEFINITION_HTGShouldBeComplete, "This complete Phase 3 sequence has a definition/description line indicating that its sequencing is still in progress.");
     }
 
     if (tech != CMolInfo::eTech_htgs_3)
         return;
 
-    r = StringSave(XMLFindTagValue(entry, xil, INSDSEQ_SEQUENCE));
+    char* r = StringSave(XMLFindTagValue(entry, xil, INSDSEQ_SEQUENCE));
     if (! r)
         return;
 
-    for (count = 0, p = r; *p != '\0'; p++) {
+    unsigned count = 0;
+    for (const char* p = r; *p != '\0'; p++) {
         if (*p != 'n')
             count = 0;
         else if (++count > 10) {
