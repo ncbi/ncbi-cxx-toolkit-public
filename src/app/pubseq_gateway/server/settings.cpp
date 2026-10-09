@@ -139,12 +139,35 @@ const bool              kDefaultSeqIdResolveAlways = false;
 const bool              kDefaultCDDProcessorsEnabled = true;
 const string            kDefaultCDDProcessorHealthCommand = "/ID/get_na?seq_id=6&names=CDD";
 const double            kDefaultCDDHealthTimeoutSec = 0.0;
+const unsigned int      kDefaultCDDMaxConn = 64;
+const double            kDefaultCDDBackendTimeout = 5.0;
+const int               kDefaultCDDErrorRate = 0;
 const bool              kDefaultWGSProcessorsEnabled = true;
 const string            kDefaultWGSProcessorHealthCommand = "/ID/resolve?seq_id=EAB1000000&disable_processor=cassandra";
 const double            kDefaultWGSHealthTimeoutSec = 0.0;
+const unsigned int      kDefaultWGSMaxConn = 64;
+const size_t            kDefaultVdbCacheSize = 100;
+const unsigned int      kDefaultIndexUpdateTime = 600;
+const unsigned int      kDefaultFileReopenTime = 3600;
+const unsigned int      kDefaultFileRecheckTime = 600;
+const psg::wgs::SWGSProcessor_Config::ECompressData
+                        kDefaultCompressData = psg::wgs::SWGSProcessor_Config::eCompressData_some;
+const uint64_t          kDefaultCassProcTimeoutMs = 1000;
+const int               kDefaultWGSErrorRate = 0;
 const bool              kDefaultSNPProcessorsEnabled = true;
 const string            kDefaultSNPProcessorHealthCommand = "/ID/get_na?seq_id_type=12&seq_id=568801899&seq_ids=ref|NT_187403.1&names=SNP";
 const double            kDefaultSNPHealthTimeoutSec = 0.0;
+const unsigned int      kDefaultSNPMaxConn = 64;
+const size_t            kDefaultSNPGCCacheSize = 10;
+const size_t            kDefaultSNPMissingGCSize = 10000;
+const unsigned int      kDefaultSNPFileReopenTime = 3600;
+const unsigned int      kDefaultSNPFileRecheckTime = 600;
+const unsigned int      kDefaultSNPFileOpenRetry = 3;
+const bool              kDefaultSNPSplit = true;
+const string            kDefaultSNPAnnotName = "";
+const bool              kDefaultSNPAddPTIS = true;
+const bool              kDefaultSNPAllowNonRefSeq = false;
+const int               kDefaultSNPErrorRate = 0;
 const size_t            kDefaultMyNCBIOKCacheSize = 10000;
 const size_t            kDefaultMyNCBINotFoundCacheSize = 10000;
 const size_t            kDefaultMyNCBINotFoundCacheExpirationSec = 3600;
@@ -229,18 +252,41 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_CDDProcessorThrottleThreshold(0),
     m_CDDProcessorThrottleByIp(0),
     m_CDDProcessorLogTimingThreshold(kDefaultLogTimingThreshold),
+    m_CDDProcessorMaxConn(kDefaultCDDMaxConn),
+    m_CDDProcessorBackendTimeout(kDefaultCDDBackendTimeout),
+    m_CDDProcessorErrorRate(kDefaultCDDErrorRate),
     m_WGSProcessorsEnabled(kDefaultWGSProcessorsEnabled),
     m_WGSProcessorHealthCommand(kDefaultWGSProcessorHealthCommand),
     m_WGSHealthTimeoutSec(kDefaultWGSHealthTimeoutSec),
     m_WGSProcessorThrottleThreshold(0),
     m_WGSProcessorThrottleByIp(0),
     m_WGSProcessorLogTimingThreshold(kDefaultLogTimingThreshold),
+    m_WGSProcessorMaxConn(kDefaultWGSMaxConn),
+    m_WGSProcessorVdbCacheSize(kDefaultVdbCacheSize),
+    m_WGSProcessorIndexUpdateTime(kDefaultIndexUpdateTime),
+    m_WGSProcessorFileReopenTime(kDefaultFileReopenTime),
+    m_WGSProcessorFileRecheckTime(kDefaultFileRecheckTime),
+    m_WGSProcessorCompressData(kDefaultCompressData),
+    m_WGSProcessorCassProcTimeoutMs(kDefaultCassProcTimeoutMs),
+    m_WGSProcessorErrorRate(kDefaultWGSErrorRate),
     m_SNPProcessorsEnabled(kDefaultSNPProcessorsEnabled),
     m_SNPProcessorHealthCommand(kDefaultSNPProcessorHealthCommand),
     m_SNPHealthTimeoutSec(kDefaultSNPHealthTimeoutSec),
     m_SNPProcessorThrottleThreshold(0),
     m_SNPProcessorThrottleByIp(0),
     m_SNPProcessorLogTimingThreshold(kDefaultLogTimingThreshold),
+    m_SNPProcessorMaxConn(kDefaultSNPMaxConn),
+    m_SNPGCCacheSize(kDefaultSNPGCCacheSize),
+    m_SNPMissingGCSize(kDefaultSNPMissingGCSize),
+    m_SNPProcessorFileReopenTime(kDefaultSNPFileReopenTime),
+    m_SNPProcessorFileRecheckTime(kDefaultSNPFileRecheckTime),
+    m_SNPProcessorFileOpenRetry(kDefaultSNPFileOpenRetry),
+    m_SNPProcessorSplit(kDefaultSNPSplit),
+    m_SNPProcessorAnnotName(kDefaultSNPAnnotName),
+    m_SNPProcessorAddPTIS(kDefaultSNPAddPTIS),
+    m_SNPProcessorAllowNonRefSeq(kDefaultSNPAllowNonRefSeq),
+    m_SNPProcessorScaleLimit(objects::CSeq_id::eSNPScaleLimit_Default),
+    m_SNPProcessorErrorRate(kDefaultSNPErrorRate),
     m_MyNCBIOKCacheSize(kDefaultMyNCBIOKCacheSize),
     m_MyNCBINotFoundCacheSize(kDefaultMyNCBINotFoundCacheSize),
     m_MyNCBINotFoundCacheExpirationSec(kDefaultMyNCBINotFoundCacheExpirationSec),
@@ -758,6 +804,32 @@ void SPubseqGatewaySettings::x_ReadCDDProcessorSection(const CNcbiRegistry &   r
                                     m_CDDProcessorThrottleByIp);
     x_ReadProcessorLogTimingThreshold(registry, "CDD",
                                       m_CDDProcessorLogTimingThreshold);
+
+    int     int_val = registry.GetInt(kCDDProcessorSection, "maxconn",
+                                      kDefaultCDDMaxConn);
+    if (int_val <= 0) {
+        m_CriticalErrors.push_back(
+            "The CDD maxconn value is out of range. It must be > 0. "
+            "Received: " + to_string(int_val) + ". Resetting to "
+            "default: " + to_string(kDefaultCDDMaxConn));
+
+        int_val = kDefaultCDDMaxConn;
+    }
+    m_CDDProcessorMaxConn = int_val;
+
+    m_CDDProcessorBackendTimeout = registry.GetDouble(kCDDProcessorSection,
+                                                      "backend_timeout",
+                                                      kDefaultCDDBackendTimeout);
+    if (m_CDDProcessorBackendTimeout <= 0.0) {
+        m_CriticalErrors.push_back(
+            "The CDD backend_timeout value is out of range. It must be > 0. "
+            "Received: " + to_string(m_CDDProcessorBackendTimeout) + ". Resetting to "
+            "default: " + to_string(kDefaultCDDBackendTimeout));
+        m_CDDProcessorBackendTimeout = kDefaultCDDBackendTimeout;
+    }
+
+    m_CDDProcessorErrorRate = registry.GetInt(kCDDProcessorSection, "error_rate",
+                                              kDefaultCDDErrorRate);
 }
 
 
@@ -792,6 +864,97 @@ void SPubseqGatewaySettings::x_ReadWGSProcessorSection(const CNcbiRegistry &   r
                                     m_WGSProcessorThrottleByIp);
     x_ReadProcessorLogTimingThreshold(registry, "WGS",
                                       m_WGSProcessorLogTimingThreshold);
+
+    int     int_val = registry.GetInt(kWGSProcessorSection, "maxconn",
+                                      kDefaultWGSMaxConn);
+    if (int_val <= 0) {
+        m_CriticalErrors.push_back(
+            "The WGS maxconn value is out of range. It must be > 0. "
+            "Received: " + to_string(int_val) + ". Resetting to "
+            "default: " + to_string(kDefaultWGSMaxConn));
+
+        int_val = kDefaultWGSMaxConn;
+    }
+    m_WGSProcessorMaxConn = int_val;
+
+    int_val = registry.GetInt(kWGSProcessorSection, "vdb_cache_size",
+                              kDefaultVdbCacheSize);
+    if (int_val < 0) {
+        m_CriticalErrors.push_back(
+            "The WGS vdb_cache_size value is out of range. It must be >= 0. "
+            "Received: " + to_string(int_val) + ". Resetting to "
+            "default: " + to_string(kDefaultVdbCacheSize));
+
+        int_val = kDefaultVdbCacheSize;
+    }
+    m_WGSProcessorVdbCacheSize = int_val;
+
+    int_val = registry.GetInt(kWGSProcessorSection, "index_update_time",
+                              kDefaultIndexUpdateTime);
+    if (int_val <= 0) {
+        m_CriticalErrors.push_back(
+            "The WGS index_update_time value is out of range. It must be > 0. "
+            "Received: " + to_string(int_val) + ". Resetting to "
+            "default: " + to_string(kDefaultIndexUpdateTime));
+
+        int_val = kDefaultIndexUpdateTime;
+    }
+    m_WGSProcessorIndexUpdateTime = int_val;
+
+    int_val = registry.GetInt(kWGSProcessorSection, "file_reopen_time",
+                              kDefaultFileReopenTime);
+    if (int_val <= 0) {
+        m_CriticalErrors.push_back(
+            "The WGS file_reopen_time value is out of range. It must be > 0. "
+            "Received: " + to_string(int_val) + ". Resetting to "
+            "default: " + to_string(kDefaultFileReopenTime));
+
+        int_val = kDefaultFileReopenTime;
+    }
+    m_WGSProcessorFileReopenTime = int_val;
+
+    int_val = registry.GetInt(kWGSProcessorSection, "file_recheck_time",
+                              kDefaultFileRecheckTime);
+    if (int_val <= 0) {
+        m_CriticalErrors.push_back(
+            "The WGS file_recheck_time value is out of range. It must be > 0. "
+            "Received: " + to_string(int_val) + ". Resetting to "
+            "default: " + to_string(kDefaultFileRecheckTime));
+
+        int_val = kDefaultFileRecheckTime;
+    }
+    m_WGSProcessorFileRecheckTime = int_val;
+
+    int_val = registry.GetInt(kWGSProcessorSection, "compress_data",
+                              kDefaultCompressData);
+    if (int_val < psg::wgs::SWGSProcessor_Config::eCompressData_never ||
+        int_val > psg::wgs::SWGSProcessor_Config::eCompressData_always) {
+        m_CriticalErrors.push_back(
+            "The WGS compress_data value is out of range. It must be " +
+            to_string(psg::wgs::SWGSProcessor_Config::eCompressData_never) + " or " +
+            to_string(psg::wgs::SWGSProcessor_Config::eCompressData_some) + " or " +
+            to_string(psg::wgs::SWGSProcessor_Config::eCompressData_always) +
+            ". Received: " + to_string(int_val) + ". Resetting to "
+            "default: " + to_string(kDefaultCompressData));
+
+        int_val = kDefaultCompressData;
+    }
+    m_WGSProcessorCompressData = psg::wgs::SWGSProcessor_Config::ECompressData(int_val);
+
+    int_val = registry.GetInt(kWGSProcessorSection, "cassandra_processor_timeout_ms",
+                              kDefaultCassProcTimeoutMs);
+    if (int_val < 0) {
+        m_CriticalErrors.push_back(
+            "The WGS cassandra_processor_timeout_ms value is out of range. It must be >= 0. "
+            "Received: " + to_string(int_val) + ". Resetting to "
+            "default: " + to_string(kDefaultCassProcTimeoutMs));
+
+        int_val = kDefaultCassProcTimeoutMs;
+    }
+    m_WGSProcessorCassProcTimeoutMs = int_val;
+
+    m_WGSProcessorErrorRate = registry.GetInt(kWGSProcessorSection, "error_rate",
+                                              kDefaultWGSErrorRate);
 }
 
 
@@ -826,6 +989,95 @@ void SPubseqGatewaySettings::x_ReadSNPProcessorSection(const CNcbiRegistry &   r
                                     m_SNPProcessorThrottleByIp);
     x_ReadProcessorLogTimingThreshold(registry, "SNP",
                                       m_SNPProcessorLogTimingThreshold);
+
+
+    int     int_val = registry.GetInt(kSNPProcessorSection, "maxconn",
+                                      kDefaultSNPMaxConn);
+    if (int_val <= 0) {
+        m_CriticalErrors.push_back(
+            "The SNP maxconn value is out of range. It must be > 0. "
+            "Received: " + to_string(int_val) + ". Resetting to "
+            "default: " + to_string(kDefaultSNPMaxConn));
+
+        int_val = kDefaultSNPMaxConn;
+    }
+    m_SNPProcessorMaxConn = int_val;
+
+    int_val = registry.GetInt(kSNPProcessorSection, "gc_cache_size",
+                              kDefaultSNPGCCacheSize);
+    if (int_val < 0) {
+        m_CriticalErrors.push_back(
+            "The SNP gc_cache_size value is out of range. It must be >= 0. "
+            "Received: " + to_string(int_val) + ". Resetting to "
+            "default: " + to_string(kDefaultSNPGCCacheSize));
+
+        int_val = kDefaultSNPGCCacheSize;
+    }
+    m_SNPGCCacheSize = int_val;
+
+    int_val = registry.GetInt(kSNPProcessorSection, "missing_gc_size",
+                              kDefaultSNPMissingGCSize);
+    if (int_val < 0) {
+        m_CriticalErrors.push_back(
+            "The SNP missing_gc_size value is out of range. It must be >= 0. "
+            "Received: " + to_string(int_val) + ". Resetting to "
+            "default: " + to_string(kDefaultSNPMissingGCSize));
+
+        int_val = kDefaultSNPMissingGCSize;
+    }
+    m_SNPMissingGCSize = int_val;
+
+    int_val = registry.GetInt(kSNPProcessorSection, "file_reopen_time",
+                              kDefaultSNPFileReopenTime);
+    if (int_val <= 0) {
+        m_CriticalErrors.push_back(
+            "The SNP file_reopen_time value is out of range. It must be > 0. "
+            "Received: " + to_string(int_val) + ". Resetting to "
+            "default: " + to_string(kDefaultSNPFileReopenTime));
+
+        int_val = kDefaultSNPFileReopenTime;
+    }
+    m_SNPProcessorFileReopenTime = int_val;
+
+    int_val = registry.GetInt(kSNPProcessorSection, "file_recheck_time",
+                              kDefaultSNPFileRecheckTime);
+    if (int_val <= 0) {
+        m_CriticalErrors.push_back(
+            "The SNP file_recheck_time value is out of range. It must be > 0. "
+            "Received: " + to_string(int_val) + ". Resetting to "
+            "default: " + to_string(kDefaultSNPFileRecheckTime));
+
+        int_val = kDefaultSNPFileRecheckTime;
+    }
+    m_SNPProcessorFileRecheckTime = int_val;
+
+    int_val = registry.GetInt(kSNPProcessorSection, "file_open_retry",
+                              kDefaultSNPFileRecheckTime);
+    if (int_val < 0) {
+        m_CriticalErrors.push_back(
+            "The SNP file_open_retry value is out of range. It must be >= 0. "
+            "Received: " + to_string(int_val) + ". Resetting to "
+            "default: " + to_string(kDefaultSNPFileOpenRetry));
+
+        int_val = kDefaultSNPFileOpenRetry;
+    }
+    m_SNPProcessorFileOpenRetry = int_val;
+
+    m_SNPProcessorSplit = registry.GetBool(kSNPProcessorSection,
+                                           "split", kDefaultSNPSplit);
+    m_SNPProcessorAnnotName = registry.GetString(kSNPProcessorSection,
+                                                 "annot_name",
+                                                 kDefaultSNPAnnotName);
+    m_SNPProcessorAddPTIS = registry.GetBool(kSNPProcessorSection,
+                                             "add_ptis", kDefaultSNPAddPTIS);
+    m_SNPProcessorAllowNonRefSeq = registry.GetBool(kSNPProcessorSection,
+                                                    "allow_non_refseq",
+                                                    kDefaultSNPAllowNonRefSeq);
+    m_SNPProcessorScaleLimit = CSeq_id::GetSNPScaleLimit_Value(
+            registry.GetString(kSNPProcessorSection, "snp_scale_limit", ""));
+
+    m_SNPProcessorErrorRate = registry.GetInt(kSNPProcessorSection, "error_rate",
+                                              kDefaultSNPErrorRate);
 }
 
 

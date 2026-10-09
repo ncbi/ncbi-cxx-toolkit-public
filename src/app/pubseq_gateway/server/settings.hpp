@@ -36,6 +36,10 @@
 #include <optional>
 using namespace std;
 
+#include <objects/seqloc/Seq_id.hpp>
+
+#include "wgs_client.hpp"
+
 USING_NCBI_SCOPE;
 
 class CPSGAlerts;
@@ -155,6 +159,9 @@ struct SPubseqGatewaySettings
     size_t                              m_CDDProcessorThrottleThreshold;
     size_t                              m_CDDProcessorThrottleByIp;
     size_t                              m_CDDProcessorLogTimingThreshold;
+    unsigned int                        m_CDDProcessorMaxConn;
+    double                              m_CDDProcessorBackendTimeout;
+    int                                 m_CDDProcessorErrorRate;
 
     // [WGS_PROCESSOR]
     bool                                m_WGSProcessorsEnabled;
@@ -163,6 +170,15 @@ struct SPubseqGatewaySettings
     size_t                              m_WGSProcessorThrottleThreshold;
     size_t                              m_WGSProcessorThrottleByIp;
     size_t                              m_WGSProcessorLogTimingThreshold;
+    unsigned int                        m_WGSProcessorMaxConn;
+    size_t                              m_WGSProcessorVdbCacheSize;
+    unsigned int                        m_WGSProcessorIndexUpdateTime;
+    unsigned int                        m_WGSProcessorFileReopenTime;
+    unsigned int                        m_WGSProcessorFileRecheckTime;
+    psg::wgs::SWGSProcessor_Config::ECompressData
+                                        m_WGSProcessorCompressData;
+    uint64_t                            m_WGSProcessorCassProcTimeoutMs;
+    int                                 m_WGSProcessorErrorRate;
 
     // [SNP_PROCESSOR]
     bool                                m_SNPProcessorsEnabled;
@@ -171,6 +187,19 @@ struct SPubseqGatewaySettings
     size_t                              m_SNPProcessorThrottleThreshold;
     size_t                              m_SNPProcessorThrottleByIp;
     size_t                              m_SNPProcessorLogTimingThreshold;
+    unsigned int                        m_SNPProcessorMaxConn;
+    size_t                              m_SNPGCCacheSize;
+    size_t                              m_SNPMissingGCSize;
+    unsigned int                        m_SNPProcessorFileReopenTime;
+    unsigned int                        m_SNPProcessorFileRecheckTime;
+    unsigned int                        m_SNPProcessorFileOpenRetry;
+    bool                                m_SNPProcessorSplit;
+    string                              m_SNPProcessorAnnotName;
+    bool                                m_SNPProcessorAddPTIS;
+    bool                                m_SNPProcessorAllowNonRefSeq;
+    objects::CSeq_id::ESNPScaleLimit    m_SNPProcessorScaleLimit;
+    int                                 m_SNPProcessorErrorRate;
+
 
     // [COUNTERS]
     // Configured counter/statistics ID to name/description
