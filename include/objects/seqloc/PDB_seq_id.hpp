@@ -61,7 +61,7 @@ public:
     int Compare(const CPDB_seq_id& psip2) const;
 
     // format a FASTA style string
-    ostream& AsFastaString(ostream& s) const;
+    ostream& AsFastaString(ostream& s, EPDBMolFormat format = ePDB_AsIs) const;
 
 
     //  Reset both chain and chain-id.  
