@@ -42,7 +42,6 @@
 #include "indx_def.h"
 #include "utilfun.h"
 #include "fta_xml.h"
-#include <span>
 
 #ifdef THIS_FILE
 #  undef THIS_FILE
@@ -53,15 +52,15 @@
 
 BEGIN_NCBI_SCOPE
 
-struct XmlKword {
+struct XmlKwordBlk {
     const char* str;
     Int4        order;
     Int4        tag;
 };
-using XmlKwordBlk = span<const XmlKword>;
+using XmlKwordBlkPtr = const XmlKwordBlk*;
 
 // clang-format off
-const XmlKword xmkwl[] = {
+XmlKwordBlk xmkwl[] = {
     {"<INSDSeq_locus>",                 1, INSDSEQ_LOCUS},
     {"<INSDSeq_length>",                2, INSDSEQ_LENGTH},
     {"<INSDSeq_strandedness>",          3, INSDSEQ_STRANDEDNESS},
@@ -91,23 +90,26 @@ const XmlKword xmkwl[] = {
     {"<INSDSeq_feature-table>",        27, INSDSEQ_FEATURE_TABLE},
     {"<INSDSeq_sequence>",             28, INSDSEQ_SEQUENCE},
     {"<INSDSeq_contig>",               29, INSDSEQ_CONTIG},
+    {nullptr,                         -1, -1}
 };
 
-const XmlKword xmfeatkwl[] = {
+XmlKwordBlk xmfeatkwl[] = {
     {"<INSDFeature_key>",               1, INSDFEATURE_KEY},
     {"<INSDFeature_location>",          2, INSDFEATURE_LOCATION},
     {"<INSDFeature_intervals>",         3, INSDFEATURE_INTERVALS},
     {"<INSDFeature_quals>",             4, INSDFEATURE_QUALS},
+    {nullptr,                          -1, -1}
 };
 
-const XmlKword xmintkwl[] = {
+XmlKwordBlk xmintkwl[] = {
     {"<INSDInterval_from>",             1, INSDINTERVAL_FROM},
     {"<INSDInterval_to>",               2, INSDINTERVAL_TO},
     {"<INSDInterval_point>",            3, INSDINTERVAL_POINT},
     {"<INSDInterval_accession>",        4, INSDINTERVAL_ACCESSION},
+    {nullptr,                          -1, -1}
 };
 
-const XmlKword xmrefkwl[] = {
+XmlKwordBlk xmrefkwl[] = {
     {"<INSDReference_reference>",       1, INSDREFERENCE_REFERENCE},
     {"<INSDReference_position>",        2, INSDREFERENCE_POSITION},
     {"<INSDReference_authors>",         3, INSDREFERENCE_AUTHORS},
@@ -118,19 +120,22 @@ const XmlKword xmrefkwl[] = {
     {"<INSDReference_medline>",         8, INSDREFERENCE_MEDLINE},
     {"<INSDReference_pubmed>",          9, INSDREFERENCE_PUBMED},
     {"<INSDReference_remark>",         10, INSDREFERENCE_REMARK},
+    {nullptr,                          -1, -1}
 };
 
-const XmlKword xmqualkwl[] = {
+XmlKwordBlk xmqualkwl[] = {
     {"<INSDQualifier_name>",            1, INSDQUALIFIER_NAME},
     {"<INSDQualifier_value>",           2, INSDQUALIFIER_VALUE},
+    {nullptr,                          -1, -1}
 };
 
-const XmlKword xmxrefkwl[] = {
+XmlKwordBlk xmxrefkwl[] = {
     {"<INSDXref_dbname>",               1, INSDXREF_DBNAME},
     {"<INSDXref_id>",                   2, INSDXREF_ID},
+    {nullptr,                          -1, -1}
 };
 
-const XmlKword xmsubkwl[] = {
+XmlKwordBlk xmsubkwl[] = {
     {"<INSDSecondary-accn>",            1, INSDSECONDARY_ACCN},
     {"<INSDKeyword>",                   1, INSDKEYWORD},
     {"<INSDFeature>",                   1, INSDFEATURE},
@@ -139,6 +144,7 @@ const XmlKword xmsubkwl[] = {
     {"<INSDReference>",                 1, INSDREFERENCE},
     {"<INSDAuthor>",                    1, INSDAUTHOR},
     {"<INSDXref>",                      1, INSDXREF},
+    {nullptr,                          -1, -1}
 };
 // clang-format on
 
@@ -220,6 +226,7 @@ void s_SetPointer(Parser& config, size_t offset)
 /**********************************************************/
 static void XMLPerformIndex(ParserPtr pp)
 {
+    XmlKwordBlkPtr xkbp;
     TXmlIndexList::iterator xip;
     IndexblkPtr    ibp;
     char*          p;
@@ -301,13 +308,10 @@ static void XMLPerformIndex(ParserPtr pp)
             continue;
         }
         p = s + ((s[1] == '/') ? 2 : 1);
-        const XmlKword* xkbp = nullptr;
-        for (const auto& i : xmkwl)
-            if (StringEqu(p, i.str + 1)) {
-                xkbp = &i;
+        for (xkbp = xmkwl; xkbp->str; xkbp++)
+            if (StringEqu(p, xkbp->str + 1))
                 break;
-            }
-        if (! xkbp)
+        if (! xkbp->str)
             continue;
         if (ibp->xip.empty() || xip->tag != xkbp->tag) {
             xip        = ibp->xip.emplace_after(xip);
@@ -491,29 +495,31 @@ static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Par
 }
 
 /**********************************************************/
-static const char* XMLStringByTag(XmlKwordBlk xkb, Int4 tag)
+static const char* XMLStringByTag(XmlKwordBlkPtr xkbp, Int4 tag)
 {
-    for (const auto& i : xkb)
-        if (i.tag == tag)
-            return i.str;
-    return "???";
+    for (; xkbp->str; xkbp++)
+        if (xkbp->tag == tag)
+            break;
+    if (! xkbp->str)
+        return ("???");
+    return (xkbp->str);
 }
 
 /**********************************************************/
-static bool XMLTagCheck(const TXmlIndexList& xil, XmlKwordBlk xkb)
+static bool XMLTagCheck(const TXmlIndexList& xil, XmlKwordBlkPtr xkbp)
 {
     bool ret = true;
     for (auto txip = xil.begin(); txip != xil.end(); ++txip) {
         if (txip->start == 0) {
-            FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLMissingStartTag, "XML record's missing start tag for \"{}\" at line {}.", XMLStringByTag(xkb, txip->tag), txip->end_line);
+            FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLMissingStartTag, "XML record's missing start tag for \"{}\" at line {}.", XMLStringByTag(xkbp, txip->tag), txip->end_line);
             ret = false;
         }
         if (txip->end == 0) {
-            FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLMissingEndTag, "XML record's missing end tag for \"{}\" at line {}.", XMLStringByTag(xkb, txip->tag), txip->start_line);
+            FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLMissingEndTag, "XML record's missing end tag for \"{}\" at line {}.", XMLStringByTag(xkbp, txip->tag), txip->start_line);
             ret = false;
         }
         if (auto const nxt = next(txip); nxt != xil.end() && txip->order >= nxt->order) {
-            FtaErrPost(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "XML tag \"{}\" at line {} is out of order.", XMLStringByTag(xkb, nxt->tag), (nxt->start > 0) ? nxt->start_line : nxt->end_line);
+            FtaErrPost(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "XML tag \"{}\" at line {} is out of order.", XMLStringByTag(xkbp, nxt->tag), (nxt->start > 0) ? nxt->start_line : nxt->end_line);
             ret = false;
         }
     }
@@ -808,42 +814,54 @@ static bool XMLCheckRequiredTags(ParserPtr pp, IndexblkPtr ibp)
 }
 
 /**********************************************************/
-unique_ptr<string> XMLLoadEntry(ParserPtr pp, bool err)
+char* XMLLoadEntry(ParserPtr pp, bool err)
 {
+    IndexblkPtr ibp;
+    char*       entry;
+    char*       p;
+    size_t      i;
+    Int4        c;
+
     if (! pp || ! s_HasInput(*pp)) {
-        return {};
+        return nullptr;
     }
 
-    IndexblkPtr ibp = pp->entrylist[pp->curindx];
+    ibp = pp->entrylist[pp->curindx];
     if (! ibp || ibp->len == 0)
-        return {};
+        return nullptr;
 
-    string entry;
-    entry.reserve(ibp->len);
+    entry = StringNew(ibp->len);
     s_SetPointer(*pp, ibp->offset);
 
-    for (size_t i = 0; i < ibp->len; i++) {
-        int c = s_GetCharAndAdvance(*pp);
+
+    for (p = entry, i = 0; i < ibp->len; i++) {
+        c = s_GetCharAndAdvance(*pp);
         if (c == -1)
-            return {};
+            break;
         if (c == 13) {
             c = 10;
         }
         if (c > 126 || (c < 32 && c != 10)) {
             if (err)
-                FtaErrPost(SEV_WARNING, ERR_FORMAT_NonAsciiChar, "Non-ASCII character within the record which begins at line {}, decimal value {}, replaced by #.", ibp->linenum, c);
-            entry.push_back('#');
+                FtaErrPost(SEV_WARNING, ERR_FORMAT_NonAsciiChar, "None-ASCII character within the record which begins at line {}, decimal value {}, replaced by #.", ibp->linenum, (signed char)c);
+            *p++ = '#';
         } else
-            entry.push_back((Char)c);
+            *p++ = (Char)c;
     }
+    if (i != ibp->len) {
+        MemFree(entry);
+        return nullptr;
+    }
+    *p = '\0';
 
-    return make_unique<string>(entry);
+    return (entry);
 }
 
 
 /**********************************************************/
-static bool XMLIndexSubTags(const char* entry, XmlIndex& xip, XmlKwordBlk xkb)
+static bool XMLIndexSubTags(const char* entry, XmlIndex& xip, XmlKwordBlkPtr xkbp)
 {
+    XmlKwordBlkPtr txkbp;
     auto           xipsub = xip.subtags.before_begin();
     const char*    c;
     char*          p;
@@ -887,13 +905,10 @@ static bool XMLIndexSubTags(const char* entry, XmlIndex& xip, XmlKwordBlk xkb)
             continue;
         s[++i] = '\0';
         p      = s + ((s[1] == '/') ? 2 : 1);
-        const XmlKword* txkbp = nullptr;
-        for (const auto& i : xkb)
-            if (StringEqu(p, i.str + 1)) {
-                txkbp = &i;
+        for (txkbp = xkbp; txkbp->str; txkbp++)
+            if (StringEqu(p, txkbp->str + 1))
                 break;
-            }
-        if (! txkbp)
+        if (! txkbp->str)
             continue;
         if (xip.subtags.empty() || xipsub->tag != txkbp->tag) {
             xipsub        = xip.subtags.emplace_after(xipsub);
@@ -927,7 +942,7 @@ static bool XMLIndexSubTags(const char* entry, XmlIndex& xip, XmlKwordBlk xkb)
         }
     }
 
-    if (! XMLTagCheck(xip.subtags, xkb))
+    if (! XMLTagCheck(xip.subtags, xkbp))
         return false;
 
     return true;
@@ -1243,6 +1258,7 @@ static bool s_IsSegment(const IndexblkPtr& ibp)
 bool XMLIndex(ParserPtr pp)
 {
     IndexblkPtr ibp;
+    char*       entry;
 
     XMLPerformIndex(pp);
 
@@ -1257,43 +1273,51 @@ bool XMLIndex(ParserPtr pp)
             ibp->drop = true;
             continue;
         }
-        auto entry = XMLLoadEntry(pp, true);
+        entry = XMLLoadEntry(pp, true);
         if (! entry) {
             FtaErrPost(SEV_FATAL, ERR_INPUT_CannotReadEntry, "Failed ro read entry from file, which starts at line {}. Entry dropped.", ibp->linenum);
             ibp->drop = true;
             continue;
         }
 
-        XMLInitialEntry(ibp, entry->c_str(), pp->accver, pp->source);
+        XMLInitialEntry(ibp, entry, pp->accver, pp->source);
         if (ibp->drop) {
+            MemFree(entry);
             continue;
         }
         if (XMLTagCheck(ibp->xip, xmkwl) == false) {
             FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted XML record. Entry dropped.");
             ibp->drop = true;
+            MemFree(entry);
             continue;
         }
-        if (XMLAccessionsCheck(pp, ibp, entry->c_str()) == false) {
+        if (XMLAccessionsCheck(pp, ibp, entry) == false) {
+            MemFree(entry);
             continue;
         }
 
         if (s_IsSegment(ibp)) {
             ibp->drop = true;
+            MemFree(entry);
             continue;
         }
 
         if (XMLCheckRequiredTags(pp, ibp) == false) {
             ibp->drop = true;
+            MemFree(entry);
             continue;
         }
-        if (XMLKeywordsCheck(entry->c_str(), ibp, pp->source) == false) {
+        if (XMLKeywordsCheck(entry, ibp, pp->source) == false) {
+            MemFree(entry);
             continue;
         }
-        if (XMLIndexFeatures(entry->c_str(), ibp->xip) == false ||
-            XMLIndexReferences(entry->c_str(), ibp->xip, ibp->bases) == false) {
+        if (XMLIndexFeatures(entry, ibp->xip) == false ||
+            XMLIndexReferences(entry, ibp->xip, ibp->bases) == false) {
             ibp->drop = true;
+            MemFree(entry);
             continue;
         }
+        MemFree(entry);
     }
 
     pp->num_drop = 0;

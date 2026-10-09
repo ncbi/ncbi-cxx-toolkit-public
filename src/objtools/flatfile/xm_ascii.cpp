@@ -120,23 +120,30 @@ static void XMLCheckContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
 /**********************************************************/
 static bool XMLGetInstContig(const TXmlIndexList& xil, const DataBlk& dbp, CBioseq& bioseq, ParserPtr pp)
 {
+    char* p;
+    char* q;
+    char* r;
     bool  locmap;
     bool  allow_crossdb_featloc;
     Int4  i;
     int   numerr;
 
-    auto x = XMLFindTagValue(dbp.mBuf.ptr, xil, INSDSEQ_CONTIG);
-    if (! x)
+    p = StringSave(XMLFindTagValue(dbp.mBuf.ptr, xil, INSDSEQ_CONTIG));
+    if (! p)
         return false;
 
-    string p;
-    p.reserve(x->size());
-    for (char c : *x)
-        if (c != '\n' && c != '\t' && c != ' ')
-            p.push_back(c);
+    for (q = p, r = p; *q != '\0'; q++)
+        if (*q != '\n' && *q != '\t' && *q != ' ')
+            *r++ = *q;
+    *r = '\0';
 
-    if (fta_contains(p, ",,") || fta_contains(p, "(,") || fta_contains(p, ",)")) {
+    for (q = p; *q != '\0'; q++)
+        if ((q[0] == ',' && q[1] == ',') || (q[0] == '(' && q[1] == ',') ||
+            (q[0] == ',' && q[1] == ')'))
+            break;
+    if (*q != '\0') {
         FtaErrPost(SEV_REJECT, ERR_LOCATION_ContigHasNull, "The join() statement for this record's contig line contains one or more comma-delimited components which are null.");
+        MemFree(p);
         return false;
     }
 
@@ -145,6 +152,7 @@ static bool XMLGetInstContig(const TXmlIndexList& xil, const DataBlk& dbp, CBios
     CRef<CSeq_loc> loc = xgbparseint_ver(p, locmap, numerr, bioseq.GetId(), pp->accver);
 
     if (loc.Empty()) {
+        MemFree(p);
         return true;
     }
 
@@ -164,6 +172,8 @@ static bool XMLGetInstContig(const TXmlIndexList& xil, const DataBlk& dbp, CBios
         bioseq.SetInst().SetRepr(CSeq_inst::eRepr_delta);
     } else
         bioseq.SetInst().ResetExt();
+
+    MemFree(p);
 
     return true;
 }
@@ -219,6 +229,8 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
         ret;
 
     IndexblkPtr ibp;
+    char*       bptr;
+    char        msg[4];
     Int2        div;
     bool        if_cds;
 
@@ -237,7 +249,9 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
 
     bool  cancelled;
     bool  drop;
+    char* tempdiv;
     Int2  thtg;
+    char* p;
     Int4  i;
 
     ibp = pp->entrylist[pp->curindx];
@@ -248,10 +262,13 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
         pp->format != Parser::EFormat::XML || pp->taxserver == 0) &&
        ibp->no_gbblock_source == false)
     {
-        if (auto str = XMLFindTagValue(entry, ibp->xip, INSDSEQ_SOURCE)) {
-            if (str->ends_with(".."))
-                str->pop_back();
-            gbb->SetSource(*str);
+        if (char* str = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_SOURCE))) {
+            p = StringRChr(str, '.');
+            if (p && p > str && p[1] == '\0' && *(p - 1) == '.')
+                *p = '\0';
+
+            gbb->SetSource(str);
+            MemFree(str);
         }
     }
 
@@ -286,11 +303,12 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
         return ret;
     }
 
-    if (auto bptr = XMLFindTagValue(entry, ibp->xip, INSDSEQ_DIVISION)) {
+    bptr = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_DIVISION));
+    if (bptr) {
         if_cds = XMLCheckCDS(entry, ibp->xip);
-        div    = CheckDIV(*bptr);
+        div    = CheckDIV(bptr);
         if (div != -1) {
-            string div_str(bptr->substr(0, 3));
+            string div_str(bptr, bptr + 3);
             gbb->SetDiv(div_str);
 
             if (div == 16) /* "ORG" replaced by "UNA" */
@@ -325,15 +343,16 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
                 }
             }
 
-            string tempdiv = gbb->GetDiv();
+            tempdiv = StringSave(gbb->GetDiv());
 
             if (fta_check_htg_kwds(gbb->SetKeywords(), pp->entrylist[pp->curindx], mol_info))
                 gbb->SetDiv("");
 
             XMLDefVsHTGKeywords(mol_info.GetTech(), entry, ibp->xip, cancelled);
 
-            CheckHTGDivision(tempdiv.c_str(), mol_info.GetTech());
-            tempdiv.clear();
+            CheckHTGDivision(tempdiv, mol_info.GetTech());
+            if (tempdiv)
+                MemFree(tempdiv);
 
             i = 0;
             if (est_kwd)
@@ -443,14 +462,17 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
                     gbb->SetDiv("");
 
                 if (drop) {
+                    MemFree(bptr);
                     return ret;
                 }
             } else if (gbb->GetDiv() == "CON") {
                 gbb->SetDiv("");
             }
         } else {
-            string_view msg = string_view(*bptr).substr(0, 3);
+            MemCpy(msg, bptr, 3);
+            msg[3] = '\0';
             FtaErrPost(SEV_REJECT, ERR_DIVISION_UnknownDivCode, "Unknown division code \"{}\" found in GenBank flatfile. Record rejected.", msg);
+            MemFree(bptr);
             return ret;
         }
 
@@ -461,6 +483,8 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
 
             gbb->SetDiv("");
         }
+
+        MemFree(bptr);
     }
 
     bool is_htc_div = gbb->GetDiv() == "HTC",
@@ -477,16 +501,22 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
     }
 
     if (is_htc_div) {
-        auto str = XMLFindTagValue(entry, ibp->xip, INSDSEQ_MOLTYPE);
+        char* str = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_MOLTYPE));
         if (str) {
-            const char* p = str->c_str();
-            ConsumeChar(p, 'm') || ConsumeChar(p, 'r') ||
-                ConsumeStr(p, "pre-") || ConsumeStr(p, "transcribed ");
+            p = str;
+            if (*str == 'm' || *str == 'r')
+                p = str + 1;
+            else if (StringEquN(str, "pre-", 4))
+                p = str + 4;
+            else if (StringEquN(str, "transcribed ", 12))
+                p = str + 12;
 
             if (! fta_StartsWith(p, "RNA"sv)) {
                 FtaErrPost(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");
+                MemFree(str);
                 return ret;
             }
+            MemFree(str);
         }
     }
 
@@ -566,19 +596,25 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
 /**********************************************************/
 static CRef<CMolInfo> XMLGetMolInfo(ParserPtr pp, const DataBlk& entry, COrg_ref* org_ref)
 {
-    IndexblkPtr ibp = pp->entrylist[pp->curindx];
+    IndexblkPtr ibp;
+
+    char* div;
+    char* molstr;
+
+    ibp = pp->entrylist[pp->curindx];
 
     CRef<CMolInfo> mol_info(new CMolInfo);
 
-    auto div = XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_DIVISION);
-    _ASSERT(div);
-    if (div->starts_with("EST"sv))
+    molstr = StringSave(XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_MOLTYPE));
+    div    = StringSave(XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_DIVISION));
+
+    if (fta_StartsWith(div, "EST"sv))
         mol_info->SetTech(CMolInfo::eTech_est);
-    else if (div->starts_with("STS"sv))
+    else if (fta_StartsWith(div, "STS"sv))
         mol_info->SetTech(CMolInfo::eTech_sts);
-    else if (div->starts_with("GSS"sv))
+    else if (fta_StartsWith(div, "GSS"sv))
         mol_info->SetTech(CMolInfo::eTech_survey);
-    else if (div->starts_with("HTG"sv))
+    else if (fta_StartsWith(div, "HTG"sv))
         mol_info->SetTech(CMolInfo::eTech_htgs_1);
     else if (ibp->is_wgs) {
         if (ibp->is_tsa)
@@ -592,10 +628,13 @@ static CRef<CMolInfo> XMLGetMolInfo(ParserPtr pp, const DataBlk& entry, COrg_ref
     else if (ibp->is_tls)
         mol_info->SetTech(CMolInfo::eTech_targeted);
 
-    auto molstr = XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_MOLTYPE);
-    GetFlatBiomol(mol_info->SetBiomol(), mol_info->GetTech(), molstr ? molstr->data() : nullptr, pp, entry, org_ref);
+    MemFree(div);
+    GetFlatBiomol(mol_info->SetBiomol(), mol_info->GetTech(), molstr, pp, entry, org_ref);
     if (mol_info->GetBiomol() == CMolInfo::eBiomol_unknown) // not set
         mol_info->ResetBiomol();
+
+    if (molstr)
+        MemFree(molstr);
 
     return mol_info;
 }
@@ -746,6 +785,11 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 {
     IndexblkPtr ibp;
 
+    char*  crdate;
+    char*  update;
+    char*  offset;
+    char*  str;
+    char*  p;
     string gbdiv;
 
     ibp = pp->entrylist[pp->curindx];
@@ -770,24 +814,28 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     /* DEFINITION data ==> descr_title
      */
+    str = StringSave(XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_DEFINITION));
     string title;
 
-    if (auto str = XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_DEFINITION)) {
-        size_t j = 0;
-        for (char c : *str)
-            if (c == ' ')
-                ++j;
-            else
-                break;
-        if (j > 0)
-            str->erase(0, j);
-
+    if (str) {
+        for (p = str; *p == ' ';)
+            p++;
+        if (p > str)
+            fta_StringCpy(str, p);
         if (false) {
-            if (! str->ends_with('.'))
-                *str += '.';
+            p = StringRChr(str, '.');
+            if (! p || p[1] != '\0') {
+                string s = str;
+                s += '.';
+                MemFree(str);
+                str = StringSave(s);
+                p   = nullptr;
+            }
         }
 
-        title = std::move(*str);
+        title = str;
+        MemFree(str);
+        str = nullptr;
 
         CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetTitle(title);
@@ -949,7 +997,7 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         bioseq.SetDescr().Set().push_back(descr);
     }
 
-    auto offset = XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_PRIMARY);
+    offset = StringSave(XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_PRIMARY));
     if (! offset && ibp->is_tpa && ibp->is_wgs == false) {
         if (ibp->inferential || ibp->experimental) {
             if (! fta_dblink_has_sra(dbuop) &&
@@ -968,10 +1016,12 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     }
 
     if (offset) {
-        if (! fta_parse_tpa_tsa_block(bioseq, offset->data(), ibp->acnum, ibp->vernum, 10, 0, ibp->is_tpa)) {
+        if (! fta_parse_tpa_tsa_block(bioseq, offset, ibp->acnum, ibp->vernum, 10, 0, ibp->is_tpa)) {
             ibp->drop = true;
+            MemFree(offset);
             return;
         }
+        MemFree(offset);
     }
 
     if (gbb.NotEmpty()) {
@@ -1035,7 +1085,6 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     if (pp->no_date) /* -N in command line means no date */
         return;
 
-    unique_ptr<string> update, crdate;
     CRef<CDate_std> std_upd_date,
         std_cre_date;
 
@@ -1049,14 +1098,17 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
         std_cre_date.Reset(new CDate_std);
         std_cre_date->SetToTime(cur_time);
-    } else {
-        update = XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_UPDATE_DATE);
-        if (update)
-            std_upd_date = GetUpdateDate(*update, pp->source);
 
-        crdate = XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_CREATE_DATE);
+        update = nullptr;
+        crdate = nullptr;
+    } else {
+        update = StringSave(XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_UPDATE_DATE));
+        if (update)
+            std_upd_date = GetUpdateDate(update, pp->source);
+
+        crdate = StringSave(XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_CREATE_DATE));
         if (crdate)
-            std_cre_date = GetUpdateDate(*crdate, pp->source);
+            std_cre_date = GetUpdateDate(crdate, pp->source);
     }
 
     if (std_upd_date.NotEmpty()) {
@@ -1065,29 +1117,38 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         bioseq.SetDescr().Set().push_back(descr);
 
         if (std_cre_date.NotEmpty() && std_cre_date->Compare(*std_upd_date) == CDate::eCompare_after) {
-            FtaErrPost(SEV_ERROR, ERR_DATE_IllegalDate, "Update-date \"{}\" precedes create-date \"{}\".", *update, *crdate);
+            FtaErrPost(SEV_ERROR, ERR_DATE_IllegalDate, "Update-date \"{}\" precedes create-date \"{}\".", update, crdate);
         }
     }
 
     if (std_cre_date.NotEmpty()) {
-        CRef<CSeqdesc> descr(new CSeqdesc);
-        descr->SetCreate_date().SetStd(*std_cre_date);
-        bioseq.SetDescr().Set().push_back(descr);
+        {
+            CRef<CSeqdesc> descr(new CSeqdesc);
+            descr->SetCreate_date().SetStd(*std_cre_date);
+            bioseq.SetDescr().Set().push_back(descr);
+        }
     }
+
+    if (update)
+        MemFree(update);
+    if (crdate)
+        MemFree(crdate);
 }
 
 /**********************************************************/
 static void XMLGetDivision(const char* entry, IndexblkPtr ibp)
 {
+    char* div;
+
     if (! ibp || ! entry)
         return;
 
-    auto div = XMLFindTagValue(entry, ibp->xip, INSDSEQ_DIVISION);
+    div = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_DIVISION));
     if (! div)
         return;
-
-    StringNCpy(ibp->division, div->c_str(), 4);
-    ibp->division[3] = '\0';
+    div[3] = '\0';
+    StringCpy(ibp->division, div);
+    MemFree(div);
 }
 
 
@@ -1117,7 +1178,7 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
         NCBI_THROW(CException, eUnknown, "Unable to load entry");
     }
 
-    XMLGetDivision(entry->c_str(), ibp);
+    XMLGetDivision(entry, ibp);
 
     if (StringEqu(ibp->division, "TSA")) {
         if (ibp->tsa_allowed == false)
@@ -1128,6 +1189,7 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
     XMLCheckContigEverywhere(ibp, mParser.source);
     if (ibp->drop) {
         FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
+        MemFree(entry);
         mTotals.Dropped++;
         // continue;
         mParser.curindx++;
@@ -1142,13 +1204,14 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
 
     unique_ptr<DataBlk> dbp(new DataBlk());
     dbp->SetEntryData(ebp);
-    dbp->mBuf.ptr = entry->data();
-    dbp->mBuf.len = entry->size();
+    dbp->mBuf.ptr = entry;
+    dbp->mBuf.len = StringLen(entry);
 
     if (! XMLGetInst(&mParser, *dbp, ibp->is_prot ? GetProtConvTable() : GetDNAConvTable(), *bioseq)) {
         ibp->drop = true;
         FtaErrPost(SEV_REJECT, ERR_SEQUENCE_BadData, "Bad sequence data. Entry dropped.");
         FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
+        MemFree(entry);
         mTotals.Dropped++;
         mParser.curindx++;
         return result;
@@ -1162,6 +1225,7 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
 
     if (! bioseq->IsSetAnnot() && ibp->drop) {
         FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
+        MemFree(entry);
         mTotals.Dropped++;
         mParser.curindx++;
         return result;
@@ -1171,6 +1235,7 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
 
     if (ibp->drop) {
         FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
+        MemFree(entry);
         mTotals.Dropped++;
         mParser.curindx++;
         return result;
@@ -1201,6 +1266,7 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
         ibp->drop = true;
         FtaErrPost(SEV_ERROR, ERR_DATE_IllegalDate, "Illegal create date. Entry dropped.");
         FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
+        MemFree(entry);
         mTotals.Dropped++;
         mParser.curindx++;
         return result;
@@ -1220,6 +1286,7 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
             ibp->drop = true;
             FtaErrPost(SEV_ERROR, ERR_QSCORE_FailedToParse, "Error while parsing QScore. Entry dropped.");
             FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
+            MemFree(entry);
             mTotals.Dropped++;
             mParser.curindx++;
             return result;
@@ -1242,6 +1309,7 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
             ibp->drop = true;
             FtaErrPost(SEV_ERROR, ERR_REFERENCE_No_references, "No references. Entry dropped.");
             FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
+            MemFree(entry);
             mTotals.Dropped++;
             mParser.curindx++;
             return result;
@@ -1259,6 +1327,7 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
     if (ebp->seq_entry.Empty()) {
         FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
         mTotals.Dropped++;
+        MemFree(entry);
         GetScope().ResetDataAndHistory();
         mParser.curindx++;
         return result;
@@ -1329,6 +1398,7 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
 
     FtaErrPost(SEV_INFO, ERR_ENTRY_Parsed, "OK - entry parsed successfully: \"{}|{}\".", ibp->locusname, ibp->acnum);
 
+    MemFree(entry);
     GetScope().ResetDataAndHistory();
 
     mParser.curindx++;

@@ -113,7 +113,6 @@ Seq-submit ::= {
           },
           descr {
             source {
-              genome chromosome,
               org {
                 taxname "Kluyveromyces marxianus",
                 orgname {

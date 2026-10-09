@@ -41,6 +41,12 @@
 
 BEGIN_NCBI_SCOPE
 
+inline char* StringNew(size_t sz)
+{
+    char* p = new char[sz + 1];
+    std::memset(p, 0, sz + 1);
+    return p;
+}
 inline void MemSet(void* p, int n, size_t sz) { std::memset(p, n, sz); }
 inline void MemCpy(void* p, const void* q, size_t sz)
 {
@@ -127,9 +133,10 @@ inline bool fta_StartsWith(const char* s1, string_view s2)
 {
     return string_view(s1).starts_with(s2);
 }
-inline bool StringEquNI(const char* s1, string_view s2)
+inline bool StringEquNI(const char* s1, const char* s2, size_t n)
 {
-    return NStr::StartsWith(string_view(s1), s2, NStr::eNocase);
+    const string S1(s1), S2(s2);
+    return NStr::EqualNocase(S1.substr(0, n), S2.substr(0, n));
 }
 
 inline bool StringHasNoText(const char* s)

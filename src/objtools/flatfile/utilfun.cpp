@@ -617,6 +617,24 @@ string GetTheCurrentToken(char** ptr)
     return (str);
 }
 
+/**********************************************************
+ *
+ *   char* SrchTheChar(bptr, eptr, letter):
+ *
+ *      Search The character letter.
+ *      Return NULL if not found; otherwise, return
+ *   a pointer points first occurrence The character.
+ *
+ **********************************************************/
+char* SrchTheChar(string_view sv, Char letter)
+{
+    auto i = sv.find(letter);
+    if (i != string_view::npos)
+        return const_cast<char*>(sv.data() + i);
+    else
+        return nullptr;
+}
+
 /**********************************************************/
 void CpSeqId(InfoBioseqPtr ibp, const CSeq_id& id)
 {

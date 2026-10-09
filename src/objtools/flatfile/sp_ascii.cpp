@@ -766,15 +766,16 @@ static void GetIntFuzzPtr(Uint1 choice, Int4 a, Int4 b, CInt_fuzz& fuzz)
 /**********************************************************/
 static CBioSource::EGenome GetSPGenomeFrom_OS_OG(const TDataBlkList& dbl)
 {
+    char* p;
     Int4  gmod = -1;
 
     for (const auto& dbp : dbl)
         if (dbp.mType == ParFlatSP_OS) {
             for (const auto& subdbp : dbp.GetSubBlocks())
                 if (subdbp.mType == ParFlatSP_OG) {
-                    const char* p = subdbp.mBuf.ptr + ParFlat_COL_DATA_SP;
-                    if (ConsumeStrI(p, "Plastid;"))
-                        while (*p == ' ')
+                    p = subdbp.mBuf.ptr + ParFlat_COL_DATA_SP;
+                    if (StringEquNI(p, "Plastid;", 8))
+                        for (p += 8; *p == ' ';)
                             p++;
                     gmod = StringMatchIcase(SP_organelle, p);
                 }
@@ -1193,7 +1194,7 @@ static CRef<COrg_ref> fill_orgref(SetOfSpecies& sosp)
             }
         }
 
-        if ((StringEquNI(p, "PV.") && (p[3] == ' ' || p[3] == '\t' || p[3] == '\0')) ||
+        if ((StringEquNI(p, "PV.", 3) && (p[3] == ' ' || p[3] == '\t' || p[3] == '\0')) ||
             NStr::EqualNocase(p, "AD11A") || NStr::EqualNocase(p, "AD11P")) {
             if (! org_ref->IsSetTaxname())
                 org_ref->SetTaxname(p);
@@ -1275,6 +1276,7 @@ static CRef<COrg_ref> fill_orgref(SetOfSpecies& sosp)
 /**********************************************************/
 static ViralHostList GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end)
 {
+    char* line;
     char* p;
     char* q;
     char* r;
@@ -1297,11 +1299,15 @@ static ViralHostList GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end
     ViralHostList vhl;
     auto          tvhp = vhl.before_begin();
 
-    string buf("\n");
-    buf.append(subdbp->mBuf.ptr, subdbp->mBuf.len - 1);
+    line                       = StringNew(subdbp->mBuf.len + 1);
+    ch                         = subdbp->mBuf.ptr[subdbp->mBuf.len - 1];
+    subdbp->mBuf.ptr[subdbp->mBuf.len - 1] = '\0';
+    line[0]                    = '\n';
+    line[1]                    = '\0';
+    StringCat(line, subdbp->mBuf.ptr);
+    subdbp->mBuf.ptr[subdbp->mBuf.len - 1] = ch;
 
-    char* line = buf.data();
-    if (! StringEquNI(line, "\nOH   NCBI_TaxID=")) {
+    if (! StringEquNI(line, "\nOH   NCBI_TaxID=", 17)) {
         ch = '\0';
         p  = StringChr(line + 1, '\n');
         if (p)
@@ -1364,6 +1370,7 @@ static ViralHostList GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end
             p = q;
         }
     }
+    MemFree(line);
 
     if (vhl.empty())
         FtaErrPost(SEV_WARNING, ERR_SOURCE_NoNcbiTaxIDLookup, "No legal NCBI TaxIDs found in OH line.");
@@ -1392,7 +1399,7 @@ static TTaxId GetTaxIdFrom_OX(DataBlkCIter dbp, DataBlkCIter dbp_end)
             p    = StringChr(line, '\n');
             if (p)
                 *p = '\0';
-            if (! StringEquNI(line, "OX   NCBI_TaxID=")) {
+            if (! StringEquNI(line, "OX   NCBI_TaxID=", 16)) {
                 if (StringLen(line) > 20)
                     line[20] = '\0';
                 FtaErrPost(SEV_ERROR, ERR_SOURCE_UnknownOXType, "Unknown beginning of OX line: \"{}\".", line);
@@ -1794,6 +1801,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
     bool         pdbnew;
     bool         check_embl_prot;
     size_t       len = 0;
+    Char         ch;
 
     CSeq_id::E_Choice ptype;
     CSeq_id::E_Choice ntype;
@@ -1804,10 +1812,12 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
     if (! SrchNodeType(entry, ParFlatSP_DR, &len, &offset))
         return;
 
-    string buf("\n");
-    buf.append(offset, len);
-    str = buf.data();
-
+    ch          = offset[len];
+    offset[len] = '\0';
+    str         = StringNew(len + 1);
+    StringCpy(str, "\n");
+    StringCat(str, offset);
+    offset[len]     = ch;
     pdbold          = false;
     pdbnew          = false;
     auto embl_tail  = embl_acc_list.before_begin();
@@ -1971,8 +1981,9 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                 token1 = "HGNC";
             else if (NStr::EqualNocase(token1, "GeneDB_Spombe"))
                 token1 = "PomBase";
-            else if (NStr::EqualNocase(token1, "PomBase"))
-                ConsumeStrI(token2, "PomBase:");
+            else if (NStr::EqualNocase(token1, "PomBase") &&
+                     StringEquNI(token2, "PomBase:", 8))
+                token2 += 8;
 
             CRef<CDbtag> tag = MakeStrDbtag(token1, token2);
             if (tag.NotEmpty()) {
@@ -2001,7 +2012,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
     ens_tran_list.clear();
     ens_prot_list.clear();
     ens_gene_list.clear();
-    buf.clear();
+    MemFree(str);
 
     if (pdbold && pdbnew) {
         FtaErrPost(SEV_REJECT, ERR_FORMAT_MixedPDBXrefs, "Both old and new types of PDB cross-references exist on this record. Only one style is allowed.");
@@ -2780,6 +2791,7 @@ static SPFeatInputList ParseSPFeat(const DataBlk& entry, size_t seqlen)
     char*          eptr;
     char*          ptr1;
     char*          offset;
+    char*          endline;
     char*          str;
     const char*    delim;
     char*          quotes;
@@ -2801,11 +2813,7 @@ static SPFeatInputList ParseSPFeat(const DataBlk& entry, size_t seqlen)
 
     auto current = spfil.before_begin();
 
-    while (bptr < eptr) {
-        auto endline = std::find(bptr, eptr, '\n');
-        if (endline == eptr)
-            break;
-
+    while (bptr < eptr && (endline = SrchTheChar(string_view(bptr, eptr), '\n'))) {
         SPFeatInput temp;
 
         for (p = bptr, i = 0; *p != ' ' && *p != '\n' && i < 8; i++)
@@ -2930,7 +2938,8 @@ static SPFeatInputList ParseSPFeat(const DataBlk& entry, size_t seqlen)
             while (*bptr == ' ')
                 bptr++;
 
-            if (ConsumeStr(bptr, "/note=\"")) {
+            if (StringEquN(bptr, "/note=\"", 7)) {
+                bptr += 7;
                 quotes = nullptr;
             } else if (StringEquN(bptr, "/evidence=\"", 11)) {
                 quotes = bptr + 10;
@@ -2958,9 +2967,8 @@ static SPFeatInputList ParseSPFeat(const DataBlk& entry, size_t seqlen)
                 quotes = nullptr;
             }
 
-            endline = std::find(bptr, eptr, '\n');
-            _ASSERT(endline < eptr);
-            p = endline - 1;
+            endline = SrchTheChar(string_view(bptr, eptr), '\n');
+            p       = endline - 1;
             if (p >= bptr && *p == '\"')
                 *p = '.';
             else
@@ -3703,42 +3711,46 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, s
         }
         if (q)
             *q++ = '\0';
-        if (ConsumeStrI(p, "Name=")) {
+        if (StringEquNI(p, "Name=", 5)) {
             if (name) {
                 FtaErrPost(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"Name=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = true;
                 break;
             }
+            p += 5;
             if (p != q)
                 name = StringSave(p);
-        } else if (ConsumeStrI(p, "Synonyms=")) {
+        } else if (StringEquNI(p, "Synonyms=", 9)) {
             if (syns) {
                 FtaErrPost(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"Synonyms=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = true;
                 break;
             }
+            p += 9;
             if (p != q)
                 syns = StringSave(p);
-        } else if (ConsumeStrI(p, "OrderedLocusNames=")) {
+        } else if (StringEquNI(p, "OrderedLocusNames=", 18)) {
             if (ltags) {
                 FtaErrPost(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"OrderedLocusNames=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = true;
                 break;
             }
+            p += 18;
             if (p != q)
                 ltags = StringSave(p);
-        } else if (ConsumeStrI(p, "ORFNames=")) {
+        } else if (StringEquNI(p, "ORFNames=", 9)) {
             if (orfs) {
                 FtaErrPost(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"ORFNames=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = true;
                 break;
             }
+            p += 9;
             if (p != q)
                 orfs = StringSave(p);
-        } else if (ConsumeStrI(p, "and ")) {
+        } else if (StringEquNI(p, "and ", 4)) {
             if (q)
                 *--q = ';';
-            q = p;
+            q = p + 4;
 
             if (! name && ! syns && ! ltags && ! orfs)
                 continue;

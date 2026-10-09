@@ -452,7 +452,6 @@ static string_view ncRNA_class_values[] = {
     "ribozyme",
     "scRNA",
     "siRNA",
-    "sgRNA",
     "miRNA",
     "piRNA",
     "pre_miRNA",
@@ -703,13 +702,13 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
     }
 
     const string& val = qual.GetVal();
-    if (NStr::EqualNocase(val, "taxon") || NStr::StartsWith(val, "GI:", NStr::eNocase))
+    if (NStr::EqualNocase(val, "taxon") || StringEquNI(val.c_str(), "GI:", 3))
         return tag;
 
     string line = val;
 
-    if (NStr::StartsWith(line, "MGD:MGI:", NStr::eNocase))
-        line.erase(0, 4);
+    if (StringEquNI(line.c_str(), "MGD:MGI:", 8))
+        line = line.substr(4);
 
     size_t colon = line.find(':');
     if (colon == string::npos) {
@@ -1031,7 +1030,7 @@ static bool PackSeqPntCheckCpp(const CSeq_loc& loc)
 /**********************************************************/
 /* returns : 2 = Ok, 1 = mixed strands, 0 = error in location
  */
-static Uint1 FTASeqLocCheck(const CSeq_loc& locs, const char* accession)
+static Uint1 FTASeqLocCheck(const CSeq_loc& locs, char* accession)
 {
     Uint1 strand = 99;
     Uint1 retval = 2;
@@ -1144,17 +1143,15 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
     TDataBlkList temp_xml_chain;
     if (pp->format == Parser::EFormat::XML) {
         temp_xml_chain = XMLBuildRefDataBlk(entry.mBuf.ptr, ibp->xip, ParFlat_REF_BTW);
-        if (temp_xml_chain.empty())
-            return;
-        dbp     = temp_xml_chain.begin();
-        dbp_end = temp_xml_chain.end();
+        dbp            = temp_xml_chain.begin();
+        dbp_end        = temp_xml_chain.end();
     } else {
         TDataBlkList& chain = TrackNodes(entry);
-        if (chain.empty())
-            return;
-        dbp     = chain.begin();
-        dbp_end = chain.end();
+        dbp                 = chain.begin();
+        dbp_end             = chain.end();
     }
+    if (dbp == dbp_end)
+        return;
 
     for (; dbp != dbp_end; ++dbp) {
         auto& ref_blk = *dbp;
@@ -1268,17 +1265,15 @@ static void ImpFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
     TDataBlkList temp_xml_chain;
     if (pp->format == Parser::EFormat::XML) {
         temp_xml_chain = XMLBuildRefDataBlk(entry.mBuf.ptr, ibp->xip, ParFlat_REF_SITES);
-        if (temp_xml_chain.empty())
-            return;
-        dbp     = temp_xml_chain.begin();
-        dbp_end = temp_xml_chain.end();
+        dbp            = temp_xml_chain.begin();
+        dbp_end        = temp_xml_chain.end();
     } else {
         TDataBlkList& chain = TrackNodes(entry);
-        if (chain.empty())
-            return;
-        dbp     = chain.begin();
-        dbp_end = chain.end();
+        dbp                 = chain.begin();
+        dbp_end             = chain.end();
     }
+    if (dbp == dbp_end)
+        return;
 
     CRef<CSeq_feat> feat;
     for (; dbp != dbp_end; ++dbp) {
@@ -1426,12 +1421,21 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
         qval2.reset();
     }
 
+    size_t len = 0;
     if (qval_str.empty() && feat.IsSetComment() && rna_ref.GetType() == CRNA_ref::eType_rRNA) {
-        const string& comment = feat.GetComment();
-        if (NStr::EndsWith(comment, "S ribosomal RNA", NStr::eNocase) ||
-            NStr::EndsWith(comment, "S rRNA", NStr::eNocase)) {
-            qval_str = comment;
-            feat.ResetComment();
+        string comment = feat.GetComment();
+        len            = comment.size();
+
+        if (len > 15 && len < 20) {
+            if (StringEquNI(comment.c_str() + len - 15, "S ribosomal RNA", 15)) {
+                qval_str = comment;
+                feat.ResetComment();
+            }
+        } else if (len > 6 && len < 20) {
+            if (StringEquNI(comment.c_str() + len - 6, "S rRNA", 6)) {
+                qval_str = comment;
+                feat.ResetComment();
+            }
         }
     }
 
@@ -1446,7 +1450,6 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
         fta_StringCpy(p + 10, p + 11);
     }
 
-    size_t len = 0;
     for (p = qval; p; p = qval + len) {
         p = StringIStr(p, "ribosomalrna");
         if (! p)
@@ -1499,16 +1502,18 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
             p += 9;
             continue;
         }
-        p += 9;
-        if (ConsumeStr(p, " RNA"))
+        if (StringEquN(p + 9, " RNA", 4)) {
+            p += 13;
             continue;
-        len = p - qval;
+        }
+        len = p - qval + 14;
+        p += 9;
         string s(qval, p);
         s.append(" RNA");
         s.append(p);
         MemFree(qval);
         qval = StringSave(s);
-        p    = qval + len + 5;
+        p    = qval + len;
     }
 
     for (p = qval;;) {
@@ -1516,7 +1521,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
         if (! p)
             break;
         p += 14;
-        if (StringEquNI(p, " ribosomal RNA"))
+        if (StringEquNI(p, " ribosomal RNA", 14))
             fta_StringCpy(p, p + 14);
     }
 
@@ -1648,7 +1653,10 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const string& 
     for (p = end; *p == ' ' || *p == ')' || *p == '(';)
         p++;
     q = p;
-    ConsumeStr(p, "F MET") || ConsumeStr(p, "F MT");
+    if (StringEquN(p, "F MET", 5))
+        p += 5;
+    else if (StringEquN(p, "F MT", 4))
+        p += 4;
     while (IS_UPPER(*p))
         p++;
     if (p > q) {
@@ -1768,8 +1776,8 @@ static CRef<CTrna_ext> fta_get_trna_from_comment(const string& comment, unsigned
     }
     ShrinkSpaces(comm);
 
-    p = comm;
-    if (ConsumeStr(p, "CODON RECOGNIZED ")) {
+    if (StringEquN(comm, "CODON RECOGNIZED ", 17)) {
+        p = comm + 17;
         q = StringChr(p, ' ');
         if (q && StringEqu(q + 1, "PUTATIVE"))
             *q = '\0';
@@ -1778,14 +1786,14 @@ static CRef<CTrna_ext> fta_get_trna_from_comment(const string& comment, unsigned
             *remove = q ? 2 : 1;
             return ret;
         }
-    } else if (ConsumeStr(p, "PUTATIVE ")) {
-        if (p[1] == ' ' &&
-            p[5] == ' ' && StringEquN(&p[6], "TRNA", 4)) {
-            ret->SetAa().SetNcbieaa(fta_get_aa_from_symbol(p[0]));
-            if (get_aa_from_trna(*ret) != 0) {
-                MemFree(comm);
-                return ret;
-            }
+    }
+
+    if (StringEquN(comm, "PUTATIVE ", 9) && comm[10] == ' ' &&
+        comm[14] == ' ' && StringEquN(&comm[15], "TRNA", 4)) {
+        ret->SetAa().SetNcbieaa(fta_get_aa_from_symbol(comm[9]));
+        if (get_aa_from_trna(*ret) != 0) {
+            MemFree(comm);
+            return ret;
         }
     }
 
@@ -1871,7 +1879,7 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
 
     if (type != CRNA_ref::eType_premsg && type != CRNA_ref::eType_tRNA) /* mRNA, snRNA, scRNA or other */
     {
-        qval = GetTheQualValue(feat.SetQual(), "product");
+        qval = GetTheQualValue(feat.SetQual(), "product"); // may return newly allocated memory!!!
         if (qval) {
             auto p = GetTheQualValue(feat.SetQual(), "product");
             if (p && ! p->empty()) {
@@ -2643,7 +2651,7 @@ static void fta_remove_dup_feats(TDataBlkList& dbl)
         const FeatBlk* fbp1 = dbp->GetFeatData();
 
         auto tdbpprev = dbp;
-        for (auto tdbp = next(tdbpprev); tdbp != dbl.end();) {
+        for (auto tdbp = next(dbp); tdbp != dbl.end();) {
             if (! tdbp->hasData()) {
                 tdbp = dbl.erase_after(tdbpprev);
                 continue;
@@ -2988,8 +2996,7 @@ static void fta_check_non_tpa_tsa_tls_locations(TDataBlkList& dbl,
 }
 
 /**********************************************************/
-static bool fta_perform_operon_checks(TSeqFeatList& feats, IndexblkPtr ibp,
-                                      Parser::ESource source)
+static bool fta_perform_operon_checks(TSeqFeatList& feats, IndexblkPtr ibp)
 {
     using FTAOperonList = list<FTAOperon*>;
     FTAOperonList operonList;
@@ -3034,14 +3041,9 @@ static bool fta_perform_operon_checks(TSeqFeatList& feats, IndexblkPtr ibp,
                 if (pLatest->mOperon != operon->mOperon) {
                     continue;
                 }
-                if (source == Parser::ESource::EMBL) {
-                    FtaErrPost(SEV_WARNING, ERR_FEATURE_OperonQualsNotUnique,
-                               "The operon features at \"{}\" and \"{}\" utilize the same /operon qualifier : \"{}\".", operon->LocationStr(), pLatest->LocationStr(), pLatest->mOperon);
-                } else {
-                    FtaErrPost(SEV_REJECT, ERR_FEATURE_OperonQualsNotUnique,
-                               "The operon features at \"{}\" and \"{}\" utilize the same /operon qualifier : \"{}\".", operon->LocationStr(), pLatest->LocationStr(), pLatest->mOperon);
-                    success = false;
-                }
+                FtaErrPost(SEV_REJECT, ERR_FEATURE_OperonQualsNotUnique,
+                           "The operon features at \"{}\" and \"{}\" utilize the same /operon qualifier : \"{}\".", operon->LocationStr(), pLatest->LocationStr(), pLatest->mOperon);
+                success = false;
             }
         }
 
@@ -3068,14 +3070,9 @@ static bool fta_perform_operon_checks(TSeqFeatList& feats, IndexblkPtr ibp,
             sequence::ECompare compare = sequence::Compare(
                 *resident->mLocation, *operon->mLocation, nullptr, sequence::fCompareOverlapping);
             if (compare != sequence::eContained && compare != sequence::eSame) {
-                if (source == Parser::ESource::EMBL) {
-                    FtaErrPost(SEV_WARNING, ERR_FEATURE_OperonLocationMisMatch,
-                               "Feature \"{}\" at \"{}\" with /operon qualifier \"{}\" does not fall within the span of the operon feature at \"{}\".", resident->mFeatname, resident->LocationStr(), resident->mOperon, operon->LocationStr());
-                } else {
-                    FtaErrPost(SEV_REJECT, ERR_FEATURE_OperonLocationMisMatch,
-                               "Feature \"{}\" at \"{}\" with /operon qualifier \"{}\" does not fall within the span of the operon feature at \"{}\".", resident->mFeatname, resident->LocationStr(), resident->mOperon, operon->LocationStr());
-                    success = false;
-                }
+                FtaErrPost(SEV_REJECT, ERR_FEATURE_OperonLocationMisMatch,
+                           "Feature \"{}\" at \"{}\" with /operon qualifier \"{}\" does not fall within the span of the operon feature at \"{}\".", resident->mFeatname, resident->LocationStr(), resident->mOperon, operon->LocationStr());
+                success = false;
             }
         }
         if (! matched) {
@@ -3684,11 +3681,11 @@ static void fta_process_cons_splice(string& val_str)
 }
 
 
-static void xSplitLines(
+void xSplitLines(
     const string&   str,
     vector<string>& lines)
 {
-    NStr::Split(str, "\n", lines);
+    NStr::Split(str, "\n", lines, 0);
 }
 
 /**********************************************************
@@ -3712,7 +3709,7 @@ static void ParseQualifiers(
 {
     string bstr(bptr, eptr);
     NStr::TruncateSpacesInPlace(bstr);
-    // cerr << "bstr:\n" << bstr << "\n\n";
+    // cerr << "bstr:\n" << bstr.c_str() << "\n\n";
     vector<string> qualLines;
     xSplitLines(bstr, qualLines);
 
@@ -3722,8 +3719,8 @@ static void ParseQualifiers(
     CQualParser qualParser(format, featKey, featLocation, qualLines);
     while (! qualParser.Done()) {
         if (qualParser.GetNextQualifier(qualKey, qualVal)) {
-            // cerr << "Key:   " << qualKey << "\n";
-            // cerr << "Val:   " << qualVal << "\n";
+            // cerr << "Key:   " << qualKey.c_str() << "\n";
+            // cerr << "Val:   " << qualVal.c_str() << "\n";
             CRef<CGb_qual> pQual(new CGb_qual);
             pQual->SetQual(qualKey);
             pQual->SetVal(qualVal);
@@ -3753,16 +3750,18 @@ static void fta_check_satellite(string_view str, bool* drop)
 }
 
 /**********************************************************/
-static bool fta_check_mobile_element(
-    FeatBlkPtr fbp, Parser::ESource source, Parser::EFormat format)
+static bool fta_check_mobile_element(FeatBlkPtr fbp, Parser::ESource source,
+                                     Parser::EFormat format)
 {
-    char* p_val;
-    char* p;
+    char *p_val;
+    char *p;
     bool found = false;
+    Int2 i;
 
-    for (TQualVector::iterator qual = fbp->quals.begin(); qual != fbp->quals.end(); ++qual) {
+    for(TQualVector::iterator qual = fbp->quals.begin(); qual != fbp->quals.end(); ++qual)
+    {
         if ((*qual)->IsSetQual() && (*qual)->GetQual() == "mobile_element_type" &&
-            (*qual)->IsSetVal() && ! (*qual)->GetVal().empty()) {
+            (*qual)->IsSetVal() && !(*qual)->GetVal().empty()) {
             p_val = (char *) (*qual)->GetVal().c_str();
             for (p = p_val; *p == '\"';)
                 ++p;
@@ -3774,7 +3773,8 @@ static bool fta_check_mobile_element(
         }
     }
 
-    if (! found) {
+    if(!found)
+    {
         optional<string> loc_str = fbp->location;
         if(source == Parser::ESource::USPTO && format == Parser::EFormat::XML)
             FtaErrPost(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing,
@@ -3788,10 +3788,10 @@ static bool fta_check_mobile_element(
     p = StringChr(p_val, ':');
     if(p)
         *p = '\0';
-    Int2 i = MatchArrayString(MobileElementQualValues, p_val);
+    i = MatchArrayString(MobileElementQualValues, p_val);
     if(p)
         *p = ':';
-    if (i >= 0)
+    if(i > -1)
         return true;
 
     optional<string> loc_str = fbp->location;
@@ -3837,6 +3837,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
     char* eptr;
     char* ptr1;
     char* ptr2;
+    char* p;
     string loc;
 
     FeatBlkPtr fbp;
@@ -3857,8 +3858,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
         bptr = dbp.mBuf.ptr;
         eptr = bptr + dbp.mBuf.len;
 
-        const char* p = bptr;
-        while (*p != '\n')
+        for (p = bptr; *p != '\n';)
             p++;
         FtaInstallPrefix(PREFIX_FEATURE, "Parsing FT line: ", string_view(bptr, p - bptr));
         ptr1 = bptr + ParFlat_COL_FEATKEY;
@@ -4966,7 +4966,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     if (pp->format == Parser::EFormat::XML)
         temp_xml_chain.clear();
 
-    if (! fta_perform_operon_checks(seq_feats, ibp, pp->source)) {
+    if (! fta_perform_operon_checks(seq_feats, ibp)) {
         ibp->drop = true;
         seq_feats.clear();
         xinstall_gbparse_range_func(nullptr, nullptr);
@@ -5049,7 +5049,7 @@ static CMolInfo::EBiomol GetBiomolFromToks(size_t mRNA, size_t tRNA, size_t rRNA
         r = CMolInfo::eBiomol_snRNA;
     }
     if (p == string_view::npos || (snoRNA != string_view::npos && snoRNA < p)) {
-        // p = snoRNA;
+        p = snoRNA;
         r = CMolInfo::eBiomol_snoRNA;
     }
 
@@ -5532,7 +5532,11 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
         if (tRNA != string_view::npos) {
             for (p = offset + tRNA + 4; *p == ' ' || *p == '\t';)
                 p++;
-            ConsumeChar(p, '\n') && ConsumeStr(p, "DE   ");
+            if (*p == '\n') {
+                p++;
+                if (StringEquN(p, "DE   ", 5))
+                    p += 5;
+            }
             if (NStr::StartsWith(p, "Synthetase"sv, NStr::eNocase))
                 return;
         }
@@ -5560,7 +5564,8 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             break;
         if (! subdbp.mBuf.ptr)
             continue;
-        if (fta_StartsWith(subdbp.mBuf.ptr + ParFlat_COL_FEATKEY, "CDS"sv))
+        offset = subdbp.mBuf.ptr + ParFlat_COL_FEATKEY;
+        if (fta_StartsWith(offset, "CDS"sv))
             i++;
     }
     if (i > 1) {

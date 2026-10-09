@@ -17,6 +17,9 @@
 #endif
 #define THIS_FILE "ftaerr.cpp"
 
+#define MESSAGE_DIR "/am/ncbiapdata/errmsg"
+
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -40,6 +43,7 @@ struct FtaMsgModTag {
 
 struct FtaMsgModFile {
     string          modname;  /* NCBI_MODULE or THIS_MODULE value */
+    string          filename; /* Name with full path of .msg file */
     std::forward_list<FtaMsgModTag> bmmt_list;
 };
 
@@ -96,8 +100,6 @@ struct FtaMsgPost {
 
 const char* months[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
-#include "ftamsg.cpp"
-
 thread_local unique_ptr<FtaMsgPost> bmp;
 FtaErrCode                          fec;
 
@@ -129,7 +131,7 @@ static void FtaErrGetMsgCodes(
 {
     char* p;
     char* q;
-    char* s;
+    char  s[2048];
     char  ch;
     bool  got_mod;
 
@@ -164,24 +166,22 @@ static void FtaErrGetMsgCodes(
     if (got_mod)
         return;
 
+    string curdir = CDir::GetCwd();
+    string buf    = curdir + CDir::GetPathSeparator() + module + ".msg";
+    FILE*  fd     = fopen(buf.c_str(), "r");
+    if (! fd) {
+        buf = string(MESSAGE_DIR) + CDir::GetPathSeparator() + module + ".msg";
+        fd  = fopen(buf.c_str(), "r");
+        if (! fd) {
+            return;
+        }
+    }
+
     auto& bmmf    = bmp->bmmf_list.emplace_front();
     bmmf.modname  = module;
+    bmmf.filename = buf;
 
-    stringstream ss;
-    if (NStr::EqualCase(module, "flat2asn"))
-        ss.str(flat2asn_msg);
-    else if (NStr::EqualCase(module, "indx_err"))
-        ss.str(indx_err_msg);
-    else if (NStr::EqualCase(module, "validatr"))
-        ss.str(validatr_msg);
-    else if (NStr::EqualCase(module, "medarch"))
-        ss.str(medarch_msg);
-    else
-        return;
-
-    string line;
-    while(getline(ss, line)) {
-        s = (char*) line.c_str();
+    while (fgets(s, 2047, fd)) {
         if (s[0] != '$' || (s[1] != '^' && s[1] != '$'))
             continue;
 
@@ -257,6 +257,8 @@ static void FtaErrGetMsgCodes(
                 sevcode = bmctx.intseverity;
         }
     }
+
+    fclose(fd);
 }
 
 /**********************************************************/
@@ -289,9 +291,6 @@ void FtaInstallPrefix(int prefix, string_view name, string_view location)
     if (name.empty())
         return;
 
-    if (! bmp)
-        FtaErrInit();
-
     if ((prefix & PREFIX_ACCESSION) == PREFIX_ACCESSION) {
         bmp->prefix_accession = name;
     }
@@ -310,9 +309,6 @@ void FtaInstallPrefix(int prefix, string_view name, string_view location)
 /**********************************************************/
 void FtaDeletePrefix(int prefix)
 {
-    if (! bmp)
-        return;
-
     if ((prefix & PREFIX_ACCESSION) == PREFIX_ACCESSION) {
         bmp->prefix_accession.clear();
     }

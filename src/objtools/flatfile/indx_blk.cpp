@@ -109,8 +109,7 @@ static const char* ddbj_accpref[] = {
     "LA", "LB", "LC", "LD", "LE", "LF", "LG", "LH", "LI", "LJ", "LU", "LV",
     "LX", "LY", "LZ", "MA", "MB", "MC", "MD", "ME", "OF", "OG", "OH", "OI",
     "OJ", "PA", "PB", "PC", "PD", "PE", "PF", "PG", "PH", "PI", "PJ", "PK",
-    "PL", "PM", "PN", "PO", "PW", "QP", "QQ", "QR", "QS", "QT", "QU", "QV",
-    "QW", "QX", "QY", nullptr
+    "PL", "PM", "PN", "PO", "PW", "QP", "QQ", "QR", "QS", "QT", "QU", nullptr
 };
 
 static const char* ncbi_accpref[] = {
@@ -131,7 +130,7 @@ static const char* ncbi_accpref[] = {
     "KX", "KY", "KZ", "MF", "MG", "MH", "MI", "MJ", "MK", "ML", "MM", "MN",
     "MO", "MT", "MU", "MV", "MW", "MX", "MY", "MZ", "OK", "OL", "OM", "ON",
     "OO", "OP", "OQ", "OR", "OS", "OT", "PP", "PQ", "PR", "PS", "PT", "PU",
-    "PV", "PX", "PY", "PZ", "QA", "QB", nullptr
+    "PV", "PX", "PY", "PZ", "QA", nullptr
 };
 
 static const char* refseq_accpref[] = {
@@ -180,13 +179,10 @@ static const map<Parser::ESource, string> sourceNames = {
     { Parser::ESource::unknown, "unknown" },
     { Parser::ESource::EMBL, "EMBL" },
     { Parser::ESource::GenBank, "GENBANK" },
-    { Parser::ESource::DDBJ, "DDBJ" },
     { Parser::ESource::SPROT, "Swiss-Prot" },
     { Parser::ESource::NCBI, "NCBI" },
     { Parser::ESource::LANL, "GSDB" },
-    { Parser::ESource::Refseq, "RefSeq" },
-    { Parser::ESource::USPTO, "USPTO" },
-    { Parser::ESource::All, "unknown" }
+    { Parser::ESource::Refseq, "RefSeq" }
 };
 
 static string_view month_name[] = {
@@ -382,8 +378,9 @@ bool SkipTitleBuf(FileBuf& fbuf, FinfoBlk& finfo, string_view keyword)
 static bool CheckLocus(const char* locus, Parser::ESource source)
 {
     const char* p = locus;
-    if (source == Parser::ESource::NCBI || source == Parser::ESource::DDBJ)
-        ConsumeStr(p, "SEG_");
+    if (StringEquN(locus, "SEG_", 4) &&
+        (source == Parser::ESource::NCBI || source == Parser::ESource::DDBJ))
+        p += 4;
     for (; *p != '\0'; p++) {
         if (IS_DIGIT(*p) || IS_UPPER(*p))
             continue;
@@ -1440,8 +1437,7 @@ static bool IsPatentedAccPrefix(const Parser& parseInfo, string_view acc)
                  (acc == "PW"sv) || (acc == "QP"sv) ||
                  (acc == "QQ"sv) || (acc == "QR"sv) ||
                  (acc == "QS"sv) || (acc == "QT"sv) ||
-                 (acc == "QU"sv) || (acc == "QV"sv) ||
-                 (acc == "QW"sv) || (acc == "QX"sv)))
+                 (acc == "QU"sv)))
                 return true;
         }
 
@@ -1681,7 +1677,7 @@ bool GetAccession(const Parser* pp, string_view line, IndexblkPtr entry, unsigne
             get = CheckAccession(tokens, pp->source, pp->mode, entry->acnum, 2);
         }
     } else {
-        auto sourceName = sourceNames.at(pp->source);
+        string sourceName = sourceNames.at(pp->source);
         FtaErrPost(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession # prefix [{}] for this source: {}", acc, sourceName);
     }
 
@@ -1705,7 +1701,7 @@ bool GetAccession(const Parser* pp, string_view line, IndexblkPtr entry, unsigne
         const char* p = entry->acnum;
         if (pp->source != Parser::ESource::DDBJ || *p != 'A' || StringLen(p) != 12 ||
             ! StringEqu(p + 5, "0000000")) {
-            auto sourceName = sourceNames.at(pp->source);
+            string sourceName = sourceNames.at(pp->source);
             FtaErrPost(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession \"{}\" for this source: {}", p, sourceName);
             get = false;
         }

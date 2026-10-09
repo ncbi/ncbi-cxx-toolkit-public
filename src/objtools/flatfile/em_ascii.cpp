@@ -283,8 +283,8 @@ static void GetEmblDate(Parser::ESource source, const DataBlk& entry, CRef<CDate
     }
 
     while (offset < eptr) {
-        offset = std::find(offset, eptr, '\n');
-        if (offset >= eptr)
+        offset = SrchTheChar(string_view(offset, eptr), '\n');
+        if (! offset)
             break;
 
         offset++; /* newline */
@@ -445,7 +445,7 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
 
         string name;
         if (code < 0) {
-            ptr = std::find(bptr, eptr, ';');
+            ptr = SrchTheChar(string_view(bptr, eptr), ';');
             name.assign(bptr, ptr);
 
             if (NStr::EqualNocase(name, "MD5")) {
@@ -453,8 +453,8 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
                     if (NStr::Equal(ptr, 0, 2, "DR"))
                         break;
 
-                    ptr = std::find(ptr, eptr, '\n');
-                    if (ptr < eptr)
+                    ptr = SrchTheChar(string_view(ptr, eptr), '\n');
+                    if (*ptr == '\n')
                         ptr++;
                 }
                 continue;
@@ -475,19 +475,19 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
         }
 
         PointToNextToken(bptr); /* bptr points to primary_identifier */
-        p   = std::find(bptr, eptr, '\n');
-        ptr = std::find(bptr, eptr, ';');
+        p    = SrchTheChar(string_view(bptr, eptr), '\n');
+        ptr  = SrchTheChar(string_view(bptr, eptr), ';');
 
         string id, id1;
 
-        if (ptr < eptr && ptr < p) {
+        if (ptr && ptr < p) {
             id.assign(bptr, ptr);
             CleanTailNonAlphaChar(id);
 
             bptr = ptr;
             PointToNextToken(bptr); /* points to secondary_identifier */
         }
-        if (p < eptr) {
+        if (p) {
             id1.assign(bptr, p);
             CleanTailNonAlphaChar(id1);
         }
@@ -604,8 +604,8 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
             if (fta_StartsWith(ptr, "DR"sv))
                 break;
 
-            ptr = std::find(ptr, eptr, '\n');
-            if (ptr < eptr)
+            ptr = SrchTheChar(string_view(ptr, eptr), '\n');
+            if (*ptr == '\n')
                 ptr++;
         }
     }
@@ -1252,8 +1252,12 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
 
         if (StringEquN(p + 1, "s-", 2))
             p += 3;
-        ConsumeChar(p, 'm') || ConsumeChar(p, 'r') ||
-          ConsumeStr(p, "pre-") || ConsumeStr(p, "transcribed ");
+        if (*p == 'm' || *p == 'r')
+            p++;
+        else if (StringEquN(p, "pre-", 4))
+            p += 4;
+        else if (StringEquN(p, "transcribed ", 12))
+            p += 12;
 
         if (! fta_StartsWith(p, "RNA"sv)) {
             FtaErrPost(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");
@@ -2349,6 +2353,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
         ret;
 
     IndexblkPtr ibp;
+    char*       bptr;
 
     CEMBL_block::EDiv div;
 
@@ -2392,19 +2397,22 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
         return ret;
     }
 
+    bptr         = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_DIVISION));
+    div          = static_cast<CEMBL_block::TDiv>(fta_StringMatch(ParFlat_Embl_DIV_array, bptr));
     dataclass[0] = '\0';
-    if (auto bptr = XMLFindTagValue(entry, ibp->xip, INSDSEQ_DIVISION)) {
-        div = static_cast<CEMBL_block::TDiv>(fta_StringMatch(ParFlat_Embl_DIV_array, *bptr));
-        if (div < 0) {
-            FtaErrPost(SEV_REJECT, ERR_DIVISION_UnknownDivCode, "Unknown division code \"{}\" found in Embl flatfile. Record rejected.", *bptr);
-            return ret;
-        }
-        StringNCpy(dataclass, bptr->c_str(), 4);
-        dataclass[3] = '\0';
-    } else {
-        FtaErrPost(SEV_REJECT, ERR_DIVISION_UnknownDivCode, "No division code found in Embl flatfile. Record rejected.");
+    if (bptr) {
+        bptr[3] = '\0';
+        StringCpy(dataclass, bptr);
+    }
+    if (div < 0) {
+        FtaErrPost(SEV_REJECT, ERR_DIVISION_UnknownDivCode, "Unknown division code \"{}\" found in Embl flatfile. Record rejected.", bptr);
+        if (bptr)
+            MemFree(bptr);
         return ret;
     }
+
+    if (bptr)
+        MemFree(bptr);
 
     /* Embl has recently (7-19-93, email) decided to change the name of
      * its "UNA"==10 division to "UNC"==16 (for "unclassified")
@@ -2588,16 +2596,22 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     }
 
     if (is_htc_div) {
-        auto r = XMLFindTagValue(entry, ibp->xip, INSDSEQ_MOLTYPE);
+        char* r = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_MOLTYPE));
         if (r) {
-            p = r->c_str();
-            ConsumeChar(p, 'm') || ConsumeChar(p, 'r') ||
-                ConsumeStr(p, "pre-") || ConsumeStr(p, "transcribed ");
+            p = r;
+            if (*r == 'm' || *r == 'r')
+                p = r + 1;
+            else if (StringEquN(r, "pre-", 4))
+                p = r + 4;
+            else if (StringEquN(r, "transcribed ", 12))
+                p = r + 12;
 
             if (! fta_StartsWith(p, "RNA"sv)) {
                 FtaErrPost(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");
+                MemFree(r);
                 return ret;
             }
+            MemFree(r);
         }
     }
 
@@ -2652,13 +2666,15 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
 
 
     CRef<CDate_std> std_creation_date, std_update_date;
-    if (auto p = XMLFindTagValue(entry, ibp->xip, INSDSEQ_CREATE_DATE)) {
-        std_creation_date = GetUpdateDate(*p, pp->source);
+    if (char* p = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_CREATE_DATE))) {
+        std_creation_date = GetUpdateDate(p, pp->source);
         embl->SetCreation_date().SetStd(*std_creation_date);
+        MemFree(p);
     }
-    if (auto p = XMLFindTagValue(entry, ibp->xip, INSDSEQ_UPDATE_DATE)) {
-        std_update_date = GetUpdateDate(*p, pp->source);
+    if (char* p = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_UPDATE_DATE))) {
+        std_update_date = GetUpdateDate(p, pp->source);
         embl->SetUpdate_date().SetStd(*std_update_date);
+        MemFree(p);
     }
 
     if (std_update_date.Empty() && std_creation_date.NotEmpty())
