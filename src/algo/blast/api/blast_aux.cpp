@@ -1157,15 +1157,14 @@ void CBlastAppDiagHandler::Post(const SDiagMessage & mess)
 	if(m_handler != NULL) {
 		m_handler->Post(mess);
 	}
-	if(m_save) {
-		CRef<CBlast4_error> d(new CBlast4_error);
-		string m;
-		mess.Write(m);
-		d->SetMessage(NStr::Sanitize(m));
-		d->SetCode((int)mess.m_Severity);
-		{
-			DEFINE_STATIC_MUTEX(mx);
-			CMutexGuard guard(mx);
+	{
+	    CFastMutexGuard guard(m_message_mutex);
+	    if(m_save) {
+		    CRef<CBlast4_error> d(new CBlast4_error);
+	    	string m;
+		    mess.Write(m);
+		    d->SetMessage(NStr::Sanitize(m));
+		    d->SetCode((int)mess.m_Severity);
 			m_messages.push_back(d);
 		}
 	}
@@ -1173,8 +1172,7 @@ void CBlastAppDiagHandler::Post(const SDiagMessage & mess)
 
 void CBlastAppDiagHandler::ResetMessages()
 {
-	DEFINE_STATIC_MUTEX(mx);
-	CMutexGuard guard(mx);
+	CFastMutexGuard guard(m_message_mutex);
 	m_messages.clear();
 }
 
@@ -1188,8 +1186,9 @@ CBlastAppDiagHandler::~CBlastAppDiagHandler()
 
 void CBlastAppDiagHandler::DoNotSaveMessages(void)
 {
+	CFastMutexGuard guard(m_message_mutex);
 	m_save = false;
-	ResetMessages();
+	m_messages.clear();
 }
 
 
