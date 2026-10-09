@@ -967,30 +967,24 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
  **********************************************************/
 static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, CCit_pat& pat)
 {
-    string num;
-    char*  p;
-    char*  q;
-    char   ch;
-    char   country[3];
-
     if (! prbp || prbp->journal.empty())
-        return (false);
+        return false;
 
-    p = (char*)prbp->journal.c_str() + StringLen("PATENT NUMBER");
-    while (*p == ' ')
+    auto p = prbp->journal.begin();
+    auto e = prbp->journal.end();
+
+    p += "PATENT NUMBER"sv.size();
+    while (p < e && *p == ' ')
         p++;
-    for (q = p; *q != ' ' && *q != ',' && *q != '\0';)
+    auto q = p;
+    while (q < e && *q != ' ' && *q != ',')
         q++;
     if (q == p) {
         FtaErrPost(SEV_ERROR, ERR_REFERENCE_Patent, "Incorrectly formatted patent reference: {}", prbp->journal);
-        return (false);
+        return false;
     }
 
-    ch  = *q;
-    *q  = '\0';
-    num = p;
-    *q  = ch;
-
+    string num(p, q);
     for (char& c : num)
         if (IS_LOWER(c))
             TO_UPPER(c);
@@ -1001,23 +995,23 @@ static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, CCit_pat& pa
             break;
         j++;
     }
+
+    string country;
     if (j == 2) {
-        country[0] = num[0];
-        country[1] = num[1];
-        country[2] = '\0';
+        country += num[0];
+        country += num[1];
     } else {
-        country[0] = '\0';
         FtaErrPost(SEV_ERROR, ERR_REFERENCE_Patent, "Incorrectly formatted patent reference: {}", prbp->journal);
     }
 
-    while (*q != '\0' && isdigit(*q) == 0)
+    while (q < e && ! IS_DIGIT(*q))
         q++;
-    if (*q == '\0') {
+    if (q == e) {
         FtaErrPost(SEV_WARNING, ERR_REFERENCE_Patent, "Missing date in patent reference: {}", prbp->journal);
-        return (false);
+        return false;
     }
 
-    CRef<CDate_std> std_date = get_full_date(q, true, source);
+    CRef<CDate_std> std_date = get_full_date(string_view(q, e), true, source);
     if (! std_date || std_date.Empty()) {
         FtaErrPost(SEV_WARNING, ERR_REFERENCE_Patent, "Missing date in patent reference: {}", prbp->journal);
         return false;
@@ -1038,7 +1032,7 @@ static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, CCit_pat& pa
     if (prbp->authors.NotEmpty())
         pat.SetAuthors(*prbp->authors);
 
-    return (true);
+    return true;
 }
 
 /**********************************************************
