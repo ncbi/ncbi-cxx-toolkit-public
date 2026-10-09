@@ -579,7 +579,7 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, bool er)
     }
 
 
-    TEntrezId oldpmid = pPmid ? pPmid->GetPmid() : ZERO_ENTREZ_ID;
+    TEntrezId oldpmid = pPmid ? pPmid->GetPmid().Get() : ZERO_ENTREZ_ID;
     TEntrezId oldmuid = pMuid ? pMuid->GetMuid() : ZERO_ENTREZ_ID;
     TEntrezId muid    = ZERO_ENTREZ_ID;
     TEntrezId pmid    = ZERO_ENTREZ_ID;
@@ -761,7 +761,7 @@ CRef<COrg_ref> fta_fix_orgref_byid(ParserPtr pp, TTaxId taxid, bool* drop, bool 
 {
     CRef<COrg_ref> ret;
 
-    if (taxid <= ZERO_TAX_ID && pp->taxserver == 0)
+    if (taxid <= ZERO_TAX_ID || pp->taxserver == 0)
         return ret;
 
     if (pp->taxserver == 2)
