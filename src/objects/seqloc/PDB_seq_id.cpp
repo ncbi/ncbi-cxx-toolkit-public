@@ -90,20 +90,21 @@ int CPDB_seq_id::Compare(const CPDB_seq_id& psip2) const
 }
 
 // format a FASTA style string
-ostream& CPDB_seq_id::AsFastaString(ostream& s) const
+ostream& CPDB_seq_id::AsFastaString(ostream& s, EPDBMolFormat format) const
 {
+    auto mol = GetMol().Format(format);
     if (IsSetChain_id()) {
-            return s << GetMol().Get() << '|' << GetChain_id();
+            return s << mol << '|' << GetChain_id();
     }
     // no Upcase per Ostell - Karl 7/2001 
     char chain = (char) GetChain();
 
     if (chain == '|') {
-        return s << GetMol().Get() << '|'; // historically |VB
+        return s << mol << '|'; // historically |VB
     } else if ( chain == '\0' ) {
-        return s << GetMol().Get() << "| ";
+        return s << mol << "| ";
     } 
-    return s << GetMol().Get() << '|' << chain; 
+    return s << mol << '|' << chain; 
 }
 
 /*

@@ -421,8 +421,16 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromPDBAcc)
     BOOST_CHECK(id->IsPdb());
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pdb_00001GAV.1")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pdb_00001GAVX")));
-    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("PDb_00001GAV_X")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("PDb_00001GAV_X",
+                                              CSeq_id::fParse_AnyRaw,
+                                              ePDB_Legacy)));
     BOOST_CHECK(id->IsPdb());
+    BOOST_CHECK_EQUAL(id->GetPdb().GetMol(), "1GAV");
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV_X",
+                                              CSeq_id::fParse_AnyRaw,
+                                              ePDB_Extended)));
+    BOOST_CHECK(id->IsPdb());
+    BOOST_CHECK_EQUAL(id->GetPdb().GetMol(), "pdb_00001GAV");
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromPIRAcc)
@@ -2616,6 +2624,13 @@ BOOST_AUTO_TEST_CASE(TestPDB)
 
     BOOST_CHECK_EQUAL(CPDB_mol_id::GetFormat("4XNU"), ePDB_Legacy);
     BOOST_CHECK_EQUAL(CPDB_mol_id::GetFormat("pdb_00004XNU"), ePDB_Extended);
+    CSeq_id legacy("4XNU"), extended("pdb_00004XNU");
+    BOOST_CHECK_EQUAL(legacy.AsFastaString(ePDB_Extended),
+                      "pdb|pdb_00004XNU| ");
+    BOOST_CHECK_EQUAL(extended.AsFastaString(ePDB_Legacy), "pdb|4XNU| ");
+    BOOST_CHECK_EQUAL(legacy.GetSeqIdString(false, ePDB_Extended),
+                      "pdb_00004XNU");
+    BOOST_CHECK_EQUAL(extended.GetSeqIdString(false, ePDB_Legacy), "4XNU");
 }
 
 BOOST_AUTO_TEST_CASE(s_TestAssessment)

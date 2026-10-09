@@ -2818,7 +2818,8 @@ void x_GetLabel_Type(const CSeq_id& id, string* label,
 
 static inline
 void x_GetLabel_Content(const CSeq_id& id, string* label,
-                        CSeq_id::TLabelFlags flags, int* version)
+                        CSeq_id::TLabelFlags flags, int* version,
+                        EPDBMolFormat pdbfmt)
 {
     const CTextseq_id* tsid = id.GetTextseq_Id();
 
@@ -2909,7 +2910,7 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
         case CSeq_id::e_Pdb:
             {{
                 const CPDB_seq_id& pid = id.GetPdb();
-                *label += pid.GetMol().Get();
+                *label += pid.GetMol().Format(pdbfmt);
                 if (pid.IsSetChain_id()) {
                     *label += '_';
                     *label += pid.GetChain_id();
@@ -2931,7 +2932,8 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
 }
 
 
-void CSeq_id::GetLabel(string* label, ELabelType type, TLabelFlags flags) const
+void CSeq_id::GetLabel(string* label, ELabelType type, TLabelFlags flags,
+                       EPDBMolFormat pdbfmt) const
 {
     if ( !label ) {
         return;
@@ -2939,13 +2941,13 @@ void CSeq_id::GetLabel(string* label, ELabelType type, TLabelFlags flags) const
 
     switch (type) {
     case eFasta:
-        *label += AsFastaString();
+        *label += AsFastaString(pdbfmt);
         break;
 
     case eFastaContent:
     {
         CNcbiOstrstream oss;
-        x_WriteContentAsFasta(oss);
+        x_WriteContentAsFasta(oss, pdbfmt);
         *label += CNcbiOstrstreamToString(oss);
         break;
     }
@@ -2976,7 +2978,7 @@ void CSeq_id::GetLabel(string* label, ELabelType type, TLabelFlags flags) const
                     *label += "." + NStr::IntToString(tsid->GetVersion());
             }
         } else {
-            x_GetLabel_Content(*this, label, flags, NULL);
+            x_GetLabel_Content(*this, label, flags, NULL, pdbfmt);
         }
         break;
 
@@ -2985,7 +2987,7 @@ void CSeq_id::GetLabel(string* label, ELabelType type, TLabelFlags flags) const
         break;
 
     case eContent:
-        x_GetLabel_Content(*this, label, flags, NULL);
+        x_GetLabel_Content(*this, label, flags, NULL, pdbfmt);
         break;
     }
 
@@ -2997,7 +2999,8 @@ void CSeq_id::GetLabel(string* label, ELabelType type, TLabelFlags flags) const
     }
 }
 
-void CSeq_id::GetLabel(string* label, int* version, ELabelType type) const
+void CSeq_id::GetLabel(string* label, int* version, ELabelType type,
+                       EPDBMolFormat pdbfmt) const
 {
     if ( !label ) {
         return;
@@ -3005,13 +3008,13 @@ void CSeq_id::GetLabel(string* label, int* version, ELabelType type) const
 
     switch (type) {
     case eFasta:
-        *label += AsFastaString();
+        *label += AsFastaString(pdbfmt);
         break;
 
     case eFastaContent:
     {
         CNcbiOstrstream oss;
-        x_WriteContentAsFasta(oss);
+        x_WriteContentAsFasta(oss, pdbfmt);
         *label += CNcbiOstrstreamToString(oss);
         break;
     }
@@ -3019,7 +3022,7 @@ void CSeq_id::GetLabel(string* label, int* version, ELabelType type) const
     case eBoth:
         x_GetLabel_Type(*this, label, 0);
         *label += "|";
-        x_GetLabel_Content(*this, label, 0, version);
+        x_GetLabel_Content(*this, label, 0, version, pdbfmt);
         break;
 
     case eType:
@@ -3027,7 +3030,7 @@ void CSeq_id::GetLabel(string* label, int* version, ELabelType type) const
         break;
 
     case eContent:
-        x_GetLabel_Content(*this, label, 0, version);
+        x_GetLabel_Content(*this, label, 0, version, pdbfmt);
         break;
     }
 }
@@ -3036,27 +3039,26 @@ void CSeq_id::GetLabel(string* label, int* version, ELabelType type) const
 
 /*Return seqid string with optional version for text seqid type
 (default no version).*/
-string CSeq_id::GetSeqIdString(bool with_version) const
+string CSeq_id::GetSeqIdString(bool with_version, EPDBMolFormat pdbfmt) const
 {
     string label;
     TLabelFlags flags = 0;
     if (with_version) {
         flags |= fLabel_Version;
     }
-    GetLabel(&label, eContent, flags);
+    GetLabel(&label, eContent, flags, pdbfmt);
     return label;
 }
 
-string CSeq_id::GetSeqIdString(int* version) const
+string CSeq_id::GetSeqIdString(int* version, EPDBMolFormat pdbfmt) const
 {
     string label;
-    GetLabel(&label, version, eContent);
+    GetLabel(&label, version, eContent, pdbfmt);
     return label;
 }
 
 
-void CSeq_id::WriteAsFasta(ostream& out)
-    const
+void CSeq_id::WriteAsFasta(ostream& out, EPDBMolFormat pdbfmt) const
 {
     unsigned the_type = Which();
     if (the_type >= e_MaxChoice)  // New SeqId type
@@ -3074,10 +3076,10 @@ void CSeq_id::WriteAsFasta(ostream& out)
         out.put('|');
     }
 
-    x_WriteContentAsFasta(out);
+    x_WriteContentAsFasta(out, pdbfmt);
 }
 
-void CSeq_id::x_WriteContentAsFasta(ostream& out) const
+void CSeq_id::x_WriteContentAsFasta(ostream& out, EPDBMolFormat pdbfmt) const
 {
     unsigned the_type = Which();
     if (the_type >= e_MaxChoice)  // New SeqId type
@@ -3133,7 +3135,7 @@ void CSeq_id::x_WriteContentAsFasta(ostream& out) const
         GetPrf().AsFastaString(out);
         break;
     case e_Pdb:
-        GetPdb().AsFastaString(out);
+        GetPdb().AsFastaString(out, pdbfmt);
         break;
     case e_Tpg:
         GetTpg().AsFastaString(out);
@@ -3157,7 +3159,7 @@ void CSeq_id::x_WriteContentAsFasta(ostream& out) const
     }
 }
 
-const string CSeq_id::AsFastaString(void) const
+const string CSeq_id::AsFastaString(EPDBMolFormat pdbfmt) const
 {
 #ifdef HAVE_THREAD_LOCAL
     thread_local static CNcbiOstrstream str;
@@ -3172,7 +3174,7 @@ const string CSeq_id::AsFastaString(void) const
 #else
     CNcbiOstrstream str;
 #endif
-    WriteAsFasta(str);
+    WriteAsFasta(str, pdbfmt);
     return CNcbiOstrstreamToString(str);
 }
 
@@ -3183,7 +3185,8 @@ const string CSeq_id::AsFastaString(void) const
 // appealing formats.  This function can produce FastA-formatted titles or a
 // number of sub-titles (GI only, Best Accession with or without version).
 //
-string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
+string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt,
+                               EPDBMolFormat pdbfmt)
 {
     if (fmt == eFormat_FastA) {
         CNcbiOstrstream ostr;
@@ -3215,7 +3218,7 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
         // its version indicator
         if (best_id.NotEmpty()) {
             string label;
-            best_id->GetLabel(&label, eDefault, fLabel_Version);
+            best_id->GetLabel(&label, eDefault, fLabel_Version, pdbfmt);
             return label;
         }
         break;
@@ -3225,7 +3228,7 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
         // without its version indicator
         if (best_id.NotEmpty()) {
             string label;
-            best_id->GetLabel(&label, eDefault, 0);
+            best_id->GetLabel(&label, eDefault, 0, pdbfmt);
             return label;
         }
         break;
@@ -3238,7 +3241,8 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
     return "";
 }
 
-CNcbiOstream& CSeq_id::WriteAsFasta(CNcbiOstream& ostr, const CBioseq& bioseq)
+CNcbiOstream& CSeq_id::WriteAsFasta(CNcbiOstream& ostr, const CBioseq& bioseq,
+                                    EPDBMolFormat pdbfmt)
 {
     bool is_na            = bioseq.GetInst().GetMol() != CSeq_inst::eMol_aa;
     CRef<CSeq_id> best_id = FindBestChoice(bioseq.GetId(),
@@ -3263,7 +3267,7 @@ CNcbiOstream& CSeq_id::WriteAsFasta(CNcbiOstream& ostr, const CBioseq& bioseq)
             ostr << '|';
         }
 
-        best_id->WriteAsFasta(ostr);
+        best_id->WriteAsFasta(ostr, pdbfmt);
     }
 
     return ostr;
@@ -3356,12 +3360,14 @@ CSeq_id::ETypeVariant CSeq_id::x_IdentifyTypeVariant(CSeq_id::E_Choice type,
 }
 
 //SeqIdFastAConstructors
-CSeq_id::CSeq_id(const CTempString& the_id, TParseFlags flags)
+CSeq_id::CSeq_id(const CTempString& the_id, TParseFlags flags,
+                 EPDBMolFormat pdbfmt)
 {
-    Set(the_id, flags);
+    Set(the_id, flags, pdbfmt);
 }
 
-CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
+CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags,
+                      EPDBMolFormat pdbfmt)
 {
     CTempString the_id = NStr::TruncateSpaces_Unsafe(the_id_in,
                                                      NStr::eTrunc_Both);
@@ -3431,7 +3437,7 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
                     chain = the_id[4];
                 }
             }
-            return Set(type, mol, chain, 0, kEmptyStr, flags);
+            return Set(type, mol, chain, 0, kEmptyStr, flags, pdbfmt);
         }
         default:
         {
@@ -3441,7 +3447,7 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
                 ResetSelection();
                 return *this;
             }
-            return Set(type, acc, kEmptyStr, ver, kEmptyStr, flags);
+            return Set(type, acc, kEmptyStr, ver, kEmptyStr, flags, pdbfmt);
         }
         }
     } else {
@@ -3449,7 +3455,7 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
         NStr::Split(the_id, "|", fasta_pieces);
         ETypeVariant tv = x_IdentifyTypeVariant(type, fasta_pieces.front());
         fasta_pieces.pop_front();
-        x_Init(fasta_pieces, type, tv, flags);
+        x_Init(fasta_pieces, type, tv, flags, pdbfmt);
         if ( !fasta_pieces.empty() ) {
             // tolerate trailing parts if they're all empty.
             ITERATE(list<CTempString>, it, fasta_pieces) {
@@ -3489,7 +3495,7 @@ CSeq_id& CSeq_id::Set(EFastaAsTypeAndContent f, E_Choice the_type,
         tv = x_IdentifyTypeVariant(the_type, fasta_pieces.front());
         fasta_pieces.pop_front();
     }
-    x_Init(fasta_pieces, the_type, tv, flags);
+    x_Init(fasta_pieces, the_type, tv, flags, ePDB_AsIs);
     return *this;
 }
 
@@ -3522,17 +3528,18 @@ CSeq_id::CheckLocalID(const CTempString& s)
 
 
 SIZE_TYPE CSeq_id::ParseFastaIds(CBioseq::TId& ids, const CTempString& s,
-                                 bool allow_partial_failure)
+                                 bool allow_partial_failure,
+                                 EPDBMolFormat pdbfmt)
 {
     TParseFlags flags = fParse_RawText | fParse_AnyLocal;
     if (allow_partial_failure) {
         flags |= fParse_PartialOK;
     }
-    return ParseIDs(ids, s, flags);
+    return ParseIDs(ids, s, flags, pdbfmt);
 }
 
 SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
-                            TParseFlags flags)
+                            TParseFlags flags, EPDBMolFormat pdbfmt)
 {
     CTempString ss = NStr::TruncateSpaces_Unsafe(s, NStr::eTrunc_Both);
     if (ss.empty()) {
@@ -3541,7 +3548,7 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
 
     // first simple check to make it faster
     if (!s_HasFastaTag(ss)) {
-        CRef<CSeq_id> id(new CSeq_id(ss, flags | fParse_NoFASTA));
+        CRef<CSeq_id> id(new CSeq_id(ss, flags | fParse_NoFASTA, pdbfmt));
         if (id->Which() == CSeq_id::e_not_set) {
             return 0;
         }
@@ -3555,7 +3562,7 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
     _ASSERT(fasta_pieces.size() > 0);
     if (fasta_pieces.size() == 1)
     {
-        CRef<CSeq_id> id(new CSeq_id(ss, flags | fParse_NoFASTA));
+        CRef<CSeq_id> id(new CSeq_id(ss, flags | fParse_NoFASTA, pdbfmt));
         if (id->Which() == CSeq_id::e_not_set) {
             return 0;
         }
@@ -3580,7 +3587,7 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
             try {
                 CRef<CSeq_id> id(new CSeq_id);
                 if (type != e_not_set) {
-                    type = id->x_Init(fasta_pieces, type, tv, flags);
+                    type = id->x_Init(fasta_pieces, type, tv, flags, pdbfmt);
                     if (id->Which() == CSeq_id::e_not_set) {
                         break;
                     }
@@ -3633,7 +3640,7 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
 
 CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
                                   E_Choice type, ETypeVariant tv,
-                                  TParseFlags flags)
+                                  TParseFlags flags, EPDBMolFormat pdbfmt)
 {
     _ASSERT(!fasta_pieces.empty());
     _ASSERT(type != e_not_set);
@@ -3780,6 +3787,7 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
             }
             fields[0] = fields[0].substr(0, 4);
         }
+        fields[0] = CPDB_mol_id::Format(fields[0], pdbfmt);
         break;
 
     default:
@@ -3848,21 +3856,22 @@ CSeq_id::CSeq_id(E_Choice           the_type,
                  const CTempString& name_in,
                  int                version,
                  const CTempString& release_in,
-                 TParseFlags        flags)
+                 TParseFlags        flags,
+                 EPDBMolFormat      pdbfmt)
 {
-    Set(the_type, acc_in, name_in, version, release_in, flags);
+    Set(the_type, acc_in, name_in, version, release_in, flags, pdbfmt);
 }
 
 CSeq_id::CSeq_id(E_Choice the_type, const CTempString& acc_in,
-                 TParseFlags flags)
+                 TParseFlags flags, EPDBMolFormat pdbfmt)
 {
-    Set(the_type, acc_in, kEmptyStr, 0, kEmptyStr, flags);
+    Set(the_type, acc_in, kEmptyStr, 0, kEmptyStr, flags, pdbfmt);
 }
 
 CSeq_id& CSeq_id::Set(E_Choice the_type, const CTempString& acc_in,
-                      TParseFlags flags)
+                      TParseFlags flags, EPDBMolFormat pdbfmt)
 {
-    return Set(the_type, acc_in, kEmptyStr, 0, kEmptyStr, flags);
+    return Set(the_type, acc_in, kEmptyStr, 0, kEmptyStr, flags, pdbfmt);
 }
 
 // Karl Sirotkin 7/2001
@@ -3872,7 +3881,8 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
                       const CTempString& name_in,
                       int                version,
                       const CTempString& release_in,
-                      TParseFlags        flags)
+                      TParseFlags        flags,
+                      EPDBMolFormat      pdbfmt)
 {
     CTempString  acc       = NStr::TruncateSpaces_Unsafe(acc_in,
                                                          NStr::eTrunc_Both);
@@ -3968,7 +3978,7 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
             CTempString  name = NStr::TruncateSpaces_Unsafe(name_in,
                                                             NStr::eTrunc_Both);
             CPDB_seq_id& pdb  = SetPdb();
-            pdb.SetMol().Set(acc);
+            pdb.SetMol().Set(CPDB_mol_id::Format(acc, pdbfmt));
 
             // Consult name_in in addition to name as whitespace
             // stripping can lose relevant information here.

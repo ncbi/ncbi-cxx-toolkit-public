@@ -45,6 +45,7 @@
 #include <serial/serializable.hpp>
 
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seqloc/PDB_mol_id.hpp>
 
 #include <set>
 
@@ -149,7 +150,8 @@ public:
     /// @param flags
     ///   How to interpret anything other than a single FASTA-style ID.
     explicit CSeq_id(const CTempString& the_id,
-                     TParseFlags flags = fParse_AnyRaw);
+                     TParseFlags        flags  = fParse_AnyRaw,
+                     EPDBMolFormat      pdbfmt = ePDB_AsIs);
 
     /// Construct a seq-id from a dbtag.
     /// @param tag
@@ -194,9 +196,11 @@ public:
             const CTempString& name_in    = kEmptyStr,
             int                version    = 0,
             const CTempString& release_in = kEmptyStr,
-            TParseFlags        flags      = 0);
+            TParseFlags        flags      = 0,
+            EPDBMolFormat      pdbfmt     = ePDB_AsIs);
 
-    CSeq_id(E_Choice the_type, const CTempString& acc_in, TParseFlags flags);
+    CSeq_id(E_Choice the_type, const CTempString& acc_in, TParseFlags flags,
+            EPDBMolFormat pdbfmt = ePDB_AsIs);
 
     /// Construct a Seq-id from a FASTA string with the leading (type)
     /// component already parsed out.
@@ -210,7 +214,8 @@ public:
     /// Reassign based on flat specifications; arguments interpreted
     /// as with constructors.  (Returns a reference to self.)
 
-    CSeq_id& Set(const CTempString& the_id, TParseFlags flags = fParse_AnyRaw);
+    CSeq_id& Set(const CTempString& the_id, TParseFlags flags = fParse_AnyRaw,
+                 EPDBMolFormat pdbfmt = ePDB_AsIs);
 
     CSeq_id& Set(const CDbtag& tag, bool set_as_general = true,
                  TParseFlags flags = 0);
@@ -224,10 +229,11 @@ public:
                  const CTempString& name_in    = kEmptyStr,
                  int                version    = 0,
                  const CTempString& release_in = kEmptyStr,
-                 TParseFlags        flags      = 0);
+                 TParseFlags        flags      = 0,
+                 EPDBMolFormat      pdbfmt     = ePDB_AsIs);
 
     CSeq_id& Set(E_Choice the_type, const CTempString& acc_in,
-                 TParseFlags flags);
+                 TParseFlags flags, EPDBMolFormat pdbfmt = ePDB_AsIs);
 
     CSeq_id& Set(EFastaAsTypeAndContent, E_Choice the_type,
                  const CTempString& the_content, TParseFlags flags = 0);
@@ -645,9 +651,11 @@ public:
     const CTextseq_id* GetTextseq_Id(void) const;
 
     /// Implement serializable interface
-    virtual void WriteAsFasta(ostream& out) const;
+    virtual void WriteAsFasta(ostream& out) const
+        { WriteAsFasta(out, ePDB_AsIs); }
+    void WriteAsFasta(ostream& out, EPDBMolFormat pdbfmt) const;
     CProxy DumpAsFasta(void) const { return Dump(eAsFasta); }
-    const string AsFastaString(void) const;
+    const string AsFastaString(EPDBMolFormat pdbfmt = ePDB_AsIs) const;
 
     /// return the label for a given string
     enum ELabelType {
@@ -684,7 +692,8 @@ public:
     /// @sa ELabelType, ELabelFlags
     void GetLabel(string*     label,
                   ELabelType  type  = eDefault,
-                  TLabelFlags flags = fLabel_Default) const;
+                  TLabelFlags flags = fLabel_Default,
+                  EPDBMolFormat pdbfmt = ePDB_AsIs) const;
     /// Append a label for this Seq-id to the supplied string, splitting
     /// out the version to a separate output parameter.
     /// @note In eFasta and eFastaContent mode, this method includes the
@@ -698,13 +707,16 @@ public:
     /// @sa ELabelType
     void GetLabel(string*     label,
                   int*        version,
-                  ELabelType  type  = eDefault) const;
+                  ELabelType  type  = eDefault,
+                  EPDBMolFormat pdbfmt = ePDB_AsIs) const;
 
     ///Return seqid string with optional version for text seqid type
-    string GetSeqIdString(bool with_version = false) const;
+    string GetSeqIdString(bool with_version = false,
+                          EPDBMolFormat pdbfmt = ePDB_AsIs) const;
 
     ///Return seqid string for text seqid type with separate integer version
-    string GetSeqIdString(int* version) const;
+    string GetSeqIdString(int* version, EPDBMolFormat pdbfmt = ePDB_AsIs)
+        const;
 
     /// Get a string representation of the sequence IDs of a given bioseq.  This
     /// function produces strings in a number of possible formats.
@@ -714,7 +726,8 @@ public:
         eFormat_BestWithoutVersion, // 'Best' accession, without the version
         eFormat_BestWithVersion     // 'Best' accession, with version
     };
-    static string GetStringDescr(const CBioseq& bioseq, EStringFormat fmt);
+    static string GetStringDescr(const CBioseq& bioseq, EStringFormat fmt,
+                                 EPDBMolFormat pdbfmt = ePDB_AsIs);
 
     /// Write a bioseq's IDs in FASTA format
     /// @param ostr
@@ -724,7 +737,8 @@ public:
     /// @return
     ///    The stream that was passed in, after all writes occurred
     static CNcbiOstream& WriteAsFasta(CNcbiOstream& ostr,
-                                      const CBioseq& bioseq);
+                                      const CBioseq& bioseq,
+                                      EPDBMolFormat pdbfmt = ePDB_AsIs);
 
     /// Perform rudimentary validation on potential local IDs, whose
     /// contents should be pure ASCII and limited to letters, digits,
@@ -748,7 +762,8 @@ public:
     /// @return
     ///   The number of IDs successfully parsed.
     static SIZE_TYPE ParseIDs(CBioseq::TId& ids, const CTempString& s,
-                              TParseFlags flags = fParse_Default);
+                              TParseFlags flags = fParse_Default,
+                              EPDBMolFormat pdbfmt = ePDB_AsIs);
 
     static bool IsValid(const CBioseq::TId& ids, TParseFlags flags = fParse_Default);
     static bool IsValid(const CSeq_id& id, TParseFlags flags = fParse_Default);
@@ -767,7 +782,8 @@ public:
     /// @return
     ///   The number of IDs successfully parsed.
     static SIZE_TYPE ParseFastaIds(CBioseq::TId& ids, const CTempString& s,
-                                   bool allow_partial_failure = false);
+                                   bool allow_partial_failure = false,
+                                   EPDBMolFormat pdbfmt = ePDB_AsIs);
 
     /// Numerical quality ranking; lower is better.  (Text)Score, aka
     /// WorstRank, corresponds to the C Toolkit's SeqIdFindWorst,
@@ -923,7 +939,7 @@ private:
 
     // returns next type if determined along the way
     E_Choice x_Init(list<CTempString>& fasta_pieces, E_Choice type,
-                    ETypeVariant tv, TParseFlags flags);
+                    ETypeVariant tv, TParseFlags flags, EPDBMolFormat pdbfmt);
 
     // Prohibit copy constructor & assignment operator
     CSeq_id(const CSeq_id&);
@@ -933,7 +949,7 @@ private:
                                               TParseFlags flags,
                                               bool has_version);
 
-    void x_WriteContentAsFasta(ostream& out) const;
+    void x_WriteContentAsFasta(ostream& out, EPDBMolFormat pdbfmt) const;
 
     //CRef<CAbstractObjectManager> m_ObjectManager;
 
