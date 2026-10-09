@@ -1031,7 +1031,7 @@ static bool PackSeqPntCheckCpp(const CSeq_loc& loc)
 /**********************************************************/
 /* returns : 2 = Ok, 1 = mixed strands, 0 = error in location
  */
-static Uint1 FTASeqLocCheck(const CSeq_loc& locs, char* accession)
+static Uint1 FTASeqLocCheck(const CSeq_loc& locs, const char* accession)
 {
     Uint1 strand = 99;
     Uint1 retval = 2;
@@ -1144,15 +1144,17 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
     TDataBlkList temp_xml_chain;
     if (pp->format == Parser::EFormat::XML) {
         temp_xml_chain = XMLBuildRefDataBlk(entry.mBuf.ptr, ibp->xip, ParFlat_REF_BTW);
-        dbp            = temp_xml_chain.begin();
-        dbp_end        = temp_xml_chain.end();
+        if (temp_xml_chain.empty())
+            return;
+        dbp     = temp_xml_chain.begin();
+        dbp_end = temp_xml_chain.end();
     } else {
         TDataBlkList& chain = TrackNodes(entry);
-        dbp                 = chain.begin();
-        dbp_end             = chain.end();
+        if (chain.empty())
+            return;
+        dbp     = chain.begin();
+        dbp_end = chain.end();
     }
-    if (dbp == dbp_end)
-        return;
 
     for (; dbp != dbp_end; ++dbp) {
         auto& ref_blk = *dbp;
@@ -1266,15 +1268,17 @@ static void ImpFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
     TDataBlkList temp_xml_chain;
     if (pp->format == Parser::EFormat::XML) {
         temp_xml_chain = XMLBuildRefDataBlk(entry.mBuf.ptr, ibp->xip, ParFlat_REF_SITES);
-        dbp            = temp_xml_chain.begin();
-        dbp_end        = temp_xml_chain.end();
+        if (temp_xml_chain.empty())
+            return;
+        dbp     = temp_xml_chain.begin();
+        dbp_end = temp_xml_chain.end();
     } else {
         TDataBlkList& chain = TrackNodes(entry);
-        dbp                 = chain.begin();
-        dbp_end             = chain.end();
+        if (chain.empty())
+            return;
+        dbp     = chain.begin();
+        dbp_end = chain.end();
     }
-    if (dbp == dbp_end)
-        return;
 
     CRef<CSeq_feat> feat;
     for (; dbp != dbp_end; ++dbp) {
@@ -1867,7 +1871,7 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
 
     if (type != CRNA_ref::eType_premsg && type != CRNA_ref::eType_tRNA) /* mRNA, snRNA, scRNA or other */
     {
-        qval = GetTheQualValue(feat.SetQual(), "product"); // may return newly allocated memory!!!
+        qval = GetTheQualValue(feat.SetQual(), "product");
         if (qval) {
             auto p = GetTheQualValue(feat.SetQual(), "product");
             if (p && ! p->empty()) {
@@ -2639,7 +2643,7 @@ static void fta_remove_dup_feats(TDataBlkList& dbl)
         const FeatBlk* fbp1 = dbp->GetFeatData();
 
         auto tdbpprev = dbp;
-        for (auto tdbp = next(dbp); tdbp != dbl.end();) {
+        for (auto tdbp = next(tdbpprev); tdbp != dbl.end();) {
             if (! tdbp->hasData()) {
                 tdbp = dbl.erase_after(tdbpprev);
                 continue;
@@ -3669,11 +3673,11 @@ static void fta_process_cons_splice(string& val_str)
 }
 
 
-void xSplitLines(
+static void xSplitLines(
     const string&   str,
     vector<string>& lines)
 {
-    NStr::Split(str, "\n", lines, 0);
+    NStr::Split(str, "\n", lines);
 }
 
 /**********************************************************
@@ -3697,7 +3701,7 @@ static void ParseQualifiers(
 {
     string bstr(bptr, eptr);
     NStr::TruncateSpacesInPlace(bstr);
-    // cerr << "bstr:\n" << bstr.c_str() << "\n\n";
+    // cerr << "bstr:\n" << bstr << "\n\n";
     vector<string> qualLines;
     xSplitLines(bstr, qualLines);
 
@@ -3707,8 +3711,8 @@ static void ParseQualifiers(
     CQualParser qualParser(format, featKey, featLocation, qualLines);
     while (! qualParser.Done()) {
         if (qualParser.GetNextQualifier(qualKey, qualVal)) {
-            // cerr << "Key:   " << qualKey.c_str() << "\n";
-            // cerr << "Val:   " << qualVal.c_str() << "\n";
+            // cerr << "Key:   " << qualKey << "\n";
+            // cerr << "Val:   " << qualVal << "\n";
             CRef<CGb_qual> pQual(new CGb_qual);
             pQual->SetQual(qualKey);
             pQual->SetVal(qualVal);
@@ -3738,18 +3742,16 @@ static void fta_check_satellite(string_view str, bool* drop)
 }
 
 /**********************************************************/
-static bool fta_check_mobile_element(FeatBlkPtr fbp, Parser::ESource source,
-                                     Parser::EFormat format)
+static bool fta_check_mobile_element(
+    FeatBlkPtr fbp, Parser::ESource source, Parser::EFormat format)
 {
-    char *p_val;
-    char *p;
+    char* p_val;
+    char* p;
     bool found = false;
-    Int2 i;
 
-    for(TQualVector::iterator qual = fbp->quals.begin(); qual != fbp->quals.end(); ++qual)
-    {
+    for (TQualVector::iterator qual = fbp->quals.begin(); qual != fbp->quals.end(); ++qual) {
         if ((*qual)->IsSetQual() && (*qual)->GetQual() == "mobile_element_type" &&
-            (*qual)->IsSetVal() && !(*qual)->GetVal().empty()) {
+            (*qual)->IsSetVal() && ! (*qual)->GetVal().empty()) {
             p_val = (char *) (*qual)->GetVal().c_str();
             for (p = p_val; *p == '\"';)
                 ++p;
@@ -3761,8 +3763,7 @@ static bool fta_check_mobile_element(FeatBlkPtr fbp, Parser::ESource source,
         }
     }
 
-    if(!found)
-    {
+    if (! found) {
         optional<string> loc_str = fbp->location;
         if(source == Parser::ESource::USPTO && format == Parser::EFormat::XML)
             FtaErrPost(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing,
@@ -3776,10 +3777,10 @@ static bool fta_check_mobile_element(FeatBlkPtr fbp, Parser::ESource source,
     p = StringChr(p_val, ':');
     if(p)
         *p = '\0';
-    i = MatchArrayString(MobileElementQualValues, p_val);
+    Int2 i = MatchArrayString(MobileElementQualValues, p_val);
     if(p)
         *p = ':';
-    if(i > -1)
+    if (i >= 0)
         return true;
 
     optional<string> loc_str = fbp->location;
@@ -3825,7 +3826,6 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
     char* eptr;
     char* ptr1;
     char* ptr2;
-    char* p;
     string loc;
 
     FeatBlkPtr fbp;
@@ -3846,7 +3846,8 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
         bptr = dbp.mBuf.ptr;
         eptr = bptr + dbp.mBuf.len;
 
-        for (p = bptr; *p != '\n';)
+        const char* p = bptr;
+        while (*p != '\n')
             p++;
         FtaInstallPrefix(PREFIX_FEATURE, "Parsing FT line: ", string_view(bptr, p - bptr));
         ptr1 = bptr + ParFlat_COL_FEATKEY;
@@ -5037,7 +5038,7 @@ static CMolInfo::EBiomol GetBiomolFromToks(size_t mRNA, size_t tRNA, size_t rRNA
         r = CMolInfo::eBiomol_snRNA;
     }
     if (p == string_view::npos || (snoRNA != string_view::npos && snoRNA < p)) {
-        p = snoRNA;
+        // p = snoRNA;
         r = CMolInfo::eBiomol_snoRNA;
     }
 
@@ -5548,8 +5549,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             break;
         if (! subdbp.mBuf.ptr)
             continue;
-        offset = subdbp.mBuf.ptr + ParFlat_COL_FEATKEY;
-        if (fta_StartsWith(offset, "CDS"sv))
+        if (fta_StartsWith(subdbp.mBuf.ptr + ParFlat_COL_FEATKEY, "CDS"sv))
             i++;
     }
     if (i > 1) {
