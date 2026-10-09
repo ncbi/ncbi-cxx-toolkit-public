@@ -703,13 +703,13 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
     }
 
     const string& val = qual.GetVal();
-    if (NStr::EqualNocase(val, "taxon") || StringEquNI(val.c_str(), "GI:", 3))
+    if (NStr::EqualNocase(val, "taxon") || NStr::StartsWith(val, "GI:", NStr::eNocase))
         return tag;
 
     string line = val;
 
-    if (StringEquNI(line.c_str(), "MGD:MGI:", 8))
-        line = line.substr(4);
+    if (NStr::StartsWith(line, "MGD:MGI:", NStr::eNocase))
+        line.erase(0, 4);
 
     size_t colon = line.find(':');
     if (colon == string::npos) {
@@ -1514,7 +1514,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
         if (! p)
             break;
         p += 14;
-        if (StringEquNI(p, " ribosomal RNA", 14))
+        if (StringEquNI(p, " ribosomal RNA"))
             fta_StringCpy(p, p + 14);
     }
 

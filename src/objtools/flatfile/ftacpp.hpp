@@ -133,10 +133,9 @@ inline bool fta_StartsWith(const char* s1, string_view s2)
 {
     return string_view(s1).starts_with(s2);
 }
-inline bool StringEquNI(const char* s1, const char* s2, size_t n)
+inline bool StringEquNI(const char* s1, string_view s2)
 {
-    const string S1(s1), S2(s2);
-    return NStr::EqualNocase(S1.substr(0, n), S2.substr(0, n));
+    return NStr::StartsWith(string_view(s1), s2, NStr::eNocase);
 }
 
 inline bool StringHasNoText(const char* s)
