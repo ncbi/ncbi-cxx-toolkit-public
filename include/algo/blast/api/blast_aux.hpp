@@ -259,9 +259,13 @@ public:
 	/// Call to turn off saving diag message, discard all saved message
 	void DoNotSaveMessages(void);
 	/// Return list of saved diag messages
-	list<CRef<objects::CBlast4_error> > & GetMessages(void) { return m_messages;}
+	list<CRef<objects::CBlast4_error> > GetMessages(void) const{
+	    CFastMutexGuard guard(m_message_mutex);
+	    return m_messages;
+	}
 private :
 	CDiagHandler * m_handler;
+	mutable CFastMutex m_message_mutex;
 	list<CRef<objects::CBlast4_error> > m_messages;
 	bool m_save;
 };
