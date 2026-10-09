@@ -3220,7 +3220,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
         GetSeqLocation(*feat, tsfbp->location, seqid, &err, pp, "source");
 
         if (err) {
-            FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped, "/source|{}| range check detects problems. Entry dropped.", tsfbp->location);
+            FtaErrPost(SEV_REJECT, ERR_FEATURE_Dropped, "/source|{}| range check detects problems. Entry dropped.", tsfbp->location);
             break;
         }
 
