@@ -180,10 +180,13 @@ static const map<Parser::ESource, string> sourceNames = {
     { Parser::ESource::unknown, "unknown" },
     { Parser::ESource::EMBL, "EMBL" },
     { Parser::ESource::GenBank, "GENBANK" },
+    { Parser::ESource::DDBJ, "DDBJ" },
     { Parser::ESource::SPROT, "Swiss-Prot" },
     { Parser::ESource::NCBI, "NCBI" },
     { Parser::ESource::LANL, "GSDB" },
-    { Parser::ESource::Refseq, "RefSeq" }
+    { Parser::ESource::Refseq, "RefSeq" },
+    { Parser::ESource::USPTO, "USPTO" },
+    { Parser::ESource::All, "unknown" }
 };
 
 static string_view month_name[] = {
@@ -1678,7 +1681,7 @@ bool GetAccession(const Parser* pp, string_view line, IndexblkPtr entry, unsigne
             get = CheckAccession(tokens, pp->source, pp->mode, entry->acnum, 2);
         }
     } else {
-        string sourceName = sourceNames.at(pp->source);
+        auto sourceName = sourceNames.at(pp->source);
         FtaErrPost(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession # prefix [{}] for this source: {}", acc, sourceName);
     }
 
@@ -1702,7 +1705,7 @@ bool GetAccession(const Parser* pp, string_view line, IndexblkPtr entry, unsigne
         const char* p = entry->acnum;
         if (pp->source != Parser::ESource::DDBJ || *p != 'A' || StringLen(p) != 12 ||
             ! StringEqu(p + 5, "0000000")) {
-            string sourceName = sourceNames.at(pp->source);
+            auto sourceName = sourceNames.at(pp->source);
             FtaErrPost(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession \"{}\" for this source: {}", p, sourceName);
             get = false;
         }
