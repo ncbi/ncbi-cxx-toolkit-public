@@ -320,6 +320,7 @@ static string_view OrganelleFirstToken[] = {
     "chromatophore",
     "hydrogenosome",
     "mitochondrion",
+    "nitroplast",
     "nucleomorph",
     "plastid",
 };
@@ -1958,7 +1959,7 @@ static bool UpdateRawBioSource(SourceFeatBlkList& sfbl, Parser::ESource source, 
                         dropped = true;
                         break;
                     }
-                    if (i == 4)
+                    if (i == 5)
                         ibp->got_plastid = true;
                     if (newgen < 0)
                         newgen = StringMatchIcase(GenomicSourceFeatQual,
@@ -1970,7 +1971,7 @@ static bool UpdateRawBioSource(SourceFeatBlkList& sfbl, Parser::ESource source, 
                         dropped = true;
                         break;
                     }
-                    if (i == 4)
+                    if (i == 5)
                         ibp->got_plastid = true;
                     if (newgen < 0)
                         newgen = StringMatchIcase(GenomicSourceFeatQual, val_ptr);
