@@ -2811,7 +2811,7 @@ static SPFeatInputList ParseSPFeat(const DataBlk& entry, size_t seqlen)
 
     auto current = spfil.before_begin();
 
-    while (bptr < eptr && (endline = SrchTheChar(string_view(bptr, eptr), '\n'))) {
+    while (bptr < eptr && (endline = SrchTheChar(bptr, eptr, '\n'))) {
         SPFeatInput temp;
 
         for (p = bptr, i = 0; *p != ' ' && *p != '\n' && i < 8; i++)
@@ -2964,7 +2964,7 @@ static SPFeatInputList ParseSPFeat(const DataBlk& entry, size_t seqlen)
                 quotes = nullptr;
             }
 
-            endline = SrchTheChar(string_view(bptr, eptr), '\n');
+            endline = SrchTheChar(bptr, eptr, '\n');
             p       = endline - 1;
             if (p >= bptr && *p == '\"')
                 *p = '.';
