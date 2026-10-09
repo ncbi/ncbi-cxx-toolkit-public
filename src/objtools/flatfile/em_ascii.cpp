@@ -2349,7 +2349,6 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
         ret;
 
     IndexblkPtr ibp;
-    char*       bptr;
 
     CEMBL_block::EDiv div;
 
@@ -2393,22 +2392,19 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
         return ret;
     }
 
-    bptr         = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_DIVISION));
-    div          = static_cast<CEMBL_block::TDiv>(fta_StringMatch(ParFlat_Embl_DIV_array, bptr));
     dataclass[0] = '\0';
-    if (bptr) {
-        bptr[3] = '\0';
-        StringCpy(dataclass, bptr);
-    }
-    if (div < 0) {
-        FtaErrPost(SEV_REJECT, ERR_DIVISION_UnknownDivCode, "Unknown division code \"{}\" found in Embl flatfile. Record rejected.", bptr);
-        if (bptr)
-            MemFree(bptr);
+    if (auto bptr = XMLFindTagValue(entry, ibp->xip, INSDSEQ_DIVISION)) {
+        div = static_cast<CEMBL_block::TDiv>(fta_StringMatch(ParFlat_Embl_DIV_array, *bptr));
+        if (div < 0) {
+            FtaErrPost(SEV_REJECT, ERR_DIVISION_UnknownDivCode, "Unknown division code \"{}\" found in Embl flatfile. Record rejected.", *bptr);
+            return ret;
+        }
+        StringNCpy(dataclass, bptr->c_str(), 4);
+        dataclass[3] = '\0';
+    } else {
+        FtaErrPost(SEV_REJECT, ERR_DIVISION_UnknownDivCode, "No division code found in Embl flatfile. Record rejected.");
         return ret;
     }
-
-    if (bptr)
-        MemFree(bptr);
 
     /* Embl has recently (7-19-93, email) decided to change the name of
      * its "UNA"==10 division to "UNC"==16 (for "unclassified")
@@ -2592,18 +2588,16 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     }
 
     if (is_htc_div) {
-        char* r = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_MOLTYPE));
+        auto r = XMLFindTagValue(entry, ibp->xip, INSDSEQ_MOLTYPE);
         if (r) {
-            p = r;
+            p = r->c_str();
             ConsumeChar(p, 'm') || ConsumeChar(p, 'r') ||
                 ConsumeStr(p, "pre-") || ConsumeStr(p, "transcribed ");
 
             if (! fta_StartsWith(p, "RNA"sv)) {
                 FtaErrPost(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");
-                MemFree(r);
                 return ret;
             }
-            MemFree(r);
         }
     }
 
@@ -2658,15 +2652,13 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
 
 
     CRef<CDate_std> std_creation_date, std_update_date;
-    if (char* p = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_CREATE_DATE))) {
-        std_creation_date = GetUpdateDate(p, pp->source);
+    if (auto p = XMLFindTagValue(entry, ibp->xip, INSDSEQ_CREATE_DATE)) {
+        std_creation_date = GetUpdateDate(*p, pp->source);
         embl->SetCreation_date().SetStd(*std_creation_date);
-        MemFree(p);
     }
-    if (char* p = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_UPDATE_DATE))) {
-        std_update_date = GetUpdateDate(p, pp->source);
+    if (auto p = XMLFindTagValue(entry, ibp->xip, INSDSEQ_UPDATE_DATE)) {
+        std_update_date = GetUpdateDate(*p, pp->source);
         embl->SetUpdate_date().SetStd(*std_update_date);
-        MemFree(p);
     }
 
     if (std_update_date.Empty() && std_creation_date.NotEmpty())
