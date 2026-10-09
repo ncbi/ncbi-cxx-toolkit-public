@@ -1422,18 +1422,11 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
         qval2.reset();
     }
 
-    size_t len = 0;
     if (qval_str.empty() && feat.IsSetComment() && rna_ref.GetType() == CRNA_ref::eType_rRNA) {
-        string comment = feat.GetComment();
-        len            = comment.size();
-
-        if (len > 15 && len < 20) {
-            if (StringEquNI(comment.c_str() + len - 15, "S ribosomal RNA", 15)) {
-                qval_str = comment;
-                feat.ResetComment();
-            }
-        } else if (len > 6 && len < 20) {
-            if (StringEquNI(comment.c_str() + len - 6, "S rRNA", 6)) {
+        const string& comment = feat.GetComment();
+        if (comment.size() < 20) {
+            if (NStr::EndsWith(comment, "S ribosomal RNA", NStr::eNocase) ||
+                NStr::EndsWith(comment, "S rRNA", NStr::eNocase)) {
                 qval_str = comment;
                 feat.ResetComment();
             }
@@ -1451,6 +1444,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
         fta_StringCpy(p + 10, p + 11);
     }
 
+    size_t len = 0;
     for (p = qval; p; p = qval + len) {
         p = StringIStr(p, "ribosomalrna");
         if (! p)
