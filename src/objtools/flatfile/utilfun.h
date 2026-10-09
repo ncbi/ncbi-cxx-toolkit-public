@@ -128,6 +128,16 @@ bool ConsumeStr(U& iter, string_view s)
     return false;
 }
 
+template <typename U>
+bool ConsumeStrI(U& iter, string_view s)
+{
+    if (StringEquNI(iter, s)) {
+        iter += s.size();
+        return true;
+    }
+    return false;
+}
+
 /* Search The character letter.
  * Return NULL if not found; otherwise, return a pointer points first
  * occurrence The character.

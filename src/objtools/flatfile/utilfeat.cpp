@@ -365,7 +365,6 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
             if (name->empty())
                 continue;
 
-            len = name->size();
             for (q = p;; q++) {
                 q = StringChr(q, '(');
                 if (! q)
@@ -376,8 +375,7 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
                 if (*s == ' ')
                     while (*s == ' ')
                         s++;
-                if (StringEquNI(s, *name) && s[len] == ')') {
-                    s += len + 1;
+                if (ConsumeStrI(s, *name) && ConsumeChar(s, ')')) {
                     while (*s == ' ')
                         s++;
                     if (*s != '\0')
