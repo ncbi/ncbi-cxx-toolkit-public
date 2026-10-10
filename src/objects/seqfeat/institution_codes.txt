@@ -357,7 +357,7 @@ ASM	s	Arts and Science University
 ASNHC	s	Angelo State Natural History Collection			
 ASNHC:BIRD	s	Angelo State Natural History Collection, Ornithology Collection			
 ASNHC:MAMM	s	Angelo State Natural History Collection, Mammalogy Collection			
-ASNHC:Reptile	s	Angelo State Natural History Collection, Herpetology Collection			
+ASNHC:REP	s	Angelo State Natural History Collection, Herpetology Collection			
 ASRC	s	Atmospheric Sciences Research Center Whiteface Mountain Field Station			
 ASSAM	s	Botanical Survey of India, Eastern Circle			
 ASSL	s	Academy of Sciences			
@@ -1778,11 +1778,11 @@ CUIC	s	Cornell University, Invertebrate Collections
 CUKH	s	Central University of Kerala			
 CUMB	s	Universidade Federal do Para			
 CUMV	s	Cornell University Museum of Vertebrates	CUVC<USA-NY>		
-CUMV:Amph	s	Cornell University Museum of Vertebrates, Amphibian Collection			
+CUMV:AMPH	s	Cornell University Museum of Vertebrates, Amphibian Collection			
 CUMV:BIRD	s	Cornell University Museum of Vertebrates, Bird Collection	Ornithology		
 CUMV:FISH	s	Cornell University Museum of Vertebrates, Fish Collection	Ichthyology		
 CUMV:MAMM	s	Cornell University Museum of Vertebrates, Mammal Collection	Mammalogy		
-CUMV:Rept	s	Cornell University Museum of Vertebrates, Reptile Collection	Herpetology		
+CUMV:REP	s	Cornell University Museum of Vertebrates, Reptile Collection	Herpetology		
 CUMZ:THA>:A	s	Amphibian Collection			
 CUMZ<CAN>	s	Carleton University, Museum of Zoology			
 CUMZ<CMR>	s	Cameroon University, Museum of Zoology			
@@ -4895,7 +4895,7 @@ MBM<USA-NV>	s	Marjorie Barrick Museum
 MBMCAS	s	Institute of Oceanology, Chinese Academy of Sciences			
 MBML	s	Museu de Biologia Mello Leitao			
 MBML:Anfibios	s	Museu de Biologia Mello Leitao, Anfibios Collection			
-MBML:AVES	s	Museu de Biologia Mello Leitao, Aves collection			
+MBML:Aves	s	Museu de Biologia Mello Leitao, Aves collection			
 MBML:Mamiferos	s	Museu de Biologia Mello Leitao, Mamiferos collection			
 MBML:Peixes	s	Museu de Biologia Mello Leitao, Peixes Collection			
 MBML:Repteis	s	Museu de Biologia Mello Leitao, Repteis Collection			
@@ -6445,7 +6445,7 @@ OSUMZ	s	Ohio State University Museum
 OSUMZ:AMPH	s	Ohio State University Museum, Amphibian collection	OSUM:Amphibian		
 OSUMZ:BIRD	s	Ohio State University Museum, Bird Collection	OSUM:Bird		
 OSUMZ:FISH	s	Ohio State University Museum, Fish collection	OSUM:Fish		
-OSUMZ:Mammal 	s	Ohio State University Museum, Mammal collection			
+OSUMZ:MAMM	s	Ohio State University Museum, Mammal collection	OSUMZ:Mammal 		
 OSUMZ:REP	s	Ohio State University Museum, Reptile Collection	OSUM:Reptile		
 OSUO	s	Oregon State University, School of Oceanography			
 OSUS	s	Oklahoma State University			

@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Fri Oct  9 05:33:04 EDT 2026; formally
+/* time_t value corresponding to Sat Oct 10 05:33:10 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1791538384UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1791624790UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -393,7 +393,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ASNHC\ts\tAngelo State Natural History Collection\t\t\t",
 "ASNHC:BIRD\ts\tAngelo State Natural History Collection, Ornithology Collection\t\t\t",
 "ASNHC:MAMM\ts\tAngelo State Natural History Collection, Mammalogy Collection\t\t\t",
-"ASNHC:Reptile\ts\tAngelo State Natural History Collection, Herpetology Collection\t\t\t",
+"ASNHC:REP\ts\tAngelo State Natural History Collection, Herpetology Collection\t\t\t",
 "ASRC\ts\tAtmospheric Sciences Research Center Whiteface Mountain Field Station\t\t\t",
 "ASSAM\ts\tBotanical Survey of India, Eastern Circle\t\t\t",
 "ASSL\ts\tAcademy of Sciences\t\t\t",
@@ -1814,11 +1814,11 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CUKH\ts\tCentral University of Kerala\t\t\t",
 "CUMB\ts\tUniversidade Federal do Para\t\t\t",
 "CUMV\ts\tCornell University Museum of Vertebrates\tCUVC<USA-NY>\t\t",
-"CUMV:Amph\ts\tCornell University Museum of Vertebrates, Amphibian Collection\t\t\t",
+"CUMV:AMPH\ts\tCornell University Museum of Vertebrates, Amphibian Collection\t\t\t",
 "CUMV:BIRD\ts\tCornell University Museum of Vertebrates, Bird Collection\tOrnithology\t\t",
 "CUMV:FISH\ts\tCornell University Museum of Vertebrates, Fish Collection\tIchthyology\t\t",
 "CUMV:MAMM\ts\tCornell University Museum of Vertebrates, Mammal Collection\tMammalogy\t\t",
-"CUMV:Rept\ts\tCornell University Museum of Vertebrates, Reptile Collection\tHerpetology\t\t",
+"CUMV:REP\ts\tCornell University Museum of Vertebrates, Reptile Collection\tHerpetology\t\t",
 "CUMZ:THA>:A\ts\tAmphibian Collection\t\t\t",
 "CUMZ<CAN>\ts\tCarleton University, Museum of Zoology\t\t\t",
 "CUMZ<CMR>\ts\tCameroon University, Museum of Zoology\t\t\t",
@@ -4931,7 +4931,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MBMCAS\ts\tInstitute of Oceanology, Chinese Academy of Sciences\t\t\t",
 "MBML\ts\tMuseu de Biologia Mello Leitao\t\t\t",
 "MBML:Anfibios\ts\tMuseu de Biologia Mello Leitao, Anfibios Collection\t\t\t",
-"MBML:AVES\ts\tMuseu de Biologia Mello Leitao, Aves collection\t\t\t",
+"MBML:Aves\ts\tMuseu de Biologia Mello Leitao, Aves collection\t\t\t",
 "MBML:Mamiferos\ts\tMuseu de Biologia Mello Leitao, Mamiferos collection\t\t\t",
 "MBML:Peixes\ts\tMuseu de Biologia Mello Leitao, Peixes Collection\t\t\t",
 "MBML:Repteis\ts\tMuseu de Biologia Mello Leitao, Repteis Collection\t\t\t",
@@ -6481,7 +6481,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "OSUMZ:AMPH\ts\tOhio State University Museum, Amphibian collection\tOSUM:Amphibian\t\t",
 "OSUMZ:BIRD\ts\tOhio State University Museum, Bird Collection\tOSUM:Bird\t\t",
 "OSUMZ:FISH\ts\tOhio State University Museum, Fish collection\tOSUM:Fish\t\t",
-"OSUMZ:Mammal \ts\tOhio State University Museum, Mammal collection\t\t\t",
+"OSUMZ:MAMM\ts\tOhio State University Museum, Mammal collection\tOSUMZ:Mammal \t\t",
 "OSUMZ:REP\ts\tOhio State University Museum, Reptile Collection\tOSUM:Reptile\t\t",
 "OSUO\ts\tOregon State University, School of Oceanography\t\t\t",
 "OSUS\ts\tOklahoma State University\t\t\t",
