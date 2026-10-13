@@ -80,14 +80,13 @@ int CPDB_mol_id::Compare(const CPDB_mol_id& id) const
 
 string_view CPDB_mol_id::Format(string_view s, string& storage, TFormat format)
 {
-    string_view result = s;
     switch (format) {
     case ePDB_AsIs:
         break;
     case ePDB_Legacy:
         if (s.size() == 12) {
             if (NStr::StartsWith(s, "pdb_0000", NStr::eNocase)) {
-                result = s.substr(8);
+                return s.substr(8);
             } else {
                 NCBI_THROW(CSeqIdException, eFormat,
                            s + " has no legacy equivalent");
