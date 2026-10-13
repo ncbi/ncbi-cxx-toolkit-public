@@ -63,8 +63,6 @@ USING_SCOPE(objects);
 static const string kWGSProcessorName = "WGS";
 static const string kWGSProcessorGroupName = "WGS";
 
-static const int kDefaultMaxConn = 64;
-
 
 /////////////////////////////////////////////////////////////////////////////
 // Helper classes
@@ -164,9 +162,6 @@ void CPSGS_WGSProcessor::x_LoadConfig(void)
     sm_ErrorRate = settings.m_WGSProcessorErrorRate;
 
     unsigned int max_conn = settings.m_WGSProcessorMaxConn;
-    if (max_conn == 0) {
-        max_conn = kDefaultMaxConn;
-    }
     m_ThreadPool.reset(new CThreadPool(kMax_UInt,
                                        new CPSGS_ThreadPool_Controller(
                                            min(3u, max_conn), max_conn)));

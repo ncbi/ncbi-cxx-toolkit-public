@@ -60,8 +60,6 @@ static const string kCDDProcessorGroupName = "CDD";
 static const string kCDDProcessorName = "CDD";
 const CID2_Blob_Id::TSat kCDDSat = 8087;
 
-static const int kDefaultMaxConn = 64;
-
 
 /////////////////////////////////////////////////////////////////////////////
 // Helper classes
@@ -74,7 +72,7 @@ CPSGS_CDDProcessor::CPSGS_CDDProcessor(void)
       m_Canceled(false)
 {
     auto& settings = CPubseqGatewayApp::GetInstance()->Settings();
-    sm_ErrorRate = settings.m_WGSProcessorErrorRate;
+    sm_ErrorRate = settings.m_CDDProcessorErrorRate;
     try {
         m_ClientPool->SetClientTimeout(CTimeout(
             settings.m_CDDProcessorBackendTimeout));
@@ -83,9 +81,6 @@ CPSGS_CDDProcessor::CPSGS_CDDProcessor(void)
         m_ClientPool->SetClientTimeout(CTimeout(CTimeout::eDefault));
     }
     unsigned int max_conn = settings.m_CDDProcessorMaxConn;
-    if (max_conn == 0) {
-        max_conn = kDefaultMaxConn;
-    }
     m_ThreadPool.reset(new CThreadPool(kMax_UInt,
                                        new CPSGS_ThreadPool_Controller(
                                            min(3u, max_conn), max_conn)));

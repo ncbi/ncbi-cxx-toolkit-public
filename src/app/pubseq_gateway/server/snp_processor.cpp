@@ -62,8 +62,6 @@ USING_SCOPE(objects);
 static const string kSNPProcessorName = "SNP";
 static const string kSNPProcessorGroupName = "SNP";
 
-static const int kDefaultMaxConn = 64;
-
 
 /////////////////////////////////////////////////////////////////////////////
 // Helper classes
@@ -185,9 +183,6 @@ void CPSGS_SNPProcessor::x_LoadConfig(void)
     m_Config->m_SNPScaleLimit = settings.m_SNPProcessorScaleLimit;
 
     unsigned int max_conn = settings.m_SNPProcessorMaxConn;
-    if (max_conn == 0) {
-        max_conn = kDefaultMaxConn;
-    }
     m_ThreadPool.reset(new CThreadPool(kMax_UInt,
                                        new CPSGS_ThreadPool_Controller(
                                            min(3u, max_conn), max_conn)));
