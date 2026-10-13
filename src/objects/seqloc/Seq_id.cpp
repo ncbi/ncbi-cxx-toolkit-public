@@ -3714,11 +3714,12 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
 
     // Special case -- dbSNP IDs have historically contained internal
     // vertical bars, so we have to parse them greedily.
-    string snp_name; // must survive until the end of the function
+    string field_storage; // must survive until the end of the function
     if (type == e_General  &&  NStr::EqualNocase(fields[0], "dbSNP")
         &&  !fasta_pieces.empty() ) {
-        snp_name = string(fields[1]) + '|' + NStr::Join(fasta_pieces, "|");
-        fields[1] = snp_name;
+        field_storage
+            = string(fields[1]) + '|' + NStr::Join(fasta_pieces, "|");
+        fields[1] = field_storage;
         fasta_pieces.clear();
     }
 
@@ -3787,7 +3788,8 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
             }
             fields[0] = fields[0].substr(0, 4);
         }
-        fields[0] = CPDB_mol_id::Format(fields[0], pdbfmt);
+        field_storage = CPDB_mol_id::Format(fields[0], pdbfmt);
+        fields[0] = field_storage;
         break;
 
     default:
