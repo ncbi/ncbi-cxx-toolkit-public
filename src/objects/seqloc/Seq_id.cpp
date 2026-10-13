@@ -3788,8 +3788,7 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
             }
             fields[0] = fields[0].substr(0, 4);
         }
-        field_storage = CPDB_mol_id::Format(fields[0], pdbfmt);
-        fields[0] = field_storage;
+        fields[0] = CPDB_mol_id::Format(fields[0], field_storage, pdbfmt);
         break;
 
     default:
