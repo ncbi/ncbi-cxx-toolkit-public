@@ -873,6 +873,7 @@ $^   CountryWithGeoLoc, 68, SEV_WARNING
 $^   InvalidGeoLocName, 69, SEV_ERROR
 $^   FormerGeoLocName, 70, SEV_WARNING
 $^   DescriptorDropped, 71, SEV_WARNING
+$^   SingleSourceTooLong, 72, SEV_REJECT
 $$ QSCORE, 30
 $^   MissingByteStore, 1, SEV_ERROR
 $^   NonLiteralDelta, 2, SEV_ERROR
