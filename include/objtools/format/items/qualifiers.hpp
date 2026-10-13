@@ -75,7 +75,7 @@ public:
     typedef EStyle  TStyle;
 
     enum FFlags {
-        // This turns off redundancy checks so 
+        // This turns off redundancy checks so
         // we show this qual even if it is redundant with
         // the others.
         fFlags_showEvenIfRedund = 1 << 0
@@ -85,7 +85,7 @@ public:
     // The level of trimming to do for this feature
     enum ETrim {
         // *vast* majority use this
-        eTrim_Normal, 
+        eTrim_Normal,
 
         // a few quals need "junk" like extra periods.
         // for example, there's a gene allele of "2.." in
@@ -168,7 +168,7 @@ protected:
                       CFormatQual::TFlags flags = 0,
                       ETrim trim = CFormatQual::eTrim_Normal ) const {
         TFlatQual res(new CFormatQual(n, v, *m_Prefix, *m_Suffix, st, flags, trim));
-        q.push_back(res); 
+        q.push_back(res);
         return res;
     }
 
@@ -191,28 +191,25 @@ public:
     typedef typename TQualMMap::size_type        size_type;
 
     // constructor
-    CQualContainer(void) {}
-    
-    iterator begin(void) { return m_Quals.begin(); }
-    const_iterator begin(void) const { return m_Quals.begin(); }
-    iterator end(void) { return m_Quals.end(); }
-    const_iterator end(void) const { return m_Quals.end(); }
-    
+    CQualContainer() = default;
+
+    size_type Size()          const { return m_Quals.size();  }
+    auto begin(void)                { return m_Quals.begin(); }
+    auto begin(void)          const { return m_Quals.begin(); }
+    auto end(void)                  { return m_Quals.end(); }
+    auto end(void)            const { return m_Quals.end(); }
+    auto LowerBound(Key& key)       { return m_Quals.lower_bound(key); }
+    auto LowerBound(const Key& key) const { return m_Quals.lower_bound(key); }
+    auto Find(const Key& key)       { return m_Quals.find(key); }
+    auto Find(const Key& key) const { return m_Quals.find(key); }
+
+
     void AddQual(const Key& key, const IFlatQVal* value) {
-        typedef typename TQualMMap::value_type TMapPair;
-        m_Quals.insert(TMapPair(key, CConstRef<IFlatQVal>(value)));
+        m_Quals.insert({key, CRef(value)});
     }
-    
+
     bool HasQual(const Key& key) const {
         return Find(key) != m_Quals.end();
-    }
-    inline
-    iterator LowerBound(Key& key) {
-        return m_Quals.find(key);
-    }
-    inline
-    const_iterator LowerBound(const Key& key) const {
-        return m_Quals.find(key);
     }
     iterator Erase(iterator it) {
         iterator next = it;
@@ -224,15 +221,6 @@ public:
     }
     void RemoveQuals(const Key& key) {
         m_Quals.erase(key);
-    }
-    iterator Find(const Key& key) {
-        return m_Quals.find(key);
-    }
-    const_iterator Find(const Key& key) const {
-        return m_Quals.find(key);
-    }
-    size_type Size() const {
-        return m_Quals.size();
     }
 
 private:
@@ -523,7 +511,7 @@ private:
 class NCBI_FORMAT_EXPORT CFlatSeqIdQVal : public IFlatQVal
 {
 public:
-    CFlatSeqIdQVal(const CSeq_id& value, bool add_gi_prefix = false) 
+    CFlatSeqIdQVal(const CSeq_id& value, bool add_gi_prefix = false)
         : m_Value(&value), m_GiPrefix(add_gi_prefix) { }
     void Format(TFlatQuals& quals, string_view name, CBioseqContext& ctx,
                 TFlags flags) const override;
@@ -595,7 +583,7 @@ public:
     typedef CSeq_feat::TDbxref                TXref;
     typedef CQualContainer<EFeatureQualifier> TQuals;
 
-    CFlatXrefQVal(const TXref& value, const TQuals* quals = 0) 
+    CFlatXrefQVal(const TXref& value, const TQuals* quals = 0)
         :   m_Value(value), m_Quals(quals) { }
     void Format(TFlatQuals& quals, string_view name, CBioseqContext& ctx,
                 TFlags flags) const override;
@@ -670,7 +658,7 @@ private:
 class NCBI_FORMAT_EXPORT CFlatProductNamesQVal : public IFlatQVal
 {
 public:
-    CFlatProductNamesQVal(const CProt_ref::TName& value, const string& gene) : 
+    CFlatProductNamesQVal(const CProt_ref::TName& value, const string& gene) :
         IFlatQVal(&kSpace, &kSemicolon), m_Value(value), m_Gene(gene)
     {}
     void Format(TFlatQuals& quals, string_view name, CBioseqContext& ctx,
@@ -681,7 +669,7 @@ public:
 
 private:
     CProt_ref::TName m_Value;
-    string           m_Gene; 
+    string           m_Gene;
 };
 
 // ...
