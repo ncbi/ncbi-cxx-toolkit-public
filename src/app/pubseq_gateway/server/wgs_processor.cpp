@@ -1052,7 +1052,7 @@ void CPSGS_WGSProcessor::x_OnAsyncWaitResult(TMethod method, bool is_timeout)
 
 void CPSGS_WGSProcessor::x_WaitForOtherProcessors(TMethod method)
 {
-    if (m_Canceled) return;
+    if (x_IsCanceled()) return;
     x_SetState("task_waiting");
     if ( m_NeedTrace ) {
         SendTrace(kWGSProcessorName +
