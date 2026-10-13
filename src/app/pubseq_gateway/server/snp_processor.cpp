@@ -61,9 +61,7 @@ USING_SCOPE(objects);
 
 static const string kSNPProcessorName = "SNP";
 static const string kSNPProcessorGroupName = "SNP";
-static const string kSNPProcessorSection = "SNP_PROCESSOR";
 
-static const string kParamMaxConn = "maxconn";
 static const int kDefaultMaxConn = 64;
 
 
@@ -117,51 +115,9 @@ void s_SetBlobDataProps(CBlobRecord& blob_props, const CID2_Reply_Data& data)
 END_LOCAL_NAMESPACE;
 
 
-NCBI_PARAM_DECL(int, SNP_PROCESSOR, ERROR_RATE);
-NCBI_PARAM_DEF(int, SNP_PROCESSOR, ERROR_RATE, 0);
-
-static bool s_SimulateError()
-{
-    static int error_rate = NCBI_PARAM_TYPE(SNP_PROCESSOR, ERROR_RATE)::GetDefault();
-    if ( error_rate > 0 ) {
-        static int error_counter = 0;
-        if ( ++error_counter >= error_rate ) {
-            error_counter = 0;
-            return true;
-        }
-    }
-    return false;
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 // CPSGS_SNPProcessor
 /////////////////////////////////////////////////////////////////////////////
-
-
-#define PARAM_GC_CACHE_SIZE "gc_cache_size"
-#define PARAM_MISSING_GC_SIZE "missing_gc_size"
-#define PARAM_FILE_REOPEN_TIME "file_reopen_time"
-#define PARAM_FILE_RECHECK_TIME "file_recheck_time"
-#define PARAM_FILE_OPEN_RETRY "file_open_retry"
-#define PARAM_SPLIT "split"
-#define PARAM_VDB_FILES "vdb_files"
-#define PARAM_ANNOT_NAME "annot_name"
-#define PARAM_ADD_PTIS "add_ptis"
-#define PARAM_ALLOW_NON_REFSEQ "allow_non_refseq"
-#define PARAM_SNP_SCALE_LIMIT "snp_scale_limit"
-
-#define DEFAULT_GC_CACHE_SIZE 10
-#define DEFAULT_MISSING_GC_SIZE 10000
-#define DEFAULT_FILE_REOPEN_TIME 3600
-#define DEFAULT_FILE_RECHECK_TIME 600
-#define DEFAULT_FILE_OPEN_RETRY 3
-#define DEFAULT_SPLIT true
-#define DEFAULT_VDB_FILES ""
-#define DEFAULT_ANNOT_NAME ""
-#define DEFAULT_ADD_PTIS true
-#define DEFAULT_ALLOW_NON_REFSEQ false
-#define DEFAULT_SNP_SCALE_LIMIT ""
 
 
 CPSGS_SNPProcessor::CPSGS_SNPProcessor(void)
@@ -212,29 +168,23 @@ CPSGS_SNPProcessor::~CPSGS_SNPProcessor(void)
 
 void CPSGS_SNPProcessor::x_LoadConfig(void)
 {
-    const CNcbiRegistry& registry = CPubseqGatewayApp::GetInstance()->GetConfig();
-    m_Config->m_GCSize = registry.GetInt(kSNPProcessorSection, PARAM_GC_CACHE_SIZE, DEFAULT_GC_CACHE_SIZE);
-    m_Config->m_MissingGCSize = registry.GetInt(kSNPProcessorSection, PARAM_MISSING_GC_SIZE, DEFAULT_MISSING_GC_SIZE);
-    m_Config->m_FileReopenTime = registry.GetInt(kSNPProcessorSection, PARAM_FILE_REOPEN_TIME, DEFAULT_FILE_REOPEN_TIME);
-    m_Config->m_FileRecheckTime = registry.GetInt(kSNPProcessorSection, PARAM_FILE_RECHECK_TIME, DEFAULT_FILE_RECHECK_TIME);
-    m_Config->m_FileOpenRetry = registry.GetInt(kSNPProcessorSection, PARAM_FILE_OPEN_RETRY, DEFAULT_FILE_OPEN_RETRY);
-    m_Config->m_Split = registry.GetBool(kSNPProcessorSection, PARAM_SPLIT, DEFAULT_SPLIT);
-    m_Config->m_AnnotName = registry.GetString(kSNPProcessorSection, PARAM_ANNOT_NAME, DEFAULT_ANNOT_NAME);
-    /*
-    string vdb_files = registry.GetString(kSNPProcessorSection, PARAM_VDB_FILES, DEFAULT_VDB_FILES);
-    NStr::Split(vdb_files, ",", m_Config->m_VDBFiles);
-    */
-    m_Config->m_AddPTIS = registry.GetBool(kSNPProcessorSection, PARAM_ADD_PTIS, DEFAULT_ADD_PTIS);
+    auto& settings = CPubseqGatewayApp::GetInstance()->Settings();
+    m_Config->m_GCSize = settings.m_SNPGCCacheSize;
+    m_Config->m_MissingGCSize = settings.m_SNPMissingGCSize;
+    m_Config->m_FileReopenTime = settings.m_SNPProcessorFileReopenTime;
+    m_Config->m_FileRecheckTime = settings.m_SNPProcessorFileRecheckTime;
+    m_Config->m_FileOpenRetry = settings.m_SNPProcessorFileOpenRetry;
+    m_Config->m_Split = settings.m_SNPProcessorSplit;
+    m_Config->m_AnnotName = settings.m_SNPProcessorAnnotName;
+    m_Config->m_AddPTIS = settings.m_SNPProcessorAddPTIS;
     if (m_Config->m_AddPTIS && !CSnpPtisClient::IsEnabled()) {
         PSG_ERROR("CSNPClient: SNP primary track is disabled due to lack of GRPC support");
         m_Config->m_AddPTIS = false;
     }
-    m_Config->m_AllowNonRefSeq = registry.GetBool(kSNPProcessorSection, PARAM_ALLOW_NON_REFSEQ, DEFAULT_ALLOW_NON_REFSEQ);
+    m_Config->m_AllowNonRefSeq = settings.m_SNPProcessorAllowNonRefSeq;
+    m_Config->m_SNPScaleLimit = settings.m_SNPProcessorScaleLimit;
 
-    string scale_limit = registry.GetString(kSNPProcessorSection, PARAM_SNP_SCALE_LIMIT, DEFAULT_SNP_SCALE_LIMIT);
-    m_Config->m_SNPScaleLimit = CSeq_id::GetSNPScaleLimit_Value(scale_limit);
-
-    unsigned int max_conn = registry.GetInt(kSNPProcessorSection, kParamMaxConn, kDefaultMaxConn);
+    unsigned int max_conn = settings.m_SNPProcessorMaxConn;
     if (max_conn == 0) {
         max_conn = kDefaultMaxConn;
     }
@@ -515,12 +465,12 @@ void CPSGS_SNPProcessor::OnGotAnnotation(void)
         return;
     }
     x_SetState("sending_result");
-    if ( s_SimulateError() ) {
+    if ( sx_SimulateError() ) {
         m_SNPDataError = "simulated SNP processor error";
         m_SNPData.clear();
     }
     for ( auto& s : m_SNPData ) {
-        if ( s_SimulateError() ) {
+        if ( sx_SimulateError() ) {
             s.m_Error = "simulated SNP processor error";
         }
     }
@@ -636,7 +586,7 @@ void CPSGS_SNPProcessor::OnGotBlobByBlobId(void)
         return;
     }
     x_SetState("sending_result");
-    if ( s_SimulateError() ) {
+    if ( sx_SimulateError() ) {
         m_SNPDataError = "simulated SNP processor error";
         m_SNPData.clear();
     }
@@ -724,7 +674,7 @@ void CPSGS_SNPProcessor::OnGotChunk(void)
         return;
     }
     x_SetState("sending_result");
-    if ( s_SimulateError() ) {
+    if ( sx_SimulateError() ) {
         m_SNPDataError = "simulated SNP processor error";
         m_SNPData.clear();
     }
@@ -1123,6 +1073,21 @@ CPSGS_SNPProcessor::TInternalState CPSGS_SNPProcessor::GetSharedInternalState() 
     values.emplace_back("pending_tasks", to_string(sm_QueuedTasks.load()));
 
     return values;
+}
+
+
+unsigned int CPSGS_SNPProcessor::sm_ErrorRate = 0;
+unsigned int CPSGS_SNPProcessor::sm_ErrorCounter = 0;
+
+bool CPSGS_SNPProcessor::sx_SimulateError(void)
+{
+    if ( sm_ErrorRate > 0 ) {
+        if ( ++sm_ErrorCounter >= sm_ErrorRate ) {
+            sm_ErrorCounter = 0;
+            return true;
+        }
+    }
+    return false;
 }
 
 

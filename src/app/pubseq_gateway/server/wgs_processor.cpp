@@ -62,9 +62,7 @@ USING_SCOPE(objects);
 
 static const string kWGSProcessorName = "WGS";
 static const string kWGSProcessorGroupName = "WGS";
-static const string kWGSProcessorSection = "WGS_PROCESSOR";
 
-static const string kParamMaxConn = "maxconn";
 static const int kDefaultMaxConn = 64;
 
 
@@ -109,41 +107,9 @@ private:
 END_LOCAL_NAMESPACE;
 
 
-NCBI_PARAM_DECL(int, WGS_PROCESSOR, ERROR_RATE);
-NCBI_PARAM_DEF(int, WGS_PROCESSOR, ERROR_RATE, 0);
-
-static bool s_SimulateError()
-{
-    static int error_rate = NCBI_PARAM_TYPE(WGS_PROCESSOR, ERROR_RATE)::GetDefault();
-    if ( error_rate > 0 ) {
-        static int error_counter = 0;
-        if ( ++error_counter >= error_rate ) {
-            error_counter = 0;
-            return true;
-        }
-    }
-    return false;
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 // CPSGS_WGSProcessor
 /////////////////////////////////////////////////////////////////////////////
-
-
-#define PARAM_VDB_CACHE_SIZE "vdb_cache_size"
-#define PARAM_INDEX_UPDATE_TIME "index_update_time"
-#define PARAM_FILE_REOPEN_TIME "file_reopen_time"
-#define PARAM_FILE_RECHECK_TIME "file_recheck_time"
-#define PARAM_COMPRESS_DATA "compress_data"
-#define PARAM_ASYNC_WAIT_TIMEOUT "cassandra_processor_timeout"
-
-#define DEFAULT_VDB_CACHE_SIZE 100
-#define DEFAULT_INDEX_UPDATE_TIME 600
-#define DEFAULT_FILE_REOPEN_TIME 3600
-#define DEFAULT_FILE_RECHECK_TIME 600
-#define DEFAULT_COMPRESS_DATA SWGSProcessor_Config::eCompressData_some
-#define DEFAULT_ASYNC_WAIT_TIMEOUT 1
 
 
 CPSGS_WGSProcessor::CPSGS_WGSProcessor(void)
@@ -168,7 +134,7 @@ CPSGS_WGSProcessor::CPSGS_WGSProcessor(
       m_Status(ePSGS_InProgress),
       m_Canceled(false),
       m_ChunkId(0),
-      m_AsyncWaitTimeoutSec(parent.m_AsyncWaitTimeoutSec),
+      m_CassWaitTimeoutMs(parent.m_CassWaitTimeoutMs),
       m_OutputFormat(SPSGS_ResolveRequest::ePSGS_NativeFormat),
       m_ThreadPool(parent.m_ThreadPool)
 {
@@ -188,27 +154,22 @@ CPSGS_WGSProcessor::~CPSGS_WGSProcessor(void)
 
 void CPSGS_WGSProcessor::x_LoadConfig(void)
 {
-    const CNcbiRegistry& registry = CPubseqGatewayApp::GetInstance()->GetConfig();
-    m_Config->m_CacheSize = registry.GetInt(kWGSProcessorSection, PARAM_VDB_CACHE_SIZE, DEFAULT_VDB_CACHE_SIZE);
+    auto& settings = CPubseqGatewayApp::GetInstance()->Settings();
+    m_Config->m_CacheSize = settings.m_WGSProcessorVdbCacheSize;
+    m_Config->m_CompressData = settings.m_WGSProcessorCompressData;
+    m_Config->m_IndexUpdateDelay = settings.m_WGSProcessorIndexUpdateTime;
+    m_Config->m_FileReopenTime = settings.m_WGSProcessorFileReopenTime;
+    m_Config->m_FileRecheckTime = settings.m_WGSProcessorFileRecheckTime;
+    m_CassWaitTimeoutMs = settings.m_WGSProcessorCassProcTimeoutMs;
+    sm_ErrorRate = settings.m_WGSProcessorErrorRate;
 
-    int compress_data = registry.GetInt(kWGSProcessorSection, PARAM_COMPRESS_DATA, DEFAULT_COMPRESS_DATA);
-    if ( compress_data >= SWGSProcessor_Config::eCompressData_never &&
-         compress_data <= SWGSProcessor_Config::eCompressData_always ) {
-        m_Config->m_CompressData = SWGSProcessor_Config::ECompressData(compress_data);
-    }
-    m_Config->m_IndexUpdateDelay = registry.GetInt(kWGSProcessorSection, PARAM_INDEX_UPDATE_TIME, DEFAULT_INDEX_UPDATE_TIME);
-    m_Config->m_FileReopenTime = registry.GetInt(kWGSProcessorSection, PARAM_FILE_REOPEN_TIME, DEFAULT_FILE_REOPEN_TIME);
-    m_Config->m_FileRecheckTime = registry.GetInt(kWGSProcessorSection, PARAM_FILE_RECHECK_TIME, DEFAULT_FILE_RECHECK_TIME);
-
-    unsigned int max_conn = registry.GetInt(kWGSProcessorSection, kParamMaxConn, kDefaultMaxConn);
+    unsigned int max_conn = settings.m_WGSProcessorMaxConn;
     if (max_conn == 0) {
         max_conn = kDefaultMaxConn;
     }
     m_ThreadPool.reset(new CThreadPool(kMax_UInt,
                                        new CPSGS_ThreadPool_Controller(
                                            min(3u, max_conn), max_conn)));
-
-    m_AsyncWaitTimeoutSec = registry.GetInt(kWGSProcessorSection, PARAM_ASYNC_WAIT_TIMEOUT, DEFAULT_ASYNC_WAIT_TIMEOUT);
 }
 
 
@@ -317,7 +278,7 @@ void CPSGS_WGSProcessor::x_ProcessResolveRequest(void)
         return;
     }
     m_ReqType = "resolve";
-    x_WaitForOtherProcessors(&CPSGS_WGSProcessor::ResolveSeqId);
+    x_WaitForCassandraProcessor(&CPSGS_WGSProcessor::ResolveSeqId);
 }
 
 
@@ -361,7 +322,7 @@ void CPSGS_WGSProcessor::OnResolvedSeqId(void)
         return;
     }
     x_SetState("sending_result");
-    if ( s_SimulateError() ) {
+    if ( sx_SimulateError() ) {
         m_WGSDataError = "simulated WGS processor error";
         m_WGSData.reset();
     }
@@ -423,13 +384,13 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySeqIdRequest(void)
 
     if (get_request.m_TSEOption == SPSGS_BlobRequestBase::ePSGS_NoneTSE) {
         m_ReqType = "resolve";
-        x_WaitForOtherProcessors(&CPSGS_WGSProcessor::ResolveSeqId);
+        x_WaitForCassandraProcessor(&CPSGS_WGSProcessor::ResolveSeqId);
     }
     else {
         m_ExcludedBlobs = get_request.m_ExcludeBlobs;
         m_ResendTimeoutMks = get_request.m_ResendTimeoutMks;
         m_ReqType = "blob_by_seq_id";
-        x_WaitForOtherProcessors(&CPSGS_WGSProcessor::GetBlobBySeqId);
+        x_WaitForCassandraProcessor(&CPSGS_WGSProcessor::GetBlobBySeqId);
     }
 }
 
@@ -480,7 +441,7 @@ void CPSGS_WGSProcessor::OnGotBlobBySeqId(void)
         return;
     }
     x_SetState("sending_result");
-    if ( s_SimulateError() ) {
+    if ( sx_SimulateError() ) {
         m_WGSDataError = "simulated WGS processor error";
         m_WGSData.reset();
     }
@@ -577,7 +538,7 @@ void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
         return;
     }
     x_SetState("sending_result");
-    if ( s_SimulateError() ) {
+    if ( sx_SimulateError() ) {
         m_WGSDataError = "simulated WGS processor error";
         m_WGSData.reset();
     }
@@ -672,7 +633,7 @@ void CPSGS_WGSProcessor::OnGotChunk(void)
         return;
     }
     x_SetState("sending_result");
-    if ( s_SimulateError() ) {
+    if ( sx_SimulateError() ) {
         m_WGSDataError = "simulated WGS processor error";
         m_WGSData.reset();
     }
@@ -1024,17 +985,17 @@ void CPSGS_WGSProcessor::x_OnAsyncWaitResult(TMethod method, bool is_timeout)
 {
     if (is_timeout) {
         PSG_WARNING(kWGSProcessorName +
-                    " processor timeout while waiting for other processors");
+                    " processor timeout while waiting for Cassandra processor");
         if ( m_NeedTrace ) {
             SendTrace(kWGSProcessorName +
-                    " processor timeout while waiting for other processors");
+                    " processor timeout while waiting for Cassandra processor");
         }
         // Proceed to normal processing anyway.
     }
     if ( m_Canceled ) {
         if ( m_NeedTrace ) {
             SendTrace(kWGSProcessorName +
-                    " processor was canceled while waiting for other processors");
+                    " processor was canceled while waiting for Cassandra processor");
         }
         x_Finish(ePSGS_Canceled);
         return;
@@ -1050,17 +1011,17 @@ void CPSGS_WGSProcessor::x_OnAsyncWaitResult(TMethod method, bool is_timeout)
 }
 
 
-void CPSGS_WGSProcessor::x_WaitForOtherProcessors(TMethod method)
+void CPSGS_WGSProcessor::x_WaitForCassandraProcessor(TMethod method)
 {
     if (x_IsCanceled()) return;
     x_SetState("task_waiting");
     if ( m_NeedTrace ) {
         SendTrace(kWGSProcessorName +
-                  " processor is waiting for other processors");
+                  " processor is waiting for Cassandra processor");
     }
     GetRequest()->WaitForAsync(kCassandraProcessorEvent,
         bind(&CPSGS_WGSProcessor::x_OnAsyncWaitResult, this, method, placeholders::_1),
-        m_AsyncWaitTimeoutSec);
+        m_CassWaitTimeoutMs);
 }
 
 
@@ -1251,6 +1212,21 @@ CPSGS_WGSProcessor::TInternalState CPSGS_WGSProcessor::GetSharedInternalState() 
     values.emplace_back("pending_tasks", to_string(sm_QueuedTasks.load()));
 
     return values;
+}
+
+
+unsigned int CPSGS_WGSProcessor::sm_ErrorRate = 0;
+unsigned int CPSGS_WGSProcessor::sm_ErrorCounter = 0;
+
+bool CPSGS_WGSProcessor::sx_SimulateError(void)
+{
+    if ( sm_ErrorRate > 0 ) {
+        if ( ++sm_ErrorCounter >= sm_ErrorRate ) {
+            sm_ErrorCounter = 0;
+            return true;
+        }
+    }
+    return false;
 }
 
 

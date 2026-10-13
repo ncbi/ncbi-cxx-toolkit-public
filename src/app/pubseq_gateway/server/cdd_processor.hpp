@@ -144,6 +144,10 @@ private:
     string m_State;
     string m_ReqType;
     psg_time_point_t m_StateT;
+
+    static unsigned int sm_ErrorRate;
+    static unsigned int sm_ErrorCounter;
+    static bool sx_SimulateError(void);
 };
 
 

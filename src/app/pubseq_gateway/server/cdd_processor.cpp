@@ -58,14 +58,9 @@ USING_SCOPE(objects);
 static const string kCDDAnnotName = "CDD";
 static const string kCDDProcessorGroupName = "CDD";
 static const string kCDDProcessorName = "CDD";
-static const string kCDDProcessorSection = "CDD_PROCESSOR";
 const CID2_Blob_Id::TSat kCDDSat = 8087;
 
-static const string kParamMaxConn = "maxconn";
 static const int kDefaultMaxConn = 64;
-
-static const string kParamCDDBackendTimeout = "backend_timeout";
-static const double kDefaultCDDBackendTimeout = 5.0;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -73,37 +68,21 @@ static const double kDefaultCDDBackendTimeout = 5.0;
 /////////////////////////////////////////////////////////////////////////////
 
 
-NCBI_PARAM_DECL(int, CDD_PROCESSOR, ERROR_RATE);
-NCBI_PARAM_DEF(int, CDD_PROCESSOR, ERROR_RATE, 0);
-
-static bool s_SimulateError()
-{
-    static int error_rate = NCBI_PARAM_TYPE(CDD_PROCESSOR, ERROR_RATE)::GetDefault();
-    if ( error_rate > 0 ) {
-        static int error_counter = 0;
-        if ( ++error_counter >= error_rate ) {
-            error_counter = 0;
-            return true;
-        }
-    }
-    return false;
-}
-
-
 CPSGS_CDDProcessor::CPSGS_CDDProcessor(void)
     : m_ClientPool(new CCDDClientPool()),
       m_Status(ePSGS_NotFound),
       m_Canceled(false)
 {
-    const CNcbiRegistry& registry = CPubseqGatewayApp::GetInstance()->GetConfig();
-    double timeout = registry.GetDouble(kCDDProcessorSection, kParamCDDBackendTimeout, kDefaultCDDBackendTimeout);
+    auto& settings = CPubseqGatewayApp::GetInstance()->Settings();
+    sm_ErrorRate = settings.m_WGSProcessorErrorRate;
     try {
-        m_ClientPool->SetClientTimeout(CTimeout(timeout));
+        m_ClientPool->SetClientTimeout(CTimeout(
+            settings.m_CDDProcessorBackendTimeout));
     }
     catch (CTimeException&) {
         m_ClientPool->SetClientTimeout(CTimeout(CTimeout::eDefault));
     }
-    unsigned int max_conn = registry.GetInt(kCDDProcessorSection, kParamMaxConn, kDefaultMaxConn);
+    unsigned int max_conn = settings.m_CDDProcessorMaxConn;
     if (max_conn == 0) {
         max_conn = kDefaultMaxConn;
     }
@@ -512,7 +491,7 @@ void CPSGS_CDDProcessor::OnGotBlobId(void)
         return;
     }
     x_SetState("sending_result");
-    if ( s_SimulateError() ) {
+    if ( sx_SimulateError() ) {
         m_Error = "simulated CDD processor error";
         m_CDDBlob.info.Reset();
         m_CDDBlob.data.Reset();
@@ -559,7 +538,7 @@ void CPSGS_CDDProcessor::OnGotBlobBySeqId(void)
         return;
     }
     x_SetState("sending_result");
-    if ( s_SimulateError() ) {
+    if ( sx_SimulateError() ) {
         m_Error = "simulated CDD processor error";
         m_CDDBlob.info.Reset();
         m_CDDBlob.data.Reset();
@@ -607,7 +586,7 @@ void CPSGS_CDDProcessor::OnGotBlobByBlobId(void)
         return;
     }
     x_SetState("sending_result");
-    if ( s_SimulateError() ) {
+    if ( sx_SimulateError() ) {
         m_Error = "simulated CDD processor error";
         m_CDDBlob.info.Reset();
         m_CDDBlob.data.Reset();
@@ -900,6 +879,21 @@ CPSGS_CDDProcessor::TInternalState CPSGS_CDDProcessor::GetSharedInternalState() 
     values.emplace_back("pending_tasks", to_string(sm_QueuedTasks.load()));
 
     return values;
+}
+
+
+unsigned int CPSGS_CDDProcessor::sm_ErrorRate = 0;
+unsigned int CPSGS_CDDProcessor::sm_ErrorCounter = 0;
+
+bool CPSGS_CDDProcessor::sx_SimulateError(void)
+{
+    if ( sm_ErrorRate > 0 ) {
+        if ( ++sm_ErrorCounter >= sm_ErrorRate ) {
+            sm_ErrorCounter = 0;
+            return true;
+        }
+    }
+    return false;
 }
 
 

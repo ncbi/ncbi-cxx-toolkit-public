@@ -161,7 +161,7 @@ private:
     using TThreadPoolTask = CPSGS_ThreadPoolTask<CPSGS_WGSProcessor>;
     using TMethod = TThreadPoolTask::TMethod;
     void x_OnAsyncWaitResult(TMethod, bool is_timeout);
-    void x_WaitForOtherProcessors(TMethod method);
+    void x_WaitForCassandraProcessor(TMethod method);
     void x_Finish(EPSGS_Status status);
     bool x_IsCanceled();
     bool x_SignalStartProcessing();
@@ -184,7 +184,7 @@ private:
     string m_ClientId;
     unsigned long m_ResendTimeoutMks = 0;
     unsigned long m_SentMksAgo = 0;
-    size_t m_AsyncWaitTimeoutSec = 1;
+    size_t m_CassWaitTimeoutMs = 1000;
     bool m_AddedToExcludedCache = false;
     shared_ptr<SWGSData> m_WGSData;
     string m_WGSDataError;
@@ -203,6 +203,10 @@ private:
     string m_State;
     string m_ReqType;
     psg_time_point_t m_StateT;
+
+    static unsigned int sm_ErrorRate;
+    static unsigned int sm_ErrorCounter;
+    static bool sx_SimulateError(void);
 };
 
 
