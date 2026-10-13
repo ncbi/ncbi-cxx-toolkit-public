@@ -978,6 +978,14 @@ void CPSGS_WGSProcessor::x_WriteData(CID2_Reply_Data& data,
 
 void CPSGS_WGSProcessor::x_OnAsyncWaitResult(TMethod method, bool is_timeout)
 {
+    if ( m_Canceled ) {
+        if ( m_NeedTrace ) {
+            SendTrace(kWGSProcessorName +
+                    " processor was canceled while waiting for Cassandra processor");
+        }
+        x_Finish(ePSGS_Canceled);
+        return;
+    }
     if (is_timeout) {
         PSG_WARNING(kWGSProcessorName +
                     " processor timeout while waiting for Cassandra processor");
@@ -986,14 +994,6 @@ void CPSGS_WGSProcessor::x_OnAsyncWaitResult(TMethod method, bool is_timeout)
                     " processor timeout while waiting for Cassandra processor");
         }
         // Proceed to normal processing anyway.
-    }
-    if ( m_Canceled ) {
-        if ( m_NeedTrace ) {
-            SendTrace(kWGSProcessorName +
-                    " processor was canceled while waiting for Cassandra processor");
-        }
-        x_Finish(ePSGS_Canceled);
-        return;
     }
     x_SetState("task_pending");
     if ( m_NeedTrace ) {
