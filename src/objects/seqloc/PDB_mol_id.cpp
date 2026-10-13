@@ -78,16 +78,15 @@ int CPDB_mol_id::Compare(const CPDB_mol_id& id) const
     }
 }
 
-string CPDB_mol_id::Format(string_view s, TFormat format)
+string_view CPDB_mol_id::Format(string_view s, string& storage, TFormat format)
 {
-    string_view result = s;
     switch (format) {
     case ePDB_AsIs:
         break;
     case ePDB_Legacy:
         if (s.size() == 12) {
             if (NStr::StartsWith(s, "pdb_0000", NStr::eNocase)) {
-                result = s.substr(8);
+                return s.substr(8);
             } else {
                 NCBI_THROW(CSeqIdException, eFormat,
                            s + " has no legacy equivalent");
@@ -97,20 +96,21 @@ string CPDB_mol_id::Format(string_view s, TFormat format)
     case ePDB_Minimal:
         if (s.size() == 12
             &&  NStr::StartsWith(s, "pdb_0000", NStr::eNocase)) {
-            result = s.substr(8);
+            return s.substr(8);
         }
         break;
     case ePDB_Extended:
         if (s.size() == 4) {
-            return "pdb_0000" + s;
+            storage = "pdb_0000" + s;
+            return storage;
         }
         break;
     case ePDB_Public:
-        return Format(s, TDfltPubFmt::GetDefault());
+        return Format(s, storage, TDfltPubFmt::GetDefault());
     case ePDB_Internal:
-        return Format(s, TDfltIntFmt::GetDefault());
+        return Format(s, storage, TDfltIntFmt::GetDefault());
     }
-    return string(result);
+    return s;
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

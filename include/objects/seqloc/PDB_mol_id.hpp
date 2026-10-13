@@ -83,13 +83,26 @@ public:
     int Compare(const CPDB_mol_id& id) const;
 
     static string Format(string_view s, TFormat format);
+    static string_view Format(string_view s, string& storage, TFormat format);
     string Format(TFormat format) const
         { return Format(Get(), format); }
+    string_view Format(TFormat format, string& storage) const
+        { return Format(Get(), storage, format); }
     static TFormat GetFormat(string_view s)
         { return s.size() == 4 ? ePDB_Legacy : ePDB_Extended; }
     TFormat GetFormat() const
         { return GetFormat(Get()); }
 };
+
+//////////////////////////////////////////////////////////////////////
+
+inline
+string CPDB_mol_id::Format(string_view s, TFormat format)
+{
+    string storage;
+    return string(Format(s, storage, format));
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
