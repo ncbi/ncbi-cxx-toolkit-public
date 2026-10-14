@@ -117,6 +117,7 @@ static const SSERV_VTable kLbdnsOp = {
 struct SLBDNS_Data {
     unsigned int   host;     /* LB DNS server host */
     unsigned short port;     /* LB DNS server port */
+    TSERV_TypeOnly types;    /* Target types       */
     unsigned       debug:1;  /* Debug output       */
     unsigned       check:1;  /* Private check mode */
     unsigned       empty:1;  /* No more data       */ 
@@ -1239,7 +1240,7 @@ static void x_Finalize(SERV_ITER iter)
         free(info);
     }
 
-    if (!data->n_cand  &&  (iter->types & fSERV_Dns)
+    if (!data->n_cand  &&  (data->types & fSERV_Dns)
         &&  !iter->last  &&  !iter->n_skip) {
         SSERV_Info x_info;
         x_BlankInfo(&x_info, fSERV_Dns);
@@ -1268,21 +1269,24 @@ static void x_Finalize(SERV_ITER iter)
                  iter->name, (unsigned long) data->n_cand));
 }
 
-
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static int/*bool*/ x_Resolve(SERV_ITER iter)
 {
+    const struct SLBDNS_Data* data = (const struct SLBDNS_Data*) iter->data;
     int/*bool*/ rv = 0/*false*/;
     CORE_TRACEF(("LBDNS resolving \"%s\"", iter->name));
-    if (!(iter->types & ~fSERV_Stateless) || (iter->types & fSERV_Standalone))
+    if (data->types == fSERV_Any/*0*/  ||  (data->types & fSERV_Standalone))
         rv |= x_ResolveType(iter, ns_t_srv);
-    if (iter->types & fSERV_Dns)
+    if (data->types & fSERV_Dns)
         rv |= x_ResolveType(iter, ns_t_any);
     CORE_TRACEF(("LBDNS returning \"%s\": %s", iter->name,
                  rv ? "located" : "unknown"));
     if (rv)
         x_Finalize(iter);
     else
-        assert(!((const struct SLBDNS_Data*) iter->data)->n_cand);
+        assert(!data->n_cand);
     return rv;
 }
 
@@ -1489,7 +1493,7 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
 
     /* Can process fSERV_Any (basically meaning fSERV_Standalone), and explicit
      * fSERV_Standalone and/or fSERV_Dns only */
-    types = iter->types & ~fSERV_Stateless;
+    types = iter->types & ~(fSERV_Stateless | fSERV_Firewall);
     if (types != fSERV_Any/*0*/  &&  !(types & (fSERV_Standalone | fSERV_Dns)))
         return 0;
     if (types == fSERV_Dns) {
@@ -1516,6 +1520,7 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
                          "LBDNS failed to create private data structure");
         goto err;
     }
+    data->types = types;
     data->debug = ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
                                       (0, REG_CONN_LBDNS_DEBUG,
                                        val, sizeof(val), 0));
