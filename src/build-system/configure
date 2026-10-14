@@ -28604,8 +28604,8 @@ if test "$with_vdb" != "no" ; then
    if test "$with_mt" = no; then
       vdb_deps="$vdb_deps $THREAD_LIBS"
    fi
-   vdb_static_deps="$LIBXML_STATIC_LIBS $vdb_deps"
-   vdb_deps="$LIBXML_LIBS $vdb_deps"
+   vdb_static_deps="$LIBXML_STATIC_LIBS $ZSTD_STATIC_LIBS $vdb_deps"
+   vdb_deps="$LIBXML_LIBS $ZSTD_LIBS $vdb_deps"
    if test "${with_vdb:-yes}" != "yes" -a -d "$with_vdb"; then
       VDB_PATH=$with_vdb
    fi
