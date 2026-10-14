@@ -302,7 +302,7 @@ APU	s	Akita Prefectural University
 AQC	s	Aquinas College, Biology Department			
 AQP	s	Estudios Fitogeograficos del Peru			
 AQT	s	Aktobe Regional University K. Zhubanov			
-AQUAMEB 	c	Culture Collection of Microalgae and Cyanobacteria, Bursa Technical University	AQUAMEB		
+AQUAMEB	c	Culture Collection of Microalgae and Cyanobacteria, Bursa Technical University	AQUAMEB,AQUAMEB,AQUAMEB		
 AQUI	s	Universita degli Studi di L'Aquila, Dipartimento di Scienze Ambientali			
 AR	s	Pomor State University			
 ARA	s	Universidade Federal de Alagoas			
@@ -432,7 +432,7 @@ AYDN	s	Adnan Menderes University, Department of Biology
 AYR	s	South Ayrshire Council			
 AZ	s	Museu Carlos Machado, Natural History Department			
 AZAN	s	Akademia Nauk Azerbaijana-Bulgarian Academy of Science of Azerbaijan			
-AZB 	s	Herbario Ruy Telles Palhinha - Universidade Dos Acores	AZB		
+AZB	s	Herbario Ruy Telles Palhinha - Universidade Dos Acores	AZB,AZB,AZB		
 AZCM	s	Azumino City Toyoshina Local Museum			
 AZMBI	s	Institute of Microbiology of the Ministry of Science and Education of the Republic of Azerbaijan			
 AZTI	sc	AZTI Tecnalia			
@@ -1084,7 +1084,7 @@ CBUMAG	s	Universidad del Magdalena
 CBY	s	Royal Museum and Art Gallery			
 CC	c	CSIRO Canberra Rhizobium Collection			
 CC-OBE	s	Colorado College Department of Organismal Biology & Ecology			
-CCA-Marburg 	c	Culture Collection of Algae at the University of Marburg			
+CCA-Marburg	c	Culture Collection of Algae at the University of Marburg	CCA,CCA-Marburg		
 CCAA	s	Universidade Federal do Maranhao - UFMA			
 CCAC<BRA>	s	Universidade Federal do Ceara, Centro Ciencias Agrarias			
 CCAC<DEU>	c	Culture Collection of Algae at the University of Cologne			
@@ -1139,7 +1139,7 @@ CCLU	s	Universidade Federal de Alagoas
 CCM	c	Czech Collection of Microorganisms	CCM<CZE>		
 CCM-A	c	Coleccion de Cultivos Microbianos			
 CCM-CIBE	c	Escuela Superior Politecnica del Litoral			
-CCM-UFV 	c	Collection of Cyanobacteria and Microalgae at the Universidade Federal de Vicosa	CCM-UFV		
+CCM-UFV	c	Collection of Cyanobacteria and Microalgae at the Universidade Federal de Vicosa	CCM-UFV,CCM-UFV,CCM-UFV		
 CCM/UEA	c	Central De Colecoes Microbiologicas Da Universidade Do Estado Do Amazonas			
 CCM<CHN>	s	Changchun College of Traditional Chinese Medicine, Department of Chinese Materia Medica			
 CCM<USA-MT>	s	Carter County Museum			
@@ -1824,7 +1824,7 @@ CZ-IICT	s	Centro de Zoologia, Instituto de Investigacao Cientifica Tropical
 CZ-MGP	s	Museum and gallery in Prostejov			
 CZAA	s	Catedra de Zoologia Agricola			
 CZACC	s	Coleccion Zoologia, Academia de Ciencias de Cuba			
-CZCEN 	s	Coleccion Zoologica de la Facultad de Ciencias Exactas y Naturales	CZCEN		
+CZCEN	s	Coleccion Zoologica de la Facultad de Ciencias Exactas y Naturales	CZCEN,CZCEN,CZCEN		
 CZEUM	c	Collection of Zoosporic Eufungi at University of Michigan			
 CZH	s	Hanshan Normal University			
 CZIP	s	Universidad de Magallanes, Instituto de la Patagonia			
@@ -2239,7 +2239,7 @@ EMC	s	Eastern Michigan University, Biology Department
 EMCC	c	Egypt Microbial Culture Collection			
 EMEC	s	Essig Museum of Entomology, University of California at Berkeley		https://essigdb.berkeley.edu/cgi/eme_query?table=eme&bnhm_id=EMEC209800&one=T	
 EMEC:EMEC	s	Essig Museum of Entomology, University of California at Berkeley, Essig Museum of Entomology		https://essigdb.berkeley.edu/cgi/eme_query?table=eme&bnhm_id=EMEC71410&one=T	
-EMEC:UCIS 	s	Essig Museum of Entomology, University of California at Berkeley, University of California Insect Survey	EMEC:UCIS UCIS	https://essigdb.berkeley.edu/cgi/eme_query?table=eme&bnhm_id=UCIS133938&one=T	
+EMEC:UCIS	s	Essig Museum of Entomology, University of California at Berkeley, University of California Insect Survey		https://essigdb.berkeley.edu/cgi/eme_query?table=eme&bnhm_id=UCIS133938&one=T	
 EMET	s	Faculty of Agriculture, Entomology Museum			
 EMIT	s	Entomological Museum of Isparta, Turkey			
 EMMA	s	Universidad Politecnica de Madrid, Unidad Docente Botanica, Departamento Silvopascicultura			
@@ -2458,7 +2458,7 @@ FINH	s	The Falkland Islands National Herbarium
 FIOC	s	Fundacao Instituto Oswaldo Cruz			
 FIOC:ColTryp	c	Fundacao Instituto Oswaldo Cruz, Collection of Trypanosoma from Wild and Domestic Mammals and Vectors			
 Fiocruz/COLPROT	c	Colecao de Protozoarios da FIOCRUZ			
-Fiocruz/COLTRYP 	s	Colecao de Trypanosoma de Mamiferos Silvestres, Domesticos e Vetores	Fiocruz/COLTRYP		
+Fiocruz/COLTRYP	s	Colecao de Trypanosoma de Mamiferos Silvestres, Domesticos e Vetores	Fiocruz/COLTRYP,Fiocruz/COLTRYP,Fiocruz/COLTRYP		
 FIP	s	Florida Institute of Paleontology			
 FIPF	s	Universita di Firenze			
 FIPIA	s	Institut Teknologi Bandung, Jurusan Biologi			
@@ -2602,7 +2602,7 @@ FULD	s	Verein fuer Naturkunde in Osthessen
 FULPSB	s	Federal University of Lafia			
 FUMH	s	Ferdowsi University			
 FUMT	s	University of Tokyo			
-FUNED 	s	Fundacao Ezequiel Dias, Belo Horizonte	FUNED		
+FUNED	s	Fundacao Ezequiel Dias, Belo Horizonte	FUNED,FUNED,FUNED		
 FUOR	s	University of Ruhuna, Sri Lanka			
 FURB	s	Universidade Regional de Blumenau			
 FUS	s	Fudan University, Biology Department			
@@ -3300,7 +3300,7 @@ HSP	s	Instituto Cientifico Michael Owen Dillon
 HSS	s	Development, Technological and Investigacion Service, Forest Production Department			
 HSTM	s	Universidade Federal do Oeste do Para			
 HSU<USA-CA>	s	Humboldt State University			
-HSU<USA-CA>:Amphibian 	s	Humboldt State University, Amphibian Collection			
+HSU<USA-CA>:Amphibian	s	Humboldt State University, Amphibian Collection			
 HSU<USA-CA>:BIRD	s	Humboldt State University, Birds collection	HSU:Birds,HSU<USA-CA>Birds		
 HSU<USA-CA>:MAMM	s	Humboldt State University, Mammals collection	HSU:Mammal,HSU<USA-CA>Mammal		
 HSU<USA-CA>:Reptile	s	Humboldt State University, Reptile collection	HSU:Reptile,HSU<USA-CA>Reptile		
@@ -3412,7 +3412,7 @@ HUTB	s	Hainan University
 HUTI	s	Universidad Tecnologica Indoamerica			
 HUTM	s	Hunan Academy of Traditional Chinese Medicine and Pharmacy			
 HUTO	s	Fundacao Universidade do Tocantins , UNITINS			
-HUTPL 	s	Universidad Tecnica Particular De Loja	HUTPL		
+HUTPL	s	Universidad Tecnica Particular De Loja	HUTPL,HUTPL,HUTPL		
 HUUD	s	Dublin City University			
 HUVA	s	Universidade Estadual Vale do Acarau			
 HVASF	s	Universidade Federal do Vale do Sao Francisco			
@@ -4760,7 +4760,7 @@ LWU	s	University of Lucknow, Botany Department
 LY	sc	Universite Claude Bernard			
 LYAC	s	Laiyang Agricultural College, Department of Basic Courses			
 LYCC	c	Lallemand Yeast Culture Collection			
-LycoCC 	c	The Lycoming College Culture Collection			
+LycoCC	c	The Lycoming College Culture Collection	LycoCC,LycoCC		
 LYD	s	Mpumalanga Parks Board			
 LYJB	s	Jardin Botanique de Lyon			
 LYN	s	Lynchburg College, Biology Department			
@@ -5308,7 +5308,7 @@ MNHN:IM	s	Museum National d'Histoire Naturelle, Molluscs
 MNHN:IN	s	Museum National d'Histoire Naturelle, Nematodes			
 MNHN:IP	s	Museum National d'Histoire Naturelle, Porifera			
 MNHN:IR 	s	Museum National d'Histoire Naturelle, Protists	MNHN:IR IR		
-MNHN:IT 	s	Museum National d'Histoire Naturelle, Tunicates/ascidians			
+MNHN:IT	s	Museum National d'Histoire Naturelle, Tunicates/ascidians			
 MNHN:IU	s	Museum National d'Histoire Naturelle, Crustaceans			
 MNHN:LCP	s	Museum National d'Histoire Naturelle, Laboratory of Cryptogamy			
 MNHN:M	s	Museum National d'Histoire Naturelle, Mammal	ZM		
@@ -5481,7 +5481,7 @@ MSEN	s	Montrose Natural History and Antiquarian Society
 MSF	s	Sauriermuseum Frick			
 MSGP	s	Nusee des Services Geologiques du Portugal			
 MSI	sc	Marine Science Institute, University of the Philippines			
-MSI:PMS-ICBG 	c	Marine Science Institute, University of the Philippines, Philippine Mollusk Symbiont-International Cooperative Biodiversity Group	MSI:PMS-ICBG PMS-ICBG		
+MSI:PMS-ICBG	c	Marine Science Institute, University of the Philippines, Philippine Mollusk Symbiont-International Cooperative Biodiversity Group	MSI:PMS-ICBG PMS-ICBG		
 MSIE	s	Museum of Shanghai			
 MSINR	s	Museum Sichuan Institute of Natural Resources			
 MSIR	s	Mauritius Sugar Industry			
@@ -5595,7 +5595,7 @@ MUM	c	Micoteca da Universidade do Minho
 MUMAB	s	Museo Mare antico e Biodiversita			
 MUMF	s	Department of Life Sciences			
 MUMH	s	Mie University Mycological Herbarium			
-MUMNH 	s	Mahidol University Museum of Natural History	MUMNH		
+MUMNH	s	Mahidol University Museum of Natural History	MUMNH,MUMNH,MUMNH		
 MUMZ	s	University of Missouri, Museum of Zoology			
 MUNC	s	St. John's, Memorial University of Newfoundland			
 MUNZ	s	Massey University			
@@ -5704,7 +5704,7 @@ MZUABCS	s	Museo de Zoologia de la Universidad Automica de Baja California Sur
 MZUB	s	Museo di Zoologia			
 MZUC<CHL>	s	Museo de Zoologia, Universidad de Concepcion			
 MZUC<ITA>	s	Universita di Cagliari			
-MZUEL 	s	Museu de Zoologia da Universidade Estadual de Londrina	MZUEL		
+MZUEL	s	Museu de Zoologia da Universidade Estadual de Londrina	MZUEL,MZUEL,MZUEL,MZUEL		
 MZUEL:PISC	s	Museu de Zoologia da Universidade Estadual de Londrina, Fish collection	MZUEL :PiscesPisces		
 MZUESC	s	Museu de Zoologia da Universidade Estadual de Santa Cruz			
 MZUF	s	Museo Zoologico La Specola, Universita di Firenze			
@@ -5720,7 +5720,7 @@ MZUS	s	Musee de Zoologie de l'Universite de Strasbourg
 MZUSP	s	Museu de Zoologia da Universidade de Sao Paulo			
 MZUT	s	Museo di Zoologia, Instituto di Zoologia e Anatomia Comparata Universita di Torino	MZUT<ITA-Torino>,MZUT<ITA-Turin>		
 MZUTH	s	Museum of Zoology, University of Thessaloniki			
-MZUTI 	s	Museo de Zoologia, Universidad Tecnologica Indoamerica			
+MZUTI	s	Museo de Zoologia, Universidad Tecnologica Indoamerica	MZUTI,MZUTI		
 MZUVN	s	Musee Zool. Univ. et Ville de Nancy			
 MZV<POL>	s	Muzeum i Instytut Zoologii			
 MZV<RUS>	s	Zoological Museum Varsovite			
@@ -5835,7 +5835,7 @@ NCSM	s	North Carolina Museum of Natural Sciences	NCSMNS
 NCSM:BIRD	s	North Carolina Museum of Natural Sciences, Birds collection			
 NCSM:FISH	s	North Carolina Museum of Natural Sciences, Fish collection			
 NCSM:HERP	s	North Carolina Museum of Natural Sciences, Herpetology Collection			
-NCSM:Mammals 	s	North Carolina Museum of Natural Sciences, Mammal collection			
+NCSM:MAMM	s	North Carolina Museum of Natural Sciences, Mammal collection	NCSM:Mammals		
 NCSU	s	North Carolina State University Collections			
 NCTC	c	National Collection of Type Cultures		https://www.phe-culturecollections.org.uk/products/bacteria/detail.jsp?collection=nctc&refId=NCTC+	
 NCU	s	University of North Carolina, North Carolina Botanical Garden			
@@ -6154,7 +6154,7 @@ NNMB	s	New Natural Material Bank
 NNMN	s	Nationaal Natuurhistorisch Museum Naturalis			
 NNSU	s	N. I. Lobachevsky Nizhni Novgorod State University, Department of Botany			
 NO	s	Tulane University, Department of Ecology and Evolutionary Biology			
-NOAA 	s	National Oceanic and Atmospeheric Administration			
+NOAA	s	National Oceanic and Atmospeheric Administration	NOAA,NOAA		
 NOAA:MarFor	s	National Oceanic and Atmospeheric Administration , Marine Forensics			
 NOAS	s	New Orleans Academy of Science			
 NOCA	s	North Cascades National Park Service Complex			
@@ -6246,7 +6246,7 @@ NTM	s	Museum and Art Gallery of the Northern Territory
 NTM<FRA>	s	Museum d'Histoire Naturelle de Nantes			
 NTN	s	Central Museum and Art Gallery			
 NTNU	s	National Taiwan Normal University	NTNUB		
-NTNU-VM 	s	Norwegian University of Science and Technology, Museum of Natural History and Archaeology	NTNU-VM		
+NTNU-VM	s	Norwegian University of Science and Technology, Museum of Natural History and Archaeology	NTNU-VM,NTNU-VM,NTNU-VM		
 NTOU	sc	Institute of Marine Biology, National Taiwan Ocean University			
 NTPI	s	Nizhny Tagil State Social Pedagogical Institute of Russian State Vocational Pedagogical University			
 NTS	s	Nevada Operations Office, U.S. Department of Energy			
@@ -6383,7 +6383,7 @@ OMNH<USA-OK>:BIRD	s	Oklahoma Museum of Natural History, Birds Collection	OMNH:Bi
 OMNH<USA-OK>:EGG	s	Oklahoma Museum of Natural History, Eggs collection	OMNH:Eggs,OMNH<USA-OK>Eggs		
 OMNH<USA-OK>:FISH	s	Oklahoma Museum of Natural History, Fish collection	OMNH:Fish,OMNH<USA-OK>Fish		
 OMNH<USA-OK>:MAMM	s	Oklahoma Museum of Natural History, Mammals Collection	OMNH:Mammal,OMNH<USA-OK>Mammal		
-OMNH<USA-OK>:Reptile 	s	Oklahoma Museum of Natural History, Reptile Collection			
+OMNH<USA-OK>:Reptile	s	Oklahoma Museum of Natural History, Reptile Collection			
 OMNHN	s	The Sam Noble Oklahoma State Museum of Natural History			
 OMNHO	s	Osaka Museum of Natural History	OMNH		
 OMNZ	s	Otago Museum	OM		
@@ -6445,7 +6445,7 @@ OSUMZ	s	Ohio State University Museum
 OSUMZ:AMPH	s	Ohio State University Museum, Amphibian collection	OSUM:Amphibian		
 OSUMZ:BIRD	s	Ohio State University Museum, Bird Collection	OSUM:Bird		
 OSUMZ:FISH	s	Ohio State University Museum, Fish collection	OSUM:Fish		
-OSUMZ:MAMM	s	Ohio State University Museum, Mammal collection	OSUMZ:Mammal 		
+OSUMZ:MAMM	s	Ohio State University Museum, Mammal collection			
 OSUMZ:REP	s	Ohio State University Museum, Reptile Collection	OSUM:Reptile		
 OSUO	s	Oregon State University, School of Oceanography			
 OSUS	s	Oklahoma State University			
@@ -7023,7 +7023,7 @@ RMNH:COEL	s	Naturalis Biodiversity Center, Coelomate collection
 RMNH:CRUS	s	Naturalis Biodiversity Center, crustacean collection			
 RMNH:CRUS.D	s	Naturalis Biodiversity Center, decapod collection			
 RMNH:INS	s	Naturalis Biodiversity Center, Insect collection			
-RMNH:MAM 	s	Naturalis Biodiversity Center, Mammal collection			
+RMNH:MAM	s	Naturalis Biodiversity Center, Mammal collection			
 RMNH:MOL	s	Naturalis Biodiversity Center, mollusc collection		http://data.biodiversitydata.nl/naturalis/specimen/RMNH.MOL.	
 RMNH:PISC	s	Naturalis Biodiversity Center, fish collection			
 RMNH:POR	s	Naturalis Biodiversity Center, poriferan collection			
@@ -7418,7 +7418,7 @@ SIB	s	Sibiu Natural History Museum
 SIBAC	s	Southwest Institute of Biology			
 SIBS	s	Institute of Marine Biological Research (IMBR)			
 SICAU	s	Herbarium of Sichuan Agricultural University			
-SICAUCC 	c	Sichuan Agricultural University Culture Collection	SICAUCC		
+SICAUCC	c	Sichuan Agricultural University Culture Collection	SICAUCC,SICAUCC,SICAUCC		
 SICH	s	Simpson College, Biology and Environmental Sciences Department			
 SIE	s	Southern Institute of Ecology			
 SIEMEA	s	Severtsov Insitute for Evolutionary Morphology and Animal Ecology			
@@ -7619,7 +7619,7 @@ SMP<USA-PA>	s	The State Museum of Pennsylvania
 SMR	s	Samara State University, Department for Ecology, Botany, and Nature Protection			
 SMRG	c	Soil Microbiology Research Group, Division of Soil Science, Department of Agriculture			
 SMRS	s	Stavropol Museum of Regional Studies			
-SMRU 	s	Shoklo Malaria Research Unit	SMRU		
+SMRU	s	Shoklo Malaria Research Unit	SMRU,SMRU,SMRU		
 SMS	s	Missouri State University, Department of Biology			
 SMTP	s	Swedish Malaise Trap Project			
 SMTWA	c	School of Medical Technology Western Australia			
@@ -8123,8 +8123,8 @@ TNF	s	United States Forest Service
 TNFC	s	Tynside Naturalists' Field Club			
 TNFS	s	USDA Forest Service, Alaska Region			
 TNHC	s	Texas Memorial Museum, Texas Natural History Collection	TMM,TMMC		
-TNHC:Herpetology 	s	Texas Memorial Museum, Texas Natural History Collection, Herpetology Collection			
-TNHC:Ichthyology 	s	Texas Memorial Museum, Texas Natural History Collection, Ichthyology Collection			
+TNHC:Herpetology	s	Texas Memorial Museum, Texas Natural History Collection, Herpetology Collection			
+TNHC:Ichthyology	s	Texas Memorial Museum, Texas Natural History Collection, Ichthyology Collection			
 TNHM	s	University of Texas			
 TNM	s	National Museum of Natural Science, Botany Department			
 TNP	s	Museum of Tatra National Park			
@@ -8223,7 +8223,7 @@ TUC	s	University of Arizona, Ecology and Evolutionary Biology Department
 TUCH	s	Tribhuvan University, Central Department of Botany			
 TUCIM	c	TU Wien collection of industrial microorganisms			
 TUF	s	University of Tartu			
-TUFC 	s	Tottori University Fungal Culture Collection	TUFC		
+TUFC	s	Tottori University Fungal Culture Collection	TUFC,TUFC,TUFC		
 TUFIL	s	Tokyo University of Fisheries, Ichthyological Laboratory			
 TUFT	s	Tufts University, Biology Department			
 TUH	s	Tehran University, Department of Biology			
@@ -8476,7 +8476,7 @@ UFRJ<herbarium>	sc	Herbario e Colecao Fitopathologica "Verlande Duarte Silveira"
 UFRJ<museum>	s	Departramento de Zoologia, Universidade Federal do Rio de Janeiro			
 UFRJ<museum>:POR	s	Departramento de Zoologia, Universidade Federal do Rio de Janeiro, Porifera collection	UFRJ:POR,UFRJ<museum>POR		
 UFRJIM	c	Departamento de Microbiologia Medica			
-UFRN 	s	Universidade Federal do Rio Grande do Norte			
+UFRN	s	Universidade Federal do Rio Grande do Norte	UFRN,UFRN		
 UFRN:Fungos	s	Universidade Federal do Rio Grande do Norte, Fungal collection	UFRN :FungosFungos		
 UFRO	c	Microbiological Resource Bank, Universidad de La Frontera			
 UFROH	s	Universidad de La Frontera			
@@ -8628,7 +8628,7 @@ UNAB<CIV>	s	Nangui Abrogoa University
 UNAC	s	Universidad Nacional Agraria			
 UNAD	s	Universidad Nacional Agraria			
 UNAF	s	University of North Alabama, Department of Biology			
-UNAH 	s	Universidad Nacional Autonoma de Honduras			
+UNAH	s	Universidad Nacional Autonoma de Honduras	UNAH,UNAH		
 UNAM	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia	IBUNAM		
 UNAM:CNAC	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Acaros			
 UNAM:CNAN	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Aracnidos			
@@ -8910,7 +8910,7 @@ UTAI	s	Tel Aviv University
 UTAL	s	Universidad de Talca			
 UTC	s	Utah State University, Biology Department			
 UTCEC	s	Universidad Tecnica de Cotopaxi (Herbario de Botanica Aplicada UTCEC, CAREN (Agriculture Farming and Natural Resources, Facultad de Ciencias Agropecuarias y Recursos Naturales)			
-UTCI 	s	University of Tennessee at Chattanooga Insect Collection			
+UTCI	s	University of Tennessee at Chattanooga Insect Collection	UTCI,UTCI		
 UTD	s	University of Texas, Plant Resources Center			
 UTE	s	University of Tartu			
 UTEP	s	University of Texas at El Paso Biodiversity Collections			
@@ -9324,7 +9324,7 @@ WSCO	s	Weber State University, Botany Department
 WSF	c	Wisconsin Soil Fungi Collection			
 WSFA	s	Wilmington College, Biology Department			
 WSL	b	Swiss Federal Institute for Forest, Snow and Landscape Research			
-WSLC 	c	Research collection of Listeria (Weihenstephan Microbial Strain Collection)			
+WSLC	c	Research collection of Listeria (Weihenstephan Microbial Strain Collection)	WSLC,WSLC		
 WSM	s	Weston-super-Mare Museum and Art Gallery			
 WSM<AUS>	c	Western Australian Soil Microbiology culture collection, Murdoch. University			
 WSNM	s	White Sands National Monument			
@@ -9481,7 +9481,7 @@ YZU	s	Yuzhou University
 YZUH	s	Yangtze University			
 Z	sb	Institut fur Systematische Botanik Universitat Zurich			
 ZAD	s	Mount Makulu Research Station			
-ZAGR 	s	University of Zagreb	ZAGR		
+ZAGR	s	University of Zagreb	ZAGR,ZAGR,ZAGR		
 ZAHBRI	s	Zambezi Horticultural and Botanical Research Institute			
 ZAHO	s	University of Zagreb, Botany Department	ZA		
 ZAR	s	Institut de Paleontologie du Museum National Historie Naturelle			
