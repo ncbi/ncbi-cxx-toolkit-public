@@ -57,6 +57,7 @@ BEGIN_NAMESPACE(snp);
 
 class CSNPFileInfo;
 class CSNPClient;
+class CPSGS_SNPProcessor;
 
 
 struct SSNPProcessor_Config
@@ -307,7 +308,7 @@ protected:
 class CSNPClient
 {
 public:
-    CSNPClient(const SSNPProcessor_Config& config);
+    CSNPClient(CPSGS_SNPProcessor& processor, const SSNPProcessor_Config& config);
     ~CSNPClient(void);
 
     vector<string> WhatNACanProcess(SPSGS_AnnotRequest& annot_request,
@@ -343,6 +344,7 @@ private:
     shared_ptr<objects::CVDBMgr> m_Mgr;
     CRef<objects::CSnpPtisClient> m_PTISClient;
     TSNPDbCache m_SNPDbCache;
+    CPSGS_SNPProcessor& m_Processor;
 };
 
 

@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include "snp_client.hpp"
+#include "snp_processor.hpp"
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_logging.hpp"
 #include <objects/seqloc/seqloc__.hpp>
@@ -753,10 +754,11 @@ bool CSNPClient::IsValidSeqId(const string& id, int id_type, int version) const
 }
 
 
-CSNPClient::CSNPClient(const SSNPProcessor_Config& config)
+CSNPClient::CSNPClient(CPSGS_SNPProcessor& processor, const SSNPProcessor_Config& config)
     : m_Config(config),
       m_Mgr(new CVDBMgr),
-      m_SNPDbCache(config.m_GCSize, config.m_FileReopenTime, config.m_FileRecheckTime)
+      m_SNPDbCache(config.m_GCSize, config.m_FileReopenTime, config.m_FileRecheckTime),
+      m_Processor(processor)
 {
     if (m_Config.m_AddPTIS) {
         m_PTISClient = CSnpPtisClient::CreateClient();
@@ -1051,7 +1053,7 @@ void CSNPClient::x_RegisterTiming(psg_time_point_t start,
                                   EPSGOperationStatus status)
 {
     CPubseqGatewayApp::GetInstance()->
-        GetTiming().Register(nullptr, operation, status, start, 0);
+        GetTiming().Register(&m_Processor, operation, status, start, "snp");
 }
 
 

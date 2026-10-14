@@ -57,6 +57,8 @@ BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(wgs);
 
 
+class CPSGS_WGSProcessor;
+
 struct SWGSProcessor_Config
 {
     enum ECompressData {
@@ -178,7 +180,7 @@ public:
         AutoPtr<SWGSSeqInfo>            m_RootSeq;
     };
 
-    CWGSClient(const SWGSProcessor_Config& config);
+    CWGSClient(CPSGS_WGSProcessor& processor, const SWGSProcessor_Config& config);
     ~CWGSClient(void);
 
     CRef<objects::CWGSResolver> GetWGSResolver(void);
@@ -284,6 +286,7 @@ private:
     CRef<objects::CWGSResolver> m_Resolver;
     TWGSDbCache m_WGSDbCache;
     CRef<CThreadNonStop> m_IndexUpdateThread;
+    CPSGS_WGSProcessor& m_Processor;
 };
 
 

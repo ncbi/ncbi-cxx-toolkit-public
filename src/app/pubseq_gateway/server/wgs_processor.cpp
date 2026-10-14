@@ -118,7 +118,7 @@ CPSGS_WGSProcessor::CPSGS_WGSProcessor(void)
       m_OutputFormat(SPSGS_ResolveRequest::ePSGS_NativeFormat)
 {
     x_LoadConfig();
-    m_Client = make_shared<CWGSClient>(*m_Config);
+    m_Client = make_shared<CWGSClient>(*this, *m_Config);
 }
 
 

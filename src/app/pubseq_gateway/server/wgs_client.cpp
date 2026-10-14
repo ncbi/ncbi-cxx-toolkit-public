@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include "wgs_client.hpp"
+#include "wgs_processor.hpp"
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_logging.hpp"
 #include <objects/seqset/seqset__.hpp>
@@ -493,9 +494,10 @@ END_LOCAL_NAMESPACE;
 /////////////////////////////////////////////////////////////////////////////
 
 
-CWGSClient::CWGSClient(const SWGSProcessor_Config& config)
+CWGSClient::CWGSClient(CPSGS_WGSProcessor& processor, const SWGSProcessor_Config& config)
     : m_Config(config),
-      m_WGSDbCache(config.m_CacheSize, config.m_FileReopenTime, config.m_FileRecheckTime)
+      m_WGSDbCache(config.m_CacheSize, config.m_FileReopenTime, config.m_FileRecheckTime),
+      m_Processor(processor)
 {
 }
 
@@ -665,7 +667,7 @@ void CWGSClient::x_RegisterTiming(psg_time_point_t start,
                                   EPSGOperationStatus status)
 {
     CPubseqGatewayApp::GetInstance()->
-        GetTiming().Register(nullptr, operation, status, start, 0);
+        GetTiming().Register(&m_Processor, operation, status, start, "wgs");
 }
 
 

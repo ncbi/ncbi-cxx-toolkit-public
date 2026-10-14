@@ -124,7 +124,7 @@ CPSGS_SNPProcessor::CPSGS_SNPProcessor(void)
       m_ScaleLimit(CSeq_id::eSNPScaleLimit_Default)
 {
     x_LoadConfig();
-    m_Client = make_shared<CSNPClient>(*m_Config);
+    m_Client = make_shared<CSNPClient>(*this, *m_Config);
 }
 
 
