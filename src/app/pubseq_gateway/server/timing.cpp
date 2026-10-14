@@ -1112,6 +1112,7 @@ uint64_t COperationTiming::Register(IPSGS_Processor *  processor,
                                     EPSGOperation  operation,
                                     EPSGOperationStatus  status,
                                     const psg_time_point_t &  op_begin_ts,
+                                    const string &  datacenter,
                                     unsigned long  blob_size)
 {
     if (!m_OnlyForProcessor.empty()) {
@@ -1273,7 +1274,8 @@ uint64_t COperationTiming::Register(IPSGS_Processor *  processor,
     // method at CHttpConnection::x_MaintainBacklog and it will be logged (if
     // log is switched on) regardless of the threshold.
     if (processor != nullptr) {
-        size_t      proc_index = m_ProcGroupToIndex[processor->GetGroupName()];
+        string      proc_group = processor->GetGroupName();
+        size_t      proc_index = m_ProcGroupToIndex[proc_group];
         size_t      log_threshold = m_ProcIndexToLogTimingThreshold[proc_index];
         if (log_threshold > 0) {
             if (mks > log_threshold) {
@@ -1290,9 +1292,17 @@ uint64_t COperationTiming::Register(IPSGS_Processor *  processor,
                 CRequestContextResetter     context_resetter;
                 request->SetRequestContext();
 
-                GetDiagContext().Extra().Print("op_too_long", mks)
-                                        .Print(m_TooLongIDs[operation], mks)
-                                        .Print("processor", processor->GetGroupName());
+                if (proc_group == "CASSANDRA") {
+                    GetDiagContext().Extra().Print("op_too_long", mks)
+                                            .Print(m_TooLongIDs[operation], mks)
+                                            .Print("processor", proc_group)
+                                            .Print("datacenter", datacenter)
+                                            .Print("active_stmt", app->GetCassandraActiveStatements());
+                } else {
+                    GetDiagContext().Extra().Print("op_too_long", mks)
+                                            .Print(m_TooLongIDs[operation], mks)
+                                            .Print("processor", proc_group);
+                }
             }
         }
     }

@@ -76,11 +76,13 @@ class CNamedAnnotationCallback
                 if (m_AnnotCount == 0)
                     app->GetTiming().Register(m_Processor, eNARetrieve,
                                               eOpStatusNotFound,
-                                              m_RetrieveTiming);
+                                              m_RetrieveTiming,
+                                              m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
                 else
                     app->GetTiming().Register(m_Processor, eNARetrieve,
                                               eOpStatusFound,
-                                              m_RetrieveTiming);
+                                              m_RetrieveTiming,
+                                              m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
             }
 
             ++m_AnnotCount;

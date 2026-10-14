@@ -73,14 +73,16 @@ class CIPGResolveCallback
                 if (m_Count == 0) {
                     app->GetTiming().Register(m_Processor, eIPGResolveRetrieve,
                                               eOpStatusNotFound,
-                                              m_RetrieveTiming);
+                                              m_RetrieveTiming,
+                                              m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
                     app->GetCounters().Increment(
                                     m_Processor,
                                     CPSGSCounters::ePSGS_IPGResolveNotFound);
                 } else {
                     app->GetTiming().Register(m_Processor, eIPGResolveRetrieve,
                                               eOpStatusFound,
-                                              m_RetrieveTiming);
+                                              m_RetrieveTiming,
+                                              m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
                 }
             }
 

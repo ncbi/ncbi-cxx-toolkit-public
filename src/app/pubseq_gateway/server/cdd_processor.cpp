@@ -621,7 +621,7 @@ void CPSGS_CDDProcessor::x_RegisterTiming(EPSGOperation operation,
                                           size_t blob_size)
 {
     CPubseqGatewayApp::GetInstance()->
-        GetTiming().Register(this, operation, status, m_Start, blob_size);
+        GetTiming().Register(this, operation, status, m_Start, "cdd", blob_size);
 }
 
 

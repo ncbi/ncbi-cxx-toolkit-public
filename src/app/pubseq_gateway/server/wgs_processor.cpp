@@ -723,7 +723,7 @@ void CPSGS_WGSProcessor::x_RegisterTiming(psg_time_point_t start,
                                           size_t blob_size)
 {
     CPubseqGatewayApp::GetInstance()->
-        GetTiming().Register(this, operation, status, start, blob_size);
+        GetTiming().Register(this, operation, status, start, "wgs", blob_size);
 }
 
 

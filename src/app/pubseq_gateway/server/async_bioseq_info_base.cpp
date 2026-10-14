@@ -180,7 +180,8 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
     if (records.empty()) {
         // Nothing was found
         app->GetTiming().Register(this, eLookupCassBioseqInfo,
-                                  eOpStatusNotFound, m_BioseqRequestStart);
+                                  eOpStatusNotFound, m_BioseqRequestStart,
+                                  GetLastFetchDatacenterName());
         app->GetCounters().Increment(this, CPSGSCounters::ePSGS_BioseqInfoNotFound);
 
         if (IsINSDCSeqIdType(m_BioseqResolution.GetBioseqInfo().GetSeqIdType())) {
@@ -212,7 +213,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
         m_BioseqResolution.m_ResolutionResult = ePSGS_BioseqDB;
 
         app->GetTiming().Register(this, eLookupCassBioseqInfo, eOpStatusFound,
-                                  m_BioseqRequestStart);
+                                  m_BioseqRequestStart, GetLastFetchDatacenterName());
         app->GetCounters().Increment(this, CPSGSCounters::ePSGS_BioseqInfoFoundOne);
         m_BioseqResolution.SetBioseqInfo(records[0]);
         m_FinishedCB(std::move(m_BioseqResolution));
@@ -232,7 +233,8 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
     if (result.status == CRequestStatus::e300_MultipleChoices) {
         // More than one and it was impossible to make a choice
         app->GetTiming().Register(this, eLookupCassBioseqInfo,
-                                  eOpStatusNotFound, m_BioseqRequestStart);
+                                  eOpStatusNotFound, m_BioseqRequestStart,
+                                  GetLastFetchDatacenterName());
         app->GetCounters().Increment(this, CPSGSCounters::ePSGS_BioseqInfoNotFound);
 
         if (m_NeedTrace) {
@@ -265,7 +267,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
     m_BioseqResolution.m_ResolutionResult = ePSGS_BioseqDB;
 
     app->GetTiming().Register(this, eLookupCassBioseqInfo, eOpStatusFound,
-                              m_BioseqRequestStart);
+                              m_BioseqRequestStart, GetLastFetchDatacenterName());
     app->GetCounters().Increment(this, CPSGSCounters::ePSGS_BioseqInfoFoundOne);
     m_BioseqResolution.SetBioseqInfo(records[result.index]);
     m_FinishedCB(std::move(m_BioseqResolution));
@@ -304,7 +306,8 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
             m_BioseqResolution.m_ResolutionResult = ePSGS_BioseqDB;
 
             app->GetTiming().Register(this, eLookupCassBioseqInfo,
-                                      eOpStatusFound, m_BioseqRequestStart);
+                                      eOpStatusFound, m_BioseqRequestStart,
+                                      GetLastFetchDatacenterName());
             app->GetCounters().Increment(this, CPSGSCounters::ePSGS_BioseqInfoFoundOne);
             m_BioseqResolution.SetBioseqInfo(records[decision.index]);
 
@@ -319,7 +322,8 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
             m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
 
             app->GetTiming().Register(this, eLookupCassBioseqInfo,
-                                      eOpStatusNotFound, m_BioseqRequestStart);
+                                      eOpStatusNotFound, m_BioseqRequestStart,
+                                      GetLastFetchDatacenterName());
             app->GetCounters().Increment(this, CPSGSCounters::ePSGS_BioseqInfoNotFound);
 
             // Data Callback
@@ -336,7 +340,8 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
             m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
 
             app->GetTiming().Register(this, eLookupCassBioseqInfo,
-                                      eOpStatusFound, m_BioseqRequestStart);
+                                      eOpStatusFound, m_BioseqRequestStart,
+                                      GetLastFetchDatacenterName());
 
             // Error callback
             m_ErrorCB(CRequestStatus::e500_InternalServerError,

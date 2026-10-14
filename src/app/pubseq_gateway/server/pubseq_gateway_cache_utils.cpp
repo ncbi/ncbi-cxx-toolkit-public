@@ -105,7 +105,7 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
         switch (records.size()) {
             case 0:
                 if (IsINSDCSeqIdType(seq_id_type)) {
-                    timing.Register(processor, eLookupLmdbBioseqInfo, eOpStatusNotFound, start);
+                    timing.Register(processor, eLookupLmdbBioseqInfo, eOpStatusNotFound, start, "cache");
                     app->GetCounters().Increment(
                             processor,
                             CPSGSCounters::ePSGS_BioseqInfoCacheMiss);
@@ -170,14 +170,14 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
     if (cache_hit) {
         if (m_NeedTrace)
             x_SendTrace("Report cache hit");
-        timing.Register(processor, eLookupLmdbBioseqInfo, eOpStatusFound, start);
+        timing.Register(processor, eLookupLmdbBioseqInfo, eOpStatusFound, start, "cache");
         app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_BioseqInfoCacheHit);
         return ePSGS_CacheHit;
     }
 
     if (m_NeedTrace)
         x_SendTrace("Report cache no hit");
-    timing.Register(processor, eLookupLmdbBioseqInfo, eOpStatusNotFound, start);
+    timing.Register(processor, eLookupLmdbBioseqInfo, eOpStatusNotFound, start, "cache");
     app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_BioseqInfoCacheMiss);
     return ePSGS_CacheNotHit;
 }
@@ -277,14 +277,14 @@ CPSGCache::x_LookupINSDCBioseqInfo(IPSGS_Processor *  processor,
     if (cache_hit) {
         if (m_NeedTrace)
             x_SendTrace("Report cache for INSDC types hit");
-        timing.Register(processor, eLookupLmdbBioseqInfo, eOpStatusFound, start);
+        timing.Register(processor, eLookupLmdbBioseqInfo, eOpStatusFound, start, "cache");
         app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_BioseqInfoCacheHit);
         return ePSGS_CacheHit;
     }
 
     if (m_NeedTrace)
         x_SendTrace("Report cache for INSDC types no hit");
-    timing.Register(processor, eLookupLmdbBioseqInfo, eOpStatusNotFound, start);
+    timing.Register(processor, eLookupLmdbBioseqInfo, eOpStatusNotFound, start, "cache");
     app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_BioseqInfoCacheMiss);
     return ePSGS_CacheNotHit;
 }
@@ -383,14 +383,14 @@ CPSGCache::x_LookupSi2csi(IPSGS_Processor *  processor,
     if (cache_hit) {
         if (m_NeedTrace)
             x_SendTrace("Report cache hit");
-        timing.Register(processor, eLookupLmdbSi2csi, eOpStatusFound, start);
+        timing.Register(processor, eLookupLmdbSi2csi, eOpStatusFound, start, "cache");
         app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_Si2csiCacheHit);
         return ePSGS_CacheHit;
     }
 
     if (m_NeedTrace)
         x_SendTrace("Report cache no hit");
-    timing.Register(processor, eLookupLmdbSi2csi, eOpStatusNotFound, start);
+    timing.Register(processor, eLookupLmdbSi2csi, eOpStatusNotFound, start, "cache");
     app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_Si2csiCacheMiss);
     return ePSGS_CacheNotHit;
 }
@@ -480,14 +480,14 @@ EPSGS_CacheLookupResult  CPSGCache::x_LookupBlobProp(
     if (cache_hit) {
         if (m_NeedTrace)
             x_SendTrace("Report cache hit");
-        timing.Register(processor, eLookupLmdbBlobProp, eOpStatusFound, start);
+        timing.Register(processor, eLookupLmdbBlobProp, eOpStatusFound, start, "cache");
         app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_BlobPropCacheHit);
         return ePSGS_CacheHit;
     }
 
     if (m_NeedTrace)
         x_SendTrace("Report cache no hit");
-    timing.Register(processor, eLookupLmdbBlobProp, eOpStatusNotFound, start);
+    timing.Register(processor, eLookupLmdbBlobProp, eOpStatusNotFound, start, "cache");
     app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_BlobPropCacheMiss);
     return ePSGS_CacheNotHit;
 }

@@ -72,7 +72,8 @@ class CSplitHistoryConsumeCallback
 
             CPubseqGatewayApp::GetInstance()->GetTiming().
                 Register(m_Processor, eSplitHistoryRetrieve, op_status,
-                         m_SplitHistoryRetrieveTiming);
+                         m_SplitHistoryRetrieveTiming,
+                         m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
 
             m_ConsumeCB(m_FetchDetails, std::move(result));
         }
@@ -107,7 +108,8 @@ class CSplitHistoryErrorCallback
                 CPubseqGatewayApp::GetInstance()->GetTiming().
                     Register(m_Processor, eSplitHistoryRetrieve,
                              eOpStatusNotFound,
-                             m_SplitHistoryRetrieveTiming);
+                             m_SplitHistoryRetrieveTiming,
+                             m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
             m_ErrorCB(m_FetchDetails, status, code, severity, message);
         }
 

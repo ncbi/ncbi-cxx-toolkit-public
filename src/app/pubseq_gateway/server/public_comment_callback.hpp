@@ -74,7 +74,8 @@ class CPublicCommentConsumeCallback
 
             CPubseqGatewayApp::GetInstance()->GetTiming().
                 Register(m_Processor, ePublicCommentRetrieve, op_status,
-                         m_PublicCommentRetrieveTiming);
+                         m_PublicCommentRetrieveTiming,
+                         m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
 
             m_ConsumeCB(m_FetchDetails, comment, is_found);
         }
@@ -109,7 +110,8 @@ class CPublicCommentErrorCallback
                 CPubseqGatewayApp::GetInstance()->GetTiming().
                     Register(m_Processor, ePublicCommentRetrieve,
                              eOpStatusNotFound,
-                             m_PublicCommentRetrieveTiming);
+                             m_PublicCommentRetrieveTiming,
+                             m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
             m_ErrorCB(m_FetchDetails, status, code, severity, message);
         }
 

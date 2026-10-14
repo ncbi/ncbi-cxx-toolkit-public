@@ -58,7 +58,7 @@ void CMyNCBIErrorCallback::operator()(CRequestStatus::ECode  status,
     if (status == CRequestStatus::e404_NotFound) {
         // Timing
         app->GetTiming().Register(m_Processor, eMyNCBIRetrieve,
-                                  eOpStatusNotFound, m_MyNCBITiming);
+                                  eOpStatusNotFound, m_MyNCBITiming, "myncbi");
 
         lock_guard<mutex>   guard(g_MyNCBICacheLock);
         app->GetMyNCBINotFoundCache()->AddNotFound(m_Cookie);
@@ -66,7 +66,7 @@ void CMyNCBIErrorCallback::operator()(CRequestStatus::ECode  status,
     } else {
         // Timing
         app->GetTiming().Register(m_Processor, eMyNCBIRetrieveError,
-                                  eOpStatusNotFound, m_MyNCBITiming);
+                                  eOpStatusNotFound, m_MyNCBITiming, "myncbi");
 
         lock_guard<mutex>   guard(g_MyNCBICacheLock);
         app->GetMyNCBIErrorCache()->AddError(m_Cookie, status, code, severity, message);
@@ -110,7 +110,7 @@ void CMyNCBIDataCallback::operator()(CPSG_MyNCBIRequest_WhoAmI::SUserInfo info)
     // Timing
     CPubseqGatewayApp::GetInstance()->GetTiming().
         Register(m_Processor, eMyNCBIRetrieve, eOpStatusFound,
-                 m_MyNCBITiming);
+                 m_MyNCBITiming, "myncbi");
 
     // Add to cache
     // Note: no need to grab the g_MyNCBICacheLock mutex because only one cache

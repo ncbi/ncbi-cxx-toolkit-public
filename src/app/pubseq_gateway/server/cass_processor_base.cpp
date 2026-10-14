@@ -495,6 +495,16 @@ CPSGS_CassProcessorBase::CountError(CCassFetch *  fetch_details,
 }
 
 
+string CPSGS_CassProcessorBase::GetLastFetchDatacenterName(void) const
+{
+    if (m_FetchDetails.empty()) {
+        return "unknown";
+    }
+
+    return m_FetchDetails.back()->GetLoader()->GetConnectionDatacenterName();
+}
+
+
 void CPSGS_CassProcessorBase::LoggingCallback(EDiagSev  severity,
                                               const string &  message)
 {

@@ -672,17 +672,18 @@ CPSGS_ResolveBase::x_OnSeqIdResolveError(
 
     if (status == CRequestStatus::e404_NotFound) {
         app->GetTiming().Register(this, eResolutionNotFound, eOpStatusNotFound,
-                                  start_timestamp);
+                                  start_timestamp, GetLastFetchDatacenterName());
         if (m_AsyncStarted)
             app->GetTiming().Register(this, eResolutionCass, eOpStatusNotFound,
-                                      GetAsyncResolutionStartTimestamp());
+                                      GetAsyncResolutionStartTimestamp(),
+                                      GetLastFetchDatacenterName());
         else
             app->GetTiming().Register(this, eResolutionLmdb, eOpStatusNotFound,
-                                      start_timestamp);
+                                      start_timestamp, GetLastFetchDatacenterName());
     }
     else {
         app->GetTiming().Register(this, eResolutionError, eOpStatusNotFound,
-                                  start_timestamp);
+                                  start_timestamp, GetLastFetchDatacenterName());
     }
 
     m_FinalErrorCB(status, code, severity, message, logging_flag);
@@ -800,21 +801,23 @@ CPSGS_ResolveBase::x_RegisterSuccessTiming(
 
     // Overall timing, regardless how it was done
     app->GetTiming().Register(this, eResolutionFound, eOpStatusFound,
-                              start_timestamp);
+                              start_timestamp, GetLastFetchDatacenterName());
 
     if (bioseq_resolution.m_CassQueryCount > 0) {
         // Regardless how many requests
         app->GetTiming().Register(this, eResolutionCass, eOpStatusFound,
-                                  GetAsyncResolutionStartTimestamp());
+                                  GetAsyncResolutionStartTimestamp(),
+                                  GetLastFetchDatacenterName());
 
         // Separated by the number of requests
         app->GetTiming().Register(this, eResolutionFoundInCassandra,
                                   eOpStatusFound,
                                   GetAsyncResolutionStartTimestamp(),
+                                  GetLastFetchDatacenterName(),
                                   bioseq_resolution.m_CassQueryCount);
     } else {
         app->GetTiming().Register(this, eResolutionLmdb, eOpStatusFound,
-                                  start_timestamp);
+                                  start_timestamp, GetLastFetchDatacenterName());
     }
 }
 

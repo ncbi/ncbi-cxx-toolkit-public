@@ -79,7 +79,9 @@ class CBlobChunkCallback
             else
                 CPubseqGatewayApp::GetInstance()->GetTiming().
                     Register(m_Processor, m_RetrieveStatistic, eOpStatusFound,
-                             m_BlobRetrieveTiming, m_BlobSize);
+                             m_BlobRetrieveTiming,
+                             m_FetchDetails->GetLoader()->GetConnectionDatacenterName(),
+                             m_BlobSize);
 
             m_BlobChunkCB(m_FetchDetails, blob, chunk_data, data_size, chunk_no);
         }
@@ -130,12 +132,14 @@ class CBlobPropCallback
                         app->GetTiming().Register(m_Processor,
                                                   eLookupCassBlobProp,
                                                   eOpStatusFound,
-                                                  m_BlobPropTiming);
+                                                  m_BlobPropTiming,
+                                                  m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
                     else
                         app->GetTiming().Register(m_Processor,
                                                   eLookupCassBlobProp,
                                                   eOpStatusNotFound,
-                                                  m_BlobPropTiming);
+                                                  m_BlobPropTiming,
+                                                  m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
                 }
 
                 m_InProcess = true;
@@ -180,7 +184,8 @@ class CGetBlobErrorCallback
             if (status == CRequestStatus::e404_NotFound)
                 CPubseqGatewayApp::GetInstance()->GetTiming().
                     Register(m_Processor, m_RetrieveStatistic, eOpStatusNotFound,
-                             m_BlobRetrieveTiming);
+                             m_BlobRetrieveTiming,
+                             m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
             m_BlobErrorCB(m_FetchDetails, status, code, severity, message);
         }
 

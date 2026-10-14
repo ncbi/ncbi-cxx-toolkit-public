@@ -86,6 +86,7 @@ protected:
                                       const string &  message,
                                       EPSGS_LoggingFlag  logging_flag,
                                       EPSGS_StatusUpdateFlag  status_update_flag);
+    string GetLastFetchDatacenterName(void) const;
 
 protected:
     enum EPSGS_MyNCBILookupResult {
