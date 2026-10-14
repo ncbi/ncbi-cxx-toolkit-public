@@ -2456,6 +2456,7 @@ const bool is_circular)
     // validate subsources in context
 
     bool has_chromosome = false;
+    bool has_linkage_group = false;
 
     FOR_EACH_SUBSOURCE_ON_BIOSOURCE(it, source)
     {
@@ -2484,6 +2485,9 @@ const bool is_circular)
         case CSubSource::eSubtype_chromosome:
             has_chromosome = true;
             break;
+        case CSubSource::eSubtype_linkage_group:
+            has_linkage_group = true;
+            break;
         default:
             break;
         }
@@ -2491,9 +2495,9 @@ const bool is_circular)
 
 
     if (IsIndexerVersion() && source.IsSetGenome() && source.GetGenome() == CBioSource::eGenome_chromosome && isEukaryote) {
-        if (! has_chromosome) {
+        if (! has_chromosome && ! has_linkage_group) {
             PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_EukaryoteWithoutChromosome,
-                "INDEXER_ONLY - Eukaryotic chromosome does not have chromosome qualifier",
+                "INDEXER_ONLY - Eukaryotic chromosome has neither a chromosome qualifier nor a linkage_group qualifier",
                 obj, ctx);
         }
         if (is_complete) {
