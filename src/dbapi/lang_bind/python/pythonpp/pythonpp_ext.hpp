@@ -38,6 +38,7 @@
 #include "pythonpp_seq.hpp"
 #include "pythonpp_dict.hpp"
 
+#include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 
 // Per https://docs.python.org/3/whatsnew/3.11.html#porting-to-python-3-11
