@@ -899,7 +899,7 @@ public:
 
     /// ID length restrictions
     const static size_t kMaxLocalIDLength    = 50;
-    const static size_t kMaxGeneralDBLength  = 20;
+    const static size_t kMaxGeneralDBLength  = 25;
     const static size_t kMaxGeneralTagLength = 50;
     const static size_t kMaxAccessionLength  = 30;
 

@@ -3062,13 +3062,13 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat, CGenBankFixture)
     scope.RemoveTopLevelSeqEntry(seh);
     entry = unit_test_util::BuildGoodSeq();
     CRef<CSeq_id> general(new CSeq_id());
-    general->SetGeneral().SetDb("thisdatabasevalueislong");
+    general->SetGeneral().SetDb("thisdatabasevalueiswaytoolong");
     general->SetGeneral().SetTag().SetStr("b");
     entry->SetSeq().ResetId();
     entry->SetSeq().SetId().push_back(general);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("gnl|thisdatabasevalueislong|b", eDiag_Critical, "BadSeqIdFormat",
-                                                   "General database longer than 20 characters"));
+    expected_errors.push_back(new CExpectedError("gnl|thisdatabasevalueiswaytoolong|b", eDiag_Critical, "BadSeqIdFormat",
+                                                   "General database longer than 25 characters"));
 
     // AddChromosomeNoLocation(expected_errors, "gnl|thisdatabasevalueislong|b");
     eval = validator.Validate(seh, options);
