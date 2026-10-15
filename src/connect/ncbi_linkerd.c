@@ -126,9 +126,9 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     SConnNetInfo*         net_info = data->net_info;
     char                  hostport[80/*IP:port*/];
     ESERV_Type            xtype, atype;
+    TNCBI_IPv6Addr        xaddr, *addr;
     char*                 infostr;
     const char*           type;
-    unsigned int          host;
     size_t                size;
     /*  SSERV_Info must match the "iter" contents:
         secure ----------------------------------------------+
@@ -146,10 +146,22 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     assert(!data->info);
 
     /* Type */
+    assert((data->types | fSERV_Http) == fSERV_Http);
+    atype = data->types ? data->types : fSERV_Http;
     switch (net_info->req_method) {
     case eReqMethod_Any:
     case eReqMethod_Any11:
-        xtype = fSERV_Http;
+        if (atype == fSERV_Http) {
+            xtype = SERV_GetImplicitServerTypeInternal(iter->name);
+            if (!(xtype & fSERV_Http/*atype*/)) {
+                if (xtype  &&  !data->types)
+                    atype = fSERV_Any/*0*/;
+                else
+                    xtype = fSERV_Http;
+            }
+            assert(xtype);
+        } else
+            xtype = fSERV_Http;
         break;
     case eReqMethod_Get:
     case eReqMethod_Get11:
@@ -160,17 +172,20 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
         xtype = fSERV_HttpPost;
         break;
     default:
-        xtype = SERV_GetImplicitServerTypeInternal(iter->name);
+        xtype = fSERV_Any/*0*/;
         break;
     }
     /* make sure the server type matches */
-    if (!(atype = data->types ? (ESERV_Type)(xtype & data->types) : xtype)
-        ||  !*(type = SERV_TypeStr(atype))) {
-        CORE_LOGF_X(eLSub_BadData, eLOG_Error,
-                    ("[%s]  Cannot match request method (%d) to server type"
-                     " (%d)", iter->name, net_info->req_method, xtype));
+    if (!(atype & xtype)) {
+        if (!xtype  ||  atype) {
+            /* warn only bad or mismatched method */
+            CORE_LOGF_X(eLSub_BadData, eLOG_Error,
+                        ("[%s]  Cannot match request method (%d) to server type (%d)",
+                         iter->name, net_info->req_method, atype));
+        }
         return 0/*failure*/;
     }
+    verify(*(type = SERV_TypeStr(atype & xtype)));
 
     /* VHost */
     size = strlen(iter->name);
@@ -182,15 +197,15 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     }
 
     /* Host:port */
-    if (!(host = SOCK_gethostbynameEx(net_info->host,
-                                      net_info->debug_printout
-                                      == eDebugPrintout_Data ? eOn : eDefault))
-        ||  !SOCK_HostPortToString(host, net_info->port,
-                                   hostport, sizeof(hostport))) {
-        CORE_LOGF_X(host ? eLSub_TooLong : eLSub_BadData, eLOG_Error,
+    if (!(addr = SOCK_gethostbyname6Ex(&xaddr, net_info->host,
+                                       net_info->debug_printout
+                                       == eDebugPrintout_Data ? eOn : eDefault))
+        ||  !SOCK_HostPortToString6(addr, net_info->port,
+                                    hostport, sizeof(hostport))) {
+        CORE_LOGF_X(addr ? eLSub_TooLong : eLSub_BadData, eLOG_Error,
                     ("[%s]  Cannot convert \"%s:%hu\": %s", iter->name,
                      net_info->host, net_info->port,
-                     host ? "Too long" : "Host unknown"));
+                     addr ? "Too long" : "Host unknown"));
         return 0/*failure*/;
     }
 
@@ -291,23 +306,23 @@ static void s_Close(SERV_ITER iter)
 static int/*tri-state bool*/ x_SetupFromNamerd(SERV_ITER iter, int* do_namerd)
 {
     struct SLINKERD_Data* data     = (struct SLINKERD_Data*) iter->data;
+    int/*bool*/           progress = -1/*nothing yet*/;
     SConnNetInfo*         net_info = data->net_info;
-    int/*bool*/           progress = -1/*none yet*/;
     TSERV_TypeOnly        types    = iter->types;
-    const SSERV_VTable*   op       = iter->op;
     SSERV_Info*           info;
     const char*           temp;
 
-    assert(data  &&  !data->info  &&  !net_info->scheme);
-    assert(!op  ||  op == &kLinkerdOp);
+    assert(!iter->op);
     assert(*do_namerd == 1/*true*/);
+    assert(!data->info  &&  !net_info->scheme);
+    assert((data->types | fSERV_Http) == fSERV_Http);
+    assert((iter->types & data->types) == data->types);
 
-    iter->op = 0;
     iter->data = 0;
-    if (!data->types)
-        iter->types  = fSERV_Http;
-    else
+    if (data->types)
         iter->types &= fSERV_Http;
+    else
+        iter->types  = fSERV_Http;
     assert(iter->types);
 
     /* Try to open NAMERD on our own iterator */
@@ -328,7 +343,7 @@ static int/*tri-state bool*/ x_SetupFromNamerd(SERV_ITER iter, int* do_namerd)
     }
 
     ++progress/*0, failure if have to bail out*/;
-    assert(!(info->type ^ (info->type & iter->types)));
+    assert(!(info->type ^ (iter->types & info->type)));
     CORE_DEBUG_ARG(temp = SERV_WriteInfo(info));
     CORE_TRACEF(("[%s]  Found a match in NAMERD: %s%s%s", iter->name,
                  &"\""[!temp], temp ? temp : "NULL", &"\""[!temp]));
@@ -360,7 +375,7 @@ static int/*tri-state bool*/ x_SetupFromNamerd(SERV_ITER iter, int* do_namerd)
             net_info->req_method = eReqMethod_Post;
             break;
         default:
-            /* leave ANY in there alone */
+            /* leave ANY in there */
             break;
         }
     }
@@ -372,12 +387,12 @@ static int/*tri-state bool*/ x_SetupFromNamerd(SERV_ITER iter, int* do_namerd)
         free(info);
     iter->op->Reset(iter);
     iter->op->Close(iter);
+    iter->op = 0;
 
  out:
     assert(!iter->data);
     iter->types = types;
-    iter->data = data;
-    iter->op = op;
+    iter->data  = data;
 
     return progress;
 }
@@ -417,9 +432,9 @@ static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter, int* do_namerd)
               (*do_namerd < 0  &&  !(*do_namerd
                                      = SERV_IsMapperConfiguredInternal
                                      (iter->name, REG_CONN_NAMERD_ENABLE))))) {
-            namerd = x_SetupFromNamerd(iter, do_namerd);
-            if (!namerd)
+            if (!(namerd = x_SetupFromNamerd(iter, do_namerd)))
                 return 0/*failed*/;
+            assert(namerd < 0  ||  net_info->scheme);
         } else
             namerd = 0;
     } else
@@ -544,7 +559,8 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
         return 0/*Unsupported scheme/type*/;
     }
 
-    CORE_TRACEF(("Enter SERV_LINKERD_Open(\"%s\")", iter->name));
+    CORE_TRACEF(("Enter SERV_LINKERD_Open(\"%s\", %s)", iter->name,
+                 types ? SERV_TypeStr(types) : "ANY"));
 
     /* Prohibit catalog-prefixed services (e.g. "/lbsm/<svc>") */
     if (iter->name[0] == '/') {
@@ -553,10 +569,11 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
         return 0;
     }
 
-    if (iter->reverse_dns  &&  (!types  ||  (types & fSERV_Standalone))) {
+    if (iter->reverse_dns  &&  !types) {
+        /* Warn only the most widely used case (NB: no STANDALONE here) */
         CORE_LOGF_X(eLSub_BadData, eLOG_Warning,
                     ("[%s]  LINKERD does not support Reverse-DNS service"
-                     " name resolutions, use at your own risk!", iter->name));
+                     " name lookups, use at your own risk!", iter->name));
     }
 
     if ( ! (data = (struct SLINKERD_Data*) calloc(1, sizeof(*data)))) {
@@ -574,6 +591,7 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
         s_Close(iter);
         return 0;
     }
+
     if (!x_SetupConnectionParams(iter, do_namerd)) {
         s_Close(iter);
         return 0;
