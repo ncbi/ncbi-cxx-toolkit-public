@@ -365,10 +365,10 @@ MAKE_CONST_MAP(sc_UrlMap, CDbtag::EDbtagType, string,
     { CDbtag::eDbtagType_ATCC, "https://www.atcc.org/Products/All/" },
     { CDbtag::eDbtagType_AceView_WormGenes, "https://www.ncbi.nlm.nih.gov/IEB/Research/Acembly/av.cgi?db=worm&c=gene&q=" },
     { CDbtag::eDbtagType_AntWeb, "https://www.antweb.org/specimen.do?name=" },
-    { CDbtag::eDbtagType_ApiDB, "http://www.apidb.org/apidb/showRecord.do?name=GeneRecordClasses.ApiDBGeneRecordClass&primary_key=" }, // https not available tested 7/13/2016
-    { CDbtag::eDbtagType_ApiDB_CryptoDB, "http://cryptodb.org/cryptodb/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=CryptoDB&source_id=" },  // https not available tested 7/13/2016
-    { CDbtag::eDbtagType_ApiDB_PlasmoDB, "http://plasmodb.org/plasmo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=PlasmoDB&source_id=" }, // https not available tested 7/13/2016
-    { CDbtag::eDbtagType_ApiDB_ToxoDB, "http://toxodb.org/toxo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=ToxoDB&source_id=" }, // https not available tested 7/13/2016
+    { CDbtag::eDbtagType_ApiDB, "" },
+    { CDbtag::eDbtagType_ApiDB_CryptoDB, "https://cryptodb.org/cryptodb/app/record/gene/" },
+    { CDbtag::eDbtagType_ApiDB_PlasmoDB, "https://plasmodb.org/plasmo/app/record/gene/" },
+    { CDbtag::eDbtagType_ApiDB_ToxoDB, "https://toxodb.org/toxo/app/record/gene/" },
     { CDbtag::eDbtagType_BB, "https://beetlebase.org/cgi-bin/cmap/feature_search?features=" },
     { CDbtag::eDbtagType_BGD, "http://bovinegenome.org/genepages/btau40/genes/" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_BoLD, "https://portal.boldsystems.org/record/" },
