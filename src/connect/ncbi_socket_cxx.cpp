@@ -776,7 +776,7 @@ string CSocketAPI::gethostname(ESwitch log)
 string CSocketAPI::gethostbyaddr(const CNCBI_IPAddr& addr, ESwitch log)
 {
     char hostname[CONN_HOST_LEN + 1];
-    if (!SOCK_gethostbyaddrEx6(&addr.GetAddr(), hostname, sizeof(hostname), log))
+    if (!SOCK_gethostbyaddr6Ex(&addr.GetAddr(), hostname, sizeof(hostname), log))
         assert(!*hostname);
     return string(hostname);
 }
@@ -785,7 +785,7 @@ string CSocketAPI::gethostbyaddr(const CNCBI_IPAddr& addr, ESwitch log)
 CNCBI_IPAddr CSocketAPI::gethostbyname(const string& host, ESwitch log)
 {
     TNCBI_IPv6Addr addr;
-    if (!SOCK_gethostbynameEx6(&addr, host.c_str(), log))
+    if (!SOCK_gethostbyname6Ex(&addr, host.c_str(), log))
         assert(NcbiIsEmptyIPv6(&addr));
     return addr;
 }

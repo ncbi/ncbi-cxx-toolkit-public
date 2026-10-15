@@ -1694,7 +1694,7 @@ inline CListeningSocket::CListeningSocket(unsigned short port,
                                           ESwitch        ipv6)
     : m_IsOwned(eTakeOwnership)
 {
-    LSOCK_CreateEx6(port, backlog, &m_Socket, flags, ipv6);
+    LSOCK_Create6Ex(port, backlog, &m_Socket, flags, ipv6);
 }
 
 
@@ -1710,7 +1710,7 @@ inline EIO_Status CListeningSocket::Listen(unsigned short port,
                                            ESwitch        ipv6)
 {
     return m_Socket
-        ? eIO_Unknown : LSOCK_CreateEx6(port, backlog, &m_Socket, flags, ipv6);
+        ? eIO_Unknown : LSOCK_Create6Ex(port, backlog, &m_Socket, flags, ipv6);
 }
 
 
