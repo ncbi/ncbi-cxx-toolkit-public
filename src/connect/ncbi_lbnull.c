@@ -106,7 +106,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     SSERV_Info*          info;
 
     assert(type  &&  data->hostlen  &&  data->host[0]  &&  !data->info);
-    if (!SOCK_gethostbynameEx6(&ipv6, data->host, data->debug ? eOn : eDefault))
+    if (!SOCK_gethostbyname6Ex(&ipv6, data->host, data->debug ? eOn : eDefault))
         return 0/*failure*/;
 
     assert(!NcbiIsEmptyIPv6(&ipv6));
@@ -277,15 +277,18 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     assert(!default_prefix  ||  default_domain);
     assert(sizeof(buf) > 3 * (CONN_HOST_LEN + 1));
 
-    /* Can process fSERV_Any (basically meaning fSERV_Standalone), and explicit
-     * fSERV_Dns, fSERV_Http and fSERV_Standalone only, which all, as a matter
+    /* Can process fSERV_Any (basically meaning fSERV_Standalone, if not hinted otherwise),
+     * and explicit fSERV_Dns, fSERV_Http and fSERV_Standalone only, which all, as a matter
      * of fact, are also included in fSERV_All. */
-    type = SERV_GetImplicitServerTypeInternalEx(iter->name, (ESERV_Type) fSERV_Any);
-    types = iter->types & fSERV_All;
-    if (!type)
-        type = types ? types : fSERV_Standalone/*default*/;
-    else if (types)
-        type &= types;
+    types = iter->types & ~(fSERV_Stateless | fSERV_Firewall);
+    if (!types/*==fSERV_Any*/  ||  (types & (types - 1))) {
+        /* More than one type ambiguity:  try to narrow down with an implicit type */
+        type = SERV_GetImplicitServerTypeInternalEx(iter->name, (ESERV_Type) fSERV_Any);
+        if (!type/*==fSERV_Any*/  ||  (types  &&  !(type &= types)))
+            type = types ? types : fSERV_Standalone;
+        assert(type);
+    } else
+        type = types;
     if (type & fSERV_Standalone)
         type = fSERV_Standalone;
     else if (type & fSERV_Http)
