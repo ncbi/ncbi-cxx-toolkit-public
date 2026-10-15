@@ -7241,7 +7241,7 @@ extern EIO_Status LSOCK_Create6(unsigned short port,
 }
 
 
-extern EIO_Status LSOCK_CreateEx6(unsigned short port,
+extern EIO_Status LSOCK_Create6Ex(unsigned short port,
                                   unsigned short backlog,
                                   LSOCK*         lsock,
                                   TSOCK_Flags    flags,
@@ -9731,7 +9731,7 @@ extern unsigned int SOCK_gethostbyname(const char* host)
 }
 
 
-extern TNCBI_IPv6Addr* SOCK_gethostbynameEx6(TNCBI_IPv6Addr* addr,
+extern TNCBI_IPv6Addr* SOCK_gethostbyname6Ex(TNCBI_IPv6Addr* addr,
                                              const char*     host,
                                              ESwitch         log)
 {
@@ -9750,7 +9750,7 @@ extern TNCBI_IPv6Addr* SOCK_gethostbynameEx6(TNCBI_IPv6Addr* addr,
 extern TNCBI_IPv6Addr* SOCK_gethostbyname6(TNCBI_IPv6Addr* addr,
                                            const char*     host)
 {
-    return SOCK_gethostbynameEx6(addr, host, eDefault);
+    return SOCK_gethostbyname6Ex(addr, host, eDefault);
 }
 
 
@@ -9786,7 +9786,7 @@ extern const char* SOCK_gethostbyaddr(unsigned int host,
 }
 
 
-extern const char* SOCK_gethostbyaddrEx6(const TNCBI_IPv6Addr* addr,
+extern const char* SOCK_gethostbyaddr6Ex(const TNCBI_IPv6Addr* addr,
                                          char*                 buf,
                                          size_t                bufsize,
                                          ESwitch               log)
@@ -9814,7 +9814,7 @@ extern const char* SOCK_gethostbyaddr6(const TNCBI_IPv6Addr* addr,
                                        char*                 buf,
                                        size_t                bufsize)
 {
-    return SOCK_gethostbyaddrEx6(addr, buf, bufsize, eDefault);
+    return SOCK_gethostbyaddr6Ex(addr, buf, bufsize, eDefault);
 }
 
 

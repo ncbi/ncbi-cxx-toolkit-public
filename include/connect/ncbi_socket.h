@@ -55,7 +55,7 @@
  *
  * Listening socket (handle LSOCK):
  *
- *  LSOCK_Create[Ex][6]
+ *  LSOCK_Create[6][Ex]
  *  LSOCK_Accept[Ex]
  *  LSOCK_Close
  *  LSOCK_GetOSHandle[Ex]
@@ -148,8 +148,8 @@
  *  SOCK_NetToHostShort
  *  SOCK_NetToHostLong
  *  SOCK_gethostname[Ex]
- *  SOCK_gethostbyname[Ex][6]
- *  SOCK_gethostbyaddr[Ex][6]
+ *  SOCK_gethostbyname[6][Ex]
+ *  SOCK_gethostbyaddr[6][Ex]
  *  SOCK_GetLocalHostAddress[6]
  *  SOCK_GetLoopbackAddress[6]
  *  SOCK_IsLoopbackAddress[6]
@@ -559,7 +559,7 @@ typedef enum {
  * @sa
  *  LSOCK_Create6, LSOCK_Close, LSOCK_GetPort
  */
-extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateEx6
+extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Create6Ex
 (unsigned short port,
  unsigned short backlog,
  LSOCK*         lsock,
@@ -569,7 +569,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateEx6
 
 
 /** [SERVER-side]  Create and initialize the server-side(listening) socket
- * Same as LSOCK_CreateEx6() called with its "flags" argument provided as
+ * Same as LSOCK_Create6Ex() called with its "flags" argument provided as
  * fSOCK_LogDefault.
  * @param port
  *  [in]  the port to listen at
@@ -582,7 +582,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateEx6
  * @param ipv6
  *  [in]  eOff to use IPv4, eOn to use IPv6, eDefault to allow system default
  * @sa
- *  LSOCK_CreateEx6, LSOCK_Close
+ *  LSOCK_Create6Ex, LSOCK_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Create6
 (unsigned short port,
@@ -592,7 +592,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Create6
  );
 
 
-/** Same as LSOCK_CreateEx6() with "ipv6" set to eOff.
+/** Same as LSOCK_Create6Ex() with "ipv6" set to eOff.
  * @param port
  *  [in]  port to listen on, or 0 to choose an available port
  * @param backlog
@@ -2444,18 +2444,18 @@ extern NCBI_XCONNECT_EXPORT int SOCK_gethostname
  * @sa
  *  SOCK_gethostbyname6, SOCK_gethostname, NcbiStringToIPv4
  */
-extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_gethostbynameEx6
+extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_gethostbyname6Ex
 (TNCBI_IPv6Addr* addr,
  const char*     hostname,
  ESwitch         log
  );
 
 
-/** Same as the immediately preceding SOCK_gethostbynameEx6(), with
+/** Same as the immediately preceding SOCK_gethostbyname6Ex(), with
  * fSOCK_LogDefault passed as its "log" argument, thereby using the current
  * API data logging setting.
  * @sa
- *  SOCK_gethostbynameEx6, SOCK_SetDataLoggingAPI
+ *  SOCK_gethostbyname6Ex, SOCK_SetDataLoggingAPI
  */
 extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_gethostbyname6
 (TNCBI_IPv6Addr* addr,
@@ -2514,7 +2514,7 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_gethostbyname
  * @sa
  *  SOCK_gethostbyaddr6, SOCK_gethostname
  */
-extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddrEx6
+extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddr6Ex
 (const TNCBI_IPv6Addr* addr,
  char*                 buf,
  size_t                buflen,
@@ -2522,7 +2522,7 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddrEx6
  );
 
 
-/** Same as the immediately preceding SOCK_gethostbyaddrEx6(), with
+/** Same as the immediately preceding SOCK_gethostbyaddr6Ex(), with
  * fSOCK_LogDefault passed as its "log" argument, thereby using the current
  * API data logging setting.
  * @param addr
@@ -2532,7 +2532,7 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddrEx6
  * @param buflen
  *  [in]  size of "buf"
  * @sa
- *  SOCK_gethostbyaddrEx6, SOCK_SetDataLoggingAPI
+ *  SOCK_gethostbyaddr6Ex, SOCK_SetDataLoggingAPI
  */
 extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddr6
 (const TNCBI_IPv6Addr* addr,
