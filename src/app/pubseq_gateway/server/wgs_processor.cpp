@@ -995,6 +995,7 @@ void CPSGS_WGSProcessor::x_OnAsyncWaitResult(TMethod method, bool is_timeout)
         }
         // Proceed to normal processing anyway.
     }
+    OnBeforeProcess();
     x_SetState("task_pending");
     if ( m_NeedTrace ) {
         SendTrace(kWGSProcessorName +
