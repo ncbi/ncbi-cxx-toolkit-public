@@ -1520,9 +1520,10 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
 
     types = iter->types & ~(fSERV_Stateless | fSERV_Firewall);
     if (iter->reverse_dns  &&  (!types  ||  (types & fSERV_Standalone))) {
+        /* Warn only the most widely used cases */
         CORE_LOGF_X(eNSub_BadData, eLOG_Warning,
                     ("[%s]  NAMERD does not support Reverse-DNS service"
-                     " name resolutions, use at your own risk!", iter->name));
+                     " name lookups, use at your own risk!", iter->name));
     }
 
     if ( ! (data = (struct SNAMERD_Data*) calloc(1, sizeof(*data)))) {
