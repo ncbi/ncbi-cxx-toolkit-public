@@ -1331,6 +1331,7 @@ CHUNB	s	University of Brasilia Herpetological Collection
 CHUR	s	Buendner Natur-Museum			
 CI	s	Carnegie Institution of Washington, Plant Biology Department			
 CIACOL	s	The Intiological Collection of the Colombian Amazon			
+CIAD	s	Centro de Investigacion en Alimentacion y Desarrollo, A.C., Coordinacion Regional Hermosillo			
 CIAN<MEX-AG>	s	Instituto Nacional de Investigaciones Forestales, Agricolas y Pecuarias (INIFAP)			
 CIAN<MEX-CO>	s	Centro de Investigaciones Agricolas Nortoeste			
 CIAT	b	Centro Internacional de Agricultura Tropical (International Center for Tropical Agriculture)			
@@ -1426,6 +1427,7 @@ CLOE	s	Clitheroe Castle Museum
 CLP	s	Forest Products Research and Development Institute, Department of Science and Technology			
 CLQCA	c	Coleccion de Levaduras quito catolica			
 CLR	s	All Saint's Church, Colchester Borough Council			
+CLSUH	s	Central Luzon State University			
 CLU	s	Universita della Calabria			
 CM	s	Carnegie Museum of Natural History	CMNH<USA-PA>		
 CM-CNRG	c	Coleccion de Microorganismos del CNRG			
@@ -1449,6 +1451,7 @@ CMC<USA-MI>	s	Central Michigan University, Department of Biology
 CMC<USA-OH>	c	Cincinnati Museum Center			
 CMCC	c	National Center for Medical Culture Collections			
 CMEI	s	Clements' Museum of Exotic Insects			
+CMEMUA	s	Escuela de Microbiologia, Universidad de Antioquia			
 CMERSC	s	Central Minerals and Environmental Resources Science Center			
 CMFRI	s	Central Marine Fisheries Research Institute	FMRI		
 CMGP	s	Central Museum of Geological Prospecting			
@@ -1530,6 +1533,7 @@ CNM<ESP>	s	Centro Nacional de Microbiologia
 CNMC	s	Colorado National Monument			
 CNMS	s	Colombo National Museum			
 CNMT	s	Herbario Centro-Norte-Mato-Grossense			
+CNP	s	Instituto de Diversidad y Evolucion Austral (IDEAus)-CONICET (Consejo Nacional de Investigaciones Cientificas y Tecnicas)			
 CNPO	s	Embrapa Pecuaria Sul			
 CNPS	s	Centro Nacional de Pesquisas da Soja			
 CNPSo	c	Culture Collection of Diazotrophic and Plant Growth Promoting Bacteria of Embrapa Soja			
@@ -2686,6 +2690,7 @@ GDOR	s	Museo Civico di Storia Naturale Giacomo Doria
 GDZQU	s	Zhaoqing University			
 GE	s	Universita di Genova			
 GEA-LAB	s	Department of Biological, Geological and Environmental Sciences, University of Bologna			
+GEERFH	s	Gujarat Ecological Education and Research (GEER) Foundation			
 GEIC	s	Guangdong Entomology Institute			
 GEMMA	s	Museo mineralogico e geologico estense			
 GEN	s	Generasi Biologi Indonesia			
@@ -2878,6 +2883,7 @@ GVSC	s	Grand Valley State University, Biology Department
 GW	s	West of Scotland College of Agriculture, Botany Department			
 GWALT	s	South African National Biodiversity Institute			
 GWJ	s	Gaowangjie National Nature Reserve			
+GWLB	s	Gottfried Wilhelm Leibniz Bibliothek - Niedersaechsische Landesbibliothek			
 GXCM	s	Guangxi Traditional Chinese Medicine University, Pharmacy Department			
 GXDC	s	Guangxi Institute for Drug Control			
 GXEM	s	Guangxi Institute of Ethnomedicine			
@@ -3227,6 +3233,7 @@ HNOP	s	Herbario Nor Peruano
 HNP	s	Harz National Park			
 HNPGBI	s	Seed and Plant Improvement Institute			
 HNR	s	Heilongjiang Academy of Sciences			
+HNSU	s	Namangan State University			
 HNT	s	Huntington Botanical Gardens			
 HNTS	s	Vlastivedne muzeum			
 HNU<CHN>	s	Hunan Normal University			
@@ -3298,6 +3305,7 @@ HSNN	s	Societa dei Naturalisti in Napoli
 HSNU	s	East China Normal University, Biology Department			
 HSP	s	Instituto Cientifico Michael Owen Dillon			
 HSS	s	Development, Technological and Investigacion Service, Forest Production Department			
+HST	s	SSRS Indonesia Biodiversity Hub			
 HSTM	s	Universidade Federal do Oeste do Para			
 HSU<USA-CA>	s	Humboldt State University			
 HSU<USA-CA>:Amphibian	s	Humboldt State University, Amphibian Collection			
@@ -3708,6 +3716,7 @@ IMDC	s	Inner Mongolia Institute for Drug Control
 IMDY	s	Chinese Academy of Medical Sciences, Yunnan Branch			
 IMET	c	National Kurturensammlung fuer Mikroorganismen			
 IMFA	s	Inner Mongolia Academy of Forestry			
+IMFOR	s	Manipur University			
 IMI	sc	CABI Genetic Resource Collection	CABI,CMI	http://www.herbimi.info/herbimi/specimen.htm?imi=&spec;	
 IML	s	Instituto Miguel Lillo			
 IMLA	s	Fundacion e Instituto Miguel Lillo			
@@ -4026,6 +4035,7 @@ JBG	s	Johannesburg Botanic Garden
 JBGE	s	Jardin Botanique de Geneve			
 JBGP	s	Jardin Botanico Guillermo Pineres			
 JBL	s	Jardin Botanico Lankester, Universidad de Costa Rica			
+JBMB	s	Jardim Botanico Municipal de Bauru			
 JBN	s	Jardin Botanico Nacional			
 JBRI	c	Jeju Biodiversity Research Institute			
 JBSD	s	Jardin Botanico Nacional Dr. Rafael M. Moscoso			
@@ -4376,6 +4386,7 @@ KUH	s	University of Karachi, Botany Department
 KUHE	s	Kyoto University, Graduate School of Human and Environmental Studies			
 KUIC	s	Kagoshima University			
 KUKENS	c	Centre for Research and Application of Culture Collections of Microorganisms			
+KUKH	s	Kenyatta University			
 KUKI	s	Kurukshetra University			
 KULPOL	s	State museum-reserved Kulikovo Field			
 KUM	s	Resource Management Support Center			
@@ -5360,6 +5371,7 @@ MNZ	s	Museum of New Zealand Te Papa Tongarewa
 MO	s	Missouri Botanical Garden			
 MoA	s	Museum of Anthropology, University of Missouri			
 MOAR	s	Morris Arboretum, University of Pennsylvania, Botany Department			
+MOBB	s	Museo Orto botanico dell'Universita degli Studi di Bari Aldo Moro			
 MOBR	s	Estacion de Investigaciones Marinas de Margarita, Fundacion La Salle de Ciencias Naturales			
 MOC	s	Western Oregon University, Biology Department			
 MOD	s	Universita degli Studi di Modena e Reggio Emilia, Dipartimento de Biologia Animale			
@@ -6322,6 +6334,7 @@ OAX	s	Instituto Politecnico Nacional (CIIDIR-Oax., I.P.N.)
 OAXM	s	Centro Interdisciplinario de Estudios, Coleccion Mastozoologica (Mexico)			
 OB	s	Station Umwelt- und Natur Oberhausen			
 OBG	s	The Oman Botanic Garden			
+OBGAR	s	Orto botanico del Gargano			
 OBI	s	Robert F. Hoover Herbarium California Polytechnic State University			
 OBPF	s	Planting Fields Arboretum State Historic Park			
 OC	s	Oberlin College, Biology Department			
@@ -6975,6 +6988,7 @@ RIA	c	The Russia Research Institute for Antibiotics Culture Collection
 RIB	c	National Research Institute of Brewing, Tax Administration Agency			
 RIBM	c	Research Institute for Brewing and Malting			
 RIC	s	Museo del territorio Luigi Ghirotti di Riccione			
+RICE	s	Rice University			
 RICK	s	Brigham Young University - Idaho			
 RICP	c	Crop Research Institute			
 RIEAFO	s	Research Institute of Environment, Agriculture and Fisheries, Osaka Prefecture			
@@ -7459,6 +7473,7 @@ SJNM	s	San Juan College
 SJRP	sc	UNESP, Campus Sao Jose Rio Preto, Departamento Zoologia e Botanica			
 SJSC	s	San Jose State University, J. Gordon Edwards Museum of Entomology			
 SJSU	s	San Jose State University, Carl W. Sharsmith Herbarium			
+SJU	s	St. John's University			
 SJUBC	s	Saint John's University, Biology Collections			
 SK	s	Katedralskolan			
 SKA	s	Stiftelsen Skansen The Biological Museum			
@@ -8365,6 +8380,7 @@ UCBD	s	University College, Thiruvananthapuram
 UCBG	s	University of Botswana, Department of Biological Sciences			
 UCBL	s	Centre de Paleontologie Stratigraphique et Paleoecologie			
 UCBMG	c	University of California Berkeley Mycogarden			
+UCBOTH	s	University of Calabar, Nigeria			
 UCC	s	University of Cincinnati			
 UCC<IRL>	s	University College Cork			
 UCCC	s	Universidad de Concepcion, Museo de Zoologia			
@@ -9625,6 +9641,7 @@ ZNG	s	Bulent Ecevit University
 ZNM	s	Zhejiang Natural Museum			
 ZNP	s	Zion National Park			
 ZNPC	s	Springdale, Zion National Park			
+ZNS	s	Zentralmagazin Naturwissenschaftlicher Sammlungen			
 ZNU	s	Zhejiang Normal University, Biology Department			
 ZOM	s	Herbarium, Department of Agriculture, Malawi			
 ZON	s	Instituto Tecnologico Superior de Zongolica			
