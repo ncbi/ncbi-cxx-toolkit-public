@@ -74,7 +74,12 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self._optional_requires("arrow/24.0.0")
         self._optional_requires("aws-sdk-cpp/[>=1.9.234 <=1.11.352]")
         if self.settings.os == "Linux":
-            self._default_requires("backward-cpp/1.6")
+            if NCBIfound:
+                self._default_requires("backward-cpp/1.6")
+                self._default_requires("libunwind/[>=1.6.2 <=1.8.3]")
+            else:
+                self._optional_requires("backward-cpp/1.6")
+                self._optional_requires("libunwind/[>=1.6.2 <=1.8.3]")
         self._default_requires("boost/[>=1.82.0 <=1.91.0]")
         self._default_requires("bzip2/1.0.8")
         self._default_requires("c-ares/[>=1.19.1 <=1.34.8]")
@@ -91,8 +96,6 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self._default_requires("libnghttp2/[>=1.51.0 <=1.68.1]")
         self._default_requires("libpng/[>=1.6.37 <=1.6.58]")
         self._default_requires("libtiff/[>=4.3.0 <=4.7.2]")
-        if self.settings.os == "Linux":
-            self._default_requires("libunwind/[>=1.6.2 <=1.8.3]")
         self._default_requires("libuv/[>=1.45.0 <=1.51.0]")
         self._default_requires("libxml2/[>=2.11.4 <=2.15.3]")
         self._default_requires("libxslt/[>=1.1.34 <=1.1.45]")
