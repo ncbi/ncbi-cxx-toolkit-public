@@ -72,7 +72,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
 
         self._default_requires("abseil/[>=20230125.3 <=20260107.1]")
         self._optional_requires("arrow/24.0.0")
-        self._optional_requires("aws-sdk-cpp/[>=1.9.234 <=1.11.692]")
+        self._optional_requires("aws-sdk-cpp/[>=1.9.234 <=1.11.352]")
         if self.settings.os == "Linux":
             if NCBIfound:
                 self._default_requires("backward-cpp/1.6")
