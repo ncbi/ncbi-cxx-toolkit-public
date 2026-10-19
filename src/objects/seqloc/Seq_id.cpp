@@ -1562,7 +1562,7 @@ bool SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         // filename, if present?
         return true;
     } else if (auto m = ctre::match<kValidThreadDecl>(rule)) {
-        auto n = NStr::StringToNumeric<unsigned int>(m.get<1>().view());
+        auto n = NStr::StringToNonNegativeInt(m.get<1>().view());
         auto expected = hints.threads.size() + 1;
         if (n != expected) {
             NCBI_THROW_FMT(CSeqIdException, eFormat,
