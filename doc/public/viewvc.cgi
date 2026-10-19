@@ -10,7 +10,7 @@ import urllib.parse
 
 # ViewVC proper knows nothing of svn:externals; this wrapper resolves
 # them before handing the user off to it.
-real_vvc = 'https://www.ncbi.nlm.nih.gov/viewvc/v1/'
+real_vvc = 'https://github.com/ncbi/ncbi-cxx-toolkit/public/blob/main/'
 repos = 'https://svn.ncbi.nlm.nih.gov/repos/'
 viewable = repos
 base = repos + 'toolkit/trunk'
@@ -121,7 +121,10 @@ def resolve(base, path):
 form = cgi.FieldStorage()
 path = form.getfirst('p')
 resolved = resolve(base, path)
-url = real_vvc + urllib.parse.quote(resolved[len(viewable):])
+if public:
+    url = real_vvc + urllib.parse.quote(path)
+else:
+    url = real_vvc + urllib.parse.quote(resolved[len(viewable):])
 if not resolved.startswith(viewable):
     print(path + " resolved to unsupported URL " + resolved, file=sys.stderr)
     if public: # Try redirecting to internal side
