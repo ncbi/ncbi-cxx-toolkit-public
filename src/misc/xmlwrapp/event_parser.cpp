@@ -785,8 +785,8 @@ void epimpl::event_pi (const xmlChar *target, const xmlChar *data) {
     if (!parser_status_) return;
 
     try {
-        std::string s_target = reinterpret_cast<const char*>(target);
-        std::string s_data = reinterpret_cast<const char*>(data);
+        std::string     s_target( target ? reinterpret_cast<const char*>(target) : "" );
+        std::string     s_data( data ? reinterpret_cast<const char*>(data) : "" );
         parser_status_ = parent_.processing_instruction(s_target, s_data);
     } catch (const std::exception &ex) {
         event_fatal_error(ex.what());
