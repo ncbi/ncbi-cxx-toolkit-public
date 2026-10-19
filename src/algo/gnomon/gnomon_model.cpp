@@ -707,6 +707,7 @@ void CGeneModel::RemoveShortHolesAndRescore(const CGnomonEngine& gnomon) {
         if (hole && intron < gnomon.GetMinIntronLen()) {
             modified = true;
             new_exons.back().m_ssplice = Exons()[i].m_ssplice;
+            new_exons.back().m_ssplice_sig = Exons()[i].m_ssplice_sig;
             new_exons.back().AddTo(Exons()[i].GetTo()-Exons()[i-1].GetTo());
             if(intron%3 != 0) {
                 int len = intron%3;
