@@ -93,7 +93,7 @@ def parse_externals(url):
 
 def resolve_via_svn(stem, rest):
     while True:
-        # print >>sys.stderr, stem + ' / ' + rest
+        # print(stem + ' / ' + rest, file=sys.stderr)
         matched = False
         for (src, dest) in parse_externals(stem):
             if rest == src:
@@ -123,7 +123,7 @@ path = form.getfirst('p')
 resolved = resolve(base, path)
 url = real_vvc + urllib.parse.quote(resolved[len(viewable):])
 if not resolved.startswith(viewable):
-    print >>sys.stderr, path, "resolved to unsupported URL", resolved
+    print(path + " resolved to unsupported URL " + resolved, file=sys.stderr)
     if public: # Try redirecting to internal side
         url = ('https://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/internal'
                + '/viewvc.cgi?p=' + urllib.parse.quote(path))
