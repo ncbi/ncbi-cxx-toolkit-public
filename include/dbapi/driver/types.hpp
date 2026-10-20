@@ -104,6 +104,8 @@ public:
 
     CGenericSqlString(void) { }
     CGenericSqlString(const TBasicString& s) : TBasicString(s) { }
+    CGenericSqlString(TBasicString&& s) noexcept
+        : TBasicString(std::move(s)) { }
     CGenericSqlString(const value_type* data) : TBasicString(data) { }
     CGenericSqlString(const value_type* data, size_type len)
         : TBasicString(data, len) { }
@@ -128,6 +130,7 @@ class NCBI_DBAPIDRIVER_EXPORT CWString : public CObject
 public:
     CWString(void);
     CWString(const CWString& str);
+    CWString(CWString&& str) noexcept = default;
 
     explicit CWString(const char* str,
                       string::size_type size = string::npos,
@@ -142,7 +145,8 @@ public:
 
     ~CWString(void);
 
-    CWString& operator=(const CWString& str);
+    CWString& operator= (const CWString& str);
+    CWString& operator= (CWString&& str) noexcept = default;
 
 public:
     operator const CSqlString&(void) const
@@ -307,6 +311,7 @@ public:
     virtual CDB_Object* Clone()   const = 0;
     virtual CDB_Object* ShallowClone() const { return Clone(); }
     virtual void AssignValue(const CDB_Object& v) = 0;
+    virtual void MoveFrom(CDB_Object&& v) { AssignValue(v); }
 
     // Create and return a new object (with internal value NULL) of type "type".
     // NOTE:  "size" matters only for eDB_Char, eDB_Binary, eDB_LongChar, eDB_LongBinary.
@@ -470,6 +475,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_String : public CDB_Object
 public:
     CDB_String(void);
     CDB_String(const CDB_String& other, bool share_data = false);
+    CDB_String(CDB_String&& other) noexcept = default;
     explicit CDB_String(const string& s,
                         EEncoding enc = eEncoding_Unknown);
     explicit CDB_String(const char* s,
@@ -489,6 +495,7 @@ public:
 public:
     // Assignment operators
     CDB_String& operator= (const CDB_String& other);
+    CDB_String& operator= (CDB_String&& other) noexcept = default;
     CDB_String& operator= (const string& s);
     CDB_String& operator= (const char* s);
     CDB_String& operator= (const TStringUCS2& s);
@@ -573,6 +580,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_VarChar : public CDB_String
 public:
     CDB_VarChar(void);
     CDB_VarChar(const CDB_VarChar& v, bool share_data = false);
+    CDB_VarChar(CDB_VarChar&& v) noexcept = default;
     CDB_VarChar(const string& s,
                 EEncoding enc = eEncoding_Unknown);
     CDB_VarChar(const char* s,
@@ -586,6 +594,8 @@ public:
 
 public:
     // assignment operators
+    CDB_VarChar& operator= (const CDB_VarChar& v) = default;
+    CDB_VarChar& operator= (CDB_VarChar&& v) noexcept = default;
     CDB_VarChar& operator= (const string& s)  { return SetValue(s); }
     CDB_VarChar& operator= (const char*   s)  { return SetValue(s); }
     CDB_VarChar& operator= (const TStringUCS2& s)  { return SetValue(s); }
@@ -607,6 +617,7 @@ public:
     virtual CDB_Object* Clone()   const;
     virtual CDB_Object* ShallowClone() const;
     virtual void AssignValue(const CDB_Object& v);
+    virtual void MoveFrom(CDB_Object&& v);
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -624,10 +635,12 @@ public:
     CDB_Char(size_t s, const TStringUCS2& v);
     // CDB_Char(size_t s, const TCharUCS2* str);
     CDB_Char(const CDB_Char& v, bool share_data = false);
+    CDB_Char(CDB_Char&& v) noexcept = default;
     virtual ~CDB_Char(void);
 
 public:
     CDB_Char& operator= (const CDB_Char& v);
+    CDB_Char& operator= (CDB_Char&& v) noexcept = default;
     CDB_Char& operator= (const string& v);
     // This operator copies a string.
     CDB_Char& operator= (const char* v);
@@ -648,6 +661,7 @@ public:
     virtual CDB_Object* ShallowClone() const;
 
     virtual void AssignValue(const CDB_Object& v);
+    virtual void MoveFrom(CDB_Object&& v);
 
 protected:
     size_t      m_Size; // Number of characters (not bytes)
@@ -672,10 +686,12 @@ public:
     CDB_LongChar(size_t s, const TStringUCS2& v);
     // CDB_LongChar(size_t len, const TCharUCS2* str);
     CDB_LongChar(const CDB_LongChar& v, bool share_data = false);
+    CDB_LongChar(CDB_LongChar&& v) noexcept = default;
     virtual ~CDB_LongChar();
 
 public:
     CDB_LongChar& operator= (const CDB_LongChar& v);
+    CDB_LongChar& operator= (CDB_LongChar&& v) noexcept = default;
     CDB_LongChar& operator= (const string& v);
     // This operator copies a string.
     CDB_LongChar& operator= (const char* v);
@@ -698,6 +714,7 @@ public:
     virtual CDB_Object* ShallowClone() const;
 
     virtual void AssignValue(const CDB_Object& v);
+    virtual void MoveFrom(CDB_Object&& v);
 
 protected:
     size_t      m_Size; // Number of characters (not bytes)
@@ -711,6 +728,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_VarBinary : public CDB_Object
 public:
     CDB_VarBinary();
     CDB_VarBinary(const CDB_VarBinary& v, bool share_data = false);
+    CDB_VarBinary(CDB_VarBinary&& v) noexcept = default;
     CDB_VarBinary(const void* v, size_t l);
     virtual ~CDB_VarBinary(void);
 
@@ -718,6 +736,7 @@ public:
     void SetValue(const void* v, size_t l);
 
     CDB_VarBinary& operator= (const CDB_VarBinary& v);
+    CDB_VarBinary& operator= (CDB_VarBinary&& v) noexcept = default;
    
     //
     const void* Value() const
@@ -730,6 +749,7 @@ public:
     virtual CDB_Object* Clone()   const;
     virtual CDB_Object* ShallowClone() const;
     virtual void AssignValue(const CDB_Object& v);
+    virtual void MoveFrom(CDB_Object&& v);
 
 protected:
     typedef CObjectFor<string> TValue;
@@ -745,12 +765,14 @@ public:
     CDB_Binary(size_t s = 1);
     CDB_Binary(size_t s, const void* v, size_t v_size);
     CDB_Binary(const CDB_Binary& v, bool share_data = false);
+    CDB_Binary(CDB_Binary&& v) noexcept = default;
     virtual ~CDB_Binary();
 
 public:
     void SetValue(const void* v, size_t v_size);
 
     CDB_Binary& operator= (const CDB_Binary& v);
+    CDB_Binary& operator= (CDB_Binary&& v) noexcept = default;
 
     //
     const void* Value() const
@@ -764,6 +786,7 @@ public:
     virtual CDB_Object* ShallowClone() const;
 
     virtual void AssignValue(const CDB_Object& v);
+    virtual void MoveFrom(CDB_Object&& v);
 
 protected:
     typedef CObjectFor<string> TValue;
@@ -781,12 +804,14 @@ public:
     CDB_LongBinary(size_t s = K8_1);
     CDB_LongBinary(size_t s, const void* v, size_t v_size);
     CDB_LongBinary(const CDB_LongBinary& v, bool share_data = false);
+    CDB_LongBinary(CDB_LongBinary&& v) noexcept = default;
     virtual ~CDB_LongBinary();
 
 public:
     void SetValue(const void* v, size_t v_size);
 
     CDB_LongBinary& operator= (const CDB_LongBinary& v);
+    CDB_LongBinary& operator= (CDB_LongBinary&& v) noexcept = default;
 
     //
     const void* Value() const
@@ -801,6 +826,7 @@ public:
     virtual CDB_Object* ShallowClone() const;
 
     virtual void AssignValue(const CDB_Object& v);
+    virtual void MoveFrom(CDB_Object&& v);
 
 protected:
     typedef CObjectFor<string> TValue;
@@ -887,6 +913,11 @@ protected:
     // constructors (destructor is public for compatibility with smart ptrs)
     CDB_Stream();
     CDB_Stream(const CDB_Stream& s, bool share_data = false);
+    CDB_Stream(CDB_Stream&& s) noexcept;
+
+    CDB_Stream& operator= (CDB_Stream&& s) noexcept;
+
+    virtual void MoveFrom(CDB_Object&& v);
 
     // common CDB_Text and CDB_VarCharMax functionality
     void   x_SetEncoding(EBulkEnc e);
@@ -909,10 +940,12 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_Image : public CDB_Stream
 public:
     CDB_Image(void);
     CDB_Image(const CDB_Image& image, bool share_data = false);
+    CDB_Image(CDB_Image&& image) noexcept = default;
     virtual ~CDB_Image(void);
 
 public:
     CDB_Image& operator= (const CDB_Image& image);
+    CDB_Image& operator= (CDB_Image&& image) noexcept = default;
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
@@ -926,6 +959,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_VarBinaryMax : public CDB_Stream
 public:
     CDB_VarBinaryMax(void);
     CDB_VarBinaryMax(const CDB_VarBinaryMax& v, bool share_data = false);
+    CDB_VarBinaryMax(CDB_VarBinaryMax&& v) noexcept = default;
     CDB_VarBinaryMax(const void* v, size_t l);
     virtual ~CDB_VarBinaryMax(void);
 
@@ -933,6 +967,7 @@ public:
     void SetValue(const void* v, size_t l) { Truncate(); Append(v, l); }
 
     CDB_VarBinaryMax& operator= (const CDB_VarBinaryMax& v);
+    CDB_VarBinaryMax& operator= (CDB_VarBinaryMax&& v) noexcept = default;
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
@@ -947,6 +982,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_Text : public CDB_Stream
 public:
     CDB_Text(void);
     CDB_Text(const CDB_Text& text, bool share_data = false);
+    CDB_Text(CDB_Text&& text) noexcept = default;
     virtual ~CDB_Text(void);
 
 public:
@@ -960,6 +996,7 @@ public:
     virtual size_t Append(const TStringUCS2& s);
 
     CDB_Text& operator= (const CDB_Text& text);
+    CDB_Text& operator= (CDB_Text&& text) noexcept = default;
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
@@ -973,6 +1010,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_VarCharMax : public CDB_Stream
 public:
     CDB_VarCharMax(void);
     CDB_VarCharMax(const CDB_VarCharMax& v, bool share_data = false);
+    CDB_VarCharMax(CDB_VarCharMax&& v) noexcept = default;
     CDB_VarCharMax(const string& s,         EEncoding enc = eEncoding_Unknown);
     CDB_VarCharMax(const char* s,           EEncoding enc = eEncoding_Unknown);
     CDB_VarCharMax(const char* s, size_t l, EEncoding enc = eEncoding_Unknown);
@@ -1006,6 +1044,7 @@ public:
     CDB_VarCharMax& operator= (const char*   s)      { return SetValue(s); }
     CDB_VarCharMax& operator= (const TStringUCS2& s) { return SetValue(s); }
     CDB_VarCharMax& operator= (const CDB_VarCharMax& v);
+    CDB_VarCharMax& operator= (CDB_VarCharMax&& v) noexcept = default;
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;

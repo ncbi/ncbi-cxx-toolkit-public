@@ -163,8 +163,9 @@ public:
     // Make CVariant from internal CDB_Object
     explicit CVariant(CDB_Object* obj);
 
-    // Copy constructor
+    // Copy and move constructors
     CVariant(const CVariant& v);
+    CVariant(CVariant&& v) noexcept;
 
     // Destructor
     ~CVariant();
@@ -194,6 +195,7 @@ public:
 
     // operators
     CVariant& operator=(const CVariant& v);
+    CVariant& operator=(CVariant&& v) noexcept;
     CVariant& operator=(const Int8& v);
     CVariant& operator=(const Int4& v);
     CVariant& operator=(const Int2& v);

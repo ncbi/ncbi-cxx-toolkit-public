@@ -444,6 +444,12 @@ CVariant::CVariant(const CVariant& v)
     }
 }
 
+CVariant::CVariant(CVariant&& v) noexcept
+    : m_data(v.m_data), m_descr(std::move(v.m_descr))
+{
+    v.m_data = nullptr;
+}
+
 CVariant::~CVariant(void)
 {
     try {
@@ -943,6 +949,15 @@ CVariant& CVariant::operator=(const CTime& v)
 CVariant& CVariant::operator=(const CVariant& v)
 {
     this->m_data->AssignValue(*(v.m_data));
+    return *this;
+}
+
+CVariant& CVariant::operator=(CVariant&& v) noexcept
+{
+    // SetData(v.m_data);
+    // v.m_data = nullptr;
+    m_data->MoveFrom(std::move(*v.m_data));
+    m_descr = std::move(v.m_descr);
     return *this;
 }
 

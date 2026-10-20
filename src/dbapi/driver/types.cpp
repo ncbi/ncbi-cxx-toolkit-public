@@ -1260,6 +1260,15 @@ void CDB_VarChar::AssignValue(const CDB_Object& v)
 }
 
 
+void CDB_VarChar::MoveFrom(CDB_Object&& v)
+{
+    CHECK_DRIVER_ERROR(v.GetType() != eDB_VarChar,
+                       string("wrong type of CDB_Object: ")
+                       + GetTypeName(v.GetType(), false),
+                       2);
+    *this = static_cast<CDB_VarChar&&>(v);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_Char::
 //
@@ -1387,6 +1396,15 @@ void CDB_Char::AssignValue(const CDB_Object& v)
 
     const CDB_Char& cv = (const CDB_Char&)v;
     *this = cv;
+}
+
+void CDB_Char::MoveFrom(CDB_Object&& v)
+{
+    CHECK_DRIVER_ERROR(v.GetType() != eDB_Char,
+                       string("wrong type of CDB_Object: ")
+                       + GetTypeName(v.GetType(), false),
+                       2);
+    *this = static_cast<CDB_Char&&>(v);
 }
 
 CDB_Char::~CDB_Char()
@@ -1548,6 +1566,16 @@ void CDB_LongChar::AssignValue(const CDB_Object& v)
 }
 
 
+void CDB_LongChar::MoveFrom(CDB_Object&& v)
+{
+    CHECK_DRIVER_ERROR(v.GetType() != eDB_LongChar,
+                       string("wrong type of CDB_Object: ")
+                       + GetTypeName(v.GetType(), false),
+                       2);
+    *this = static_cast<CDB_LongChar&&>(v);
+}
+
+
 CDB_LongChar::~CDB_LongChar()
 {
 }
@@ -1631,6 +1659,17 @@ void CDB_VarBinary::AssignValue(const CDB_Object& v)
                        2);
 
     *this= (const CDB_VarBinary&)v;
+}
+
+
+void CDB_VarBinary::MoveFrom(CDB_Object&& v)
+{
+    CHECK_DRIVER_ERROR(v.GetType() != eDB_VarBinary,
+                       string("wrong type of CDB_Object: ")
+                       + GetTypeName(v.GetType(), false),
+                       2);
+
+    *this = static_cast<CDB_VarBinary&&>(v);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1718,6 +1757,17 @@ void CDB_Binary::AssignValue(const CDB_Object& v)
 
     const CDB_Binary& cv = static_cast<const CDB_Binary&>(v);
     *this = cv;
+}
+
+
+void CDB_Binary::MoveFrom(CDB_Object&& v)
+{
+    CHECK_DRIVER_ERROR(v.GetType() != eDB_Binary,
+                       string("wrong type of CDB_Object: ")
+                       + GetTypeName(v.GetType(), false),
+                       2);
+
+    *this = static_cast<CDB_Binary&&>(v);
 }
 
 
@@ -1816,6 +1866,17 @@ void CDB_LongBinary::AssignValue(const CDB_Object& v)
 
     const CDB_LongBinary& cv = static_cast<const CDB_LongBinary&>(v);
     *this = cv;
+}
+
+
+void CDB_LongBinary::MoveFrom(CDB_Object&& v)
+{
+    CHECK_DRIVER_ERROR(v.GetType() != eDB_LongBinary,
+                       string("wrong type of CDB_Object: ")
+                       + GetTypeName(v.GetType(), false),
+                       2);
+
+    *this = static_cast<CDB_LongBinary&&>(v);
 }
 
 
@@ -1958,6 +2019,21 @@ CDB_Stream::CDB_Stream(const CDB_Stream& s, bool share_data)
     }
 }
 
+CDB_Stream::CDB_Stream(CDB_Stream&& s) noexcept
+    : CDB_Object(s), m_Encoding(s.m_Encoding), m_Store(s.m_Store)
+{
+    s.m_Store = nullptr;
+}
+
+CDB_Stream& CDB_Stream::operator= (CDB_Stream&& s) noexcept
+{
+    SetNULL(s.IsNULL());
+    m_Encoding = s.m_Encoding;
+    m_Store = s.m_Store;
+    s.m_Store = nullptr;
+    return *this;
+}
+
 CDB_Stream& CDB_Stream::Assign(const CDB_Stream& v)
 {
     SetNULL(v.IsNULL());
@@ -2031,8 +2107,20 @@ void CDB_Stream::AssignValue(const CDB_Object& v)
     Assign(static_cast<const CDB_Stream&>(v));
 }
 
+void CDB_Stream::MoveFrom(CDB_Object&& v)
+{
+    CHECK_DRIVER_ERROR( !IsBlobType(v.GetType()),
+        string("wrong type of CDB_Object: ") + GetTypeName(v.GetType(), false),
+        2
+        );
+    *this = static_cast<CDB_Stream&&>(v);
+}
+
 CDB_Stream::~CDB_Stream()
 {
+    if (m_Store == nullptr) {
+        return;
+    }
     try {
         m_Store->RemoveReference();
     }
