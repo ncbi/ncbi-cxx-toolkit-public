@@ -89,89 +89,82 @@ static bool gb_err_field(const char* str)
 }
 
 /**********************************************************/
-static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser::ESource source, Parser::EMode mode, bool ign_toks)
+static void ParseGenBankVersion(IndexblkPtr entry, string_view line, Parser::ESource source, Parser::EMode mode, bool ign_toks)
 {
-    bool  gi;
-    char* p;
-    char* q;
-    char* r;
-    Char  ch;
-    Char  ch1;
-
-    if (! line)
+    if (line.empty())
         return;
 
-    for (p = line; *p != '\0' && *p != ' ' && *p != '\t';)
-        p++;
-    gi = (*p == '\0') ? false : true;
+    size_t p = line.find_first_of(" \t");
+    string_view acc_ver(line.substr(0, p));
+    string_view gi;
+    if (p != string_view::npos)
+        gi = line.substr(p);
 
-    ch1 = *p;
-    *p  = '\0';
-    q   = StringRChr(line, '.');
-    if (! q) {
+    size_t dot = acc_ver.rfind('.');
+    if (dot == string_view::npos) {
         if (mode != Parser::EMode::Relaxed) {
-            *p = ch1;
             FtaErrPost(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing VERSION number in VERSION line: \"{}\".", line);
             entry->drop = true;
         }
         return;
     }
 
-    for (r = q + 1; *r >= '0' && *r <= '9';)
-        r++;
-    if (*r != '\0') {
+    string_view acc(acc_ver.substr(0, dot));
+    string_view ver(acc_ver.substr(dot + 1));
+
+    for (char c : ver) {
+        if (IS_DIGIT(c))
+            continue;
         if (mode != Parser::EMode::Relaxed) {
-            *p = ch1;
             FtaErrPost(SEV_FATAL, ERR_VERSION_NonDigitVerNum, "Incorrect VERSION number in VERSION line: \"{}\".", line);
             entry->drop = true;
         }
         return;
     }
-    ch = *q;
-    *q = '\0';
-    if (! StringEqu(entry->acnum, line)) {
-        *q = ch;
-        *p = ch1;
+
+    if (string_view(entry->acnum) != acc) {
         if (mode != Parser::EMode::Relaxed) {
             FtaErrPost(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in VERSION and ACCESSION lines don't match: \"{}\" vs \"{}\".", line, entry->acnum);
             entry->drop = true;
         }
         return;
     }
-    entry->vernum = fta_atoi(q + 1);
-    *q            = ch;
 
+    entry->vernum = fta_atoi(ver);
     if (entry->vernum < 1) {
-        *p = ch1;
         FtaErrPost(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"{}\" from Accession.Version value \"{}.{}\" is not a positive integer.", entry->vernum, entry->acnum, entry->vernum);
         entry->drop = true;
         return;
     }
 
-    if (ch1 != '\0')
-        for (*p++ = ch1; *p == ' ' || *p == '\t';)
-            p++;
+    auto j = gi.find_first_not_of(" \t");
+    if (j == string_view::npos)
+        j = gi.size();
+    if (j > 0)
+        gi.remove_prefix(j);
 
     if (source == Parser::ESource::DDBJ) {
-        if (*p != '\0' && ! ign_toks) {
+        if (! gi.empty() && ! ign_toks) {
             FtaErrPost(SEV_ERROR, ERR_VERSION_BadVersionLine, "DDBJ's VERSION line has too many tokens: \"{}\".", line);
         }
         return;
     }
 
-    if (! gi)
+    if (gi.empty())
         return;
 
-    if (! ConsumeStr(p, "GI:")) {
+    if (! gi.starts_with("GI:")) {
         FtaErrPost(SEV_FATAL, ERR_VERSION_IncorrectGIInVersion, "Incorrect GI entry in VERSION line: \"{}\".", line);
         entry->drop = true;
         return;
     }
-    for (q = p; IS_DIGIT(*q);)
-        q++;
-    if (*q != '\0') {
+    gi.remove_prefix(3);
+    for (char c : gi) {
+        if (IS_DIGIT(c))
+            continue;
         FtaErrPost(SEV_FATAL, ERR_VERSION_NonDigitGI, "Incorrect GI number in VERSION line: \"{}\".", line);
         entry->drop = true;
+        return;
     }
 }
 
@@ -570,7 +563,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                     ParseGenBankVersion(
                         entry,
                         line_ver,
-                        line_nid,
+                        // line_nid,
                         pp->source,
                         pp->mode,
                         pp->ign_toks);
