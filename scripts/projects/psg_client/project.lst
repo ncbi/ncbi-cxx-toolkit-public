@@ -5,6 +5,7 @@ util/checksum
 util/bitset$
 util/cache$
 util/compress
+util/regexp/ctre$
 util/sequtil$
 connect$
 connect/ext$
