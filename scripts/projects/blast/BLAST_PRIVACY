@@ -1,10 +1,49 @@
-As part of our efforts to improve BLAST+, we have implemented usage
-reporting to collect limited data. This information shows us whether
-BLAST+ is being used by the community, and therefore is worth being
-maintained and developed by NCBI.
-It also allows us to focus our development efforts on the most used
-aspects of BLAST+.
+BLAST+ Usage Reporting and Privacy Notice
+-----------------------------------------
 
-See https://www.ncbi.nlm.nih.gov/books/NBK569851/
-for what data we collect and how to opt out of usage reporting. 
+NCBI would like your permission to collect limited usage data for BLAST programs
+to help improve reliability, performance, and long-term support.
 
+Help prioritize software features and improvements. Make sure that your favorite
+BLAST features are supported.
+
+Participation is OPTIONAL. See https://www.ncbi.nlm.nih.gov/books/NBK569851/
+for more information.
+
+WHY IS DATA BEING COLLECTED
+This information shows us whether BLAST+ is being used by the community, and
+therefore is worth being maintained and developed by  NCBI.
+
+It also allows us to focus our development  efforts on the most used aspects of
+BLAST+ and helps us keep BLAST+ reliable, performant, and around for the long term.
+
+If possible, please report your usage, so we can continue to
+support and develop BLAST+ to best suit your needs.
+
+WHAT IS COLLECTED:
+Application name,
+program,
+task,
+version, 
+database name,
+database creation date,
+database length, 
+number of database sequences,
+number of query sequences,
+length of query sequences, 
+hitlist size,
+E-value threshold,
+composition-based statistics option, 
+output format,
+number of threads,
+run time, 
+exit status, 
+name of the operating system,
+IP address.
+
+HOW DO I OPT-OUT
+If you have never opted in, there is nothing to do. 
+To opt-out after opting in run "blast_usage_report -off" or
+set environment variable BLAST_USAGE_REPORT=false.
+
+See https://www.ncbi.nlm.nih.gov/books/NBK569851/ for more information.
