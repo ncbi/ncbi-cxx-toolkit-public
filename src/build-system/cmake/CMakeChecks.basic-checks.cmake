@@ -186,7 +186,7 @@ check_symbol_exists(FIONBIO "sys/ioctl.h" BSD_COMP)
 if (APPLE)
   block(PROPAGATE HAVE_PIPE2 HAVE_PIPE2_DECL)
     set(CMAKE_REQUIRED_FLAGS
-        "{CMAKE_REQUIRED_FLAGS} -Werror=unguarded-availability-new")
+        "${CMAKE_REQUIRED_FLAGS} -Werror=unguarded-availability-new")
     check_symbol_exists(pipe2 "unistd.h" HAVE_PIPE2_DECL)
     if(HAVE_PIPE2_DECL)
       check_function_exists(pipe2 HAVE_PIPE2)
