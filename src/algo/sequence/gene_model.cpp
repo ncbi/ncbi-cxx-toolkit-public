@@ -2076,7 +2076,7 @@ SImplementation::x_CreateCdsFeature(CConstRef<CSeq_feat> cds_feat_on_query_mrna,
                             }
                             new_cb_ranges &= loc_ranges;
                         }
-                        if (new_cb_ranges.GetCoveredLength() == 3) {
+                        if (new_cb_ranges.GetCoveredLength() > 0) {
                             (*it)->SetLoc(*new_cb_loc);
                             ++it;
                         } else {
