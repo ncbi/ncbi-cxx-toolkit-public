@@ -340,6 +340,8 @@ protected:
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
+
+    [[deprecated]]
     bool xAssignFeatureAttributeExonNumber(
         CGffFeatureRecord&,
         CGffFeatureContext&,
