@@ -596,7 +596,6 @@ bool CGff2Writer::xAssignFeatureAttributesFormatIndependent(
         xAssignFeatureAttributeRptFamily(record, fc, mf) &&
         xAssignFeatureAttributeIsOrdered(record, fc, mf) &&
         xAssignFeatureAttributeEcNumbers(record, fc, mf) &&
-        xAssignFeatureAttributeExonNumber(record, fc, mf) &&
         xAssignFeatureAttributePartial(record, fc, mf) &&
         xAssignFeatureAttributePseudo(record, fc, mf));
 }
