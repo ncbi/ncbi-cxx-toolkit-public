@@ -168,12 +168,36 @@ CWString::CWString(const string& str, EEncoding enc) :
 }
 
 
+CWString::CWString(string&& str, EEncoding enc) :
+    m_AvailableValueType(eString),
+    m_StringEncoding(enc),
+    m_Char(NULL),
+#ifdef HAVE_WSTRING
+    m_WChar(NULL),
+#endif
+    m_String(std::move(str))
+{
+    m_Char = m_String.c_str();
+    m_AvailableValueType |= eChar;
+}
+
+
 #ifdef HAVE_WSTRING
 CWString::CWString(const wstring& str) :
     m_AvailableValueType(eWString),
     m_Char(NULL),
     m_WChar(NULL),
     m_WString(str)
+{
+    m_WChar = m_WString.c_str();
+    m_AvailableValueType |= eWChar;
+}
+
+CWString::CWString(wstring&& str) :
+    m_AvailableValueType(eWString),
+    m_Char(NULL),
+    m_WChar(NULL),
+    m_WString(std::move(str))
 {
     m_WChar = m_WString.c_str();
     m_AvailableValueType |= eWChar;
@@ -497,6 +521,21 @@ void CWString::Assign(const string& str,
     m_AvailableValueType = eChar | eString;
 }
 
+void CWString::Assign(string&& str,
+                      EEncoding enc)
+{
+#ifdef HAVE_WSTRING
+    m_WChar = NULL;
+    m_WString.erase();
+#endif
+    m_UTF8String.erase();
+
+    m_StringEncoding = enc;
+    m_String = std::move(str);
+    m_Char = m_String.c_str();
+    m_AvailableValueType = eChar | eString;
+}
+
 #ifdef HAVE_WSTRING
 void CWString::Assign(const wstring& str)
 {
@@ -506,6 +545,18 @@ void CWString::Assign(const wstring& str)
     m_UTF8String.erase();
 
     m_WString = str;
+    m_WChar = m_WString.c_str();
+    m_AvailableValueType = eWChar | eWString;
+}
+
+void CWString::Assign(wstring&& str)
+{
+    m_StringEncoding = eEncoding_Unknown;
+    m_Char = NULL;
+    m_String.erase();
+    m_UTF8String.erase();
+
+    m_WString = std::move(str);
     m_WChar = m_WString.c_str();
     m_AvailableValueType = eWChar | eWString;
 }
@@ -864,7 +915,18 @@ CRef<CWString> MakeString(const string& s, string::size_type size,
         value.resize(size, ' ');
     }
 
-    return CRef<CWString>(new CWString(value, enc));
+    return CRef<CWString>(new CWString(std::move(value), enc));
+}
+
+inline
+CRef<CWString> MakeString(string&& s, string::size_type size,
+                          EEncoding enc = eEncoding_Unknown)
+{
+    if (size != string::npos) {
+        s.resize(size, ' ');
+    }
+
+    return CRef<CWString>(new CWString(std::move(s), enc));
 }
 
 inline
@@ -931,6 +993,13 @@ CDB_String::CDB_String(const string& s, EEncoding enc)
 }
 
 
+CDB_String::CDB_String(string&& s, EEncoding enc)
+    : CDB_Object(false), m_WString(new CWString(s, enc)),
+      m_BulkInsertionEnc(eBulkEnc_RawBytes)
+{
+}
+
+
 CDB_String::CDB_String(const char* s,
                        string::size_type size,
                        EEncoding enc)
@@ -944,6 +1013,15 @@ CDB_String::CDB_String(const string& s,
                        string::size_type size,
                        EEncoding enc) 
     : CDB_Object(false), m_WString(MakeString(s, size, enc)),
+      m_BulkInsertionEnc(eBulkEnc_RawBytes)
+{
+}
+
+
+CDB_String::CDB_String(string&& s,
+                       string::size_type size,
+                       EEncoding enc) 
+    : CDB_Object(false), m_WString(MakeString(std::move(s), size, enc)),
       m_BulkInsertionEnc(eBulkEnc_RawBytes)
 {
 }
@@ -1057,6 +1135,18 @@ void CDB_String::Assign(const string& s,
 }
 
 
+void CDB_String::Assign(string&& s,
+                        string::size_type size,
+                        EEncoding enc)
+{
+    SetNULL(false);
+    m_WString.Reset(MakeString(std::move(s), size, enc));
+    if (m_BulkInsertionEnc == eBulkEnc_RawUCS2) {
+        m_BulkInsertionEnc = eBulkEnc_UCS2FromChar;
+    }
+}
+
+
 /*
 void CDB_String::Assign(const TCharUCS2* s,
                         TStringUCS2::size_type size)
@@ -1152,6 +1242,13 @@ CDB_VarChar::CDB_VarChar(const string& s,
 }
 
 
+CDB_VarChar::CDB_VarChar(string&& s,
+                         EEncoding enc)
+: CDB_String(std::move(s), enc)
+{
+}
+
+
 CDB_VarChar::CDB_VarChar(const char* s,
                          EEncoding enc)
 : CDB_String(s, string::npos, enc)
@@ -1190,6 +1287,15 @@ CDB_VarChar& CDB_VarChar::SetValue(const string& s,
                                    EEncoding enc)
 {
     Assign(s, string::npos, enc);
+
+    return *this;
+}
+
+
+CDB_VarChar& CDB_VarChar::SetValue(string&& s,
+                                   EEncoding enc)
+{
+    Assign(std::move(s), string::npos, enc);
 
     return *this;
 }
@@ -1290,6 +1396,15 @@ CDB_Char::CDB_Char(size_t s,
 
 
 CDB_Char::CDB_Char(size_t s,
+                   string&& v,
+                   EEncoding enc) :
+    CDB_String(std::move(v), s, enc),
+    m_Size(CDB_String::Size())
+{
+}
+
+
+CDB_Char::CDB_Char(size_t s,
                    const char* str,
                    EEncoding enc) :
     CDB_String(str, s, enc),
@@ -1332,6 +1447,16 @@ CDB_Char& CDB_Char::operator= (const string& s)
 }
 
 
+CDB_Char& CDB_Char::operator= (string&& s)
+{
+    // Encoding of s ???
+    CheckStringTruncation(s.size(), m_Size);
+    Assign(std::move(s), m_Size);
+
+    return *this;
+}
+
+
 CDB_Char& CDB_Char::operator= (const char* s)
 {
     if (s) {
@@ -1359,7 +1484,16 @@ void CDB_Char::SetValue(const char* str, size_t len, EEncoding enc)
     CDB_VarChar vc_value(str, len, enc);
     CheckStringTruncation(vc_value.Size(), m_Size);
 
-    Assign(vc_value.AsCString(), m_Size, enc);
+    Assign(std::move(vc_value.AsString()), m_Size, enc);
+}
+
+
+void CDB_Char::SetValue(string&& str, EEncoding enc)
+{
+    CDB_VarChar vc_value(std::move(str), enc);
+    CheckStringTruncation(vc_value.Size(), m_Size);
+
+    Assign(std::move(vc_value.AsString()), m_Size, enc);
 }
 
 
@@ -1451,6 +1585,15 @@ CDB_LongChar::CDB_LongChar(size_t s,
 }
 
 
+CDB_LongChar::CDB_LongChar(size_t s,
+                           string&& v,
+                           EEncoding enc) :
+    CDB_String(std::move(v), s, enc),
+    m_Size(CDB_String::Size())
+{
+}
+
+
 CDB_LongChar::CDB_LongChar(size_t len,
                            const char* str,
                            EEncoding enc) :
@@ -1495,6 +1638,16 @@ CDB_LongChar& CDB_LongChar::operator= (const string& s)
 }
 
 
+CDB_LongChar& CDB_LongChar::operator= (string&& s)
+{
+    // Encoding of s ???
+    CheckStringTruncation(s.size(), m_Size);
+    Assign(std::move(s), m_Size);
+
+    return *this;
+}
+
+
 CDB_LongChar& CDB_LongChar::operator= (const char* s)
 {
     if (s) {
@@ -1524,7 +1677,17 @@ void CDB_LongChar::SetValue(const char* str,
     CDB_VarChar vc(str, len, enc);
     CheckStringTruncation(vc.Size(), m_Size);
 
-    Assign(vc.AsCString(), m_Size, enc);
+    Assign(std::move(vc.AsString()), m_Size, enc);
+}
+
+
+void CDB_LongChar::SetValue(string&& str,
+                            EEncoding enc)
+{
+    CDB_VarChar vc(std::move(str), enc);
+    CheckStringTruncation(vc.Size(), m_Size);
+
+    Assign(std::move(vc.AsString()), m_Size, enc);
 }
 
 

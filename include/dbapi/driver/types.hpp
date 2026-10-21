@@ -137,10 +137,13 @@ public:
                       EEncoding enc = eEncoding_Unknown);
     explicit CWString(const string& str,
                       EEncoding enc = eEncoding_Unknown);
+    explicit CWString(string&& str,
+                      EEncoding enc = eEncoding_Unknown);
 #ifdef HAVE_WSTRING
     explicit CWString(const wchar_t* str,
                       wstring::size_type size = wstring::npos);
     explicit CWString(const wstring& str);
+    explicit CWString(wstring&& str);
 #endif
 
     ~CWString(void);
@@ -243,10 +246,13 @@ public:
                 EEncoding enc = eEncoding_Unknown);
     void Assign(const string& str,
                 EEncoding enc = eEncoding_Unknown);
+    void Assign(string&& str,
+                EEncoding enc = eEncoding_Unknown);
 #ifdef HAVE_WSTRING
     void Assign(const wchar_t* str,
                 wstring::size_type size = wstring::npos);
     void Assign(const wstring& str);
+    void Assign(wstring&& str);
 #endif
 
 protected:
@@ -478,11 +484,16 @@ public:
     CDB_String(CDB_String&& other) noexcept = default;
     explicit CDB_String(const string& s,
                         EEncoding enc = eEncoding_Unknown);
+    explicit CDB_String(string&& s,
+                        EEncoding enc = eEncoding_Unknown);
     explicit CDB_String(const char* s,
                         string::size_type size = string::npos,
                         EEncoding enc = eEncoding_Unknown);
     explicit CDB_String(const string& s,
                         string::size_type size = string::npos,
+                        EEncoding enc = eEncoding_Unknown);
+    explicit CDB_String(string&& s,
+                        string::size_type size,
                         EEncoding enc = eEncoding_Unknown);
     explicit CDB_String(const TStringUCS2& s,
                         TStringUCS2::size_type size = TStringUCS2::npos);
@@ -497,6 +508,7 @@ public:
     CDB_String& operator= (const CDB_String& other);
     CDB_String& operator= (CDB_String&& other) noexcept = default;
     CDB_String& operator= (const string& s);
+    CDB_String& operator= (string&& s);
     CDB_String& operator= (const char* s);
     CDB_String& operator= (const TStringUCS2& s);
     // CDB_String& operator= (const TCharUCS2* s);
@@ -552,6 +564,9 @@ public:
     void Assign(const string& s,
                 string::size_type size = string::npos,
                 EEncoding enc = eEncoding_Unknown);
+    void Assign(string&& s,
+                string::size_type size = string::npos,
+                EEncoding enc = eEncoding_Unknown);
     // void Assign(const TCharUCS2* s,
     //             TStringUCS2::size_type size = TStringUCS2::npos);
     void Assign(const TStringUCS2& s,
@@ -583,6 +598,8 @@ public:
     CDB_VarChar(CDB_VarChar&& v) noexcept = default;
     CDB_VarChar(const string& s,
                 EEncoding enc = eEncoding_Unknown);
+    CDB_VarChar(string&& s,
+                EEncoding enc = eEncoding_Unknown);
     CDB_VarChar(const char* s,
                 EEncoding enc = eEncoding_Unknown);
     CDB_VarChar(const char* s,
@@ -597,6 +614,7 @@ public:
     CDB_VarChar& operator= (const CDB_VarChar& v) = default;
     CDB_VarChar& operator= (CDB_VarChar&& v) noexcept = default;
     CDB_VarChar& operator= (const string& s)  { return SetValue(s); }
+    CDB_VarChar& operator= (string&& s)       { return SetValue(s); }
     CDB_VarChar& operator= (const char*   s)  { return SetValue(s); }
     CDB_VarChar& operator= (const TStringUCS2& s)  { return SetValue(s); }
     // CDB_VarChar& operator= (const TCharUCS2*   s)  { return SetValue(s); }
@@ -604,6 +622,8 @@ public:
 public:
     // set-value methods
     CDB_VarChar& SetValue(const string& s,
+                          EEncoding enc = eEncoding_Unknown);
+    CDB_VarChar& SetValue(string&& s,
                           EEncoding enc = eEncoding_Unknown);
     CDB_VarChar& SetValue(const char* s,
                           EEncoding enc = eEncoding_Unknown);
@@ -628,6 +648,9 @@ public:
     CDB_Char(size_t s,
              const string& v,
              EEncoding enc = eEncoding_Unknown);
+    CDB_Char(size_t s,
+             string&& v,
+             EEncoding enc = eEncoding_Unknown);
     // This ctor copies a string.
     CDB_Char(size_t s,
              const char* str,
@@ -642,6 +665,7 @@ public:
     CDB_Char& operator= (const CDB_Char& v);
     CDB_Char& operator= (CDB_Char&& v) noexcept = default;
     CDB_Char& operator= (const string& v);
+    CDB_Char& operator= (string&& v);
     // This operator copies a string.
     CDB_Char& operator= (const char* v);
     CDB_Char& operator= (const TStringUCS2& v);
@@ -651,6 +675,8 @@ public:
     // This method copies a string.
     void SetValue(const char* str,
                   size_t len,
+                  EEncoding enc = eEncoding_Unknown);
+    void SetValue(string&& str,
                   EEncoding enc = eEncoding_Unknown);
     void SetValue(const TStringUCS2& v, size_t len);
     // void SetValue(const TCharUCS2* v, size_t len);
@@ -679,6 +705,9 @@ public:
     CDB_LongChar(size_t s,
                  const string& v,
                  EEncoding enc = eEncoding_Unknown);
+    CDB_LongChar(size_t s,
+                 string&& v,
+                 EEncoding enc = eEncoding_Unknown);
     // This ctor copies a string.
     CDB_LongChar(size_t len,
                  const char* str,
@@ -693,6 +722,7 @@ public:
     CDB_LongChar& operator= (const CDB_LongChar& v);
     CDB_LongChar& operator= (CDB_LongChar&& v) noexcept = default;
     CDB_LongChar& operator= (const string& v);
+    CDB_LongChar& operator= (string&& v);
     // This operator copies a string.
     CDB_LongChar& operator= (const char* v);
     CDB_LongChar& operator= (const TStringUCS2& v);
@@ -701,6 +731,8 @@ public:
     // This method copies a string.
     void SetValue(const char* str,
                   size_t len,
+                  EEncoding enc = eEncoding_Unknown);
+    void SetValue(string&& str,
                   EEncoding enc = eEncoding_Unknown);
     void SetValue(const TStringUCS2& str, size_t len);
     // void SetValue(const TCharUCS2* str, size_t len);

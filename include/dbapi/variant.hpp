@@ -107,6 +107,7 @@ public:
     explicit CVariant(double v);
     explicit CVariant(bool v);
     explicit CVariant(const string& v);
+    explicit CVariant(string&& v);
     explicit CVariant(const char* s);
     explicit CVariant(const TStringUCS2& v);
     // explicit CVariant(const TCharUCS2* s);

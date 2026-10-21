@@ -391,6 +391,11 @@ CVariant::CVariant(const string& v)
 {
 }
 
+CVariant::CVariant(string&& v)
+    : m_data(new CDB_VarChar(std::move(v)))
+{
+}
+
 CVariant::CVariant(const char* s)
     : m_data(new CDB_VarChar(s))
 {
