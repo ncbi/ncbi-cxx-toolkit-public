@@ -10,7 +10,7 @@ import urllib.parse
 
 # ViewVC proper knows nothing of svn:externals; this wrapper resolves
 # them before handing the user off to it.
-real_vvc = 'https://github.com/ncbi/ncbi-cxx-toolkit/public/blob/main/'
+real_vvc = 'https://github.com/ncbi/ncbi-cxx-toolkit-public/blob/main/'
 repos = 'https://svn.ncbi.nlm.nih.gov/repos/'
 viewable = repos
 base = repos + 'toolkit/trunk'
