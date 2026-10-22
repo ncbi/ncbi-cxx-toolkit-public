@@ -84,6 +84,69 @@
 #include "gff3_idgen.hpp"
 
 BEGIN_NCBI_SCOPE
+BEGIN_objects_SCOPE
+
+//  ============================================================================
+class CGff3FeatRecord
+//  ============================================================================
+    : public CGffFeatureRecord
+{
+public:
+    CGff3FeatRecord()
+        : CGffFeatureRecord("")
+    {};
+
+    CGff3FeatRecord(const CGff3FeatRecord& rhs)
+        : CGffFeatureRecord(rhs), mRecordId(rhs.mRecordId), mParent(rhs.mParent)
+    {};
+
+    void SetRecordId(
+        const string& recordId) { mRecordId = recordId; };
+    void SetParent(
+        const string& parent) { mParent = parent; };
+    string Id() const { return mRecordId; };
+    string Parent() const { return mParent; };
+
+    string StrAttributes() const {
+        string attributes;
+        attributes.reserve(256);
+
+        if (!mRecordId.empty()) {
+            attributes += "ID=";
+            attributes += xEscapedString(mRecordId);
+        }
+        if (!mParent.empty()) {
+            if (!attributes.empty()) {
+                attributes += ATTR_SEPARATOR;
+            }
+            attributes += "Parent=";
+            attributes += xEscapedString(mParent);
+        }
+        auto baseAttributes = CGffBaseRecord::StrAttributes();
+        if (!baseAttributes.empty()) {
+            attributes +=  ATTR_SEPARATOR;
+            attributes += baseAttributes;
+        }
+        return attributes;
+    }
+
+
+    void SetLocation(const CSeq_interval& interval, bool IsInsdcMode);
+
+    void SetLocation(const CSeq_interval& interval,
+            bool IsInsdcMode,
+            unsigned int wrapSize,
+            unsigned int wrapPoint);
+
+private:
+    string mRecordId;
+    string mParent;
+};
+
+END_objects_SCOPE
+
+
+
 USING_SCOPE(objects);
 
 
@@ -225,6 +288,95 @@ string sBestMatchType(
     return strCdnaMatch;
 
 }
+
+
+static void s_SetInsdcPartialnessAttributes(CGffFeatureRecord& record)
+{
+    string value;
+    if (record.Location().IsPartialStart(eExtreme_Biological)) {
+        value = "start";
+    }
+    if (record.Location().IsPartialStop(eExtreme_Biological)) {
+        if (! value.empty()) {
+            value.push_back(',');
+        }
+        value.append("end");
+    }
+    if (! value.empty()) {
+        record.SetAttribute("partial", value);
+    }
+}
+
+
+static void s_SetPartialnessAttributes(unsigned int start, unsigned int stop, bool IsInsdcMode, CGffFeatureRecord& record)
+{
+
+    if (IsInsdcMode) {
+        s_SetInsdcPartialnessAttributes(record);
+        return;
+    }
+    string min = NStr::IntToString(start + 1);
+    string max = NStr::IntToString(stop + 1);
+    if (record.Location().IsPartialStart(eExtreme_Biological)) {
+        if (record.Location().GetStrand() == eNa_strand_minus) {
+            record.SetAttribute("end_range", max + string(",."));
+        }
+        else {
+            record.SetAttribute("start_range", string(".,") + min);
+        }
+    }
+    if (record.Location().IsPartialStop(eExtreme_Biological)) {
+        if (record.Location().GetStrand() == eNa_strand_minus) {
+            record.SetAttribute("start_range", string(".,") + min);
+        }
+        else {
+            record.SetAttribute("end_range", max + string(",."));
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+void CGff3FeatRecord::SetLocation(
+    const CSeq_interval& interval, bool IsInsdcMode)
+//  ----------------------------------------------------------------------------
+{
+    m_pLoc.Reset(new CSeq_loc());
+    m_pLoc->SetInt().Assign(interval);
+    if ( interval.CanGetFrom() ) {
+        mSeqStart = interval.GetFrom();
+    }
+    if ( interval.CanGetTo() ) {
+        mSeqStop = interval.GetTo();
+    }
+
+    unsigned int seqStart = Location().GetStart(eExtreme_Positional);
+    unsigned int seqStop = Location().GetStop(eExtreme_Positional);
+
+    s_SetPartialnessAttributes(seqStart, seqStop, IsInsdcMode, *this);
+
+    if ( interval.IsSetStrand() ) {
+        SetStrand(interval.GetStrand());
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+void CGff3FeatRecord::SetLocation(
+    const CSeq_interval& interval,
+    bool IsInsdcMode,
+    unsigned int wrapSize,
+    unsigned int wrapPoint)
+//  ----------------------------------------------------------------------------
+{
+    SetLocation(interval, IsInsdcMode);
+
+    if (wrapSize != 0 && mSeqStart < wrapPoint) {
+        mSeqStart += wrapSize;
+        mSeqStop += wrapSize;
+    }
+}
+
 
 
 //  ----------------------------------------------------------------------------
@@ -1555,7 +1707,7 @@ bool CGff3Writer::xWriteProteinFeature(
         return true;
     }
 
-    CRef<CGff3FeatureRecord> pRecord(new CGff3FeatureRecord());
+    CRef<CGff3FeatRecord> pRecord(new CGff3FeatRecord());
     if (!xAssignFeature(*pRecord, fc, mf)) {
         return false;
     }
@@ -1635,7 +1787,15 @@ bool CGff3Writer::xWriteNucleotideFeature(
     return false;
 }
 
-
+static void s_DropPartialness(CGff3FeatRecord& record, bool isInsdcMode)
+{
+    if (isInsdcMode) {
+        record.DropAttributes("partial");
+    } else {
+        record.DropAttributes("start_range");
+        record.DropAttributes("end_range");
+    }
+}
 
 
 //  ----------------------------------------------------------------------------
@@ -1644,7 +1804,8 @@ bool CGff3Writer::xWriteNucleotideFeatureTransSpliced(
     const CMappedFeat& mf)
     //  ----------------------------------------------------------------------------
 {
-    CRef<CGff3FeatureRecord> pRna(new CGff3FeatureRecord());
+
+    CRef<CGff3FeatRecord> pRna(new CGff3FeatRecord());
     if (!xAssignFeature(*pRna, fc, mf)) {
         return false;
     }
@@ -1672,16 +1833,16 @@ bool CGff3Writer::xWriteNucleotideFeatureTransSpliced(
             sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
         }
 
+        bool isInsdcMode = xIsInsdcMode();
         for (const auto& pSubint : sublocs) {
-            auto pChild = Ref(new CGff3FeatureRecord(*pRna));
+            auto pChild = Ref(new CGff3FeatRecord(*pRna));
             pChild->SetRecordId(m_pIdGenerator->GetNextGffExonId(parentId));
             pChild->DropAttributes("Name"); // explicitly not inherited
-            pChild->DropAttributes("start_range");
-            pChild->DropAttributes("end_range");
+            s_DropPartialness(*pChild, isInsdcMode);
             pChild->DropAttributes("model_evidence");
             pChild->SetParent(parentId);
             pChild->SetType("exon");
-            pChild->SetLocation(*pSubint, wrapSize, wrapPoint);
+            pChild->SetLocation(*pSubint, isInsdcMode, wrapSize, wrapPoint);
             if (useParts) {
                 pChild->SetAttribute("part", NStr::NumericToString(partNum++));
             }
@@ -1701,7 +1862,7 @@ bool CGff3Writer::xWriteFeatureTrna(
 //  ----------------------------------------------------------------------------
 {
 
-    CRef<CGff3FeatureRecord> pRna( new CGff3FeatureRecord() );
+    CRef<CGff3FeatRecord> pRna( new CGff3FeatRecord() );
     if (!xAssignFeature(*pRna, fc, mf)) {
         return false;
     }
@@ -1737,10 +1898,10 @@ bool CGff3Writer::xWriteFeatureTrna(
         bool useParts = xIntervalsNeedPartNumbers(sublocs);
 
         for (const auto& pSubint : sublocs) {
-            auto pChild = Ref(new CGff3FeatureRecord(*pRna));
+            auto pChild = Ref(new CGff3FeatRecord(*pRna));
             pChild->SetRecordId(m_pIdGenerator->GetNextGffExonId(rnaId));
             pChild->SetType("exon");
-            pChild->SetLocation(*pSubint, wrapSize, wrapPoint);
+            pChild->SetLocation(*pSubint, xIsInsdcMode(), wrapSize, wrapPoint);
             pChild->SetParent(rnaId);
             if (useParts) {
                 pChild->SetAttribute("part", NStr::NumericToString(partNum++));
@@ -1860,31 +2021,12 @@ bool CGff3Writer::xAssignFeatureEndpoints(
             return false;
         }
         baseRecord.SetLocation(seqStart, seqStop);
-        //return true;
     }
     else {
         seqStart = record.Location().GetStart(eExtreme_Positional);
         seqStop = record.Location().GetStop(eExtreme_Positional);
-        string min = NStr::IntToString(seqStart + 1);
-        string max = NStr::IntToString(seqStop + 1);
-        if (record.Location().IsPartialStart(eExtreme_Biological)) {
-            if (record.Location().GetStrand() == eNa_strand_minus) {
-                record.SetAttribute("end_range", max + string(",."));
-            }
-            else {
-                record.SetAttribute("start_range", string(".,") + min);
-            }
-        }
-        if (record.Location().IsPartialStop(eExtreme_Biological)) {
-            if (record.Location().GetStrand() == eNa_strand_minus) {
-                record.SetAttribute("start_range", string(".,") + min);
-            }
-            else {
-                record.SetAttribute("end_range", max + string(",."));
-            }
-        }
+        s_SetPartialnessAttributes(seqStart, seqStop, xIsInsdcMode(), record);
         baseRecord.SetLocation(seqStart, seqStop);
-        //return true;
     }
 
     CBioseq_Handle bsh = fc.BioseqHandle();
@@ -1964,7 +2106,7 @@ bool CGff3Writer::xAssignFeatureAttributesFormatSpecific(
     const CMappedFeat& mf )
     //  ----------------------------------------------------------------------------
 {
-    CGff3FeatureRecord& record = dynamic_cast<CGff3FeatureRecord&>(rec);
+    CGff3FeatRecord& record = dynamic_cast<CGff3FeatRecord&>(rec);
     return (
         xAssignFeatureAttributeID(record, fc, mf)  &&
         xAssignFeatureAttributeParent(record, fc, mf)  &&
@@ -2178,7 +2320,7 @@ bool CGff3Writer::xAssignFeatureAttributeNcrnaClass(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeID(
-    CGff3FeatureRecord& record,
+    CGff3FeatRecord& record,
     CGffFeatureContext& fc,
     const CMappedFeat& mf )
     //  ----------------------------------------------------------------------------
@@ -2192,7 +2334,7 @@ bool CGff3Writer::xAssignFeatureAttributeID(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeParent(
-    CGff3FeatureRecord& record,
+    CGff3FeatRecord& record,
     CGffFeatureContext& fc,
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
@@ -2275,7 +2417,7 @@ bool CGff3Writer::xAssignFeatureAttributesQualifiers(
 //  ----------------------------------------------------------------------------
 {
     //FIX_ME
-    CGff3FeatureRecord& record = dynamic_cast<CGff3FeatureRecord&>(rec);
+    CGff3FeatRecord& record = dynamic_cast<CGff3FeatRecord&>(rec);
 
     MAKE_CONST_SET(gff3_attributes, ct::tagStrNocase, {
        "ID", "Name", "Alias", "Parent", "Target", "Gap", "Derives_from",
@@ -2314,6 +2456,21 @@ bool CGff3Writer::xAssignFeatureAttributesQualifiers(
     }
     return true;
 }
+
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xAssignFeatureAttributePartial(
+    CGffFeatureRecord&  record,
+    CGffFeatureContext& fc,
+    const CMappedFeat&  mf)
+//  ----------------------------------------------------------------------------
+{
+    if (! xIsInsdcMode()) {
+        return CGff2Writer::xAssignFeatureAttributePartial(record, fc, mf);
+    }
+    return true;
+}
+
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeature(
@@ -2659,13 +2816,14 @@ bool CGff3Writer::xWriteFeatureGene(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGff3FeatureRecord> pRecord(new CGff3FeatureRecord());
+    CRef<CGff3FeatRecord> pRecord(new CGff3FeatRecord());
     if (!xAssignFeature(*pRecord, fc, mf)) {
         return false;
     }
     m_GeneMapNew[mf] = pRecord;
     return xWriteFeatureRecords(*pRecord, pRecord->Location(), 0);
 }
+
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteFeatureCds(
@@ -2677,7 +2835,7 @@ bool CGff3Writer::xWriteFeatureCds(
     if (tf  && !xWriteNucleotideFeatureTransSpliced(fc, tf)) {
         return false;
     }
-    CRef<CGff3FeatureRecord> pCds(new CGff3FeatureRecord());
+    CRef<CGff3FeatRecord> pCds(new CGff3FeatRecord());
     if (!xAssignFeature(*pCds, fc, mf)) {
         return false;
     }
@@ -2701,8 +2859,7 @@ bool CGff3Writer::xWriteFeatureCds(
 
     int iTotSize = -iPhase;
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
-        list< CRef< CSeq_interval > > sublocs( PackedInt.GetPacked_int().Get() );
-        list< CRef< CSeq_interval > >::const_iterator it;
+        const auto& sublocs = PackedInt.GetPacked_int().Get();
         string cdsId = pCds->Id();
         int partNum = 1;
         bool useParts = xIntervalsNeedPartNumbers(sublocs);
@@ -2712,14 +2869,13 @@ bool CGff3Writer::xWriteFeatureCds(
             sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
         }
 
-        for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
-            const CSeq_interval& subint = **it;
-            CRef<CGff3FeatureRecord> pExon(new CGff3FeatureRecord(*pCds));
+        bool isInsdcMode = xIsInsdcMode();
+        for (const auto& pSubint : sublocs) {
+            CRef<CGff3FeatRecord> pExon(new CGff3FeatRecord(*pCds));
             pExon->SetRecordId(cdsId);
             pExon->SetType("CDS");
-            pExon->DropAttributes("start_range");
-            pExon->DropAttributes("end_range");
-            pExon->SetLocation(subint, wrapSize, wrapPoint);
+            s_DropPartialness(*pExon, isInsdcMode);
+            pExon->SetLocation(*pSubint, isInsdcMode, wrapSize, wrapPoint);
             pExon->SetPhase(iPhase);
             if (useParts) {
                 pExon->SetAttribute("part", NStr::NumericToString(partNum++));
@@ -2727,7 +2883,7 @@ bool CGff3Writer::xWriteFeatureCds(
             if (!xWriteRecord(*pExon)) {
                 return false;
             }
-            iTotSize = (iTotSize + subint.GetLength());
+            iTotSize = (iTotSize + pSubint->GetLength());
             const int posInCodon = (3+iTotSize)%3;
             iPhase = posInCodon ? 3-posInCodon : 0;
         }
@@ -2755,7 +2911,7 @@ bool CGff3Writer::xWriteFeatureCds(
 
 
 bool CGff3Writer::xWriteRnaExons(
-    const CGff3FeatureRecord& rna_record,
+    const CGff3FeatRecord& rna_record,
     const CGffFeatureContext& fc,
     const CMappedFeat&        mf)
 {
@@ -2772,16 +2928,16 @@ bool CGff3Writer::xWriteRnaExons(
         }
 
         auto parentId = rna_record.Id();
+        bool isInsdcMode = xIsInsdcMode();
         for (const auto& pSubint : sublocs) {
-            auto pChild = Ref(new CGff3FeatureRecord(rna_record));
+            auto pChild = Ref(new CGff3FeatRecord(rna_record));
             pChild->SetRecordId(m_pIdGenerator->GetNextGffExonId(parentId));
             pChild->DropAttributes("Name"); // explicitly not inherited
-            pChild->DropAttributes("start_range");
-            pChild->DropAttributes("end_range");
+            s_DropPartialness(*pChild, isInsdcMode);
             pChild->DropAttributes("model_evidence");
             pChild->SetParent(parentId);
             pChild->SetType("exon");
-            pChild->SetLocation(*pSubint, wrapSize, wrapPoint);
+            pChild->SetLocation(*pSubint, isInsdcMode, wrapSize, wrapPoint);
             if (useParts) {
                 pChild->SetAttribute("part", NStr::NumericToString(partNum++));
             }
@@ -2800,7 +2956,7 @@ bool CGff3Writer::xWriteFeatureRna(
     const CMappedFeat&  mf)
 //  ----------------------------------------------------------------------------
 {
-    auto pRna = Ref(new CGff3FeatureRecord());
+    auto pRna = Ref(new CGff3FeatRecord());
 
     if (! xAssignFeature(*pRna, fc, mf)) {
         return false;
@@ -2830,7 +2986,7 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGff3FeatureRecord> pSegment(new CGff3FeatureRecord());
+    CRef<CGff3FeatRecord> pSegment(new CGff3FeatRecord());
 
     if (!xAssignFeature(*pSegment, fc, mf)) {
         return false;
@@ -2863,15 +3019,15 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
             sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
         }
 
+        bool isInsdcMode = xIsInsdcMode();
         for (const auto& pSubint : sublocs) {
-            auto pChild = Ref(new CGff3FeatureRecord(*pSegment));
+            auto pChild = Ref(new CGff3FeatRecord(*pSegment));
             pChild->SetRecordId(m_pIdGenerator->GetNextGffExonId(parentId));
             pChild->DropAttributes("Name");
-            pChild->DropAttributes("start_range");
-            pChild->DropAttributes("end_range");
+            s_DropPartialness(*pChild, isInsdcMode);
             pChild->SetParent(parentId);
             pChild->SetType("exon");
-            pChild->SetLocation(*pSubint, wrapSize, wrapPoint);
+            pChild->SetLocation(*pSubint, isInsdcMode, wrapSize, wrapPoint);
             if (!xWriteRecord(*pChild)) {
                 return false;
             }
@@ -2886,7 +3042,7 @@ bool CGff3Writer::xWriteFeatureGeneric(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGff3FeatureRecord> pParent(new CGff3FeatureRecord());
+    CRef<CGff3FeatRecord> pParent(new CGff3FeatRecord());
     if (!xAssignFeature(*pParent, fc, mf)) {
         return false;
     }
@@ -2911,7 +3067,7 @@ bool CGff3Writer::xWriteFeatureProtein(
         return true;
     }
 
-    CRef<CGff3FeatureRecord> pRecord(new CGff3FeatureRecord());
+    CRef<CGff3FeatRecord> pRecord(new CGff3FeatRecord());
     if (!xAssignFeature(*pRecord, fc, protein)) {
         return false;
     }
@@ -2964,8 +3120,8 @@ bool CGff3Writer::xWriteFeatureProtein(
 
     for ( auto it = sublocs.begin(); it != sublocs.end(); ++it ) {
         const CSeq_interval& subint = **it;
-        CRef<CGff3FeatureRecord> pExon(new CGff3FeatureRecord(*pRecord));
-        pExon->SetLocation(subint, wrapSize, wrapPoint);
+        CRef<CGff3FeatRecord> pExon(new CGff3FeatRecord(*pRecord));
+        pExon->SetLocation(subint, xIsInsdcMode(), wrapSize, wrapPoint);
         if (!xWriteRecord(*pExon)) {
             return false;
         }
@@ -2981,8 +3137,8 @@ bool CGff3Writer::xWriteFeatureRecords(
     unsigned int seqLength )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGff3FeatureRecord> pRecord(new CGff3FeatureRecord(
-        dynamic_cast<const CGff3FeatureRecord&>(record)));
+    CRef<CGff3FeatRecord> pRecord(new CGff3FeatRecord(
+        dynamic_cast<const CGff3FeatRecord&>(record)));
     _ASSERT(pRecord);
 
     const CSeq_loc& loc = record.Location();
@@ -2998,8 +3154,8 @@ bool CGff3Writer::xWriteFeatureRecords(
     bool useParts = xIntervalsNeedPartNumbers(sublocs);
     for (auto it = sublocs.begin(); it != sublocs.end(); ++it) {
         const CSeq_interval& subint = **it;
-        CRef<CGffFeatureRecord> pChild(new CGff3FeatureRecord(*pRecord));
-        pChild->SetLocation(subint, 0);
+        auto pChild = Ref(new CGff3FeatRecord(*pRecord));
+        pChild->SetLocation(subint, xIsInsdcMode());
         string part = NStr::IntToString(curInterval++);
         if (useParts) {
             pChild->SetAttribute("part", part);
@@ -3029,7 +3185,7 @@ void CGff3Writer::xWriteAlignment(
 
 //  ============================================================================
 bool CGff3Writer::xAssignFeatureAttributeParentGene(
-    CGff3FeatureRecord& record,
+    CGff3FeatRecord& record,
     CGffFeatureContext& fc,
     const CMappedFeat& mf)
 //  ============================================================================
@@ -3048,7 +3204,7 @@ bool CGff3Writer::xAssignFeatureAttributeParentGene(
 
 //  ============================================================================
 bool CGff3Writer::xAssignFeatureAttributeParentMrna(
-    CGff3FeatureRecord& record,
+    CGff3FeatRecord& record,
     CGffFeatureContext& fc,
     const CMappedFeat& mf)
 //  ============================================================================
@@ -3073,7 +3229,7 @@ bool CGff3Writer::xAssignFeatureAttributeParentMrna(
 
 //  ============================================================================
 bool CGff3Writer::xAssignFeatureAttributeParentCds(
-    CGff3FeatureRecord& record,
+    CGff3FeatRecord& record,
     CGffFeatureContext& fc,
     const CMappedFeat& mf)
 //  ============================================================================
@@ -3093,7 +3249,7 @@ bool CGff3Writer::xAssignFeatureAttributeParentCds(
 
 //  ============================================================================
 bool CGff3Writer::xAssignFeatureAttributeParentRegion(
-    CGff3FeatureRecord& record,
+    CGff3FeatRecord& record,
     CGffFeatureContext& fc,
     const CMappedFeat& mf)
 //  ============================================================================
@@ -3113,7 +3269,7 @@ bool CGff3Writer::xAssignFeatureAttributeParentRegion(
 
 //  ============================================================================
 bool CGff3Writer::xAssignFeatureAttributeParentpreRNA(
-    CGff3FeatureRecord& record,
+    CGff3FeatRecord& record,
     CGffFeatureContext& fc,
     const CMappedFeat& mf)
 //  ============================================================================
@@ -3135,7 +3291,7 @@ bool CGff3Writer::xAssignFeatureAttributeParentpreRNA(
 
 //  ============================================================================
 bool CGff3Writer::xAssignFeatureAttributeParentVDJsegmentCregion(
-    CGff3FeatureRecord& record,
+    CGff3FeatRecord& record,
     CGffFeatureContext& fc,
     const CMappedFeat& mf)
 //  ============================================================================

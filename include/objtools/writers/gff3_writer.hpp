@@ -85,7 +85,7 @@ protected:
 };
 
 //  ============================================================================
-class CGff3FeatureRecord
+class [[deprecated]] CGff3FeatureRecord
 //  ============================================================================
     : public CGffFeatureRecord
 {
@@ -134,6 +134,7 @@ protected:
 
 };
 
+class CGff3FeatRecord;
 
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGff3Writer
@@ -442,35 +443,35 @@ protected:
         CGffFeatureContext&,
         const CMappedFeat&) override;
     bool xAssignFeatureAttributeParent(
-        CGff3FeatureRecord&,
+        CGff3FeatRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
     bool xAssignFeatureAttributeID(
-        CGff3FeatureRecord&,
+        CGff3FeatRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
     virtual bool xAssignFeatureAttributeParentMrna(
-        CGff3FeatureRecord&,
+        CGff3FeatRecord&,
         CGffFeatureContext&,
         const CMappedFeat& );
     virtual bool xAssignFeatureAttributeParentCds(
-        CGff3FeatureRecord&,
+        CGff3FeatRecord&,
         CGffFeatureContext&,
         const CMappedFeat& );
     virtual bool xAssignFeatureAttributeParentpreRNA(
-        CGff3FeatureRecord&,
+        CGff3FeatRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
     virtual bool xAssignFeatureAttributeParentVDJsegmentCregion(
-        CGff3FeatureRecord&,
+        CGff3FeatRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
     virtual bool xAssignFeatureAttributeParentGene(
-        CGff3FeatureRecord&,
+        CGff3FeatRecord&,
         CGffFeatureContext&,
         const CMappedFeat& );
     virtual bool xAssignFeatureAttributeParentRegion(
-        CGff3FeatureRecord&,
+        CGff3FeatRecord&,
         CGffFeatureContext&,
         const CMappedFeat& );
 
@@ -499,8 +500,13 @@ protected:
     string xNextAlignId();
 
 private:
+    bool xAssignFeatureAttributePartial(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&) override;
+
     bool xWriteRnaExons(
-            const CGff3FeatureRecord& rna_record,
+            const CGff3FeatRecord& rna_record,
             const CGffFeatureContext& fc,
             const CMappedFeat& mf);
 
@@ -510,7 +516,7 @@ protected:
     unsigned int m_uRecordId;
     string m_sDefaultMethod;
 
-    using TFeatureMap = map<CMappedFeat, CRef<CGff3FeatureRecord>>;
+    using TFeatureMap = map<CMappedFeat, CRef<CGff3FeatRecord>>;
 
     using TGeneMapNew  = TFeatureMap;
     TGeneMapNew m_GeneMapNew;
