@@ -495,11 +495,11 @@ s_ConvertValue(const string& from_val, CVariant& to_var)
         to_var = from_val;
         break;
     case eDB_Binary:
-        static_cast<CDB_Binary*>(to_var.GetData())
+        static_cast<CDB_Binary*>(to_var.GetData(eNoOwnership))
             ->SetValue(from_val.data(), from_val.size());
         break;
     case eDB_LongBinary:
-        static_cast<CDB_LongBinary*>(to_var.GetData())
+        static_cast<CDB_LongBinary*>(to_var.GetData(eNoOwnership))
             ->SetValue(from_val.data(), from_val.size());
         break;
     case eDB_VarBinary:
@@ -2800,7 +2800,7 @@ CQueryImpl::x_GetContext(void) const
             if (value == NULL  ||  value->IsNull()) {
                 oss << "NULL";
             } else {
-                oss << value->GetData()->GetLogString();
+                oss << value->GetData(eNoOwnership)->GetLogString();
             }
             delim = ", ";
         }

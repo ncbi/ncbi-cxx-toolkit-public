@@ -258,7 +258,7 @@ CVariant CVariant::Numeric(unsigned int precision,
 
 
 CVariant::CVariant(EDB_Type type, size_t size)
-    : m_data(0)
+    : m_data(0), m_exposed(false)
 {
     switch ( type ) {
     case eDB_Int:
@@ -355,59 +355,59 @@ CVariant::CVariant(EDB_Type type, size_t size)
 
 
 CVariant::CVariant(CDB_Object* o)
-    : m_data(o)
+    : m_data(o), m_exposed(true)
 {
     return;
 }
 
 
 CVariant::CVariant(Int8 v)
-    : m_data(new CDB_BigInt(v)) {}
+    : m_data(new CDB_BigInt(v)), m_exposed(false) {}
 
 
 CVariant::CVariant(Int4 v)
-    : m_data(new CDB_Int(v)) {}
+    : m_data(new CDB_Int(v)), m_exposed(false) {}
 
 //CVariant::CVariant(int v)
 //: m_data(new CDB_Int(v)) {}
 
 CVariant::CVariant(Int2 v)
-    : m_data(new CDB_SmallInt(v)) {}
+    : m_data(new CDB_SmallInt(v)), m_exposed(false) {}
 
 CVariant::CVariant(Uint1 v)
-    : m_data(new CDB_TinyInt(v)) {}
+    : m_data(new CDB_TinyInt(v)), m_exposed(false) {}
 
 CVariant::CVariant(float v)
-    : m_data(new CDB_Float(v)) {}
+    : m_data(new CDB_Float(v)), m_exposed(false) {}
 
 CVariant::CVariant(double v)
-    : m_data(new CDB_Double(v)) {}
+    : m_data(new CDB_Double(v)), m_exposed(false) {}
 
 CVariant::CVariant(bool v)
-    : m_data(new CDB_Bit(v)) {}
+    : m_data(new CDB_Bit(v)), m_exposed(false) {}
 
 CVariant::CVariant(const string& v)
-    : m_data(new CDB_VarChar(v))
+    : m_data(new CDB_VarChar(v)), m_exposed(false)
 {
 }
 
 CVariant::CVariant(string&& v)
-    : m_data(new CDB_VarChar(std::move(v)))
+    : m_data(new CDB_VarChar(std::move(v))), m_exposed(false)
 {
 }
 
 CVariant::CVariant(const char* s)
-    : m_data(new CDB_VarChar(s))
+    : m_data(new CDB_VarChar(s)), m_exposed(false)
 {
 }
 
 CVariant::CVariant(const TStringUCS2& v)
-    : m_data(new CDB_VarChar(v))
+    : m_data(new CDB_VarChar(v)), m_exposed(false)
 {
 }
 
 CVariant::CVariant(const CTime& v, EDateTimeFormat fmt)
-    : m_data(0)
+    : m_data(0), m_exposed(false)
 {
 
     switch(fmt) {
@@ -442,15 +442,15 @@ CVariant::CVariant(const CTime& v, EDateTimeFormat fmt)
 
 
 CVariant::CVariant(const CVariant& v)
-    : m_data(0)
+    : m_data(0), m_exposed(false)
 {
-    if( v.GetData() != 0 ) {
-        m_data = v.GetData()->Clone();
+    if( v.GetData(eNoOwnership) != 0 ) {
+        m_data = v.GetData(eNoOwnership)->Clone();
     }
 }
 
 CVariant::CVariant(CVariant&& v) noexcept
-    : m_data(v.m_data), m_descr(std::move(v.m_descr))
+    : m_data(v.m_data), m_descr(std::move(v.m_descr)), m_exposed(v.m_exposed)
 {
     v.m_data = nullptr;
 }
@@ -464,17 +464,20 @@ CVariant::~CVariant(void)
 }
 
 
-CDB_Object* CVariant::GetNonNullData() const {
+CDB_Object* CVariant::GetNonNullData(EOwnership ownership) const {
     if( m_data == 0 )
         NCBI_THROW(CVariantException, eVariant | Retriable(eRetriable_No),
                    "CVariant::GetNonNullData(): null data");
 
-    return m_data;
+    return GetData(ownership);
 }
 
-void CVariant::SetData(CDB_Object* o) {
+void CVariant::SetData(CDB_Object* o, EOwnership ownership) {
     delete m_data;
     m_data = o;
+    if (ownership == eNoOwnership) {
+        m_exposed = true;
+    }
 }
 
 
@@ -507,23 +510,23 @@ string CVariant::GetString(void) const
             case eDB_Char:
             case eDB_VarChar:
             case eDB_LongChar:
-                s = ((CDB_String*)GetData())->AsString();
+                s = ((CDB_String*)GetData(eNoOwnership))->AsString();
                 break;
             case eDB_Binary:
                 {
-                    CDB_Binary *b = (CDB_Binary*)GetData();
+                    CDB_Binary *b = (CDB_Binary*)GetData(eNoOwnership);
                     s = string((char*)b->Value(), b->Size());
                     break;
                 }
             case eDB_LongBinary:
                 {
-                    CDB_LongBinary *vb = (CDB_LongBinary*)GetData();
+                    auto *vb = (CDB_LongBinary*)GetData(eNoOwnership);
                     s = string((char*)vb->Value(), vb->DataSize());
                     break;
                 }
             case eDB_VarBinary:
                 {
-                    CDB_VarBinary *vb = (CDB_VarBinary*)GetData();
+                    CDB_VarBinary *vb = (CDB_VarBinary*)GetData(eNoOwnership);
                     s = string((char*)vb->Value(), vb->Size());
                     break;
                 }
@@ -549,7 +552,7 @@ string CVariant::GetString(void) const
                 s = NStr::BoolToString(GetBit());
                 break;
             case eDB_Numeric:
-                s = ((CDB_Numeric*)GetData())->Value();
+                s = ((CDB_Numeric*)GetData(eNoOwnership))->Value();
                 break;
             case eDB_DateTime:
             case eDB_BigDateTime:
@@ -561,7 +564,7 @@ string CVariant::GetString(void) const
             case eDB_VarCharMax:
             case eDB_VarBinaryMax:
                 {
-                    CDB_Stream* stream = (CDB_Stream*)GetData();
+                    CDB_Stream* stream = (CDB_Stream*)GetData(eNoOwnership);
                     size_t n = stream->Size();
                     s.resize(n);
                     size_t n2 = stream->PeekAt(&s[0], 0, n);
@@ -585,13 +588,13 @@ Int8 CVariant::GetInt8() const
     {
         switch( GetType() ) {
         case eDB_BigInt:
-            return ((CDB_BigInt*)GetData())->Value();
+            return ((CDB_BigInt*)GetData(eNoOwnership))->Value();
         case eDB_Int:
-            return ((CDB_Int*)GetData())->Value();
+            return ((CDB_Int*)GetData(eNoOwnership))->Value();
         case eDB_SmallInt:
-            return ((CDB_SmallInt*)GetData())->Value();
+            return ((CDB_SmallInt*)GetData(eNoOwnership))->Value();
         case eDB_TinyInt:
-            return ((CDB_TinyInt*)GetData())->Value();
+            return ((CDB_TinyInt*)GetData(eNoOwnership))->Value();
         default:
             x_Verify_AssignType(eDB_UnsupportedType, "Int8");
         }
@@ -606,11 +609,11 @@ Int4 CVariant::GetInt4() const
     {
         switch( GetType() ) {
         case eDB_Int:
-            return ((CDB_Int*)GetData())->Value();
+            return ((CDB_Int*)GetData(eNoOwnership))->Value();
         case eDB_SmallInt:
-            return ((CDB_SmallInt*)GetData())->Value();
+            return ((CDB_SmallInt*)GetData(eNoOwnership))->Value();
         case eDB_TinyInt:
-            return ((CDB_TinyInt*)GetData())->Value();
+            return ((CDB_TinyInt*)GetData(eNoOwnership))->Value();
         default:
             x_Verify_AssignType(eDB_UnsupportedType, "Int4");
         }
@@ -624,9 +627,9 @@ Int2 CVariant::GetInt2() const
     {
         switch( GetType() ) {
         case eDB_SmallInt:
-            return ((CDB_SmallInt*)GetData())->Value();
+            return ((CDB_SmallInt*)GetData(eNoOwnership))->Value();
         case eDB_TinyInt:
-            return ((CDB_TinyInt*)GetData())->Value();
+            return ((CDB_TinyInt*)GetData(eNoOwnership))->Value();
         default:
             x_Verify_AssignType(eDB_UnsupportedType, "Int2");
         }
@@ -640,7 +643,7 @@ Uint1 CVariant::GetByte() const
     {
         switch( GetType() ) {
         case eDB_TinyInt:
-            return ((CDB_TinyInt*)GetData())->Value();
+            return ((CDB_TinyInt*)GetData(eNoOwnership))->Value();
         default:
             x_Verify_AssignType(eDB_UnsupportedType, "Uint1");
         }
@@ -654,11 +657,11 @@ float CVariant::GetFloat() const
     {
         switch( GetType() ) {
         case eDB_Float:
-            return ((CDB_Float*)GetData())->Value();
+            return ((CDB_Float*)GetData(eNoOwnership))->Value();
         case eDB_SmallInt:
-            return ((CDB_SmallInt*)GetData())->Value();
+            return ((CDB_SmallInt*)GetData(eNoOwnership))->Value();
         case eDB_TinyInt:
-            return ((CDB_TinyInt*)GetData())->Value();
+            return ((CDB_TinyInt*)GetData(eNoOwnership))->Value();
         default:
             x_Verify_AssignType(eDB_UnsupportedType, "float");
         }
@@ -672,15 +675,15 @@ double CVariant::GetDouble() const
     {
         switch( GetType() ) {
         case eDB_Float:
-            return ((CDB_Float*)GetData())->Value();
+            return ((CDB_Float*)GetData(eNoOwnership))->Value();
         case eDB_Double:
-            return ((CDB_Double*)GetData())->Value();
+            return ((CDB_Double*)GetData(eNoOwnership))->Value();
         case eDB_Int:
-            return ((CDB_Int*)GetData())->Value();
+            return ((CDB_Int*)GetData(eNoOwnership))->Value();
         case eDB_SmallInt:
-            return ((CDB_SmallInt*)GetData())->Value();
+            return ((CDB_SmallInt*)GetData(eNoOwnership))->Value();
         case eDB_TinyInt:
-            return ((CDB_TinyInt*)GetData())->Value();
+            return ((CDB_TinyInt*)GetData(eNoOwnership))->Value();
         default:
             x_Verify_AssignType(eDB_UnsupportedType, "double");
         }
@@ -693,7 +696,7 @@ bool CVariant::GetBit() const
     if( !IsNull() )
     {
         x_Verify_AssignType(eDB_Bit, "bool");
-        return ((CDB_Bit*)GetData())->Value() != 0;
+        return ((CDB_Bit*)GetData(eNoOwnership))->Value() != 0;
     }
     return false;
 }
@@ -703,7 +706,7 @@ string CVariant::GetNumeric() const
     if( !IsNull() )
     {
         x_Verify_AssignType(eDB_Numeric, "string");
-        return ((CDB_Numeric*)GetData())->Value();
+        return ((CDB_Numeric*)GetData(eNoOwnership))->Value();
     }
     return "";
 }
@@ -713,13 +716,16 @@ const CTime& CVariant::GetCTime() const
     CTime *ptr = NULL;
     switch(GetType()) {
     case eDB_DateTime:
-        ptr = const_cast<CTime*>(&((CDB_DateTime*)GetData())->Value());
+        ptr = const_cast<CTime*>(&((CDB_DateTime*)GetData(eNoOwnership))
+                                 ->Value());
         break;
     case eDB_BigDateTime:
-        ptr = const_cast<CTime*>(&((CDB_BigDateTime*)GetData())->GetCTime());
+        ptr = const_cast<CTime*>(&((CDB_BigDateTime*)GetData(eNoOwnership))
+                                 ->GetCTime());
         break;
     case eDB_SmallDateTime:
-        ptr = const_cast<CTime*>(&((CDB_SmallDateTime*)GetData())->Value());
+        ptr = const_cast<CTime*>(&((CDB_SmallDateTime*)GetData(eNoOwnership))
+                                 ->Value());
         break;
     default:
         x_Verify_AssignType(eDB_UnsupportedType, "CTime");
@@ -739,13 +745,13 @@ string CVariant::AsNotNullString(const string& v) const
 
 bool CVariant::IsNull() const
 {
-    return GetData() == 0 ? true : GetData()->IsNULL();
+    return GetData(eNoOwnership) == 0 ? true : GetData(eNoOwnership)->IsNULL();
 }
 
 void CVariant::SetNull()
 {
-    if( GetData() != 0 )
-        GetData()->AssignNULL();
+    if( GetData(eNoOwnership) != 0 )
+        GetData(eNoOwnership)->AssignNULL();
 }
 
 size_t CVariant::Read(void* buf, size_t len) const
@@ -753,7 +759,7 @@ size_t CVariant::Read(void* buf, size_t len) const
     if( !IsNull() )
     {
         if (CDB_Object::IsBlobType(GetType())) {
-            return ((CDB_Stream*)GetData())->Read(buf, len);
+            return ((CDB_Stream*)GetData(eNoOwnership))->Read(buf, len);
         } else {
             x_Inapplicable_Method("Read()");
         }
@@ -764,7 +770,7 @@ size_t CVariant::Read(void* buf, size_t len) const
 size_t CVariant::Append(const void* buf, size_t len)
 {
     if (CDB_Object::IsBlobType(GetType())) {
-        return ((CDB_Stream*)GetData())->Append(buf, len);
+        return ((CDB_Stream*)GetData(eNoOwnership))->Append(buf, len);
     } else {
         x_Inapplicable_Method("Append()");
     }
@@ -775,10 +781,10 @@ size_t CVariant::Append(const string& str)
 {
     switch(GetType()) {
     case eDB_Text:
-        return ((CDB_Text*)GetData())->Append(str);
+        return ((CDB_Text*)GetData(eNoOwnership))->Append(str);
 
     case eDB_VarCharMax:
-        return ((CDB_VarCharMax*)GetData())->Append(str);
+        return ((CDB_VarCharMax*)GetData(eNoOwnership))->Append(str);
 
     default:
         x_Inapplicable_Method("Append()");
@@ -790,10 +796,10 @@ size_t CVariant::Append(const TStringUCS2& str)
 {
     switch(GetType()) {
     case eDB_Text:
-        return ((CDB_Text*)GetData())->Append(str);
+        return ((CDB_Text*)GetData(eNoOwnership))->Append(str);
 
     case eDB_VarCharMax:
-        return ((CDB_VarCharMax*)GetData())->Append(str);
+        return ((CDB_VarCharMax*)GetData(eNoOwnership))->Append(str);
 
     default:
         x_Inapplicable_Method("Append()");
@@ -804,7 +810,7 @@ size_t CVariant::Append(const TStringUCS2& str)
 size_t CVariant::GetBlobSize() const
 {
     if (CDB_Object::IsBlobType(GetType())) {
-        return ((CDB_Stream*)GetData())->Size();
+        return ((CDB_Stream*)GetData(eNoOwnership))->Size();
     } else {
         x_Inapplicable_Method("GetBlobSize()");
     }
@@ -814,7 +820,7 @@ size_t CVariant::GetBlobSize() const
 void CVariant::Truncate(size_t len)
 {
     if (CDB_Object::IsBlobType(GetType())) {
-        ((CDB_Stream*)GetData())->Truncate(len);
+        ((CDB_Stream*)GetData(eNoOwnership))->Truncate(len);
     } else {
         x_Inapplicable_Method("Truncate()");
     }
@@ -824,7 +830,7 @@ void CVariant::Truncate(size_t len)
 bool CVariant::MoveTo(size_t pos) const
 {
     if (CDB_Object::IsBlobType(GetType())) {
-        return ((CDB_Stream*)GetData())->MoveTo(pos);
+        return ((CDB_Stream*)GetData(eNoOwnership))->MoveTo(pos);
     } else {
         x_Inapplicable_Method("MoveTo()");
     }
@@ -834,42 +840,42 @@ bool CVariant::MoveTo(size_t pos) const
 CVariant& CVariant::operator=(const Int8& v)
 {
     x_Verify_AssignType(eDB_BigInt, "Int8");
-    *((CDB_BigInt*)GetData()) = v;
+    *((CDB_BigInt*)GetData(eNoOwnership)) = v;
     return *this;
 }
 
 CVariant& CVariant::operator=(const Int4& v)
 {
     x_Verify_AssignType(eDB_Int, "Int4");
-    *((CDB_Int*)GetData()) = v;
+    *((CDB_Int*)GetData(eNoOwnership)) = v;
     return *this;
 }
 
 CVariant& CVariant::operator=(const Int2& v)
 {
     x_Verify_AssignType(eDB_SmallInt, "Int2");
-    *((CDB_SmallInt*)GetData()) = v;
+    *((CDB_SmallInt*)GetData(eNoOwnership)) = v;
     return *this;
 }
 
 CVariant& CVariant::operator=(const Uint1& v)
 {
     x_Verify_AssignType(eDB_TinyInt, "Uint1");
-    *((CDB_TinyInt*)GetData()) = v;
+    *((CDB_TinyInt*)GetData(eNoOwnership)) = v;
     return *this;
 }
 
 CVariant& CVariant::operator=(const float& v)
 {
     x_Verify_AssignType(eDB_Float, "float");
-    *((CDB_Float*)GetData()) = v;
+    *((CDB_Float*)GetData(eNoOwnership)) = v;
     return *this;
 }
 
 CVariant& CVariant::operator=(const double& v)
 {
     x_Verify_AssignType(eDB_Double, "double");
-    *((CDB_Double*)GetData()) = v;
+    *((CDB_Double*)GetData(eNoOwnership)) = v;
     return *this;
 }
 
@@ -877,13 +883,13 @@ CVariant& CVariant::operator=(const string& v)
 {
     switch( GetType()) {
     case eDB_VarChar:
-        *((CDB_VarChar*)GetData()) = v;
+        *((CDB_VarChar*)GetData(eNoOwnership)) = v;
         break;
     case eDB_LongChar:
-        *((CDB_LongChar*)GetData()) = v;
+        *((CDB_LongChar*)GetData(eNoOwnership)) = v;
         break;
     case eDB_Char:
-        *((CDB_Char*)GetData()) = v;
+        *((CDB_Char*)GetData(eNoOwnership)) = v;
         break;
     default:
         x_Verify_AssignType(eDB_UnsupportedType, "string");
@@ -896,13 +902,13 @@ CVariant& CVariant::operator=(const char* v)
 {
     switch( GetType()) {
     case eDB_VarChar:
-        *((CDB_VarChar*)GetData()) = v;
+        *((CDB_VarChar*)GetData(eNoOwnership)) = v;
         break;
     case eDB_LongChar:
-        *((CDB_LongChar*)GetData()) = v;
+        *((CDB_LongChar*)GetData(eNoOwnership)) = v;
         break;
     case eDB_Char:
-        *((CDB_Char*)GetData()) = v;
+        *((CDB_Char*)GetData(eNoOwnership)) = v;
         break;
     default:
         x_Verify_AssignType(eDB_UnsupportedType, "const char *");
@@ -917,7 +923,7 @@ CVariant& CVariant::operator=(const TStringUCS2& v)
     case eDB_VarChar:
     case eDB_LongChar:
     case eDB_Char:
-        *((CDB_String*)GetData()) = v;
+        *((CDB_String*)GetData(eNoOwnership)) = v;
         break;
     default:
         x_Verify_AssignType(eDB_UnsupportedType, "TStringUCS2");
@@ -929,7 +935,7 @@ CVariant& CVariant::operator=(const TStringUCS2& v)
 CVariant& CVariant::operator=(const bool& v)
 {
     x_Verify_AssignType(eDB_Bit, "bool");
-    *((CDB_Bit*)GetData()) = v;
+    *((CDB_Bit*)GetData(eNoOwnership)) = v;
     return *this;
 }
 
@@ -937,13 +943,13 @@ CVariant& CVariant::operator=(const CTime& v)
 {
     switch(GetType()) {
     case eDB_DateTime:
-        *((CDB_DateTime*)GetData()) = v;
+        *((CDB_DateTime*)GetData(eNoOwnership)) = v;
         break;
     case eDB_BigDateTime:
-        *((CDB_BigDateTime*)GetData()) = v;
+        *((CDB_BigDateTime*)GetData(eNoOwnership)) = v;
         break;
     case eDB_SmallDateTime:
-        *((CDB_SmallDateTime*)GetData()) = v;
+        *((CDB_SmallDateTime*)GetData(eNoOwnership)) = v;
         break;
     default:
         x_Verify_AssignType(eDB_UnsupportedType, "CTime");
@@ -953,15 +959,19 @@ CVariant& CVariant::operator=(const CTime& v)
 
 CVariant& CVariant::operator=(const CVariant& v)
 {
-    this->m_data->AssignValue(*(v.m_data));
+    m_data->AssignValue(*(v.m_data));
     return *this;
 }
 
 CVariant& CVariant::operator=(CVariant&& v) noexcept
 {
-    // SetData(v.m_data);
-    // v.m_data = nullptr;
-    m_data->MoveFrom(std::move(*v.m_data));
+    if (m_exposed) {
+        GetData(eNoOwnership)->MoveFrom(std::move(*v.m_data));
+    } else {
+        SetData(v.m_data);
+        m_exposed = v.m_exposed;
+        v.m_data = nullptr;
+    }
     m_descr = std::move(v.m_descr);
     return *this;
 }
@@ -1079,7 +1089,7 @@ bool operator==(const CVariant& v1, const CVariant& v2)
 
 EBulkEnc CVariant::GetBulkInsertionEnc(void) const
 {
-    if ( !GetData() ) {
+    if ( !GetData(eNoOwnership) ) {
         return eBulkEnc_RawBytes;
     }
 
@@ -1087,11 +1097,12 @@ EBulkEnc CVariant::GetBulkInsertionEnc(void) const
     case eDB_VarChar:
     case eDB_Char:
     case eDB_LongChar:
-        return ((const CDB_String*)GetData())->GetBulkInsertionEnc();
+        return ((const CDB_String*)GetData(eNoOwnership))
+            ->GetBulkInsertionEnc();
     case eDB_Text:
-        return ((const CDB_Text*)GetData())->GetEncoding();
+        return ((const CDB_Text*)GetData(eNoOwnership))->GetEncoding();
     case eDB_VarCharMax:
-        return ((const CDB_VarCharMax*)GetData())->GetEncoding();
+        return ((const CDB_VarCharMax*)GetData(eNoOwnership))->GetEncoding();
     default:
         return eBulkEnc_RawBytes;
     }
@@ -1099,7 +1110,7 @@ EBulkEnc CVariant::GetBulkInsertionEnc(void) const
 
 void CVariant::SetBulkInsertionEnc(EBulkEnc e)
 {
-    if ( !GetData() ) {
+    if ( !GetData(eNoOwnership) ) {
         return;
     }
 
@@ -1107,13 +1118,13 @@ void CVariant::SetBulkInsertionEnc(EBulkEnc e)
     case eDB_VarChar:
     case eDB_Char:
     case eDB_LongChar:
-        ((CDB_String*)GetData())->SetBulkInsertionEnc(e);
+        ((CDB_String*)GetData(eNoOwnership))->SetBulkInsertionEnc(e);
         break;
     case eDB_Text:
-        ((CDB_Text*)GetData())->SetEncoding(e);
+        ((CDB_Text*)GetData(eNoOwnership))->SetEncoding(e);
         break;
     case eDB_VarCharMax:
-        ((CDB_VarCharMax*)GetData())->SetEncoding(e);
+        ((CDB_VarCharMax*)GetData(eNoOwnership))->SetEncoding(e);
         break;
     default:
         break;

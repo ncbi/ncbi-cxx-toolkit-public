@@ -81,13 +81,14 @@ void CDBAPIBulkInsert::FreeResources()
  
 void CDBAPIBulkInsert::Bind(const CDBParamVariant& param, CVariant* v)
 {
-    // GetBCPInCmd()->GetBindParams().Bind(col - 1, v->GetData());
+    // GetBCPInCmd()->GetBindParams().Bind(col-1, v->GetData(eTakeOwnership));
 
     if (param.IsPositional()) {
         // Decrement position by ONE.
-        GetBCPInCmd()->GetBindParams().Bind(param.GetPosition() - 1, v->GetData());
+        GetBCPInCmd()->GetBindParams().Bind(param.GetPosition() - 1,
+                                            v->GetData(eTakeOwnership));
     } else {
-        GetBCPInCmd()->GetBindParams().Bind(param, v->GetData());
+        GetBCPInCmd()->GetBindParams().Bind(param, v->GetData(eTakeOwnership));
     }
 }
 		

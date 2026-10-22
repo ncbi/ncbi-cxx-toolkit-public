@@ -78,9 +78,10 @@ void CCursor::SetParam(const CVariant& v,
 {
     if (param.IsPositional()) {
         // Decrement position by ONE.
-        GetCursorCmd()->GetBindParams().Set(param.GetPosition() - 1, v.GetData());
+        GetCursorCmd()->GetBindParams().Set(param.GetPosition() - 1,
+                                            v.GetData(eNoOwnership));
     } else {
-        GetCursorCmd()->GetBindParams().Set(param, v.GetData());
+        GetCursorCmd()->GetBindParams().Set(param, v.GetData(eNoOwnership));
     }
 }
 		

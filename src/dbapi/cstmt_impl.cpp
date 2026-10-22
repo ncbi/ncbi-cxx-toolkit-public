@@ -101,9 +101,10 @@ void CCallableStatement::SetParam(const CVariant& v,
 {
     if (param.IsPositional()) {
         // Decrement position by ONE.
-        GetRpcCmd()->GetBindParams().Set(param.GetPosition() - 1, v.GetData());
+        GetRpcCmd()->GetBindParams().Set(param.GetPosition() - 1,
+                                         v.GetData(eNoOwnership));
     } else {
-        GetRpcCmd()->GetBindParams().Set(param, v.GetData());
+        GetRpcCmd()->GetBindParams().Set(param, v.GetData(eNoOwnership));
     }
 }
 
@@ -112,9 +113,10 @@ void CCallableStatement::SetOutputParam(const CVariant& v,
 {
     if (param.IsPositional()) {
         // Decrement position by ONE.
-        GetRpcCmd()->GetBindParams().Set(param.GetPosition() - 1, v.GetData(), true);
+        GetRpcCmd()->GetBindParams().Set(param.GetPosition() - 1,
+                                         v.GetData(eNoOwnership), true);
     } else {
-        GetRpcCmd()->GetBindParams().Set(param, v.GetData(), true);
+        GetRpcCmd()->GetBindParams().Set(param, v.GetData(eNoOwnership), true);
     }
 }
 

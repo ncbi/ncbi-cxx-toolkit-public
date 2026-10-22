@@ -265,10 +265,10 @@ void CResultSet::x_CacheItems(int last_num) {
 
         CVariant& var = m_data[ind];
         if (CDB_Object::IsBlobType(type)) {
-            ((CDB_Stream*)var.GetNonNullData())->Truncate();
+            ((CDB_Stream*)var.GetNonNullData(eNoOwnership))->Truncate();
             var.SetBlobDescriptor(s_GetBlobDescriptor(*m_rs));
         }
-        m_rs->GetItem(var.GetNonNullData());
+        m_rs->GetItem(var.GetNonNullData(eNoOwnership));
 
         if (m_rs->ResultType() == eDB_StatusResult)
             break;

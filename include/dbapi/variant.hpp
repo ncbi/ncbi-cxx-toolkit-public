@@ -212,13 +212,29 @@ public:
 
 
 
-    // Get pointer to the data buffer
-    // NOTE: internal use only!
-    CDB_Object* GetData() const;
+    /// Get pointer to the data buffer.  The CVariant will retain
+    /// responsibility for deallocating the buffer regardless of
+    /// @a ownership, which instead indicates whether the caller can
+    /// assume the buffer's location won't change (except via SetData,
+    /// which is protected and has little or no use).  Callers should
+    /// explicitly pass @a ownership even if they want its default,
+    /// which is conservative and may eventually change.
+    ///
+    /// @note internal use only!
+    CDB_Object* GetData(EOwnership ownership = eTakeOwnership) const;
 
-    // Get pointer to the data buffer, throws CVariantException if buffer is 0
-    // NOTE: internal use only!
-    CDB_Object* GetNonNullData() const;
+    /// Get pointer to the data buffer.  The CVariant will retain
+    /// responsibility for deallocating the buffer regardless of
+    /// @a ownership, which instead indicates whether the caller can
+    /// assume the buffer's location won't change (except via SetData,
+    /// which is protected and has little or no use).  Callers should
+    /// explicitly pass @a ownership even if they want its default,
+    /// which is conservative and may eventually change.
+    ///
+    /// @throw CVariantException if buffer is null.
+    ///
+    /// @note internal use only!
+    CDB_Object* GetNonNullData(EOwnership ownership = eTakeOwnership) const;
 
     // Methods to work with BLOB data (Text and Image)
     size_t GetBlobSize() const;
@@ -248,8 +264,14 @@ public:
     void     SetBulkInsertionEnc(EBulkEnc e);
 
 protected:
-    // Set methods
-    void SetData(CDB_Object* o);
+    /// Repoint data buffer.  The CVariant will retain responsibility
+    /// for deallocating the buffer regardless of @a ownership, which
+    /// instead indicates whether the caller can assume that only
+    /// another call to SetData will change the buffer's location
+    /// again.  Callers should explicitly pass @a ownership even if
+    /// they want its default, which is conservative and may
+    /// eventually change.
+    void SetData(CDB_Object* o, EOwnership ownership = eNoOwnership);
 
 private:
 
@@ -261,6 +283,7 @@ private:
 
     class CDB_Object* m_data;
     mutable unique_ptr<I_BlobDescriptor> m_descr;
+    mutable bool m_exposed;
 };
 
 bool NCBI_DBAPI_EXPORT operator==(const CVariant& v1, const CVariant& v2);
@@ -269,7 +292,10 @@ bool NCBI_DBAPI_EXPORT operator<(const CVariant& v1, const CVariant& v2);
 
 //================================================================
 inline
-CDB_Object* CVariant::GetData() const {
+CDB_Object* CVariant::GetData(EOwnership ownership) const {
+    if (ownership == eTakeOwnership) {
+        m_exposed = true;
+    }
     return m_data;
 }
 

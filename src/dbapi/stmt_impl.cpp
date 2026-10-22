@@ -268,14 +268,15 @@ void CStatement::ExecuteUpdate(const string& sql)
 void CStatement::ExecuteLast()
 {
     for(ParamList::iterator i = m_params.begin(); i != m_params.end(); ++i ) {
-        GetLangCmd()->GetBindParams().Bind((*i).first, (*i).second->GetData());
+        GetLangCmd()->GetBindParams().Bind
+            ((*i).first, (*i).second->GetData(eTakeOwnership));
     }
     for(unsigned int i = 0; i < m_posParams.size(); ++i) {
         CVariant* var = m_posParams[i];
         if (!var) {
             NCBI_DBAPI_THROW("Not all parameters were bound by position.");
         }
-        GetLangCmd()->GetBindParams().Bind(i, var->GetData());
+        GetLangCmd()->GetBindParams().Bind(i, var->GetData(eTakeOwnership));
     }
     m_cmd->Send();
 }
