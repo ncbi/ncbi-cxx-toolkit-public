@@ -82,7 +82,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
                 self._optional_requires("libunwind/[>=1.6.2 <=1.8.3]")
         self._default_requires("boost/[>=1.82.0 <=1.91.0]")
         self._default_requires("bzip2/1.0.8")
-        self._default_requires("c-ares/[>=1.19.1 <=1.34.8]")
+        self._default_requires("c-ares/[>=1.19.1 <=1.34.9]")
         if self.settings.os == "Linux":
             self._default_requires("cassandra-cpp-driver/[>=2.15.3 <=2.17.1.2]")
         self._default_requires("giflib/[>=5.2.1 <=6.1.3]")
