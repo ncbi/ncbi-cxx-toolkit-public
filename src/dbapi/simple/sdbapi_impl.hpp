@@ -135,6 +135,7 @@ public:
     void WriteNull(void);
     template <class T>
     void WriteVal(const T& val);
+    void WriteVal(string&& val);
 
 private:
     void x_CheckCanWrite(int col);
@@ -292,6 +293,7 @@ public:
 
     template <class T>
     void SetParameter(CTempString name, const T& value, ESDB_Type type, ESP_ParamType param_type);
+    void SetParameter(CTempString name, string&& value, ESDB_Type type, ESP_ParamType param_type);
     void SetNullParameter(CTempString name, ESDB_Type type, ESP_ParamType param_type);
     const CQuery::CField& GetParameter(CTempString name);
     void ClearParameter(CTempString name);
@@ -335,6 +337,8 @@ public:
 
 private:
     void x_CheckCanWork(bool need_rs = false) const;
+    CVariant& x_SetParameter(CTempString name, ESDB_Type type,
+                             ESP_ParamType param_type);
     void x_SetOutParameter(const string& name, const CVariant& value);
     void x_ClearAllParams(void);
     void x_CheckRowCount(void);

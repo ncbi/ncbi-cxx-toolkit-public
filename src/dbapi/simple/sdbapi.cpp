@@ -544,6 +544,21 @@ s_ConvertValue(const string& from_val, CVariant& to_var)
 }
 
 static void
+s_MoveOrConvertValue(string&& from_val, CVariant& to_var)
+{
+    switch (to_var.GetType()) {
+    case eDB_Char:
+    case eDB_VarChar:
+    case eDB_LongChar:
+        to_var = std::move(from_val);
+        break;
+    default:
+        s_ConvertValue(from_val, to_var);
+        break;
+    }
+}
+
+static void
 s_ConvertValue(const char* from_val, CVariant& to_var)
 {
     s_ConvertValue(string(from_val), to_var);
@@ -2380,6 +2395,13 @@ CBulkInsertImpl::WriteVal(const T& val)
     s_ConvertValue(val, m_Cols[m_ColsWritten++]);
 }
 
+inline void
+CBulkInsertImpl::WriteVal(string&& val)
+{
+    x_CheckWriteStarted();
+    s_MoveOrConvertValue(std::move(val), m_Cols[m_ColsWritten++]);
+}
+
 
 CBulkInsert::CBulkInsert(void)
 {}
@@ -2451,6 +2473,13 @@ CBulkInsert&
 CBulkInsert::operator<<(const string& val)
 {
     m_Impl->WriteVal(val);
+    return *this;
+}
+
+CBulkInsert&
+CBulkInsert::operator<<(string&& val)
+{
+    m_Impl->WriteVal(std::move(val));
     return *this;
 }
 
@@ -2795,6 +2824,32 @@ CQueryImpl::x_CheckCanWork(bool need_rs /* = false */) const
     }
 }
 
+CVariant&
+CQueryImpl::x_SetParameter(CTempString   name,
+                           ESDB_Type     type,
+                           ESP_ParamType param_type)
+{
+    x_CheckCanWork();
+    m_Context->extra_msg.clear();
+
+    EDB_Type var_type = s_ConvertType(type);
+    TParamsMap::iterator it = m_Params.find(name);
+    if (it == m_Params.end()) {
+        CQuery::CField field(this, new CVariant(var_type), param_type);
+        it = m_Params.insert(make_pair(name, field)).first;
+    } else {
+        it->second.x_Detach();
+        static_cast<CParamQFB&>(*it->second.m_Impl->m_Basis)
+            .SetParamType(param_type);
+    }
+    CQueryFieldImpl& field = *it->second.m_Impl;
+    if (field.GetValue() == NULL
+        ||  field.GetValue()->GetType() != var_type) {
+        it->second = CQuery::CField(this, new CVariant(var_type), param_type);
+    }
+    return const_cast<CVariant&>(*it->second.m_Impl->GetValue());
+}
+
 template <class T>
 inline void
 CQueryImpl::SetParameter(CTempString   name,
@@ -2802,26 +2857,17 @@ CQueryImpl::SetParameter(CTempString   name,
                          ESDB_Type     type,
                          ESP_ParamType param_type)
 {
-    x_CheckCanWork();
-    m_Context->extra_msg.clear();
+    s_ConvertValue(value, x_SetParameter(name, type, param_type));
+}
 
-    EDB_Type var_type = s_ConvertType(type);
-    TParamsMap::iterator it = m_Params.find(name);
-    if (it == m_Params.end()) {
-        CQuery::CField field(this, new CVariant(var_type), param_type);
-        it = m_Params.insert(make_pair(name, field)).first;
-    } else {
-        it->second.x_Detach();
-        static_cast<CParamQFB&>(*it->second.m_Impl->m_Basis)
-            .SetParamType(param_type);
-    }
-    CQueryFieldImpl& field = *it->second.m_Impl;
-    if (field.GetValue() == NULL
-        ||  field.GetValue()->GetType() != var_type) {
-        it->second = CQuery::CField(this, new CVariant(var_type), param_type);
-    }
-    s_ConvertValue(value,
-                   const_cast<CVariant&>(*it->second.m_Impl->GetValue()));
+inline void
+CQueryImpl::SetParameter(CTempString   name,
+                         string&&      value,
+                         ESDB_Type     type,
+                         ESP_ParamType param_type)
+{
+    s_MoveOrConvertValue(std::move(value),
+                         x_SetParameter(name, type, param_type));
 }
 
 inline void
@@ -2829,26 +2875,7 @@ CQueryImpl::SetNullParameter(CTempString   name,
                              ESDB_Type     type,
                              ESP_ParamType param_type)
 {
-    x_CheckCanWork();
-    m_Context->extra_msg.clear();
-
-    EDB_Type var_type = s_ConvertType(type);
-    TParamsMap::iterator it = m_Params.find(name);
-    if (it == m_Params.end()) {
-        CQuery::CField field(this, new CVariant(var_type), param_type);
-        it = m_Params.insert(make_pair(name, field)).first;
-    } else {
-        it->second.x_Detach();
-        static_cast<CParamQFB&>(*it->second.m_Impl->m_Basis)
-            .SetParamType(param_type);
-    }
-    CQueryFieldImpl& field = *it->second.m_Impl;
-    if (field.GetValue() == NULL
-        ||  field.GetValue()->GetType() != var_type) {
-        it->second = CQuery::CField(this, new CVariant(var_type), param_type);
-    } else {
-        const_cast<CVariant*>(field.GetValue())->SetNull();
-    }
+    x_SetParameter(name, type, param_type).SetNull();
 }
 
 inline void
@@ -3954,6 +3981,16 @@ CQuery::operator= (const CQuery& q)
 CQuery&
 CQuery::SetParameter(CTempString   name,
                      const string& value,
+                     ESDB_Type     type /* = eSDB_String */,
+                     ESP_ParamType param_type /* = eSP_In */)
+{
+    m_Impl->SetParameter(name, value, type, param_type);
+    return *this;
+}
+
+CQuery&
+CQuery::SetParameter(CTempString   name,
+                     string&&      value,
                      ESDB_Type     type /* = eSDB_String */,
                      ESP_ParamType param_type /* = eSP_In */)
 {

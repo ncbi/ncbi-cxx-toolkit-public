@@ -506,6 +506,13 @@ public:
     /// If data type requested is not string then attempt to do conversion
     /// will be made. If conversion is impossible exception will be thrown.
     CQuery& SetParameter(CTempString   name,
+                         string&&      value,
+                         ESDB_Type     type = eSDB_String,
+                         ESP_ParamType param_type = eSP_In);
+    /// Assign string value to the parameter.
+    /// If data type requested is not string then attempt to do conversion
+    /// will be made. If conversion is impossible exception will be thrown.
+    CQuery& SetParameter(CTempString   name,
                          const char*   value,
                          ESDB_Type     type = eSDB_String,
                          ESP_ParamType param_type = eSP_In);
@@ -866,6 +873,7 @@ public:
     /// put into the row should be exactly the same as number of columns
     /// bound with calls to Bind().
     CBulkInsert& operator<<(const string& val);
+    CBulkInsert& operator<<(string&& val);
     CBulkInsert& operator<<(const char* val);
     CBulkInsert& operator<<(unsigned char val);
     CBulkInsert& operator<<(short val);
