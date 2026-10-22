@@ -70,17 +70,17 @@ Function fnc_data_usage_page_Create
     ${If} ${Errors}
       ${ExitDo}
     ${EndIf}
-    ; OLD  Append line with newline
-    ; OLD StrCpy $R0 "$R0$R1"
-	; NEW: Append new text to a one in control
+        ; ${StrRep} "$result_var" "String" "SubString" "RepString"
+        ; Add '\r' to fix Unix style ending.
+        ${StrRep} $R3 $R1 "$\n" "$\r$\n"
+	; NEW: Append new text to a TextBox in control
 	SendMessage $hCtl_custom_page_v1_TextBox1 ${EM_SETSEL} -1 -1
-	SendMessage $hCtl_custom_page_v1_TextBox1 ${EM_REPLACESEL} 0, "STR:$R1"
+	SendMessage $hCtl_custom_page_v1_TextBox1 ${EM_REPLACESEL} 0, "STR:$R3"
   ${Loop}
   
   ; Close file
   FileClose $R2
   
-  ;OLD: SendMessagee $hCtl_custom_page_v1_TextBox1 ${WM_SETTEXT} 0 "STR:$R0"
   SendMessage $hCtl_custom_page_v1_TextBox1 ${WM_VSCROLL} ${SCROLL_CONTENT_TOP} 0
 FunctionEnd
 
