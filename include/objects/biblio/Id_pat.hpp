@@ -62,6 +62,9 @@ public:
     bool Match(const CId_pat& idp2) const;
     static bool Id_Match(const C_Id& id1, const C_Id& id2);
 
+    int Compare(const CId_pat& idp2) const;
+    static int Id_Compare(const C_Id& id1, const C_Id& id2);
+    
     // may return either actual number or application number
     const string& GetSomeNumber(void) const;
 

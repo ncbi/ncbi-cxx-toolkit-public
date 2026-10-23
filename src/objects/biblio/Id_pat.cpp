@@ -54,11 +54,11 @@ CId_pat::~CId_pat(void)
 
 bool CId_pat::Id_Match(const C_Id& id1, const C_Id& id2)
 {
-	C_Id::E_Choice type1 = id1.Which();
-	C_Id::E_Choice type2 = id2.Which();
+    C_Id::E_Choice type1 = id1.Which();
+    C_Id::E_Choice type2 = id2.Which();
 
-	if (type1 != type2)
-		return false;
+    if (type1 != type2)
+        return false;
 
     switch ( type1 ) {
     case C_Id::e_Number:
@@ -69,13 +69,41 @@ bool CId_pat::Id_Match(const C_Id& id1, const C_Id& id2)
         return false;
     }
 }
-	
+
+
+int CId_pat::Id_Compare(const C_Id& id1, const C_Id& id2)
+{
+    C_Id::E_Choice type1 = id1.Which();
+    C_Id::E_Choice type2 = id2.Which();
+
+    if (type1 != type2)
+        return type1 < type2;
+
+    switch ( type1 ) {
+    case C_Id::e_Number:
+        return NStr::CompareNocase(id1.GetNumber(), id2.GetNumber());
+    case C_Id::e_App_number:
+        return NStr::CompareNocase(id1.GetApp_number(), id2.GetApp_number());
+    default:
+        return 0;
+    }
+}
+
 
 // comparison function
 bool CId_pat::Match(const CId_pat& idp2) const
 {
     return AStrEquiv(GetCountry(), idp2.GetCountry(), PNocase()) &&
         Id_Match(GetId(), idp2.GetId());
+}
+
+
+int CId_pat::Compare(const CId_pat& idp2) const
+{
+    if ( auto cmp = NStr::CompareNocase(GetCountry(), idp2.GetCountry()) ) {
+        return cmp;
+    }
+    return Id_Compare(GetId(), idp2.GetId());
 }
 
 
@@ -101,7 +129,7 @@ const string& CId_pat::GetSomeNumber(void) const
     default:                  return kEmptyStr;
     }
 }
-	
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

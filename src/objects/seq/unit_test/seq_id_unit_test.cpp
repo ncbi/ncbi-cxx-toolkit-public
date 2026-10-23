@@ -1020,7 +1020,7 @@ static void s_TestFastaRoundTrip(const char* s)
         BOOST_REQUIRE_EQUAL(ids.size(), 1u);
         BOOST_CHECK_EQUAL(ids.front()->AsFastaString(), s);
         BOOST_CHECK(ids.front()->Equals(*id));
-	BOOST_CHECK(id->Match(*id));
+        BOOST_CHECK(id->Match(*id));
         BOOST_CHECK_EQUAL(id->Compare(*id), CSeq_id::e_YES);
     }
     for (SIZE_TYPE pos = strlen(s) - 1;
@@ -1405,6 +1405,12 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
         "lcl|0123",
         "lcl|0124",
         "lcl|013",
+        "pat|GB|33188|10",
+        "pat|US|33188|0",
+        "pat|US|33188|1",
+        "pat|us|33188|1",
+        "pat|US|re133188|10",
+        "pat|US|re33188|1",
         "NC_000001",
         "ref|NC_000001|chr1_build35",
         "ref|NC_000001|chr1_build36",

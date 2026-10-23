@@ -59,11 +59,10 @@ bool CPatent_seq_id::Match(const CPatent_seq_id& psip2) const
 
 int CPatent_seq_id::Compare(const CPatent_seq_id& psip2) const
 {
-    int ret = GetSeqid() - psip2.GetSeqid();
-    if ( ret == 0 ) {
-        ret = GetCit().Match(psip2.GetCit())? 0: this < &psip2? -1: 1;
+    if ( auto ret = GetCit().Compare(psip2.GetCit()) ) {
+        return ret;
     }
-    return ret;
+    return GetSeqid() - psip2.GetSeqid();
 }
 
 
@@ -71,7 +70,7 @@ int CPatent_seq_id::Compare(const CPatent_seq_id& psip2) const
 ostream& CPatent_seq_id::AsFastaString(ostream& s) const
 {
     const CId_pat& idp = GetCit();
-	
+
     s << idp.GetCountry() << '|';  // no Upcase per Ostell - Karl 7/2001
 
     const CId_pat_Base::C_Id& id = idp.GetId();
