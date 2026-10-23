@@ -77,7 +77,7 @@ int CId_pat::Id_Compare(const C_Id& id1, const C_Id& id2)
     C_Id::E_Choice type2 = id2.Which();
 
     if (type1 != type2)
-        return type1 < type2;
+        return type1 - type2;
 
     switch ( type1 ) {
     case C_Id::e_Number:
