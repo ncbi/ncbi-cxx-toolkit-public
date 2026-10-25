@@ -567,7 +567,7 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkList& sfbl, Int
                 *q = '\0';
                 if (NStr::EqualNocase(val_ptr, "taxon"))
                     if (ibp->taxid <= ZERO_TAX_ID)
-                        ibp->taxid = TAX_ID_FROM(int, fta_atoi(q + 1));
+                        ibp->taxid = TAX_ID_FROM(int, fta_atoi<int>(q + 1));
                 *q = ':';
                 continue;
             }
@@ -951,19 +951,19 @@ static Int4 CheckSourceFeatCoverage(SourceFeatBlkList& sfbl, MinMaxList& mml, si
             for (r = q; IS_DIGIT(*r);)
                 r++;
             if (*r == '\0') {
-                i = fta_atoi(q);
+                i = fta_atoi<Int4>(q);
                 if (i > 0) {
                     min = i;
                     max = i;
                 }
             } else if (*r == '.' && r[1] == '.') {
                 *r++ = '\0';
-                min  = fta_atoi(q);
+                min  = fta_atoi<Int4>(q);
                 if (min > 0) {
                     for (q = ++r; IS_DIGIT(*r);)
                         r++;
                     if (*r == '\0')
-                        max = fta_atoi(q);
+                        max = fta_atoi<Int4>(q);
                 }
             }
             if (min > 0 && max > 0) {
@@ -2745,7 +2745,7 @@ static void CheckCollectionDate(const SourceFeatBlkList& sfbl, Parser::ESource s
                             break;
                     if (*p != '\0')
                         bad = 1;
-                    else if (fta_atoi(q) > date.GetYear())
+                    else if (fta_atoi<int>(q) > date.GetYear())
                         bad = 3;
                 } else if (len == 8) {
                     if (val[3] != '-')
@@ -2777,7 +2777,7 @@ static void CheckCollectionDate(const SourceFeatBlkList& sfbl, Parser::ESource s
                         if (*p != '\0')
                             bad = 1;
                         else {
-                            year = fta_atoi(q);
+                            year = fta_atoi<Int4>(q);
                             if (year > date.GetYear() ||
                                 (year == date.GetYear() && month > date.GetMonth()))
                                 bad = 3;
@@ -2795,7 +2795,7 @@ static void CheckCollectionDate(const SourceFeatBlkList& sfbl, Parser::ESource s
                         else {
                             if (*p == '0')
                                 p++;
-                            day = fta_atoi(p);
+                            day = fta_atoi<Int4>(p);
                             p   = val + 3;
                             if (source == Parser::ESource::DDBJ) {
                                 if (IS_LOWER(p[0]))
@@ -2828,7 +2828,7 @@ static void CheckCollectionDate(const SourceFeatBlkList& sfbl, Parser::ESource s
                             if (*p != '\0')
                                 bad = 1;
                             else {
-                                year = fta_atoi(q) - 1900;
+                                year = fta_atoi<Int4>(q) - 1900;
                                 if (year > date.GetYear() ||
                                     (year == date.GetYear() && month > date.GetMonth()) ||
                                     (year == date.GetYear() && month == date.GetMonth() && day > date.GetDay()))

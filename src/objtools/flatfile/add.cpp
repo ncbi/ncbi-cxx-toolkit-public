@@ -1131,7 +1131,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             break;
         }
 
-        Int4 from1 = fta_atoi(string_view(r, p));
+        Int4 from1 = fta_atoi<Int4>(string_view(r, p));
         r = ++p;
         while (p < q && IS_DIGIT(*p))
             p++;
@@ -1139,7 +1139,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             bad_interval = true;
             break;
         }
-        Int4 to1 = fta_atoi(string_view(r, p));
+        Int4 to1 = fta_atoi<Int4>(string_view(r, p));
         if (from1 >= to1) {
             bad_interval = true;
             break;
@@ -1171,7 +1171,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
                 bad_accession = acc;
                 break;
             }
-            tftbp->version = fta_atoi(string_view(i, j));
+            tftbp->version = fta_atoi<Int4>(string_view(i, j));
             acc.resize(n);
         }
 
@@ -1214,7 +1214,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
                 bad_interval = true;
                 break;
             }
-            tftbp->from2 = fta_atoi(string_view(r, p));
+            tftbp->from2 = fta_atoi<Int4>(string_view(r, p));
 
             r = ++p;
             while (p < q && IS_DIGIT(*p))
@@ -1223,7 +1223,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
                 bad_interval = true;
                 break;
             }
-            tftbp->to2 = fta_atoi(string_view(r, p));
+            tftbp->to2 = fta_atoi<Int4>(string_view(r, p));
 
             if (tftbp->from2 >= tftbp->to2) {
                 bad_interval = true;
@@ -1343,7 +1343,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
                 r++;
             string s(r, acc.end());
             if (! fta_number_is_huge(s))
-                tag.SetTag().SetId(fta_atoi(s));
+                tag.SetTag().SetId(fta_atoi<int>(s));
             else
                 tag.SetTag().SetStr(std::move(s));
 
@@ -1603,7 +1603,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, const char* offset, Parse
 
             CRef<CUser_field> user_field(new CUser_field);
             user_field->SetLabel().SetStr("ProjectID");
-            user_field->SetData().SetInt(fta_atoi(tvnp));
+            user_field->SetData().SetInt(fta_atoi<int>(tvnp));
             user_obj_ptr->SetData().push_back(user_field);
 
             user_field.Reset(new CUser_field);
@@ -1830,7 +1830,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, string_view s, Parser::ESo
         user_field.Reset(new CUser_field);
 
         user_field->SetLabel().SetStr("ProjectID");
-        user_field->SetData().SetInt(fta_atoi(tok));
+        user_field->SetData().SetInt(fta_atoi<int>(tok));
         user_obj->SetData().push_back(user_field);
 
         user_field.Reset(new CUser_field);

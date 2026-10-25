@@ -143,8 +143,10 @@ inline bool StringHasNoText(const char* s)
 
 inline bool StringDoesHaveText(const char* s) { return ! StringHasNoText(s); }
 
-inline int fta_atoi(string_view sv) {
-    int n = 0;
+template <typename T>
+inline T fta_atoi(string_view sv)
+{
+    T n{ 0 };
     std::from_chars(sv.data(), sv.data() + sv.size(), n);
     return n;
 }

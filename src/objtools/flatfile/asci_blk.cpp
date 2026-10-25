@@ -815,7 +815,7 @@ void GetLenSubNode(DataBlk& dbp)
     offset = dbp.mBuf.ptr;
     for (s = offset; *s != '\0' && isdigit(*s) == 0;)
         s++;
-    n = fta_atoi(s);
+    n = fta_atoi<Int2>(s);
 
     auto ldbp = subblocks.cend();
     for (auto ndbp = subblocks.cbegin(); ndbp != subblocks.cend(); ++ndbp) {
@@ -881,7 +881,7 @@ CRef<CPatent_seq_id> MakeUsptoPatSeqId(string_view acc)
         return pat_id;
     p = q + 1;
 
-    pat_id->SetSeqid(fta_atoi(string_view(p, e)));
+    pat_id->SetSeqid(fta_atoi<int>(string_view(p, e)));
 
     return pat_id;
 }

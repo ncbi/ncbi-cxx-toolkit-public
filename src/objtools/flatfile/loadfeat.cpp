@@ -758,7 +758,7 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
         for (strid = p; IS_DIGIT(*p);)
             p++;
         if (*p == '\0' && *strid != '0') {
-            intid = fta_atoi(strid);
+            intid = fta_atoi<Int4>(strid);
             strid = nullptr;
         }
     } else if (MatchArrayIString(DbxrefTagStr, line) > -1 ||
@@ -770,7 +770,7 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
             FtaErrPost(SEV_WARNING, ERR_QUALIFIER_DbxrefWrongType,
                        "/db_xref qualifier \"{}\" is supposed to be a string, but its value consists of digits only.", val);
             if (*strid != '0') {
-                intid = fta_atoi(strid);
+                intid = fta_atoi<Int4>(strid);
                 strid = nullptr;
             }
         }
@@ -797,7 +797,7 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
         else if (NStr::EqualNocase(line, "IntrepidBio"sv) && fta_number_is_huge(q))
             strid = q;
         else
-            intid = fta_atoi(q);
+            intid = fta_atoi<Int4>(q);
     } else if (NStr::EqualNocase(line, "PID"sv)) {
         if (*p != 'e' && *p != 'g' && *p != 'd') {
             FtaErrPost(SEV_ERROR, ERR_QUALIFIER_DbxrefIncorrect,
@@ -2489,7 +2489,7 @@ static void fta_sort_quals(FeatBlkPtr fbp, bool qamode)
 
                     if (! tq_val.empty()) {
                         if (IS_DIGIT(q_val[0]) && IS_DIGIT(tq_val[0])) {
-                            if (fta_atoi(q_val.c_str()) <= fta_atoi(tq_val.c_str()))
+                            if (fta_atoi<int>(q_val) <= fta_atoi<int>(tq_val))
                                 continue;
                         } else if (q_val <= tq_val)
                             continue;
@@ -2585,12 +2585,12 @@ static bool fta_check_rpt_unit_span(const char* val, size_t length)
     if (p == val || p[0] != '.' || p[1] != '.')
         return false;
 
-    i1 = fta_atoi(val);
+    i1 = fta_atoi<Int4>(val);
     for (p += 2, q = p; IS_DIGIT(*q);)
         q++;
     if (q == p || *q != '\0')
         return false;
-    i2 = fta_atoi(p);
+    i2 = fta_atoi<Int4>(p);
 
     if (i1 == 0 || i1 > i2 || i2 > (Int4)length)
         return false;

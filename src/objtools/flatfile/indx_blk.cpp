@@ -882,7 +882,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
 
     bases = GetResidue(&tokens);
     if (bases)
-        entry->bases = (size_t)fta_atoi(bases);
+        entry->bases = fta_atoi<size_t>(bases);
 
     if (pp->format == Parser::EFormat::GenBank &&
         entry->lc.date > -1) {

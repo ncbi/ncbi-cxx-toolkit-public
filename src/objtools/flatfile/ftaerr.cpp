@@ -206,7 +206,7 @@ static void FtaErrGetMsgCodes(
 
         ch   = *p;
         *p   = '\0';
-        val2 = fta_atoi(q);
+        val2 = fta_atoi<int>(q);
         *p   = ch;
 
         if (val2 < 1) {
