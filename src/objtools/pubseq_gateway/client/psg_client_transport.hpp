@@ -1109,6 +1109,7 @@ private:
     SUv_Async m_Shutdown;
     SUv_Timer m_Timer;
     thread m_Thread;
+    CThreadCounterGuard m_ThreadCounter;
 };
 
 struct SPSG_Servers : protected deque<SPSG_Server>
