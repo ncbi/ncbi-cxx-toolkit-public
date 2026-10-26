@@ -363,6 +363,10 @@ bool Test_CThreadExit(void)
 
 void* CTestThread::Main(void)
 {
+#ifdef USE_NATIVE_THREADS
+    CThreadCounterGuard::CountThisThread();
+#endif
+
     {{
         CFastMutexGuard guard(s_GlobalLock);
         states[m_Index] = eRunning;

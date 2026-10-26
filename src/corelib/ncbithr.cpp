@@ -1002,6 +1002,22 @@ bool CThread::WaitForAllThreads(void)
 }
 
 
+CThreadCounterGuard::CThreadCounterGuard(void)
+{
+    ++CThread::sm_ThreadsCount;
+}
+
+CThreadCounterGuard::~CThreadCounterGuard(void)
+{
+    --CThread::sm_ThreadsCount;
+}
+
+void CThreadCounterGuard::CountThisThread(void)
+{
+    thread_local CThreadCounterGuard s_CounterGuard;
+}
+
+
 const char* CThreadException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {

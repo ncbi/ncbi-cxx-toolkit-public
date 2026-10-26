@@ -528,6 +528,7 @@ class NCBI_XNCBI_EXPORT CThread : public CObject
 {
     friend class CRef<CThread>;
     friend class CTlsBase;
+    friend class CThreadCounterGuard;
 
 public:
     /// Constructor.
@@ -686,6 +687,25 @@ private:
     /// Prohibit copying and assigning
     CThread(const CThread&);
     CThread& operator= (const CThread&);
+};
+
+
+/// Thread counting guard for non-CThread implementations.
+class NCBI_XNCBI_EXPORT CThreadCounterGuard
+{
+public:
+    /// Increment internal thread counter.
+    CThreadCounterGuard(void);
+    /// Increment internal thread counter.
+    ~CThreadCounterGuard(void);
+
+    /// Increment thread counter to track the calling thread,
+    /// and decrement it automatically when the thread exits.
+    /// The guard itself is stored in a thread_local variable, no need
+    /// to keep reference to this object in the user's code.
+    /// Multiple calls from the same thread are safe - no new guards are created.
+    /// Standalone guard instances can still be created to alter the counter.
+    static void CountThisThread(void);
 };
 
 
