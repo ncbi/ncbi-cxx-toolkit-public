@@ -2062,6 +2062,23 @@ SImplementation::x_CreateCdsFeature(CConstRef<CSeq_feat> cds_feat_on_query_mrna,
                         CSeq_loc code_break_loc;
                         code_break_loc.Assign((*it)->GetLoc());
                         code_break_loc.SetId(align.GetSeq_id(0)); // set query mrna id - the mapper maps from query mrna to genome
+                        /// Distinguish between code-breaks added in internal
+                        /// processing and those copied from the query mrna.
+                        /// For code-breaks added internally, keep them only if
+                        /// they map to the full 3 bases on the genome; for
+                        /// code-breaks copied from the query mrna, keep even
+                        /// if they map only partially
+                        bool added_internally = false;
+                        for (const CRef<CSeq_loc> &added_code_break
+                                       : transcribed_mrna_seqloc_refs)
+                        {
+                            if (added_code_break->Compare((*it)->GetLoc()) == 0)
+                            {
+                                added_internally = true;
+                                break;
+                            }
+                        }
+
                         CRef<CSeq_loc> new_cb_loc = mapper.Map(code_break_loc);
 
                         // we may get an equiv. If we do, get just mapped loc
@@ -2076,7 +2093,10 @@ SImplementation::x_CreateCdsFeature(CConstRef<CSeq_feat> cds_feat_on_query_mrna,
                             }
                             new_cb_ranges &= loc_ranges;
                         }
-                        if (new_cb_ranges.GetCoveredLength() > 0) {
+                        if (new_cb_ranges.GetCoveredLength() == 3 ||
+                            (!added_internally &&
+                             new_cb_ranges.GetCoveredLength() > 0))
+                        {
                             (*it)->SetLoc(*new_cb_loc);
                             ++it;
                         } else {
