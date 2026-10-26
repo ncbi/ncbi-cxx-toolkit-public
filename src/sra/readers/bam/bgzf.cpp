@@ -34,7 +34,7 @@
 #include <sra/readers/bam/bgzf.hpp>
 #include <util/util_exception.hpp>
 #include <util/checksum.hpp>
-#include <util/compress/zlib/zlib.h>
+#include <zlib.h>
 
 BEGIN_NCBI_SCOPE
 

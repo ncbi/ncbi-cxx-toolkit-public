@@ -5,5 +5,6 @@ NCBI_begin_lib(bamread SHARED)
   NCBI_add_definitions(NCBI_BAMREAD_EXPORTS)
   NCBI_uses_toolkit_libraries(seqset xcompress)
   NCBI_project_watchers(vasilche)
+  NCBI_requires(Z)
 NCBI_end_lib()
 
