@@ -62627,7 +62627,7 @@ Seq-entry ::= seq {
  record is from the whole genome assembly released by the Baylor College of
  Medicine Human Genome Sequencing Center (BCM-HGSC) on 2009/09/09 as Skow_1.1
  (see https://www.hgsc.bcm.edu/other-invertebrates/acorn-worm-genome-project).
- The original whole genome shotgun project has the accession ACQM00000000.1." ,
+ The original whole genome project has the accession ACQM00000000.1." ,
     user {
       type
         str "DBLink" ,
