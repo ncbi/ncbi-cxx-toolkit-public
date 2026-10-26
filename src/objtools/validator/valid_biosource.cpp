@@ -2494,7 +2494,7 @@ const bool is_circular)
     }
 
 
-    if (IsIndexerVersion() && source.IsSetGenome() && source.GetGenome() == CBioSource::eGenome_chromosome && isEukaryote) {
+    if (IsIndexerVersion() && bsh.IsNa() && source.IsSetGenome() && source.GetGenome() == CBioSource::eGenome_chromosome && isEukaryote) {
         if (! has_chromosome && ! has_linkage_group) {
             PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_EukaryoteWithoutChromosome,
                 "INDEXER_ONLY - Eukaryotic chromosome has neither a chromosome qualifier nor a linkage_group qualifier",
