@@ -75,15 +75,6 @@ export BLAST_USAGE_REPORT=1
 export NCBI_USAGE_REPORT_ENABLED=1
 ```
 
-#### Docker
-
-Pass whichever variable you need with `-e` . The same variables enable or disable inside a container:
-
-```bash
-# Opt in
--e BLAST_USAGE_REPORT=1
-```
-
 ## How do I opt out?
 
 There is often nothing to do: *off is the default*. If you have never opted in, nothing is sent, and non-interactive runs are treated as opt-out automatically.
@@ -113,15 +104,6 @@ export DO_NOT_TRACK=1
 
 An invalid boolean value (for example `DO_NOT_TRACK=foo`) is rejected with a warning and ignored.
 
-#### Docker
-
-Pass whichever variable you need with `-e` . The same variables enable or disable inside a container:
-
-```bash
-# Disable
--e DO_NOT_TRACK=1
-```
-
 ## How BLAST+ decides between multiple switches?
 
 BLAST+ checks your preference in this order and stops at the first one it finds:
@@ -137,7 +119,7 @@ Because the environment variables come first, they override a stored preference 
 If the data BLAST+ collects changes, you will be able to find it documented in these places:
 
 - *BLAST+ release notes*: [https://www.ncbi.nlm.nih.gov/books/NBK131777/](https://www.ncbi.nlm.nih.gov/books/NBK131777/)
-- *BLAST_PRIVACY.md* in the source tree: [https://github.com/ncbi/ncbi-cxx-toolkit-public/tree/main/include/algo/blast/PRIVACY.md](https://github.com/ncbi/ncbi-cxx-toolkit-public/tree/main/include/algo/blast/PRIVACY.md)
+- *BLAST_PRIVACY.md* in the source tree: [https://github.com/ncbi/ncbi-cxx-toolkit-public/tree/main/src/algo/blast/PRIVACY.md](https://github.com/ncbi/ncbi-cxx-toolkit-public/tree/main/src/algo/blast/PRIVACY.md)
 - *BLAST+ User Manual*: [https://www.ncbi.nlm.nih.gov/books/NBK569851/](https://www.ncbi.nlm.nih.gov/books/NBK569851/)
 
 Updated information will also reference the applicable NLM privacy policies.
