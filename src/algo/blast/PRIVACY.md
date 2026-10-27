@@ -49,18 +49,16 @@ Here is the complete list, with an example value for each:
 
 ### blast\_usage\_report utility
 
-To turn usage data collection on, run these commands in a terminal:
+To turn usage data collection on, run this command in a terminal:
 
 ```bash
-blast_usage_report -on      # enable
-blast_usage_report -status  # show the current setting
+blast_usage_report -on
 ```
 
-The utility records your choice in an NCBI configuration file so it persists across sessions. You can check what would be sent, and see this notice, at any time:
+The utility records your choice in an NCBI configuration file so it persists across sessions. You can check whether usage data collection is enabled, at anytime, by running this command in a terminal:
 
 ```bash
-blast_usage_report -privacy_msg                 # print this privacy message
-blast_usage_report -status -out my_status.txt   # write status to a file
+blast_usage_report -status
 ```
 
 Run `blast_usage_report -help` for the full list of options. Using the utility is recommended over hand-editing configuration files, since it finds the right file for you (and tells you if it cannot write to it).
