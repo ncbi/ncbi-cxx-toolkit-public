@@ -1286,6 +1286,10 @@ int CPrimeCacheApplication::Run(void)
                 previous_execution_ids.insert(CSeq_id_Handle::GetHandle(line));
             } else if (NStr::StartsWith(line, "#Completed run ")) {
                 previous_execution_runs.insert(line.substr(15));
+            } else if (line == "#Execution successful") {
+                ERR_POST(Warning << "Previous execution completed "
+                                    "successfully; nothing to do");
+                return 0;
             }
             if ((resuming_from_clean_wrapup = (line == "#Clean wrapup"))) {
                 /// Execution ended in a clean wrapup, so the ids and runs that
@@ -1425,6 +1429,8 @@ int CPrimeCacheApplication::Run(void)
     if (!ids.empty()) {
         x_Process_Ids(ids, ostr, ifmt == "ids" ? 0 : 1, count);
     }
+
+    ostr << "#Execution successful\n";
 
     GetDiagContext().GetRequestContext().SetRequestStatus(200);
     GetDiagContext().PrintRequestStop();
