@@ -265,19 +265,18 @@ EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
     string* err_msg)
 {
     bool    need_trace = m_Request->NeedTrace();
-    string  stripped_seq_id = StripTrailingVerticalBars(request_seq_id, request_seq_id_type);
 
     // First variation of Set()
     if (request_seq_id_type > 0) {
         seq_id.Set(CSeq_id::eFasta_AsTypeAndContent,
                    (CSeq_id_Base::E_Choice)(request_seq_id_type),
-                   stripped_seq_id,
+                   request_seq_id,
                    CSeq_id::fParse_NoThrow | CSeq_id::fParse_NoWarn);
         if (seq_id.Which() != CSeq_id::e_not_set) {
             if (need_trace) {
                 SendTrace("Parsing CSeq_id(eFasta_AsTypeAndContent, " +
                           to_string(request_seq_id_type) +
-                          ", '" + stripped_seq_id + "') succeeded.\n"
+                          ", '" + request_seq_id + "') succeeded.\n"
                           "Parsing CSeq_id finished OK (#1)");
             }
             return ePSGS_ParsedOK;
@@ -286,18 +285,18 @@ EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
         if (need_trace) {
             SendTrace("Parsing CSeq_id(eFasta_AsTypeAndContent, " +
                       to_string(request_seq_id_type) +
-                      ", '" + stripped_seq_id + "') failed");
+                      ", '" + request_seq_id + "') failed");
         }
     }
 
     // Second variation of Set()
 
-    seq_id.Set(stripped_seq_id,
+    seq_id.Set(request_seq_id,
                CSeq_id::fParse_AnyRaw | CSeq_id::fParse_Cautiously |
                CSeq_id::fParse_NoThrow | CSeq_id::fParse_NoWarn);
     if (seq_id.Which() == CSeq_id::e_not_set) {
         if (need_trace) {
-            SendTrace("Parsing CSeq_id('" + stripped_seq_id +
+            SendTrace("Parsing CSeq_id('" + request_seq_id +
                       "') failed\nParsing CSeq_id finished FAILED");
         }
         return ePSGS_ParseFailed;
@@ -305,7 +304,7 @@ EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
 
 
     if (need_trace)
-        SendTrace("Parsing CSeq_id('" + stripped_seq_id + "') succeeded");
+        SendTrace("Parsing CSeq_id('" + request_seq_id + "') succeeded");
 
     if (request_seq_id_type <= 0) {
         if (need_trace)
