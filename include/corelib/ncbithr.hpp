@@ -696,7 +696,7 @@ class NCBI_XNCBI_EXPORT CThreadCounterGuard
 public:
     /// Increment internal thread counter.
     CThreadCounterGuard(void);
-    /// Increment internal thread counter.
+    /// Decrement internal thread counter.
     ~CThreadCounterGuard(void);
 
     /// Increment thread counter to track the calling thread,
