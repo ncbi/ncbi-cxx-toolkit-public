@@ -69,8 +69,6 @@ To opt in for a session, run either command in a terminal. You can also add one 
 
 ```bash
 export BLAST_USAGE_REPORT=1
-# or
-export NCBI_USAGE_REPORT_ENABLED=1
 ```
 
 ## How do I opt out?
@@ -107,12 +105,12 @@ An invalid boolean value (for example `DO_NOT_TRACK=foo`) is rejected with a war
 BLAST+ checks your preference in this order and stops at the first one it finds:
 
 1. *`DO_NOT_TRACK`* : if set to anything other than `0`/`FALSE`/`NO`/`OFF`, disables usage data collection. This one only ever turns usage data collection *off*.
-1. *`BLAST_USAGE_REPORT`* and *`NCBI_USAGE_REPORT_ENABLED`* : two-way switches; a value of `1,` `ON`, `TRUE`, `YES` (case-insensitive) turns usage data collection *on*, a value of `0`, `FALSE`, `NO`, or `OFF` (case-insensitive) turns it *off*.
+1. *`BLAST_USAGE_REPORT`* : two-way switch; a value of `1,` `ON`, `TRUE`, `YES` (case-insensitive) turns usage data collection *on*, a value of `0`, `FALSE`, `NO`, or `OFF` (case-insensitive) turns it *off*.
 1. *Configuration file* : your saved preference. It lives in a standard NCBI configuration file (for a single user, `${HOME}/.ncbirc` under a `[BLAST]` section); machine-wide defaults can be set in the system configuration (`/etc/ncbirc.ini`). Settings from these files are layered rather than replaced, so a per-user choice and site-wide defaults can coexist. Let the `blast_usage_report` utility manage this for you rather than editing by hand.
 
 Because the environment variables come first, they override a stored preference to enable or disable usage data collection.
 
-## How changes to usage data collection will be communicated
+## How changes to usage data collection will be announced
 
 If the data BLAST+ collects changes, you will be able to find it documented in these places:
 
