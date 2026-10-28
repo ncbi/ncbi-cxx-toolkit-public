@@ -87,7 +87,7 @@ Var hCtl_summary_opt_text
     FunctionEnd
 !macroend
 !insertmacro Func_StrRep ""
-!insertmacro Func_StrRep "un."
+;!insertmacro Func_StrRep "un."
 ;---  !include "EnvVar.nsh"
 
 ;--- define some constants
