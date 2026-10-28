@@ -2,7 +2,7 @@
 
 NCBI_begin_app(bam_compare)
   NCBI_sources(bam_compare samtools bam_test_common)
-  NCBI_requires(Linux SAMTOOLS)
+  NCBI_requires(Linux SAMTOOLS Z)
   NCBI_uses_toolkit_libraries(bamread xobjreadex xobjsimple)
 
   NCBI_begin_test(bam_compare)
