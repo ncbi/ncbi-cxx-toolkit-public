@@ -374,7 +374,7 @@ esac
 
 : ${SGE_PATH=/netmnt/gridengine/uge8619/drmaa}
 
-: ${SQLITE3_PATH=$NCBI/sqlite-3.26.0-ncbi1}
+: ${SQLITE3_PATH=$NCBI/sqlite-3.47.2-ncbi1}
 
 : ${SYBASE_PATH=/opt/sybase/clients/16.0-64bit}
 local_sybase_root="/opt/sybase/clients"
