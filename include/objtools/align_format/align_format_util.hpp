@@ -679,7 +679,7 @@ public:
     ///@param all_aln_set: CSeq_align_set source/target list
     ///@param alignSeqList: string of seqIds separated by comma
     ///
-    static void ExtractSeqAlignForSeqList(CRef<objects::CSeq_align_set> &all_aln_set, string alignSeqList);
+    static void ExtractSeqAlignForSeqList(CRef<objects::CSeq_align_set> &all_aln_set, string alignSeqList,bool fastAFormat = true);
 
     ///return the custom url (such as mapview)
     ///@param ids: the id list
@@ -1225,7 +1225,7 @@ public:
     static CAlignFormatUtil::SSeqAlignSetCalcParams* GetSeqAlignSetCalcParamsFromASN(const objects::CSeq_align_set& alnSet);
     static double GetSeqAlignSetCalcPercentIdent(const objects::CSeq_align_set& aln, bool do_translation);
 
-    static map < string, CRef<objects::CSeq_align_set>  >  HspListToHitMap(vector <string> seqIdList, const objects::CSeq_align_set& source);
+    static map < string, CRef<objects::CSeq_align_set>  >  HspListToHitMap(vector <string> seqIdList, const objects::CSeq_align_set& source, bool fastAFormat = true);
 
     ///Scan the the list of blast deflines and find seqID to be use in display    
     ///@param handle: CBioseq_Handle [in]
@@ -1272,7 +1272,8 @@ public:
                                 TTaxId *taxid  = NULL,
                                 string *textSeqID = NULL);
 
-
+    
+    static list <string> ExtractSeqListFromAlignSet(CRef<objects::CSeq_align_set> &source_aln);
 
     ///Check if accession is WGS
     ///@param accession: string accession [in]
