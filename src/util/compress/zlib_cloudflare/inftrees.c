@@ -187,6 +187,9 @@ int ZLIB_INTERNAL inflate_table(codetype type, unsigned short FAR *lens,
         base = dbase;
         extra = dext;
         match = 0;
+        break;
+    default:
+        return -1;              /* invalid code type */
     }
 
     /* initialize state for loop */
