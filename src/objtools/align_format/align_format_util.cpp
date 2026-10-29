@@ -1784,7 +1784,7 @@ CAlignFormatUtil::HitListToHspList(list< CRef<CSeq_align_set> >& source)
 }
 
 map < string, CRef<CSeq_align_set>  >  CAlignFormatUtil::HspListToHitMap(vector <string> seqIdList,
-                                       const CSeq_align_set& source)
+                                       const CSeq_align_set& source, bool fastAFormat)
 {
     CConstRef<CSeq_id> previous_id;
     CRef<CSeq_align_set> temp;
@@ -1802,7 +1802,14 @@ map < string, CRef<CSeq_align_set>  >  CAlignFormatUtil::HspListToHitMap(vector 
             if(count >= seqIdList.size()) {
                 break;
             }
-            string idString = NStr::TruncateSpaces(cur_id.AsFastaString());
+            string idString;
+            if(fastAFormat) {
+                idString = NStr::TruncateSpaces(cur_id.AsFastaString());
+            }
+            else {
+                cur_id.GetLabel(&idString, CSeq_id::eContent);
+            }
+            
             if(hitsMap.find(idString) != hitsMap.end()) {
                 temp =  new CSeq_align_set;
                 temp->Set().push_back(*iter);
@@ -1823,14 +1830,14 @@ map < string, CRef<CSeq_align_set>  >  CAlignFormatUtil::HspListToHitMap(vector 
     return hitsMap;
 }
 
-void CAlignFormatUtil::ExtractSeqAlignForSeqList(CRef<CSeq_align_set> &all_aln_set, string alignSeqList)
+void CAlignFormatUtil::ExtractSeqAlignForSeqList(CRef<CSeq_align_set> &all_aln_set, string alignSeqList, bool fastAFormat)
 {
     vector <string> seqIds;
     NStr::Split(alignSeqList,",",seqIds);
 
     //SEQ_ALN_SET from ALIGNDB contains seq_aligns in random order
     //The followimg will create a map that contains seq-aln_set per gi from ALIGN_SEQ_LIST
-    map < string, CRef<CSeq_align_set>  > hitsMap = CAlignFormatUtil::HspListToHitMap(seqIds,*all_aln_set) ;
+    map < string, CRef<CSeq_align_set>  > hitsMap = CAlignFormatUtil::HspListToHitMap(seqIds,*all_aln_set, fastAFormat) ;
 
     map < string, CRef<CSeq_align_set>  >::iterator it;
     list< CRef<CSeq_align_set> > orderedSet;
@@ -5021,6 +5028,23 @@ CRef<CSeq_align_set> CAlignFormatUtil::FilterSeqalignBySeqList(CSeq_align_set& s
     return new_aln;
 }
 
+list <string> CAlignFormatUtil::ExtractSeqListFromAlignSet(CRef<CSeq_align_set> &source_aln)
+                                                  
+{
+    CConstRef<CSeq_id> previous_id, subid;    
+    list <string> seqList;
+
+    ITERATE(CSeq_align_set::Tdata, iter, source_aln->Get()){
+        subid = &((*iter)->GetSeq_id(1));
+        if(previous_id.Empty() || !subid->Match(*previous_id)){            
+            string idString;
+            subid->GetLabel(&idString, CSeq_id::eContent);
+            seqList.push_back(idString);            
+        }
+        previous_id = subid;        
+    }
+    return seqList;
+}
 
 END_SCOPE(align_format)
 END_NCBI_SCOPE
