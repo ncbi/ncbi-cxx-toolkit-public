@@ -17845,7 +17845,7 @@
                         "method": "biodata",
                         "params": {
                             "bio_id": [
-                                "NW_012149730"
+                                "NW_012137191"
                             ],
                             "include_data": "slim-tse",
                             "user_args": "resend_timeout=0&send_blob_if_small=50"
@@ -17861,34 +17861,34 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "ref|NW_012149730.1|",
+                            "id": "ref|NW_012137191.1|",
                             "type": 10
                         },
                         "other_ids": [
                             {
-                                "id": "gnl|ASM:GCF_000956115.1|SCAFFOLD40",
+                                "id": "gnl|ASM:GCF_000956115.1|SCAFFOLD13",
                                 "type": 11
                             },
                             {
-                                "id": "gi|808380890",
+                                "id": "gi|808393481",
                                 "type": 12
                             },
                             {
-                                "id": "gpp|GPS_009062743.1",
+                                "id": "gpp|GPS_009050204.1",
                                 "type": 19
                             }
                         ],
                         "molecule_type": "dna",
-                        "length": 7452373,
+                        "length": 16774894,
                         "seq_state": 10,
                         "state": 10,
                         "blob_id": {
-                            "id": "4.140933297"
+                            "id": "4.140932805"
                         },
                         "tax_id": 379532,
-                        "hash": -1469591905,
-                        "date_changed": null,
-                        "gi": 808380890
+                        "hash": 2069316054,
+                        "date_changed": "06/01/2015 19:49:00",
+                        "gi": 808393481
                     }
                 },
                 {
@@ -17898,11 +17898,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 999999999,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 11461,
-                        "hash": "6CDB2B5A49261D8F",
-                        "preview": "eJy1nQl8FOX5x/d9ZmevXA=="
+                        "length": 15390,
+                        "hash": "5A4583B30DEB16DE",
+                        "preview": "eJy9nQmcVlX9/+8599mf2Q=="
                     }
                 },
                 {
@@ -17911,13 +17911,13 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id": "4.140933297",
-                            "last_modified": 1433181852550
+                            "id": "4.140932805",
+                            "last_modified": 1433181236783
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 28185,
-                        "size": 310993,
+                        "storage_size": 53116,
+                        "size": 592646,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -17928,11 +17928,11 @@
                         "no_incremental_processing": false,
                         "hup_release_date": "",
                         "owner": 21,
-                        "original_load_date": "06/01/2015 18:04:12",
+                        "original_load_date": "06/01/2015 17:53:56",
                         "class": "not-set",
                         "division": "CON",
                         "username": "gpipe",
-                        "id2_info": "33.98498112.7.1433168284",
+                        "id2_info": "33.98496204.11.1433167388",
                         "n_chunks": 1
                     }
                 },
@@ -17943,12 +17943,12 @@
                         "reply": "BlobInfo",
                         "id": {
                             "id2_chunk": 999999999,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 11461,
-                        "size": 105868,
+                        "storage_size": 15390,
+                        "size": 138261,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -17976,8 +17976,8 @@
                 }
             ]
         },
-        "Biodata slim if small 50000": {
-            "description": "Biodata slim if small 50000",
+        "Biodata slim if small 100000": {
+            "description": "Biodata slim if small 100000",
             "tags": ["id-get", "cassandra", "200"],
             "requests": [
                 [
@@ -17986,10 +17986,10 @@
                         "method": "biodata",
                         "params": {
                             "bio_id": [
-                                "NW_012149730"
+                                "NW_012137191"
                             ],
                             "include_data": "slim-tse",
-                            "user_args": "resend_timeout=0&send_blob_if_small=50000"
+                            "user_args": "resend_timeout=0&send_blob_if_small=100000"
                         },
                         "id": "blob_1"
                     }
@@ -18002,34 +18002,34 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "ref|NW_012149730.1|",
+                            "id": "ref|NW_012137191.1|",
                             "type": 10
                         },
                         "other_ids": [
                             {
-                                "id": "gnl|ASM:GCF_000956115.1|SCAFFOLD40",
+                                "id": "gnl|ASM:GCF_000956115.1|SCAFFOLD13",
                                 "type": 11
                             },
                             {
-                                "id": "gi|808380890",
+                                "id": "gi|808393481",
                                 "type": 12
                             },
                             {
-                                "id": "gpp|GPS_009062743.1",
+                                "id": "gpp|GPS_009050204.1",
                                 "type": 19
                             }
                         ],
                         "molecule_type": "dna",
-                        "length": 7452373,
+                        "length": 16774894,
                         "seq_state": 10,
                         "state": 10,
                         "blob_id": {
-                            "id": "4.140933297"
+                            "id": "4.140932805"
                         },
                         "tax_id": 379532,
-                        "hash": -1469591905,
-                        "date_changed": null,
-                        "gi": 808380890
+                        "hash": 2069316054,
+                        "date_changed": "06/01/2015 19:49:00",
+                        "gi": 808393481
                     }
                 },
                 {
@@ -18039,11 +18039,37 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 1,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 6416,
-                        "hash": "753743B2FC55722E",
-                        "preview": "eJztnQtcVNW6wAER81XmEw=="
+                        "length": 6208,
+                        "hash": "4FA0909D9F2B5AC8",
+                        "preview": "eJztnQl8FFWex0lCkqa7dQ=="
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobData",
+                        "id": {
+                            "id2_chunk": 10,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "length": 3655,
+                        "hash": "C3369FA3D1ACB1E9",
+                        "preview": "eJztnX1wFOUdx/cuIS80mA=="
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobData",
+                        "id": {
+                            "id2_chunk": 11,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "data": "MICggDGAMICggKGAAgQwLxsJAAAAAKGAMYCmgBqB60Fzc2VtYmx5IG5hbWU6IFBjb3FfMS4wflRoZSBnZW5vbWljIHNlcXVlbmNlIGZvciB0aGlzIFJlZlNlcSByZWNvcmQgaXMgZnJvbSB0aGUgd2hvbGUtZ2Vub21lIGFzc2VtYmx5IHJlbGVhc2VkIGJ5IHRoZSBCYXlsb3IgQ29sbGVnZSBvZiBNZWRpY2luZSBvbiAyMDE1LzAzLzIzLiBUaGUgb3JpZ2luYWwgd2hvbGUtZ2Vub21lIHNob3RndW4gcHJvamVjdCBoYXMgdGhlIGFjY2Vzc2lvbiBKWktFMDAwMDAwMDAuMS4AAAAAAAAAAAAAAAAAAA=="
                     }
                 },
                 {
@@ -18053,11 +18079,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 2,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 3197,
-                        "hash": "D8C2557052110F95",
-                        "preview": "eJztnAtwFOUdwJMQEuQhWA=="
+                        "length": 6868,
+                        "hash": "EA4710D01F3C0863",
+                        "preview": "eJztnXlg1GTex9tKCyICLg=="
                     }
                 },
                 {
@@ -18067,9 +18093,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 3,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "data": "MICggDGAMICggKGAAgQwLunaAAAAAKGAMYCxgKGAMICggAICB98AAKGAAgEGAACigAIBAQAAAAAAAAAAsoChgDCAoIACAgffAAChgAIBBgAAooACAQEAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+                        "length": 7237,
+                        "hash": "1BEB0419D30E5DFA",
+                        "preview": "eJztnQt8E1X2x/vmqbjyBg=="
                     }
                 },
                 {
@@ -18079,11 +18107,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 4,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 5925,
-                        "hash": "13B171DE3E18E509",
-                        "preview": "eJztXQlwHNWZbo1kWb4PfA=="
+                        "length": 1096,
+                        "hash": "6B27A09CEB3A5918",
+                        "preview": "eJztmM9v02YYx21TQltSxA=="
                     }
                 },
                 {
@@ -18093,11 +18121,9 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 5,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 7168,
-                        "hash": "F84329C4D02B6D90",
-                        "preview": "eJztnQl43NS1xxXbsbNRyA=="
+                        "data": "MICggDGAMICggKGAAgQwLxsJAAAAAKGAMYCxgKGAMICggAICB98AAKGAAgEGAACigAIBAQAAAAAAAAAAsoChgDCAoIACAgffAAChgAIBBgAAooACAQEAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
                     }
                 },
                 {
@@ -18107,11 +18133,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 6,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 1069,
-                        "hash": "8ABF5D4C8C0BD83C",
-                        "preview": "eJzVls9v3EQUx73OjzYJUQ=="
+                        "length": 6995,
+                        "hash": "217F950BC0C6DBD2",
+                        "preview": "eJztnQl4W9WVx583WZYUSg=="
                     }
                 },
                 {
@@ -18121,9 +18147,39 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 7,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "data": "MICggDGAMICggKGAAgQwLunaAAAAAKGAMYCmgBqB60Fzc2VtYmx5IG5hbWU6IFBjb3FfMS4wflRoZSBnZW5vbWljIHNlcXVlbmNlIGZvciB0aGlzIFJlZlNlcSByZWNvcmQgaXMgZnJvbSB0aGUgd2hvbGUtZ2Vub21lIGFzc2VtYmx5IHJlbGVhc2VkIGJ5IHRoZSBCYXlsb3IgQ29sbGVnZSBvZiBNZWRpY2luZSBvbiAyMDE1LzAzLzIzLiBUaGUgb3JpZ2luYWwgd2hvbGUtZ2Vub21lIHNob3RndW4gcHJvamVjdCBoYXMgdGhlIGFjY2Vzc2lvbiBKWktFMDAwMDAwMDAuMS4AAAAAAAAAAAAAAAAAAA=="
+                        "length": 6301,
+                        "hash": "7621E8122F55C1F2",
+                        "preview": "eJztnQt4FFWWxysBkvBQfA=="
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobData",
+                        "id": {
+                            "id2_chunk": 8,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "length": 8437,
+                        "hash": "61950D322482A74E",
+                        "preview": "eJztnXl8FEXaxyeTEwwCBg=="
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobData",
+                        "id": {
+                            "id2_chunk": 9,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "length": 7344,
+                        "hash": "AA79941D9CE6621D",
+                        "preview": "eJztnQmcU9X1xzM7q6isgg=="
                     }
                 },
                 {
@@ -18133,11 +18189,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 999999999,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 11461,
-                        "hash": "6CDB2B5A49261D8F",
-                        "preview": "eJy1nQl8FOX5x/d9ZmevXA=="
+                        "length": 15390,
+                        "hash": "5A4583B30DEB16DE",
+                        "preview": "eJy9nQmcVlX9/+8599mf2Q=="
                     }
                 },
                 {
@@ -18146,13 +18202,13 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id": "4.140933297",
-                            "last_modified": 1433181852550
+                            "id": "4.140932805",
+                            "last_modified": 1433181236783
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 28185,
-                        "size": 310993,
+                        "storage_size": 53116,
+                        "size": 592646,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -18163,11 +18219,11 @@
                         "no_incremental_processing": false,
                         "hup_release_date": "",
                         "owner": 21,
-                        "original_load_date": "06/01/2015 18:04:12",
+                        "original_load_date": "06/01/2015 17:53:56",
                         "class": "not-set",
                         "division": "CON",
                         "username": "gpipe",
-                        "id2_info": "33.98498112.7.1433168284",
+                        "id2_info": "33.98496204.11.1433167388",
                         "n_chunks": 1
                     }
                 },
@@ -18178,12 +18234,12 @@
                         "reply": "BlobInfo",
                         "id": {
                             "id2_chunk": 1,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 6416,
-                        "size": 60114,
+                        "storage_size": 6208,
+                        "size": 60323,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -18208,13 +18264,13 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id2_chunk": 2,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_chunk": 10,
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 3197,
-                        "size": 25289,
+                        "storage_size": 3655,
+                        "size": 29756,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -18239,132 +18295,8 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id2_chunk": 3,
-                            "id2_info": "33.98498112.7.1433168284"
-                        },
-                        "compression": "",
-                        "format": "asn.1",
-                        "storage_size": 106,
-                        "size": 106,
-                        "is_dead": false,
-                        "is_suppressed": false,
-                        "is_suppressed_temporarily": false,
-                        "is_withdrawn": false,
-                        "is_withdrawn_base": false,
-                        "is_withdrawn_permanently": false,
-                        "is_edit_blocked": false,
-                        "no_incremental_processing": false,
-                        "hup_release_date": "",
-                        "owner": 0,
-                        "original_load_date": "",
-                        "class": "not-set",
-                        "division": "",
-                        "username": "gbupdate",
-                        "id2_info": "",
-                        "n_chunks": 1
-                    }
-                },
-                {
-                    "jsonrpc": "2.0",
-                    "id": "blob_1",
-                    "result": {
-                        "reply": "BlobInfo",
-                        "id": {
-                            "id2_chunk": 4,
-                            "id2_info": "33.98498112.7.1433168284"
-                        },
-                        "compression": "gzip",
-                        "format": "asn.1",
-                        "storage_size": 5925,
-                        "size": 60296,
-                        "is_dead": false,
-                        "is_suppressed": false,
-                        "is_suppressed_temporarily": false,
-                        "is_withdrawn": false,
-                        "is_withdrawn_base": false,
-                        "is_withdrawn_permanently": false,
-                        "is_edit_blocked": false,
-                        "no_incremental_processing": false,
-                        "hup_release_date": "",
-                        "owner": 0,
-                        "original_load_date": "",
-                        "class": "not-set",
-                        "division": "",
-                        "username": "gbupdate",
-                        "id2_info": "",
-                        "n_chunks": 1
-                    }
-                },
-                {
-                    "jsonrpc": "2.0",
-                    "id": "blob_1",
-                    "result": {
-                        "reply": "BlobInfo",
-                        "id": {
-                            "id2_chunk": 5,
-                            "id2_info": "33.98498112.7.1433168284"
-                        },
-                        "compression": "gzip",
-                        "format": "asn.1",
-                        "storage_size": 7168,
-                        "size": 60228,
-                        "is_dead": false,
-                        "is_suppressed": false,
-                        "is_suppressed_temporarily": false,
-                        "is_withdrawn": false,
-                        "is_withdrawn_base": false,
-                        "is_withdrawn_permanently": false,
-                        "is_edit_blocked": false,
-                        "no_incremental_processing": false,
-                        "hup_release_date": "",
-                        "owner": 0,
-                        "original_load_date": "",
-                        "class": "not-set",
-                        "division": "",
-                        "username": "gbupdate",
-                        "id2_info": "",
-                        "n_chunks": 1
-                    }
-                },
-                {
-                    "jsonrpc": "2.0",
-                    "id": "blob_1",
-                    "result": {
-                        "reply": "BlobInfo",
-                        "id": {
-                            "id2_chunk": 6,
-                            "id2_info": "33.98498112.7.1433168284"
-                        },
-                        "compression": "gzip",
-                        "format": "asn.1",
-                        "storage_size": 1069,
-                        "size": 4058,
-                        "is_dead": false,
-                        "is_suppressed": false,
-                        "is_suppressed_temporarily": false,
-                        "is_withdrawn": false,
-                        "is_withdrawn_base": false,
-                        "is_withdrawn_permanently": false,
-                        "is_edit_blocked": false,
-                        "no_incremental_processing": false,
-                        "hup_release_date": "",
-                        "owner": 0,
-                        "original_load_date": "",
-                        "class": "not-set",
-                        "division": "",
-                        "username": "gbupdate",
-                        "id2_info": "",
-                        "n_chunks": 1
-                    }
-                },
-                {
-                    "jsonrpc": "2.0",
-                    "id": "blob_1",
-                    "result": {
-                        "reply": "BlobInfo",
-                        "id": {
-                            "id2_chunk": 7,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_chunk": 11,
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "",
                         "format": "asn.1",
@@ -18394,13 +18326,261 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id2_chunk": 999999999,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_chunk": 2,
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 11461,
-                        "size": 105868,
+                        "storage_size": 6868,
+                        "size": 60289,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 3,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 7237,
+                        "size": 60507,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 4,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 1096,
+                        "size": 6472,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 5,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "",
+                        "format": "asn.1",
+                        "storage_size": 106,
+                        "size": 106,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 6,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 6995,
+                        "size": 60496,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 7,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 6301,
+                        "size": 60408,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 8,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 8437,
+                        "size": 65559,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 9,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 7344,
+                        "size": 60452,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 999999999,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 15390,
+                        "size": 138261,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -18438,7 +18618,7 @@
                         "method": "biodata",
                         "params": {
                             "bio_id": [
-                                "NW_012149730"
+                                "NW_012137191"
                             ],
                             "include_data": "smart-tse",
                             "user_args": "resend_timeout=0&send_blob_if_small=50"
@@ -18454,34 +18634,34 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "ref|NW_012149730.1|",
+                            "id": "ref|NW_012137191.1|",
                             "type": 10
                         },
                         "other_ids": [
                             {
-                                "id": "gnl|ASM:GCF_000956115.1|SCAFFOLD40",
+                                "id": "gnl|ASM:GCF_000956115.1|SCAFFOLD13",
                                 "type": 11
                             },
                             {
-                                "id": "gi|808380890",
+                                "id": "gi|808393481",
                                 "type": 12
                             },
                             {
-                                "id": "gpp|GPS_009062743.1",
+                                "id": "gpp|GPS_009050204.1",
                                 "type": 19
                             }
                         ],
                         "molecule_type": "dna",
-                        "length": 7452373,
+                        "length": 16774894,
                         "seq_state": 10,
                         "state": 10,
                         "blob_id": {
-                            "id": "4.140933297"
+                            "id": "4.140932805"
                         },
                         "tax_id": 379532,
-                        "hash": -1469591905,
-                        "date_changed": null,
-                        "gi": 808380890
+                        "hash": 2069316054,
+                        "date_changed": "06/01/2015 19:49:00",
+                        "gi": 808393481
                     }
                 },
                 {
@@ -18491,11 +18671,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 999999999,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 11461,
-                        "hash": "6CDB2B5A49261D8F",
-                        "preview": "eJy1nQl8FOX5x/d9ZmevXA=="
+                        "length": 15390,
+                        "hash": "5A4583B30DEB16DE",
+                        "preview": "eJy9nQmcVlX9/+8599mf2Q=="
                     }
                 },
                 {
@@ -18504,13 +18684,13 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id": "4.140933297",
-                            "last_modified": 1433181852550
+                            "id": "4.140932805",
+                            "last_modified": 1433181236783
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 28185,
-                        "size": 310993,
+                        "storage_size": 53116,
+                        "size": 592646,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -18521,11 +18701,11 @@
                         "no_incremental_processing": false,
                         "hup_release_date": "",
                         "owner": 21,
-                        "original_load_date": "06/01/2015 18:04:12",
+                        "original_load_date": "06/01/2015 17:53:56",
                         "class": "not-set",
                         "division": "CON",
                         "username": "gpipe",
-                        "id2_info": "33.98498112.7.1433168284",
+                        "id2_info": "33.98496204.11.1433167388",
                         "n_chunks": 1
                     }
                 },
@@ -18536,12 +18716,12 @@
                         "reply": "BlobInfo",
                         "id": {
                             "id2_chunk": 999999999,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 11461,
-                        "size": 105868,
+                        "storage_size": 15390,
+                        "size": 138261,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -18569,8 +18749,8 @@
                 }
             ]
         },
-        "Biodata smart if small 50000": {
-            "description": "Biodata smart if small 50000",
+        "Biodata smart if small 100000": {
+            "description": "Biodata smart if small 100000",
             "tags": ["id-get", "cassandra", "200"],
             "requests": [
                 [
@@ -18579,10 +18759,10 @@
                         "method": "biodata",
                         "params": {
                             "bio_id": [
-                                "NW_012149730"
+                                "NW_012137191"
                             ],
                             "include_data": "smart-tse",
-                            "user_args": "resend_timeout=0&send_blob_if_small=50000"
+                            "user_args": "resend_timeout=0&send_blob_if_small=100000"
                         },
                         "id": "blob_1"
                     }
@@ -18595,34 +18775,34 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "ref|NW_012149730.1|",
+                            "id": "ref|NW_012137191.1|",
                             "type": 10
                         },
                         "other_ids": [
                             {
-                                "id": "gnl|ASM:GCF_000956115.1|SCAFFOLD40",
+                                "id": "gnl|ASM:GCF_000956115.1|SCAFFOLD13",
                                 "type": 11
                             },
                             {
-                                "id": "gi|808380890",
+                                "id": "gi|808393481",
                                 "type": 12
                             },
                             {
-                                "id": "gpp|GPS_009062743.1",
+                                "id": "gpp|GPS_009050204.1",
                                 "type": 19
                             }
                         ],
                         "molecule_type": "dna",
-                        "length": 7452373,
+                        "length": 16774894,
                         "seq_state": 10,
                         "state": 10,
                         "blob_id": {
-                            "id": "4.140933297"
+                            "id": "4.140932805"
                         },
                         "tax_id": 379532,
-                        "hash": -1469591905,
-                        "date_changed": null,
-                        "gi": 808380890
+                        "hash": 2069316054,
+                        "date_changed": "06/01/2015 19:49:00",
+                        "gi": 808393481
                     }
                 },
                 {
@@ -18632,11 +18812,37 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 1,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 6416,
-                        "hash": "753743B2FC55722E",
-                        "preview": "eJztnQtcVNW6wAER81XmEw=="
+                        "length": 6208,
+                        "hash": "4FA0909D9F2B5AC8",
+                        "preview": "eJztnQl8FFWex0lCkqa7dQ=="
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobData",
+                        "id": {
+                            "id2_chunk": 10,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "length": 3655,
+                        "hash": "C3369FA3D1ACB1E9",
+                        "preview": "eJztnX1wFOUdx/cuIS80mA=="
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobData",
+                        "id": {
+                            "id2_chunk": 11,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "data": "MICggDGAMICggKGAAgQwLxsJAAAAAKGAMYCmgBqB60Fzc2VtYmx5IG5hbWU6IFBjb3FfMS4wflRoZSBnZW5vbWljIHNlcXVlbmNlIGZvciB0aGlzIFJlZlNlcSByZWNvcmQgaXMgZnJvbSB0aGUgd2hvbGUtZ2Vub21lIGFzc2VtYmx5IHJlbGVhc2VkIGJ5IHRoZSBCYXlsb3IgQ29sbGVnZSBvZiBNZWRpY2luZSBvbiAyMDE1LzAzLzIzLiBUaGUgb3JpZ2luYWwgd2hvbGUtZ2Vub21lIHNob3RndW4gcHJvamVjdCBoYXMgdGhlIGFjY2Vzc2lvbiBKWktFMDAwMDAwMDAuMS4AAAAAAAAAAAAAAAAAAA=="
                     }
                 },
                 {
@@ -18646,11 +18852,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 2,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 3197,
-                        "hash": "D8C2557052110F95",
-                        "preview": "eJztnAtwFOUdwJMQEuQhWA=="
+                        "length": 6868,
+                        "hash": "EA4710D01F3C0863",
+                        "preview": "eJztnXlg1GTex9tKCyICLg=="
                     }
                 },
                 {
@@ -18660,9 +18866,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 3,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "data": "MICggDGAMICggKGAAgQwLunaAAAAAKGAMYCxgKGAMICggAICB98AAKGAAgEGAACigAIBAQAAAAAAAAAAsoChgDCAoIACAgffAAChgAIBBgAAooACAQEAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+                        "length": 7237,
+                        "hash": "1BEB0419D30E5DFA",
+                        "preview": "eJztnQt8E1X2x/vmqbjyBg=="
                     }
                 },
                 {
@@ -18672,11 +18880,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 4,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 5925,
-                        "hash": "13B171DE3E18E509",
-                        "preview": "eJztXQlwHNWZbo1kWb4PfA=="
+                        "length": 1096,
+                        "hash": "6B27A09CEB3A5918",
+                        "preview": "eJztmM9v02YYx21TQltSxA=="
                     }
                 },
                 {
@@ -18686,11 +18894,9 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 5,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 7168,
-                        "hash": "F84329C4D02B6D90",
-                        "preview": "eJztnQl43NS1xxXbsbNRyA=="
+                        "data": "MICggDGAMICggKGAAgQwLxsJAAAAAKGAMYCxgKGAMICggAICB98AAKGAAgEGAACigAIBAQAAAAAAAAAAsoChgDCAoIACAgffAAChgAIBBgAAooACAQEAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
                     }
                 },
                 {
@@ -18700,11 +18906,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 6,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 1069,
-                        "hash": "8ABF5D4C8C0BD83C",
-                        "preview": "eJzVls9v3EQUx73OjzYJUQ=="
+                        "length": 6995,
+                        "hash": "217F950BC0C6DBD2",
+                        "preview": "eJztnQl4W9WVx583WZYUSg=="
                     }
                 },
                 {
@@ -18714,9 +18920,39 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 7,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "data": "MICggDGAMICggKGAAgQwLunaAAAAAKGAMYCmgBqB60Fzc2VtYmx5IG5hbWU6IFBjb3FfMS4wflRoZSBnZW5vbWljIHNlcXVlbmNlIGZvciB0aGlzIFJlZlNlcSByZWNvcmQgaXMgZnJvbSB0aGUgd2hvbGUtZ2Vub21lIGFzc2VtYmx5IHJlbGVhc2VkIGJ5IHRoZSBCYXlsb3IgQ29sbGVnZSBvZiBNZWRpY2luZSBvbiAyMDE1LzAzLzIzLiBUaGUgb3JpZ2luYWwgd2hvbGUtZ2Vub21lIHNob3RndW4gcHJvamVjdCBoYXMgdGhlIGFjY2Vzc2lvbiBKWktFMDAwMDAwMDAuMS4AAAAAAAAAAAAAAAAAAA=="
+                        "length": 6301,
+                        "hash": "7621E8122F55C1F2",
+                        "preview": "eJztnQt4FFWWxysBkvBQfA=="
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobData",
+                        "id": {
+                            "id2_chunk": 8,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "length": 8437,
+                        "hash": "61950D322482A74E",
+                        "preview": "eJztnXl8FEXaxyeTEwwCBg=="
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobData",
+                        "id": {
+                            "id2_chunk": 9,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "length": 7344,
+                        "hash": "AA79941D9CE6621D",
+                        "preview": "eJztnQmcU9X1xzM7q6isgg=="
                     }
                 },
                 {
@@ -18726,11 +18962,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 999999999,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 11461,
-                        "hash": "6CDB2B5A49261D8F",
-                        "preview": "eJy1nQl8FOX5x/d9ZmevXA=="
+                        "length": 15390,
+                        "hash": "5A4583B30DEB16DE",
+                        "preview": "eJy9nQmcVlX9/+8599mf2Q=="
                     }
                 },
                 {
@@ -18739,13 +18975,13 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id": "4.140933297",
-                            "last_modified": 1433181852550
+                            "id": "4.140932805",
+                            "last_modified": 1433181236783
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 28185,
-                        "size": 310993,
+                        "storage_size": 53116,
+                        "size": 592646,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -18756,11 +18992,11 @@
                         "no_incremental_processing": false,
                         "hup_release_date": "",
                         "owner": 21,
-                        "original_load_date": "06/01/2015 18:04:12",
+                        "original_load_date": "06/01/2015 17:53:56",
                         "class": "not-set",
                         "division": "CON",
                         "username": "gpipe",
-                        "id2_info": "33.98498112.7.1433168284",
+                        "id2_info": "33.98496204.11.1433167388",
                         "n_chunks": 1
                     }
                 },
@@ -18771,12 +19007,12 @@
                         "reply": "BlobInfo",
                         "id": {
                             "id2_chunk": 1,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 6416,
-                        "size": 60114,
+                        "storage_size": 6208,
+                        "size": 60323,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -18801,13 +19037,13 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id2_chunk": 2,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_chunk": 10,
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 3197,
-                        "size": 25289,
+                        "storage_size": 3655,
+                        "size": 29756,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -18832,132 +19068,8 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id2_chunk": 3,
-                            "id2_info": "33.98498112.7.1433168284"
-                        },
-                        "compression": "",
-                        "format": "asn.1",
-                        "storage_size": 106,
-                        "size": 106,
-                        "is_dead": false,
-                        "is_suppressed": false,
-                        "is_suppressed_temporarily": false,
-                        "is_withdrawn": false,
-                        "is_withdrawn_base": false,
-                        "is_withdrawn_permanently": false,
-                        "is_edit_blocked": false,
-                        "no_incremental_processing": false,
-                        "hup_release_date": "",
-                        "owner": 0,
-                        "original_load_date": "",
-                        "class": "not-set",
-                        "division": "",
-                        "username": "gbupdate",
-                        "id2_info": "",
-                        "n_chunks": 1
-                    }
-                },
-                {
-                    "jsonrpc": "2.0",
-                    "id": "blob_1",
-                    "result": {
-                        "reply": "BlobInfo",
-                        "id": {
-                            "id2_chunk": 4,
-                            "id2_info": "33.98498112.7.1433168284"
-                        },
-                        "compression": "gzip",
-                        "format": "asn.1",
-                        "storage_size": 5925,
-                        "size": 60296,
-                        "is_dead": false,
-                        "is_suppressed": false,
-                        "is_suppressed_temporarily": false,
-                        "is_withdrawn": false,
-                        "is_withdrawn_base": false,
-                        "is_withdrawn_permanently": false,
-                        "is_edit_blocked": false,
-                        "no_incremental_processing": false,
-                        "hup_release_date": "",
-                        "owner": 0,
-                        "original_load_date": "",
-                        "class": "not-set",
-                        "division": "",
-                        "username": "gbupdate",
-                        "id2_info": "",
-                        "n_chunks": 1
-                    }
-                },
-                {
-                    "jsonrpc": "2.0",
-                    "id": "blob_1",
-                    "result": {
-                        "reply": "BlobInfo",
-                        "id": {
-                            "id2_chunk": 5,
-                            "id2_info": "33.98498112.7.1433168284"
-                        },
-                        "compression": "gzip",
-                        "format": "asn.1",
-                        "storage_size": 7168,
-                        "size": 60228,
-                        "is_dead": false,
-                        "is_suppressed": false,
-                        "is_suppressed_temporarily": false,
-                        "is_withdrawn": false,
-                        "is_withdrawn_base": false,
-                        "is_withdrawn_permanently": false,
-                        "is_edit_blocked": false,
-                        "no_incremental_processing": false,
-                        "hup_release_date": "",
-                        "owner": 0,
-                        "original_load_date": "",
-                        "class": "not-set",
-                        "division": "",
-                        "username": "gbupdate",
-                        "id2_info": "",
-                        "n_chunks": 1
-                    }
-                },
-                {
-                    "jsonrpc": "2.0",
-                    "id": "blob_1",
-                    "result": {
-                        "reply": "BlobInfo",
-                        "id": {
-                            "id2_chunk": 6,
-                            "id2_info": "33.98498112.7.1433168284"
-                        },
-                        "compression": "gzip",
-                        "format": "asn.1",
-                        "storage_size": 1069,
-                        "size": 4058,
-                        "is_dead": false,
-                        "is_suppressed": false,
-                        "is_suppressed_temporarily": false,
-                        "is_withdrawn": false,
-                        "is_withdrawn_base": false,
-                        "is_withdrawn_permanently": false,
-                        "is_edit_blocked": false,
-                        "no_incremental_processing": false,
-                        "hup_release_date": "",
-                        "owner": 0,
-                        "original_load_date": "",
-                        "class": "not-set",
-                        "division": "",
-                        "username": "gbupdate",
-                        "id2_info": "",
-                        "n_chunks": 1
-                    }
-                },
-                {
-                    "jsonrpc": "2.0",
-                    "id": "blob_1",
-                    "result": {
-                        "reply": "BlobInfo",
-                        "id": {
-                            "id2_chunk": 7,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_chunk": 11,
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "",
                         "format": "asn.1",
@@ -18987,13 +19099,261 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id2_chunk": 999999999,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_chunk": 2,
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 11461,
-                        "size": 105868,
+                        "storage_size": 6868,
+                        "size": 60289,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 3,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 7237,
+                        "size": 60507,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 4,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 1096,
+                        "size": 6472,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 5,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "",
+                        "format": "asn.1",
+                        "storage_size": 106,
+                        "size": 106,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 6,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 6995,
+                        "size": 60496,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 7,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 6301,
+                        "size": 60408,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 8,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 8437,
+                        "size": 65559,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 9,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 7344,
+                        "size": 60452,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 999999999,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 15390,
+                        "size": 138261,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -19031,7 +19391,7 @@
                         "method": "blob",
                         "params": {
                             "blob_id": [
-                                "4.140933297"
+                                "4.140932805"
                             ],
                             "include_data": "slim-tse",
                             "user_args": "send_blob_if_small=50"
@@ -19048,11 +19408,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 999999999,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 11461,
-                        "hash": "6CDB2B5A49261D8F",
-                        "preview": "eJy1nQl8FOX5x/d9ZmevXA=="
+                        "length": 15390,
+                        "hash": "5A4583B30DEB16DE",
+                        "preview": "eJy9nQmcVlX9/+8599mf2Q=="
                     }
                 },
                 {
@@ -19061,13 +19421,13 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id": "4.140933297",
-                            "last_modified": 1433181852550
+                            "id": "4.140932805",
+                            "last_modified": 1433181236783
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 28185,
-                        "size": 310993,
+                        "storage_size": 53116,
+                        "size": 592646,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -19078,11 +19438,11 @@
                         "no_incremental_processing": false,
                         "hup_release_date": "",
                         "owner": 21,
-                        "original_load_date": "06/01/2015 18:04:12",
+                        "original_load_date": "06/01/2015 17:53:56",
                         "class": "not-set",
                         "division": "CON",
                         "username": "gpipe",
-                        "id2_info": "33.98498112.7.1433168284",
+                        "id2_info": "33.98496204.11.1433167388",
                         "n_chunks": 1
                     }
                 },
@@ -19093,12 +19453,12 @@
                         "reply": "BlobInfo",
                         "id": {
                             "id2_chunk": 999999999,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 11461,
-                        "size": 105868,
+                        "storage_size": 15390,
+                        "size": 138261,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -19126,8 +19486,8 @@
                 }
             ]
         },
-        "Blob slim if small 50000": {
-            "description": "Blob slim if small 50000",
+        "Blob slim if small 100000": {
+            "description": "Blob slim if small 100000",
             "tags": ["id-getblob", "cassandra", "200"],
             "requests": [
                 [
@@ -19136,10 +19496,10 @@
                         "method": "blob",
                         "params": {
                             "blob_id": [
-                                "4.140933297"
+                                "4.140932805"
                             ],
                             "include_data": "slim-tse",
-                            "user_args": "send_blob_if_small=50000"
+                            "user_args": "send_blob_if_small=100000"
                         },
                         "id": "blob_1"
                     }
@@ -19153,11 +19513,37 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 1,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 6416,
-                        "hash": "753743B2FC55722E",
-                        "preview": "eJztnQtcVNW6wAER81XmEw=="
+                        "length": 6208,
+                        "hash": "4FA0909D9F2B5AC8",
+                        "preview": "eJztnQl8FFWex0lCkqa7dQ=="
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobData",
+                        "id": {
+                            "id2_chunk": 10,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "length": 3655,
+                        "hash": "C3369FA3D1ACB1E9",
+                        "preview": "eJztnX1wFOUdx/cuIS80mA=="
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobData",
+                        "id": {
+                            "id2_chunk": 11,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "data": "MICggDGAMICggKGAAgQwLxsJAAAAAKGAMYCmgBqB60Fzc2VtYmx5IG5hbWU6IFBjb3FfMS4wflRoZSBnZW5vbWljIHNlcXVlbmNlIGZvciB0aGlzIFJlZlNlcSByZWNvcmQgaXMgZnJvbSB0aGUgd2hvbGUtZ2Vub21lIGFzc2VtYmx5IHJlbGVhc2VkIGJ5IHRoZSBCYXlsb3IgQ29sbGVnZSBvZiBNZWRpY2luZSBvbiAyMDE1LzAzLzIzLiBUaGUgb3JpZ2luYWwgd2hvbGUtZ2Vub21lIHNob3RndW4gcHJvamVjdCBoYXMgdGhlIGFjY2Vzc2lvbiBKWktFMDAwMDAwMDAuMS4AAAAAAAAAAAAAAAAAAA=="
                     }
                 },
                 {
@@ -19167,11 +19553,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 2,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 3197,
-                        "hash": "D8C2557052110F95",
-                        "preview": "eJztnAtwFOUdwJMQEuQhWA=="
+                        "length": 6868,
+                        "hash": "EA4710D01F3C0863",
+                        "preview": "eJztnXlg1GTex9tKCyICLg=="
                     }
                 },
                 {
@@ -19181,9 +19567,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 3,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "data": "MICggDGAMICggKGAAgQwLunaAAAAAKGAMYCxgKGAMICggAICB98AAKGAAgEGAACigAIBAQAAAAAAAAAAsoChgDCAoIACAgffAAChgAIBBgAAooACAQEAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+                        "length": 7237,
+                        "hash": "1BEB0419D30E5DFA",
+                        "preview": "eJztnQt8E1X2x/vmqbjyBg=="
                     }
                 },
                 {
@@ -19193,11 +19581,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 4,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 5925,
-                        "hash": "13B171DE3E18E509",
-                        "preview": "eJztXQlwHNWZbo1kWb4PfA=="
+                        "length": 1096,
+                        "hash": "6B27A09CEB3A5918",
+                        "preview": "eJztmM9v02YYx21TQltSxA=="
                     }
                 },
                 {
@@ -19207,11 +19595,9 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 5,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 7168,
-                        "hash": "F84329C4D02B6D90",
-                        "preview": "eJztnQl43NS1xxXbsbNRyA=="
+                        "data": "MICggDGAMICggKGAAgQwLxsJAAAAAKGAMYCxgKGAMICggAICB98AAKGAAgEGAACigAIBAQAAAAAAAAAAsoChgDCAoIACAgffAAChgAIBBgAAooACAQEAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
                     }
                 },
                 {
@@ -19221,11 +19607,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 6,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 1069,
-                        "hash": "8ABF5D4C8C0BD83C",
-                        "preview": "eJzVls9v3EQUx73OjzYJUQ=="
+                        "length": 6995,
+                        "hash": "217F950BC0C6DBD2",
+                        "preview": "eJztnQl4W9WVx583WZYUSg=="
                     }
                 },
                 {
@@ -19235,9 +19621,39 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 7,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "data": "MICggDGAMICggKGAAgQwLunaAAAAAKGAMYCmgBqB60Fzc2VtYmx5IG5hbWU6IFBjb3FfMS4wflRoZSBnZW5vbWljIHNlcXVlbmNlIGZvciB0aGlzIFJlZlNlcSByZWNvcmQgaXMgZnJvbSB0aGUgd2hvbGUtZ2Vub21lIGFzc2VtYmx5IHJlbGVhc2VkIGJ5IHRoZSBCYXlsb3IgQ29sbGVnZSBvZiBNZWRpY2luZSBvbiAyMDE1LzAzLzIzLiBUaGUgb3JpZ2luYWwgd2hvbGUtZ2Vub21lIHNob3RndW4gcHJvamVjdCBoYXMgdGhlIGFjY2Vzc2lvbiBKWktFMDAwMDAwMDAuMS4AAAAAAAAAAAAAAAAAAA=="
+                        "length": 6301,
+                        "hash": "7621E8122F55C1F2",
+                        "preview": "eJztnQt4FFWWxysBkvBQfA=="
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobData",
+                        "id": {
+                            "id2_chunk": 8,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "length": 8437,
+                        "hash": "61950D322482A74E",
+                        "preview": "eJztnXl8FEXaxyeTEwwCBg=="
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobData",
+                        "id": {
+                            "id2_chunk": 9,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "length": 7344,
+                        "hash": "AA79941D9CE6621D",
+                        "preview": "eJztnQmcU9X1xzM7q6isgg=="
                     }
                 },
                 {
@@ -19247,11 +19663,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 999999999,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 11461,
-                        "hash": "6CDB2B5A49261D8F",
-                        "preview": "eJy1nQl8FOX5x/d9ZmevXA=="
+                        "length": 15390,
+                        "hash": "5A4583B30DEB16DE",
+                        "preview": "eJy9nQmcVlX9/+8599mf2Q=="
                     }
                 },
                 {
@@ -19260,13 +19676,13 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id": "4.140933297",
-                            "last_modified": 1433181852550
+                            "id": "4.140932805",
+                            "last_modified": 1433181236783
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 28185,
-                        "size": 310993,
+                        "storage_size": 53116,
+                        "size": 592646,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -19277,11 +19693,11 @@
                         "no_incremental_processing": false,
                         "hup_release_date": "",
                         "owner": 21,
-                        "original_load_date": "06/01/2015 18:04:12",
+                        "original_load_date": "06/01/2015 17:53:56",
                         "class": "not-set",
                         "division": "CON",
                         "username": "gpipe",
-                        "id2_info": "33.98498112.7.1433168284",
+                        "id2_info": "33.98496204.11.1433167388",
                         "n_chunks": 1
                     }
                 },
@@ -19292,12 +19708,12 @@
                         "reply": "BlobInfo",
                         "id": {
                             "id2_chunk": 1,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 6416,
-                        "size": 60114,
+                        "storage_size": 6208,
+                        "size": 60323,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -19322,13 +19738,13 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id2_chunk": 2,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_chunk": 10,
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 3197,
-                        "size": 25289,
+                        "storage_size": 3655,
+                        "size": 29756,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -19353,132 +19769,8 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id2_chunk": 3,
-                            "id2_info": "33.98498112.7.1433168284"
-                        },
-                        "compression": "",
-                        "format": "asn.1",
-                        "storage_size": 106,
-                        "size": 106,
-                        "is_dead": false,
-                        "is_suppressed": false,
-                        "is_suppressed_temporarily": false,
-                        "is_withdrawn": false,
-                        "is_withdrawn_base": false,
-                        "is_withdrawn_permanently": false,
-                        "is_edit_blocked": false,
-                        "no_incremental_processing": false,
-                        "hup_release_date": "",
-                        "owner": 0,
-                        "original_load_date": "",
-                        "class": "not-set",
-                        "division": "",
-                        "username": "gbupdate",
-                        "id2_info": "",
-                        "n_chunks": 1
-                    }
-                },
-                {
-                    "jsonrpc": "2.0",
-                    "id": "blob_1",
-                    "result": {
-                        "reply": "BlobInfo",
-                        "id": {
-                            "id2_chunk": 4,
-                            "id2_info": "33.98498112.7.1433168284"
-                        },
-                        "compression": "gzip",
-                        "format": "asn.1",
-                        "storage_size": 5925,
-                        "size": 60296,
-                        "is_dead": false,
-                        "is_suppressed": false,
-                        "is_suppressed_temporarily": false,
-                        "is_withdrawn": false,
-                        "is_withdrawn_base": false,
-                        "is_withdrawn_permanently": false,
-                        "is_edit_blocked": false,
-                        "no_incremental_processing": false,
-                        "hup_release_date": "",
-                        "owner": 0,
-                        "original_load_date": "",
-                        "class": "not-set",
-                        "division": "",
-                        "username": "gbupdate",
-                        "id2_info": "",
-                        "n_chunks": 1
-                    }
-                },
-                {
-                    "jsonrpc": "2.0",
-                    "id": "blob_1",
-                    "result": {
-                        "reply": "BlobInfo",
-                        "id": {
-                            "id2_chunk": 5,
-                            "id2_info": "33.98498112.7.1433168284"
-                        },
-                        "compression": "gzip",
-                        "format": "asn.1",
-                        "storage_size": 7168,
-                        "size": 60228,
-                        "is_dead": false,
-                        "is_suppressed": false,
-                        "is_suppressed_temporarily": false,
-                        "is_withdrawn": false,
-                        "is_withdrawn_base": false,
-                        "is_withdrawn_permanently": false,
-                        "is_edit_blocked": false,
-                        "no_incremental_processing": false,
-                        "hup_release_date": "",
-                        "owner": 0,
-                        "original_load_date": "",
-                        "class": "not-set",
-                        "division": "",
-                        "username": "gbupdate",
-                        "id2_info": "",
-                        "n_chunks": 1
-                    }
-                },
-                {
-                    "jsonrpc": "2.0",
-                    "id": "blob_1",
-                    "result": {
-                        "reply": "BlobInfo",
-                        "id": {
-                            "id2_chunk": 6,
-                            "id2_info": "33.98498112.7.1433168284"
-                        },
-                        "compression": "gzip",
-                        "format": "asn.1",
-                        "storage_size": 1069,
-                        "size": 4058,
-                        "is_dead": false,
-                        "is_suppressed": false,
-                        "is_suppressed_temporarily": false,
-                        "is_withdrawn": false,
-                        "is_withdrawn_base": false,
-                        "is_withdrawn_permanently": false,
-                        "is_edit_blocked": false,
-                        "no_incremental_processing": false,
-                        "hup_release_date": "",
-                        "owner": 0,
-                        "original_load_date": "",
-                        "class": "not-set",
-                        "division": "",
-                        "username": "gbupdate",
-                        "id2_info": "",
-                        "n_chunks": 1
-                    }
-                },
-                {
-                    "jsonrpc": "2.0",
-                    "id": "blob_1",
-                    "result": {
-                        "reply": "BlobInfo",
-                        "id": {
-                            "id2_chunk": 7,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_chunk": 11,
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "",
                         "format": "asn.1",
@@ -19508,13 +19800,261 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id2_chunk": 999999999,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_chunk": 2,
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 11461,
-                        "size": 105868,
+                        "storage_size": 6868,
+                        "size": 60289,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 3,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 7237,
+                        "size": 60507,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 4,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 1096,
+                        "size": 6472,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 5,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "",
+                        "format": "asn.1",
+                        "storage_size": 106,
+                        "size": 106,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 6,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 6995,
+                        "size": 60496,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 7,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 6301,
+                        "size": 60408,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 8,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 8437,
+                        "size": 65559,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 9,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 7344,
+                        "size": 60452,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 999999999,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 15390,
+                        "size": 138261,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -19552,7 +20092,7 @@
                         "method": "blob",
                         "params": {
                             "blob_id": [
-                                "4.140933297"
+                                "4.140932805"
                             ],
                             "include_data": "smart-tse",
                             "user_args": "send_blob_if_small=50"
@@ -19569,11 +20109,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 999999999,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 11461,
-                        "hash": "6CDB2B5A49261D8F",
-                        "preview": "eJy1nQl8FOX5x/d9ZmevXA=="
+                        "length": 15390,
+                        "hash": "5A4583B30DEB16DE",
+                        "preview": "eJy9nQmcVlX9/+8599mf2Q=="
                     }
                 },
                 {
@@ -19582,13 +20122,13 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id": "4.140933297",
-                            "last_modified": 1433181852550
+                            "id": "4.140932805",
+                            "last_modified": 1433181236783
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 28185,
-                        "size": 310993,
+                        "storage_size": 53116,
+                        "size": 592646,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -19599,11 +20139,11 @@
                         "no_incremental_processing": false,
                         "hup_release_date": "",
                         "owner": 21,
-                        "original_load_date": "06/01/2015 18:04:12",
+                        "original_load_date": "06/01/2015 17:53:56",
                         "class": "not-set",
                         "division": "CON",
                         "username": "gpipe",
-                        "id2_info": "33.98498112.7.1433168284",
+                        "id2_info": "33.98496204.11.1433167388",
                         "n_chunks": 1
                     }
                 },
@@ -19614,12 +20154,12 @@
                         "reply": "BlobInfo",
                         "id": {
                             "id2_chunk": 999999999,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 11461,
-                        "size": 105868,
+                        "storage_size": 15390,
+                        "size": 138261,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -19647,8 +20187,8 @@
                 }
             ]
         },
-        "Blob smart if small 50000": {
-            "description": "Blob smart if small 50000",
+        "Blob smart if small 100000": {
+            "description": "Blob smart if small 100000",
             "tags": ["id-getblob", "cassandra", "200"],
             "requests": [
                 [
@@ -19657,10 +20197,10 @@
                         "method": "blob",
                         "params": {
                             "blob_id": [
-                                "4.140933297"
+                                "4.140932805"
                             ],
                             "include_data": "smart-tse",
-                            "user_args": "send_blob_if_small=50000"
+                            "user_args": "send_blob_if_small=100000"
                         },
                         "id": "blob_1"
                     }
@@ -19674,11 +20214,37 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 1,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 6416,
-                        "hash": "753743B2FC55722E",
-                        "preview": "eJztnQtcVNW6wAER81XmEw=="
+                        "length": 6208,
+                        "hash": "4FA0909D9F2B5AC8",
+                        "preview": "eJztnQl8FFWex0lCkqa7dQ=="
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobData",
+                        "id": {
+                            "id2_chunk": 10,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "length": 3655,
+                        "hash": "C3369FA3D1ACB1E9",
+                        "preview": "eJztnX1wFOUdx/cuIS80mA=="
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobData",
+                        "id": {
+                            "id2_chunk": 11,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "data": "MICggDGAMICggKGAAgQwLxsJAAAAAKGAMYCmgBqB60Fzc2VtYmx5IG5hbWU6IFBjb3FfMS4wflRoZSBnZW5vbWljIHNlcXVlbmNlIGZvciB0aGlzIFJlZlNlcSByZWNvcmQgaXMgZnJvbSB0aGUgd2hvbGUtZ2Vub21lIGFzc2VtYmx5IHJlbGVhc2VkIGJ5IHRoZSBCYXlsb3IgQ29sbGVnZSBvZiBNZWRpY2luZSBvbiAyMDE1LzAzLzIzLiBUaGUgb3JpZ2luYWwgd2hvbGUtZ2Vub21lIHNob3RndW4gcHJvamVjdCBoYXMgdGhlIGFjY2Vzc2lvbiBKWktFMDAwMDAwMDAuMS4AAAAAAAAAAAAAAAAAAA=="
                     }
                 },
                 {
@@ -19688,11 +20254,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 2,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 3197,
-                        "hash": "D8C2557052110F95",
-                        "preview": "eJztnAtwFOUdwJMQEuQhWA=="
+                        "length": 6868,
+                        "hash": "EA4710D01F3C0863",
+                        "preview": "eJztnXlg1GTex9tKCyICLg=="
                     }
                 },
                 {
@@ -19702,9 +20268,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 3,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "data": "MICggDGAMICggKGAAgQwLunaAAAAAKGAMYCxgKGAMICggAICB98AAKGAAgEGAACigAIBAQAAAAAAAAAAsoChgDCAoIACAgffAAChgAIBBgAAooACAQEAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+                        "length": 7237,
+                        "hash": "1BEB0419D30E5DFA",
+                        "preview": "eJztnQt8E1X2x/vmqbjyBg=="
                     }
                 },
                 {
@@ -19714,11 +20282,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 4,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 5925,
-                        "hash": "13B171DE3E18E509",
-                        "preview": "eJztXQlwHNWZbo1kWb4PfA=="
+                        "length": 1096,
+                        "hash": "6B27A09CEB3A5918",
+                        "preview": "eJztmM9v02YYx21TQltSxA=="
                     }
                 },
                 {
@@ -19728,11 +20296,9 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 5,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 7168,
-                        "hash": "F84329C4D02B6D90",
-                        "preview": "eJztnQl43NS1xxXbsbNRyA=="
+                        "data": "MICggDGAMICggKGAAgQwLxsJAAAAAKGAMYCxgKGAMICggAICB98AAKGAAgEGAACigAIBAQAAAAAAAAAAsoChgDCAoIACAgffAAChgAIBBgAAooACAQEAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
                     }
                 },
                 {
@@ -19742,11 +20308,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 6,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 1069,
-                        "hash": "8ABF5D4C8C0BD83C",
-                        "preview": "eJzVls9v3EQUx73OjzYJUQ=="
+                        "length": 6995,
+                        "hash": "217F950BC0C6DBD2",
+                        "preview": "eJztnQl4W9WVx583WZYUSg=="
                     }
                 },
                 {
@@ -19756,9 +20322,39 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 7,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "data": "MICggDGAMICggKGAAgQwLunaAAAAAKGAMYCmgBqB60Fzc2VtYmx5IG5hbWU6IFBjb3FfMS4wflRoZSBnZW5vbWljIHNlcXVlbmNlIGZvciB0aGlzIFJlZlNlcSByZWNvcmQgaXMgZnJvbSB0aGUgd2hvbGUtZ2Vub21lIGFzc2VtYmx5IHJlbGVhc2VkIGJ5IHRoZSBCYXlsb3IgQ29sbGVnZSBvZiBNZWRpY2luZSBvbiAyMDE1LzAzLzIzLiBUaGUgb3JpZ2luYWwgd2hvbGUtZ2Vub21lIHNob3RndW4gcHJvamVjdCBoYXMgdGhlIGFjY2Vzc2lvbiBKWktFMDAwMDAwMDAuMS4AAAAAAAAAAAAAAAAAAA=="
+                        "length": 6301,
+                        "hash": "7621E8122F55C1F2",
+                        "preview": "eJztnQt4FFWWxysBkvBQfA=="
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobData",
+                        "id": {
+                            "id2_chunk": 8,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "length": 8437,
+                        "hash": "61950D322482A74E",
+                        "preview": "eJztnXl8FEXaxyeTEwwCBg=="
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobData",
+                        "id": {
+                            "id2_chunk": 9,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "length": 7344,
+                        "hash": "AA79941D9CE6621D",
+                        "preview": "eJztnQmcU9X1xzM7q6isgg=="
                     }
                 },
                 {
@@ -19768,11 +20364,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id2_chunk": 999999999,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
-                        "length": 11461,
-                        "hash": "6CDB2B5A49261D8F",
-                        "preview": "eJy1nQl8FOX5x/d9ZmevXA=="
+                        "length": 15390,
+                        "hash": "5A4583B30DEB16DE",
+                        "preview": "eJy9nQmcVlX9/+8599mf2Q=="
                     }
                 },
                 {
@@ -19781,13 +20377,13 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id": "4.140933297",
-                            "last_modified": 1433181852550
+                            "id": "4.140932805",
+                            "last_modified": 1433181236783
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 28185,
-                        "size": 310993,
+                        "storage_size": 53116,
+                        "size": 592646,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -19798,11 +20394,11 @@
                         "no_incremental_processing": false,
                         "hup_release_date": "",
                         "owner": 21,
-                        "original_load_date": "06/01/2015 18:04:12",
+                        "original_load_date": "06/01/2015 17:53:56",
                         "class": "not-set",
                         "division": "CON",
                         "username": "gpipe",
-                        "id2_info": "33.98498112.7.1433168284",
+                        "id2_info": "33.98496204.11.1433167388",
                         "n_chunks": 1
                     }
                 },
@@ -19813,12 +20409,12 @@
                         "reply": "BlobInfo",
                         "id": {
                             "id2_chunk": 1,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 6416,
-                        "size": 60114,
+                        "storage_size": 6208,
+                        "size": 60323,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -19843,13 +20439,13 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id2_chunk": 2,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_chunk": 10,
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 3197,
-                        "size": 25289,
+                        "storage_size": 3655,
+                        "size": 29756,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
@@ -19874,132 +20470,8 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id2_chunk": 3,
-                            "id2_info": "33.98498112.7.1433168284"
-                        },
-                        "compression": "",
-                        "format": "asn.1",
-                        "storage_size": 106,
-                        "size": 106,
-                        "is_dead": false,
-                        "is_suppressed": false,
-                        "is_suppressed_temporarily": false,
-                        "is_withdrawn": false,
-                        "is_withdrawn_base": false,
-                        "is_withdrawn_permanently": false,
-                        "is_edit_blocked": false,
-                        "no_incremental_processing": false,
-                        "hup_release_date": "",
-                        "owner": 0,
-                        "original_load_date": "",
-                        "class": "not-set",
-                        "division": "",
-                        "username": "gbupdate",
-                        "id2_info": "",
-                        "n_chunks": 1
-                    }
-                },
-                {
-                    "jsonrpc": "2.0",
-                    "id": "blob_1",
-                    "result": {
-                        "reply": "BlobInfo",
-                        "id": {
-                            "id2_chunk": 4,
-                            "id2_info": "33.98498112.7.1433168284"
-                        },
-                        "compression": "gzip",
-                        "format": "asn.1",
-                        "storage_size": 5925,
-                        "size": 60296,
-                        "is_dead": false,
-                        "is_suppressed": false,
-                        "is_suppressed_temporarily": false,
-                        "is_withdrawn": false,
-                        "is_withdrawn_base": false,
-                        "is_withdrawn_permanently": false,
-                        "is_edit_blocked": false,
-                        "no_incremental_processing": false,
-                        "hup_release_date": "",
-                        "owner": 0,
-                        "original_load_date": "",
-                        "class": "not-set",
-                        "division": "",
-                        "username": "gbupdate",
-                        "id2_info": "",
-                        "n_chunks": 1
-                    }
-                },
-                {
-                    "jsonrpc": "2.0",
-                    "id": "blob_1",
-                    "result": {
-                        "reply": "BlobInfo",
-                        "id": {
-                            "id2_chunk": 5,
-                            "id2_info": "33.98498112.7.1433168284"
-                        },
-                        "compression": "gzip",
-                        "format": "asn.1",
-                        "storage_size": 7168,
-                        "size": 60228,
-                        "is_dead": false,
-                        "is_suppressed": false,
-                        "is_suppressed_temporarily": false,
-                        "is_withdrawn": false,
-                        "is_withdrawn_base": false,
-                        "is_withdrawn_permanently": false,
-                        "is_edit_blocked": false,
-                        "no_incremental_processing": false,
-                        "hup_release_date": "",
-                        "owner": 0,
-                        "original_load_date": "",
-                        "class": "not-set",
-                        "division": "",
-                        "username": "gbupdate",
-                        "id2_info": "",
-                        "n_chunks": 1
-                    }
-                },
-                {
-                    "jsonrpc": "2.0",
-                    "id": "blob_1",
-                    "result": {
-                        "reply": "BlobInfo",
-                        "id": {
-                            "id2_chunk": 6,
-                            "id2_info": "33.98498112.7.1433168284"
-                        },
-                        "compression": "gzip",
-                        "format": "asn.1",
-                        "storage_size": 1069,
-                        "size": 4058,
-                        "is_dead": false,
-                        "is_suppressed": false,
-                        "is_suppressed_temporarily": false,
-                        "is_withdrawn": false,
-                        "is_withdrawn_base": false,
-                        "is_withdrawn_permanently": false,
-                        "is_edit_blocked": false,
-                        "no_incremental_processing": false,
-                        "hup_release_date": "",
-                        "owner": 0,
-                        "original_load_date": "",
-                        "class": "not-set",
-                        "division": "",
-                        "username": "gbupdate",
-                        "id2_info": "",
-                        "n_chunks": 1
-                    }
-                },
-                {
-                    "jsonrpc": "2.0",
-                    "id": "blob_1",
-                    "result": {
-                        "reply": "BlobInfo",
-                        "id": {
-                            "id2_chunk": 7,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_chunk": 11,
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "",
                         "format": "asn.1",
@@ -20029,13 +20501,261 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id2_chunk": 999999999,
-                            "id2_info": "33.98498112.7.1433168284"
+                            "id2_chunk": 2,
+                            "id2_info": "33.98496204.11.1433167388"
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 11461,
-                        "size": 105868,
+                        "storage_size": 6868,
+                        "size": 60289,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 3,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 7237,
+                        "size": 60507,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 4,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 1096,
+                        "size": 6472,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 5,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "",
+                        "format": "asn.1",
+                        "storage_size": 106,
+                        "size": 106,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 6,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 6995,
+                        "size": 60496,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 7,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 6301,
+                        "size": 60408,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 8,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 8437,
+                        "size": 65559,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 9,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 7344,
+                        "size": 60452,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_suppressed_temporarily": false,
+                        "is_withdrawn": false,
+                        "is_withdrawn_base": false,
+                        "is_withdrawn_permanently": false,
+                        "is_edit_blocked": false,
+                        "no_incremental_processing": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 999999999,
+                            "id2_info": "33.98496204.11.1433167388"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 15390,
+                        "size": 138261,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_suppressed_temporarily": false,
