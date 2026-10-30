@@ -251,6 +251,10 @@ void CBlastDbCheckApplication::Init(void)
         ("duplicate_id",
          "Check for duplicate ids.");
 
+    arg_desc->AddFlag
+        ("taxdb", 
+         "Check taxdb.");
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -446,7 +450,6 @@ private:
     set<string> m_DbDuplicateIDs;
 };
 
-        
 class CMetaDataTest : public CTestAction {
 public:
     CMetaDataTest(CBlastDbCheckLog & log, int flags)
@@ -474,9 +477,6 @@ public:
             db.FindVolumePaths(vols);
 
             int nv = vols.size();
-            
-            SSeqDBTaxInfo taxinfo;
-            db.GetTaxInfo(TAX_ID_CONST(9606), taxinfo);
             
             if (! d.size()) {
                 Log(db, e_Brief) << "[ERROR] db has empty date string" << endl;
@@ -519,11 +519,6 @@ public:
 
             if ((nseq > noid) || ((! tl) != (! noid)) || ((! vl) && tl)) {
                 Log(db, e_Brief) << "[ERROR] sequence count/length mismatch" << endl;
-                num_failures++;
-            }
-            string hs = taxinfo.scientific_name;
-            if (hs != "Homo sapiens") {
-                Log(db, e_Brief) << "[ERROR] tax info looks wrong (" << hs << ")" << endl;
                 num_failures++;
             }
         } catch(exception &e) {
@@ -979,18 +974,43 @@ class CDbTest : public CTestData {
 public:
     CDbTest(CBlastDbCheckLog & outp, string db, string dbtype)
         : CTestData(outp, dbtype),
-          m_Db     (db) { }
+          m_Db          (db),
+          m_CheckTaxdb  (false) { }
     
     virtual bool Test(CTestActionList & action);
+    void RunTaxdbTest() { m_CheckTaxdb = true; }
     
 private:
     string m_Db;
+    bool m_CheckTaxdb;
 
     int x_GetVolumeList(const vector <string> &dbs, 
                                 CSeqDB::ESeqType stype, 
                                 set <string> &vlist,
                                 set <string> &alist) const;
+    int x_TaxdbTest();
 };
+
+int CDbTest::x_TaxdbTest()
+{
+    try {
+        SSeqDBTaxInfo taxinfo;
+        CSeqDB::ESeqType seqtype = ParseMoleculeTypeString(m_DbType);
+        CSeqDB test_db(m_Db, seqtype);
+        test_db.GetTaxInfo(TAX_ID_CONST(9606), taxinfo);
+        const auto & hs = taxinfo.scientific_name;
+        if (hs != "Homo sapiens") {
+            m_Out.Log(e_Brief) << "[ERROR] Invalid tax id to tax name lookup (" << hs << ")" << endl;
+            return 1;
+        }
+    }
+    catch(const exception &e) {
+        m_Out.Log(e_Brief) << "[ERROR] Finding/Opening taxdb files." << endl;
+        return 1;
+    }
+    return 0;
+}
+
 
 int CDbTest::x_GetVolumeList(const vector <string>  &dbs, 
                               CSeqDB::ESeqType       stype, 
@@ -1025,6 +1045,10 @@ bool CDbTest::Test(CTestActionList & action)
     NStr::Split(m_Db, " ", dbs, NStr::fSplit_Tokenize);
     
     CSeqDB::ESeqType seqtype = ParseMoleculeTypeString(m_DbType);
+
+    if (m_CheckTaxdb) {
+        tot_faults += x_TaxdbTest();
+    }
 
     set <string> vol_list;
     set <string> ali_list;
@@ -1487,6 +1511,12 @@ int CBlastDbCheckApplication::Run(void)
             return 1;
         } else if (db != "") {
             data.Reset(new CDbTest(output, db, dbtype));
+            if (args["taxdb"]) {
+                static_cast<CDbTest*>(data.GetPointer())->RunTaxdbTest();
+            }
+            output.Log(e_Summary)
+                << "Taxdb testing is " << (args["taxdb"] ? "EN" : "DIS") << "ABLED." << endl;
+
         } else {
             data.Reset(new CDirTest(output, dir, dbtype, 1, recurse));
         }
@@ -1554,7 +1584,7 @@ int CBlastDbCheckApplication::Run(void)
             tests->Add(new CEndsTest(output, end_amt, flags));
             default_set = true;
         }
-        
+
         if (!default_set) {
             int random_sample = 200;
             output.Log(e_Summary)
