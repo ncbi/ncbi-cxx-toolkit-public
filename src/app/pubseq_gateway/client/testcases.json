@@ -30322,7 +30322,7 @@
                     "id": "resolve_1",
                     "result": {
                         "reply": "BioseqInfo",
-                        "status": "Error",
+                        "status": "NotFound",
                         "messages": [
                             {
                                 "severity": "Error",
@@ -30336,7 +30336,7 @@
                     "jsonrpc": "2.0",
                     "id": "resolve_1",
                     "result": {
-                        "status": "Error"
+                        "status": "NotFound"
                     }
                 }
             ]
@@ -30368,7 +30368,7 @@
                     "id": "resolve_1",
                     "result": {
                         "reply": "BioseqInfo",
-                        "status": "Error",
+                        "status": "NotFound",
                         "messages": [
                             {
                                 "severity": "Error",
@@ -30382,7 +30382,7 @@
                     "jsonrpc": "2.0",
                     "id": "resolve_1",
                     "result": {
-                        "status": "Error"
+                        "status": "NotFound"
                     }
                 }
             ]
