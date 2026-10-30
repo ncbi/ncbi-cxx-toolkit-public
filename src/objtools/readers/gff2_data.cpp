@@ -878,14 +878,9 @@ bool CGff2Record::xMigrateAttributes(
         }
         attrs_left.erase(it);
     }
+    
 
-    it = attrs_left.find("partial");
-    if (it != attrs_left.end()) {
-        if (!(flags & CGff2Reader::fGenbankMode)) {
-            pFeature->AddQualifier("partial", it->second);
-        }
-        attrs_left.erase(it);
-    }
+    xMigrateAttributePartial(flags, pFeature, attrs_left);
 
     it = attrs_left.find("pseudo");
     if (it != attrs_left.end()) {
@@ -1043,6 +1038,21 @@ bool CGff2Record::xMigrateAttributeDefault(
     }
     attributes.erase(it);
     return true;
+}
+
+
+void CGff2Record::xMigrateAttributePartial(
+        TReaderFlags flags,
+        CRef<CSeq_feat> pFeature,
+        TAttributes& attributes) const
+{
+    auto it = attributes.find("partial");
+    if (it != attributes.end()) {
+        if (!(flags & CGff2Reader::fGenbankMode)) {
+            pFeature->AddQualifier("partial", it->second);
+        }
+        attributes.erase(it);
+    }
 }
 
 //  ----------------------------------------------------------------------------

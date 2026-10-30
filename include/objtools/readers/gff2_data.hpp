@@ -143,6 +143,11 @@ protected:
         CRef<CSeq_feat>,
         TAttributes& ) const;
 
+    virtual void xMigrateAttributePartial(
+            TReaderFlags flags,
+            CRef<CSeq_feat> pFeature,
+            TAttributes& attributes) const;
+
     //utility helpers:
     //
     static string xNormalizedAttributeKey(

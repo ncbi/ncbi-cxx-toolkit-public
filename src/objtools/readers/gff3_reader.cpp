@@ -215,6 +215,20 @@ string CGff3ReadRecord::x_NormalizedAttributeKey(
     return strKey;
 }
 
+
+void CGff3ReadRecord::xMigrateAttributePartial(
+        TReaderFlags flags,
+        CRef<CSeq_feat> pFeature,
+        TAttributes& attributes) const
+{
+    if (flags & CGff3Reader::fInsdcMode) {
+        return;
+    }
+
+    CGff2Record::xMigrateAttributePartial(flags, pFeature, attributes);
+}
+
+
 //  ----------------------------------------------------------------------------
 CGff3Reader::CGff3Reader(
     TReaderFlags uFlags,
@@ -543,9 +557,10 @@ bool CGff3Reader::xUpdateAnnotFeature(
 
     mpLocations->AddRecord(gffRecord);
 
-    CRef< CSeq_feat > pFeature(new CSeq_feat);
+    auto pFeature = Ref(new CSeq_feat);
 
     auto recType = gffRecord.NormalizedType();
+    bool result {true};
     if (recType == "exon" || recType == "five_prime_utr" || recType == "three_prime_utr") {
         return xUpdateAnnotExon(gffRecord, pFeature, annot, pEC);
     }
@@ -1222,6 +1237,15 @@ void CGff3Reader::xPostProcessAnnot(
             auto& cdrData = pFeature->SetData().SetCdregion();
             cdrData.SetFrame(
                 frame == CCdregion::eFrame_not_set ? CCdregion::eFrame_one : frame);
+        }
+    }
+
+    // RW-2741
+    for (auto pFeature : annot.SetData().SetFtable()) {
+        if (! pFeature->IsSetPartial() &&
+            (pFeature->GetLocation().IsPartialStart(eExtreme_Biological) ||
+             pFeature->GetLocation().IsPartialStop(eExtreme_Biological))) {
+            pFeature->SetPartial(true);
         }
     }
 

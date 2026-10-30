@@ -60,6 +60,12 @@ public:
 protected:
     string x_NormalizedAttributeKey(
         const string& );
+private:
+    void xMigrateAttributePartial(
+            TReaderFlags flags,
+            CRef<CSeq_feat> pFeature,
+            TAttributes& attributes) const override;
+
 };
 
 //  ============================================================================
@@ -88,7 +94,6 @@ public:
         fGeneXrefs = (0x1 << 12),
         fInsdcMode = 1 << 23,
     };
-    //typedef unsigned int TReaderFlags;
 
     CGff3Reader(
         TReaderFlags uFlags,
