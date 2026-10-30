@@ -356,7 +356,6 @@ void CMultiReaderApp::Init()
             "microarray", "bed15",
             "wig", "wiggle", "bedgraph",
             "gtf", "gff3", "gff2", "augustus",
-            "insdc-gff",
             "gvf",
             "agp",
             "newick", "tree", "tre",
@@ -805,7 +804,6 @@ CMultiReaderApp::xProcessSingleFile(
             case CFormatGuess::eNewick:
                 xProcessNewick(args, istr, ostr);
                 break;
-            case CFormatGuess::eGffInsdc:
             case CFormatGuess::eGff3:
                 xProcessGff3(args, istr, ostr);
                 break;
@@ -1304,12 +1302,6 @@ void CMultiReaderApp::xSetFormat(
         m_uFormat = CFormatGuess::eGffAugustus;
         return;
     }
-    
-    if (format == "insdc-gff") {
-        m_uFormat = CFormatGuess::eGffInsdc;
-        return;
-    }
-
     if (NStr::StartsWith(strProgramName, "gff3") || format == "gff3") {
         m_uFormat = CFormatGuess::eGff3;
         return;
@@ -1466,16 +1458,6 @@ void CMultiReaderApp::xSetFlags(
         if ( args["genbank"] ) {
             m_iFlags |= CGff3Reader::fGeneXrefs;
             m_iFlags |= CGff3Reader::fGenbankMode;
-        }
-        break;
-
-    case CFormatGuess::eGffInsdc:
-        m_iFlags = CGff3Reader::fInsdcMode;
-        if (args["genbank"] || args["genbank-no-locus-tags"]) {
-            m_iFlags |= CGff3Reader::fGeneXrefs;
-            m_iFlags |= CGtfReader::fGenbankMode;
-        } else if ( args["gene-xrefs"] ) {
-            m_iFlags |= CGff3Reader::fGeneXrefs;
         }
         break;
 

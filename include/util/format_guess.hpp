@@ -128,7 +128,6 @@ public:
         eFlatFileUniProt     = 67,
 
         eZstd                = 68, ///< Zstandard (zstd) compressed data
-        eGffInsdc            = 69,
 
         // ***  Adding new format codes?  ***
         //  (1) A sanity check in the  implementation depends on the format codes being 
@@ -315,7 +314,6 @@ protected:
     bool TestFormatFlatFileGenbank(EMode);
     bool TestFormatFlatFileEna(EMode);
     bool TestFormatFlatFileUniProt(EMode);
-    bool TestFormatGffInsdc(EMode);
 
     bool IsInputRepeatMaskerWithoutHeader();
     bool IsInputRepeatMaskerWithHeader();
