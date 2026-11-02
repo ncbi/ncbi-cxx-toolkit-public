@@ -187,6 +187,22 @@ const bool              kDefaultm_AsyncLogEnabled = false;
 const size_t            kDefaultIdleTimeoutSec = 100000;
 const size_t            kDefaultSeqIdRefreshSec = 300;
 
+const unsigned int      kDefaultCassIdResolveExecTooLongMs = 15;
+const unsigned int      kDefaultCassIpgResolveExecTooLongMs = 50;
+const unsigned int      kDefaultCassIdGetExecTooLongMs = 20;
+const unsigned int      kDefaultCassIdGetBlobExecTooLongMs = 20;
+const unsigned int      kDefaultCassIdGetTseChunkExecTooLongMs = 50;
+const unsigned int      kDefaultCassIdGetNaExecTooLongMs = 100;
+const unsigned int      kDefaultCassIdGetAccVerHistoryExecTooLongMs = 50;
+const unsigned int      kDefaultCDDIdGetNaExecTooLongMs = 300;
+const unsigned int      kDefaultWGSIdGetExecTooLongMs = 2000;
+const unsigned int      kDefaultWGSIdGetBlobExecTooLongMs = 2000;
+const unsigned int      kDefaultWGSIdResolveExecTooLongMs = 2000;
+const unsigned int      kDefaultWGSIdGetTseChunkExecTooLongMs = 2000;
+const unsigned int      kDefaultSNPIdGetNaExecTooLongMs = 100;
+const unsigned int      kDefaultSNPIdGetBlobExecTooLongMs = 1000;
+const unsigned int      kDefaultSNPIdGetTseChunkExecTooLongMs = 1000;
+
 
 SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_HttpPort(0),
@@ -244,6 +260,13 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_CassandraProcessorThrottleThreshold(0),
     m_CassandraProcessorThrottleByIp(0),
     m_CassandraProcessorLogTimingThreshold(kDefaultLogTimingThreshold),
+    m_CassandraProcessorIdResolveExecTooLongMs(kDefaultCassIdResolveExecTooLongMs),
+    m_CassandraProcessorIpgResolveExecTooLongMs(kDefaultCassIpgResolveExecTooLongMs),
+    m_CassandraProcessorIdGetExecTooLongMs(kDefaultCassIdGetExecTooLongMs),
+    m_CassandraProcessorIdGetBlobExecTooLongMs(kDefaultCassIdGetBlobExecTooLongMs),
+    m_CassandraProcessorIdGetTseChunkExecTooLongMs(kDefaultCassIdGetTseChunkExecTooLongMs),
+    m_CassandraProcessorIdGetNaExecTooLongMs(kDefaultCassIdGetNaExecTooLongMs),
+    m_CassandraProcessorIdGetAccVerHistoryExecTooLongMs(kDefaultCassIdGetAccVerHistoryExecTooLongMs),
     m_LMDBProcessorHealthCommand(kDefaultLMDBProcessorHealthCommand),
     m_LMDBHealthTimeoutSec(kDefaultLMDBHealthTimeoutSec),
     m_CDDProcessorsEnabled(kDefaultCDDProcessorsEnabled),
@@ -255,6 +278,7 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_CDDProcessorMaxConn(kDefaultCDDMaxConn),
     m_CDDProcessorBackendTimeout(kDefaultCDDBackendTimeout),
     m_CDDProcessorErrorRate(kDefaultCDDErrorRate),
+    m_CDDProcessorIdGetNaExecTooLongMs(kDefaultCDDIdGetNaExecTooLongMs),
     m_WGSProcessorsEnabled(kDefaultWGSProcessorsEnabled),
     m_WGSProcessorHealthCommand(kDefaultWGSProcessorHealthCommand),
     m_WGSHealthTimeoutSec(kDefaultWGSHealthTimeoutSec),
@@ -269,6 +293,10 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_WGSProcessorCompressData(kDefaultCompressData),
     m_WGSProcessorCassProcTimeoutMs(kDefaultCassProcTimeoutMs),
     m_WGSProcessorErrorRate(kDefaultWGSErrorRate),
+    m_WGSProcessorIdGetExecTooLongMs(kDefaultWGSIdGetExecTooLongMs),
+    m_WGSProcessorIdGetBlobExecTooLongMs(kDefaultWGSIdGetBlobExecTooLongMs),
+    m_WGSProcessorIdResolveExecTooLongMs(kDefaultWGSIdResolveExecTooLongMs),
+    m_WGSProcessorIdGetTseChunkExecTooLongMs(kDefaultWGSIdGetTseChunkExecTooLongMs),
     m_SNPProcessorsEnabled(kDefaultSNPProcessorsEnabled),
     m_SNPProcessorHealthCommand(kDefaultSNPProcessorHealthCommand),
     m_SNPHealthTimeoutSec(kDefaultSNPHealthTimeoutSec),
@@ -287,6 +315,9 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_SNPProcessorAllowNonRefSeq(kDefaultSNPAllowNonRefSeq),
     m_SNPProcessorScaleLimit(objects::CSeq_id::eSNPScaleLimit_Default),
     m_SNPProcessorErrorRate(kDefaultSNPErrorRate),
+    m_SNPProcessorIdGetNaExecTooLongMs(kDefaultSNPIdGetNaExecTooLongMs),
+    m_SNPProcessorIdGetBlobExecTooLongMs(kDefaultSNPIdGetBlobExecTooLongMs),
+    m_SNPProcessorIdGetTseChunkExecTooLongMs(kDefaultSNPIdGetTseChunkExecTooLongMs),
     m_MyNCBIOKCacheSize(kDefaultMyNCBIOKCacheSize),
     m_MyNCBINotFoundCacheSize(kDefaultMyNCBINotFoundCacheSize),
     m_MyNCBINotFoundCacheExpirationSec(kDefaultMyNCBINotFoundCacheExpirationSec),
@@ -629,6 +660,24 @@ SPubseqGatewaySettings::x_ReadProcessorLogTimingThreshold(const CNcbiRegistry & 
 }
 
 
+unsigned int
+SPubseqGatewaySettings::x_ReadExecToolLong(const CNcbiRegistry &   registry,
+                                           const string &  section,
+                                           const string &  name,
+                                           unsigned int  default_value)
+{
+    auto    int_val = registry.GetInt(section, name, default_value);
+    if (int_val <= 0) {
+        m_CriticalErrors.push_back(
+            "The execution too long value " + section + "/" + name + " is out of range. "
+            "It must be > 0. Received: " + to_string(int_val) +
+            ". Resettint to default: " + to_string(default_value));
+        int_val = default_value;
+    }
+    return int_val;
+}
+
+
 void
 SPubseqGatewaySettings::x_ReadProcessorThrottleSettings(const CNcbiRegistry &   registry,
                                                         const string &  proc_id,
@@ -741,12 +790,41 @@ void SPubseqGatewaySettings::x_ReadCassandraProcessorSection(const CNcbiRegistry
         registry.GetBool(kCassandraProcessorSection, "seq_id_resolve_always",
                          kDefaultSeqIdResolveAlways);
 
-    x_ReadProcessorThrottleSettings(registry, "CASSANDRA",
+    x_ReadProcessorThrottleSettings(registry, kCassandraProcessorSection,
                                     m_CassandraProcessorThrottleThreshold,
                                     m_CassandraProcessorThrottleByIp);
 
-    x_ReadProcessorLogTimingThreshold(registry, "CASSANDRA",
+    x_ReadProcessorLogTimingThreshold(registry, kCassandraProcessorSection,
                                       m_CassandraProcessorLogTimingThreshold);
+
+    m_CassandraProcessorIdResolveExecTooLongMs =
+        x_ReadExecToolLong(registry, kCassandraProcessorSection,
+                           "id_resolve_exec_too_long_ms",
+                           kDefaultCassIdResolveExecTooLongMs);
+    m_CassandraProcessorIpgResolveExecTooLongMs =
+        x_ReadExecToolLong(registry, kCassandraProcessorSection,
+                           "ipg_resolve_exec_too_long_ms",
+                           kDefaultCassIpgResolveExecTooLongMs);
+    m_CassandraProcessorIdGetExecTooLongMs =
+        x_ReadExecToolLong(registry, kCassandraProcessorSection,
+                           "id_get_exec_too_long_ms",
+                           kDefaultCassIdGetExecTooLongMs);
+    m_CassandraProcessorIdGetBlobExecTooLongMs =
+        x_ReadExecToolLong(registry, kCassandraProcessorSection,
+                           "id_get_blob_exec_too_long_ms",
+                           kDefaultCassIdGetBlobExecTooLongMs);
+    m_CassandraProcessorIdGetTseChunkExecTooLongMs =
+        x_ReadExecToolLong(registry, kCassandraProcessorSection,
+                           "id_get_tse_chunk_exec_too_long_ms",
+                           kDefaultCassIdGetTseChunkExecTooLongMs);
+    m_CassandraProcessorIdGetNaExecTooLongMs =
+        x_ReadExecToolLong(registry, kCassandraProcessorSection,
+                           "id_get_na_exec_too_long_ms",
+                           kDefaultCassIdGetNaExecTooLongMs);
+    m_CassandraProcessorIdGetAccVerHistoryExecTooLongMs =
+        x_ReadExecToolLong(registry, kCassandraProcessorSection,
+                           "id_get_acc_ver_history_exec_too_long_ms",
+                           kDefaultCassIdGetAccVerHistoryExecTooLongMs);
 }
 
 
@@ -799,10 +877,10 @@ void SPubseqGatewaySettings::x_ReadCDDProcessorSection(const CNcbiRegistry &   r
         m_CDDHealthTimeoutSec = kDefaultHealthTimeout;
     }
 
-    x_ReadProcessorThrottleSettings(registry, "CDD",
+    x_ReadProcessorThrottleSettings(registry, kCDDProcessorSection,
                                     m_CDDProcessorThrottleThreshold,
                                     m_CDDProcessorThrottleByIp);
-    x_ReadProcessorLogTimingThreshold(registry, "CDD",
+    x_ReadProcessorLogTimingThreshold(registry, kCDDProcessorSection,
                                       m_CDDProcessorLogTimingThreshold);
 
     int     int_val = registry.GetInt(kCDDProcessorSection, "maxconn",
@@ -830,6 +908,11 @@ void SPubseqGatewaySettings::x_ReadCDDProcessorSection(const CNcbiRegistry &   r
 
     m_CDDProcessorErrorRate = registry.GetInt(kCDDProcessorSection, "error_rate",
                                               kDefaultCDDErrorRate);
+
+    m_CDDProcessorIdGetNaExecTooLongMs =
+        x_ReadExecToolLong(registry, kCDDProcessorSection,
+                           "id_get_na_exec_too_long_ms",
+                           kDefaultCDDIdGetNaExecTooLongMs);
 }
 
 
@@ -955,6 +1038,23 @@ void SPubseqGatewaySettings::x_ReadWGSProcessorSection(const CNcbiRegistry &   r
 
     m_WGSProcessorErrorRate = registry.GetInt(kWGSProcessorSection, "error_rate",
                                               kDefaultWGSErrorRate);
+
+    m_WGSProcessorIdGetExecTooLongMs =
+        x_ReadExecToolLong(registry, kWGSProcessorSection,
+                           "id_get_exec_too_long_ms",
+                           kDefaultWGSIdGetExecTooLongMs);
+    m_WGSProcessorIdGetBlobExecTooLongMs =
+        x_ReadExecToolLong(registry, kWGSProcessorSection,
+                           "id_get_blob_exec_too_long_ms",
+                           kDefaultWGSIdGetBlobExecTooLongMs);
+    m_WGSProcessorIdResolveExecTooLongMs =
+        x_ReadExecToolLong(registry, kWGSProcessorSection,
+                           "id_resolve_exec_too_long_ms",
+                           kDefaultWGSIdResolveExecTooLongMs);
+    m_WGSProcessorIdGetTseChunkExecTooLongMs =
+        x_ReadExecToolLong(registry, kWGSProcessorSection,
+                           "id_get_tse_chunk_exec_too_long_ms",
+                           kDefaultWGSIdGetTseChunkExecTooLongMs);
 }
 
 
@@ -1078,6 +1178,19 @@ void SPubseqGatewaySettings::x_ReadSNPProcessorSection(const CNcbiRegistry &   r
 
     m_SNPProcessorErrorRate = registry.GetInt(kSNPProcessorSection, "error_rate",
                                               kDefaultSNPErrorRate);
+
+    m_SNPProcessorIdGetNaExecTooLongMs =
+        x_ReadExecToolLong(registry, kSNPProcessorSection,
+                           "id_get_na_exec_too_long_ms",
+                           kDefaultSNPIdGetNaExecTooLongMs);
+    m_SNPProcessorIdGetBlobExecTooLongMs =
+        x_ReadExecToolLong(registry, kSNPProcessorSection,
+                           "id_get_blob_exec_too_long_ms",
+                           kDefaultSNPIdGetBlobExecTooLongMs);
+    m_SNPProcessorIdGetTseChunkExecTooLongMs =
+        x_ReadExecToolLong(registry, kSNPProcessorSection,
+                           "id_get_tse_chunk_exec_too_long_ms",
+                           kDefaultSNPIdGetTseChunkExecTooLongMs);
 }
 
 

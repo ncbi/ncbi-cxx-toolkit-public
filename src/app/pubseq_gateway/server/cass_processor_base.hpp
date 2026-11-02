@@ -130,6 +130,9 @@ protected:
     mutable optional<size_t>                m_CheckedFetchSize;
 
 public:
+    size_t GetTotalFetchesCount(void) const
+    { return m_FetchDetails.size(); }
+
     // Memorize the ambiguity message and json with records
     string                          m_CacheAmbiguityMessage;
     string                          m_CassAmbiguityMessage;

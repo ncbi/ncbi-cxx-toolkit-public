@@ -98,8 +98,8 @@ enum EPSGOperation {
     eBlobRetrieve,
     eNARetrieve,
 
-    eTseChunkRetrieve,
-    eNAResolve,
+    eTseChunkRetrieve,      // Per processor
+    eNAResolve,             // SNP and CDD only
 
     eOperationLast  // Not for using in the processors' code.
                     // It is for allocating an array with an applog identifiers
@@ -388,6 +388,16 @@ class COperationTiming
                                  uint64_t &  max_warnings,
                                  uint64_t &  max_not_found) const;
         size_t x_GetLogThreshold(const string &  proc_group_name);
+        unsigned int x_GetExecTooLongThreshold(const string &  proc_group_name,
+                                               CPSGS_Request::EPSGS_Type  request_type);
+        bool x_NeedExecTooLongLogging(IPSGS_Processor::EPSGS_Status  proc_finish_status,
+                                      size_t  proc_index,
+                                      size_t  request_index,
+                                      psg_time_point_t  now,
+                                      const string &  proc_group_name,
+                                      CPSGS_Request::EPSGS_Type  request_type,
+                                      IPSGS_Processor *  processor,
+                                      uint64_t  mks);
 
     private:
         string                                              m_OnlyForProcessor;
@@ -487,6 +497,10 @@ class COperationTiming
         map<string, size_t>         m_ProcGroupToIndex;
         map<size_t, size_t>         m_ProcIndexToLogTimingThreshold;
 
+        // Thresholds for execution too long per processor per request
+        using RequestThresholds = array<unsigned int, CPSGS_Request::ePSGS_UnknownRequest>;
+        vector<RequestThresholds>   m_ExecTooLongThresholdMks;
+
         mutable mutex               m_Lock; // reset-rotate-serialize lock
 
         CRequestTimeSeries          m_IdGetStat;
@@ -514,6 +528,7 @@ class COperationTiming
         CMonotonicCounterSeries                             m_WarningTimeSeries;
         vector<unique_ptr<CMonotonicCounterSeries>>         m_OpTooLongByProc;
         vector<unique_ptr<COpTooLongTiming>>                m_OpTooLongTimingByProc;
+        vector<unique_ptr<CMonotonicCounterSeries>>         m_ExecTooLongByProc;
 
         CMonotonicCounterSeries                             m_AsyncLogDroppedMessagesTimeSeries;
         CMonotonicCounterSeries                             m_AsyncLogDroppedRequestsTimeSeries;
@@ -524,6 +539,7 @@ class COperationTiming
         vector<vector<unique_ptr<CProcessorPerformanceTiming>>>     m_NotFoundProcPerformance;
         vector<vector<unique_ptr<CProcessorPerformanceTiming>>>     m_TimeoutProcPerformance;
         vector<vector<unique_ptr<CProcessorPerformanceTiming>>>     m_ErrorProcPerformance;
+        vector<vector<unique_ptr<CProcessorPerformanceTiming>>>     m_ExecTooLongProcPerformance;
 };
 
 #endif /* PUBSEQ_GATEWAY_TIMING__HPP */

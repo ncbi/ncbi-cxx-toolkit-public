@@ -147,6 +147,13 @@ struct SPubseqGatewaySettings
     size_t                              m_CassandraProcessorThrottleThreshold;
     size_t                              m_CassandraProcessorThrottleByIp;
     size_t                              m_CassandraProcessorLogTimingThreshold;
+    unsigned int                        m_CassandraProcessorIdResolveExecTooLongMs;
+    unsigned int                        m_CassandraProcessorIpgResolveExecTooLongMs;
+    unsigned int                        m_CassandraProcessorIdGetExecTooLongMs;
+    unsigned int                        m_CassandraProcessorIdGetBlobExecTooLongMs;
+    unsigned int                        m_CassandraProcessorIdGetTseChunkExecTooLongMs;
+    unsigned int                        m_CassandraProcessorIdGetNaExecTooLongMs;
+    unsigned int                        m_CassandraProcessorIdGetAccVerHistoryExecTooLongMs;
 
     // [LMDB_PROCESSOR]
     string                              m_LMDBProcessorHealthCommand;
@@ -162,6 +169,7 @@ struct SPubseqGatewaySettings
     unsigned int                        m_CDDProcessorMaxConn;
     double                              m_CDDProcessorBackendTimeout;
     int                                 m_CDDProcessorErrorRate;
+    unsigned int                        m_CDDProcessorIdGetNaExecTooLongMs;
 
     // [WGS_PROCESSOR]
     bool                                m_WGSProcessorsEnabled;
@@ -179,6 +187,10 @@ struct SPubseqGatewaySettings
                                         m_WGSProcessorCompressData;
     uint64_t                            m_WGSProcessorCassProcTimeoutMs;
     int                                 m_WGSProcessorErrorRate;
+    unsigned int                        m_WGSProcessorIdGetExecTooLongMs;
+    unsigned int                        m_WGSProcessorIdGetBlobExecTooLongMs;
+    unsigned int                        m_WGSProcessorIdResolveExecTooLongMs;
+    unsigned int                        m_WGSProcessorIdGetTseChunkExecTooLongMs;
 
     // [SNP_PROCESSOR]
     bool                                m_SNPProcessorsEnabled;
@@ -199,7 +211,9 @@ struct SPubseqGatewaySettings
     bool                                m_SNPProcessorAllowNonRefSeq;
     objects::CSeq_id::ESNPScaleLimit    m_SNPProcessorScaleLimit;
     int                                 m_SNPProcessorErrorRate;
-
+    unsigned int                        m_SNPProcessorIdGetNaExecTooLongMs;
+    unsigned int                        m_SNPProcessorIdGetBlobExecTooLongMs;
+    unsigned int                        m_SNPProcessorIdGetTseChunkExecTooLongMs;
 
     // [COUNTERS]
     // Configured counter/statistics ID to name/description
@@ -259,6 +273,10 @@ private:
     void x_ReadProcessorLogTimingThreshold(const CNcbiRegistry &   registry,
                                            const string &  proc_id,
                                            size_t &  log_timing_threshold_val);
+    unsigned int x_ReadExecToolLong(const CNcbiRegistry &   registry,
+                                    const string &  section,
+                                    const string &  value,
+                                    unsigned int  default_value);
 
     void x_ValidateServerSection(void);
     void x_ValidateProcessorThrottlingServerSectionSettings(void);

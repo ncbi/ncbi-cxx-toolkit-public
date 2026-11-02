@@ -1985,7 +1985,7 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  http_req,
 
         vector<pair<int, int>>      time_series;
         if (!x_GetTimeSeries(http_req, reply, now, time_series)) {
-            x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;

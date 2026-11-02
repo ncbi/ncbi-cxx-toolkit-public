@@ -103,7 +103,7 @@ void CheckFDLimit(void)
         // Dirty hack:
         // all the structures for http1/2 have the same beginning of the
         // connection structure. However the http1 structure is in the a
-        // .c file while htt2 connection structure is in the available header.
+        // .c file while http2 connection structure is in the available header.
         // So, the shift of the socket pointer is the same regardless of the
         // connection type and thus the cast is to http2 connection regardless
         // of the actual connection type

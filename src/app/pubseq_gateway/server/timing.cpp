@@ -35,6 +35,7 @@
 #include "pubseq_gateway_utils.hpp"
 #include "pubseq_gateway.hpp"
 #include "ipsgs_processor.hpp"
+#include "cass_processor_base.hpp"
 
 static string           kTimeRangeStart("TimeRangeStart");
 static string           kTimeRangeEnd("TimeRangeEnd");
@@ -441,6 +442,7 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
         m_NotFoundProcPerformance.push_back(vector<unique_ptr<CProcessorPerformanceTiming>>());
         m_TimeoutProcPerformance.push_back(vector<unique_ptr<CProcessorPerformanceTiming>>());
         m_ErrorProcPerformance.push_back(vector<unique_ptr<CProcessorPerformanceTiming>>());
+        m_ExecTooLongProcPerformance.push_back(vector<unique_ptr<CProcessorPerformanceTiming>>());
 
         for (size_t  proc_index = 0; proc_index < m_ProcGroupToIndex.size(); ++proc_index) {
             m_DoneProcPerformance.back().push_back(
@@ -456,6 +458,10 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                     new CProcessorPerformanceTiming(min_stat_value, max_stat_value,
                                                     n_bins, scale_type, reset_to_default)));
             m_ErrorProcPerformance.back().push_back(
+                unique_ptr<CProcessorPerformanceTiming>(
+                    new CProcessorPerformanceTiming(min_stat_value, max_stat_value,
+                                                    n_bins, scale_type, reset_to_default)));
+            m_ExecTooLongProcPerformance.back().push_back(
                 unique_ptr<CProcessorPerformanceTiming>(
                     new CProcessorPerformanceTiming(min_stat_value, max_stat_value,
                                                     n_bins, scale_type, reset_to_default)));
@@ -809,6 +815,12 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                       item.first + " Error performance for " + req_name,
                       "The timing of the " + item.first +
                       " processor when it finished with status Error for " + req_name);
+
+            m_NamesMap[prefix + "ExecTooLong" + suffix] =
+                SInfo(m_ExecTooLongProcPerformance[req_index][proc_index].get(),
+                      item.first + " Execution too long timing for " + req_name,
+                      "The timing of the " + item.first +
+                      " processor when it executes a " + req_name + " request too long");
         }
     }
 
@@ -977,6 +989,7 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
         m_IdGetNADoneByProc.push_back(unique_ptr<CProcessorRequestTimeSeries>(new CProcessorRequestTimeSeries()));
 
         m_OpTooLongByProc.push_back(unique_ptr<CMonotonicCounterSeries>(new CMonotonicCounterSeries()));
+        m_ExecTooLongByProc.push_back(unique_ptr<CMonotonicCounterSeries>(new CMonotonicCounterSeries()));
 
         m_OpTooLongTimingByProc.push_back(
             unique_ptr<COpTooLongTiming>(
@@ -1032,13 +1045,35 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
     m_TooLongIDs[eSplitHistoryRetrieve] = "split_history_retrieve_too_long";
     m_TooLongIDs[ePublicCommentRetrieve] = "public_comment_retrieve_too_long";
     m_TooLongIDs[eAccVerHistRetrieve] = "acc_ver_hist_retrieve_too_long";
-    m_TooLongIDs[eIPGResolveRetrieve] = "iog_resolve_retrieve_too_long";
+    m_TooLongIDs[eIPGResolveRetrieve] = "ipg_resolve_retrieve_too_long";
     m_TooLongIDs[eTseChunkRetrieve] = "tse_chunk_retrieve_too_long";
     m_TooLongIDs[eNAResolve] = "na_resolve_too_long";
     m_TooLongIDs[eVDBOpen] = "vdb_open_too_long";
     m_TooLongIDs[eBacklog] = "backlog_too_long";
     m_TooLongIDs[eSNP_PTISLookup] = "snp_ptis_lookup_too_long";
     m_TooLongIDs[eWGS_VDBLookup] = "wgs_vdb_lookup_too_long";
+
+    // Prepare fast access exec too long timing threshold
+    size_t  max_index = 0;
+    for (const auto& [name, proc_index] : m_ProcGroupToIndex) {
+        if (proc_index > max_index) {
+            max_index = proc_index;
+        }
+    }
+    // Allocate space for matrix processor group <-> request type
+    m_ExecTooLongThresholdMks.assign(max_index + 1, RequestThresholds{});
+
+    // Populate the thresholds
+    for (const auto& [proc_name, proc_index] : m_ProcGroupToIndex) {
+        for (size_t  req_index = 0;
+             req_index < static_cast<size_t>(CPSGS_Request::ePSGS_UnknownRequest);
+             ++req_index) {
+            m_ExecTooLongThresholdMks[proc_index][req_index] =
+                        x_GetExecTooLongThreshold(proc_name,
+                                                  static_cast<CPSGS_Request::EPSGS_Type>(req_index));
+
+        }
+    }
 }
 
 
@@ -1405,8 +1440,11 @@ void COperationTiming::RegisterProcessorPerformance(IPSGS_Processor *  processor
         return;     // Should not really happened
                     // the start timestamp is memorized unconditionally
 
-    size_t  request_index = static_cast<size_t>(processor->GetRequest()->GetRequestType());
-    size_t  proc_index = m_ProcGroupToIndex[processor->GetGroupName()];
+    auto    request = processor->GetRequest();
+    auto    request_type = request->GetRequestType();
+    size_t  request_index = static_cast<size_t>(request_type);
+    string  proc_group_name = processor->GetGroupName();
+    size_t  proc_index = m_ProcGroupToIndex[proc_group_name];
 
 
     auto            now = psg_clock_t::now();
@@ -1439,6 +1477,109 @@ void COperationTiming::RegisterProcessorPerformance(IPSGS_Processor *  processor
         default:
             break;
     }
+
+    // Deal with the "execution too long"
+    bool    need_exec_too_long_logging =
+                    x_NeedExecTooLongLogging(proc_finish_status,
+                                             proc_index, request_index, now,
+                                             proc_group_name, request_type,
+                                             processor, mks);
+    if (need_exec_too_long_logging) {
+        m_ExecTooLongProcPerformance[request_index][proc_index]->Add(mks);
+        m_ExecTooLongByProc[proc_index]->Add();
+
+        CRequestContextResetter     context_resetter;
+        request->SetRequestContext();
+
+        if (proc_group_name == "CASSANDRA") {
+            CPSGS_CassProcessorBase *   cass_proc = dynamic_cast<CPSGS_CassProcessorBase*>(processor);
+            auto                        app = CPubseqGatewayApp::GetInstance();
+            if (cass_proc) {
+                GetDiagContext().Extra().Print("exec_too_long", mks)
+                                        .Print("processor", proc_group_name)
+                                        .Print("request_type", CPSGS_Request::TypeToString(request_type))
+                                        .Print("active_stmt", app->GetCassandraActiveStatements())
+                                        .Print("fetches_count", cass_proc->GetTotalFetchesCount());
+            } else {
+                GetDiagContext().Extra().Print("exec_too_long", mks)
+                                        .Print("processor", proc_group_name)
+                                        .Print("request_type", CPSGS_Request::TypeToString(request_type))
+                                        .Print("active_stmt", app->GetCassandraActiveStatements());
+            }
+        } else {
+            GetDiagContext().Extra().Print("exec_too_long", mks)
+                                    .Print("processor", proc_group_name)
+                                    .Print("request_type", CPSGS_Request::TypeToString(request_type));
+        }
+    }
+}
+
+
+bool
+COperationTiming::x_NeedExecTooLongLogging(IPSGS_Processor::EPSGS_Status  proc_finish_status,
+                                           size_t  proc_index,
+                                           size_t  request_index,
+                                           psg_time_point_t  now,
+                                           const string &  proc_group_name,
+                                           CPSGS_Request::EPSGS_Type  request_type,
+                                           IPSGS_Processor *  processor,
+                                           uint64_t  mks)
+{
+    if (proc_finish_status == IPSGS_Processor::ePSGS_Timeout) {
+        return true;
+    }
+
+    // It is not timeout so let's check it against a setting
+    uint64_t   threshold_mks = m_ExecTooLongThresholdMks[proc_index][request_index];
+    if (threshold_mks == 0) {
+        static std::atomic<int64_t>     last_warn_time_sec{0};
+        int64_t                         now_sec =
+            chrono::duration_cast<chrono::seconds>(now.time_since_epoch()).count();
+
+        if (now_sec - last_warn_time_sec.load() > 10 * 60) {
+            // Last warning was more than 10 min ago
+            last_warn_time_sec.store(now_sec);
+
+            CRequestContextResetter     context_resetter;
+            processor->GetRequest()->SetRequestContext();
+
+            PSG_WARNING("Execution too long threshold is not configured for the "
+                        "combination of " + proc_group_name + " processor and "
+                        " request type " + CPSGS_Request::TypeToString(request_type) +
+                        ". Threshold checking skipped.");
+        }
+
+        // Threshold is not defined; it is unlikely but possible if in the
+        // future modifications new settings are not added
+        return false;
+    }
+
+    // If it is a request which retrieves a blob then the threshold needs to be
+    // normalized to the size of a blob
+    if (request_type == CPSGS_Request::ePSGS_BlobBySeqIdRequest ||
+        request_type == CPSGS_Request::ePSGS_BlobBySatSatKeyRequest ||
+        request_type == CPSGS_Request::ePSGS_IPGResolveRequest) {
+        if (proc_finish_status == IPSGS_Processor::ePSGS_Done) {
+            // This is a request which resulted a blob.
+            // Normalize the threshold to 64k bytes sent to the client
+            auto    reply = processor->GetReply();
+            size_t  bytes_sent = reply->GetBytesSent();
+
+            // Blob related requests are normalized by 64k while IPG requests
+            // by 4k of data sent to the client
+            size_t  normalization = 64 * 1024;
+            if (request_type == CPSGS_Request::ePSGS_IPGResolveRequest) {
+                normalization = 4 * 1024;
+            }
+
+            uint64_t    adjusted_threshold_mks =
+                (static_cast<uint64_t>(bytes_sent / normalization) + 1) * threshold_mks;
+
+            return mks > adjusted_threshold_mks;
+        }
+    }
+
+    return mks > threshold_mks;
 }
 
 
@@ -1518,6 +1659,7 @@ void COperationTiming::Rotate(void)
             m_NotFoundProcPerformance[req_index][proc_index]->Rotate();
             m_TimeoutProcPerformance[req_index][proc_index]->Rotate();
             m_ErrorProcPerformance[req_index][proc_index]->Rotate();
+            m_ExecTooLongProcPerformance[req_index][proc_index]->Rotate();
         }
     }
 }
@@ -1545,6 +1687,8 @@ void COperationTiming::RotateRequestStat(void)
     for (auto &  item : m_IdGetNADoneByProc)
         item->Rotate();
     for (auto &  item : m_OpTooLongByProc)
+        item->Rotate();
+    for (auto &  item : m_ExecTooLongByProc)
         item->Rotate();
 
     m_TCPConnectionsStat.Rotate();
@@ -1633,6 +1777,7 @@ void COperationTiming::RotateAvgPerfTimeSeries(void)
             m_NotFoundProcPerformance[req_index][proc_index]->RotateAvgTimeSeries();
             m_TimeoutProcPerformance[req_index][proc_index]->RotateAvgTimeSeries();
             m_ErrorProcPerformance[req_index][proc_index]->RotateAvgTimeSeries();
+            m_ExecTooLongProcPerformance[req_index][proc_index]->RotateAvgTimeSeries();
         }
     }
 
@@ -1771,6 +1916,8 @@ void COperationTiming::Reset(void)
         item->Reset();
     for (auto &  item : m_OpTooLongByProc)
         item->Reset();
+    for (auto &  item : m_ExecTooLongByProc)
+        item->Reset();
 
     for (size_t  req_index = 0;
          req_index < static_cast<size_t>(CPSGS_Request::ePSGS_UnknownRequest);
@@ -1780,6 +1927,7 @@ void COperationTiming::Reset(void)
             m_NotFoundProcPerformance[req_index][proc_index]->Reset();
             m_TimeoutProcPerformance[req_index][proc_index]->Reset();
             m_ErrorProcPerformance[req_index][proc_index]->Reset();
+            m_ExecTooLongProcPerformance[req_index][proc_index]->Reset();
         }
     }
 }
@@ -1984,6 +2132,11 @@ COperationTiming::Serialize(int  most_ancient_time,
                                                                        most_ancient_time,
                                                                        most_recent_time,
                                                                        loop, current_index));
+                ret.SetByKey(item.first + "_exec_too_long_time_series",
+                             m_ExecTooLongByProc[item.second]->Serialize(time_series,
+                                                                         most_ancient_time,
+                                                                         most_recent_time,
+                                                                         loop, current_index));
             }
             ret.SetByKey("error_time_series",
                          m_ErrorTimeSeries.Serialize(time_series,
@@ -2087,5 +2240,78 @@ size_t COperationTiming::x_GetLogThreshold(const string &  proc_group_name)
     PSG_WARNING("No individual timing log threshold found for " + proc_group_name +
                 " processor. Server wide will be used.");
     return settings.m_LogTimingThreshold * 1000;
+}
+
+
+unsigned int
+COperationTiming::x_GetExecTooLongThreshold(const string &  proc_group_name,
+                                            CPSGS_Request::EPSGS_Type  request_type)
+{
+    auto        app = CPubseqGatewayApp::GetInstance();
+    auto        settings = app->Settings();
+
+    // Note: the setting is in ms however the timing is collected in mks so
+    //       there is ... * 1000 in the return statements
+
+    if (proc_group_name == "CASSANDRA") {
+        switch (request_type) {
+            case CPSGS_Request::ePSGS_ResolveRequest:
+                return settings.m_CassandraProcessorIdResolveExecTooLongMs * 1000;
+            case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
+                return settings.m_CassandraProcessorIdGetExecTooLongMs * 1000;
+            case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
+                return settings.m_CassandraProcessorIdGetBlobExecTooLongMs * 1000;
+            case CPSGS_Request::ePSGS_AnnotationRequest:
+                return settings.m_CassandraProcessorIdGetNaExecTooLongMs * 1000;
+            case CPSGS_Request::ePSGS_TSEChunkRequest:
+                return settings.m_CassandraProcessorIdGetTseChunkExecTooLongMs * 1000;
+            case CPSGS_Request::ePSGS_AccessionVersionHistoryRequest:
+                return settings.m_CassandraProcessorIdGetAccVerHistoryExecTooLongMs * 1000;
+            case CPSGS_Request::ePSGS_IPGResolveRequest:
+                return settings.m_CassandraProcessorIpgResolveExecTooLongMs * 1000;
+            default:
+                break;
+        }
+        return 0;
+    }
+    if (proc_group_name == "CDD") {
+        switch (request_type) {
+            case CPSGS_Request::ePSGS_AnnotationRequest:
+                return settings.m_CDDProcessorIdGetNaExecTooLongMs * 1000;
+            default:
+                break;
+        }
+        return 0;
+    }
+    if (proc_group_name == "WGS") {
+        switch (request_type) {
+            case CPSGS_Request::ePSGS_ResolveRequest:
+                return settings.m_WGSProcessorIdResolveExecTooLongMs * 1000;
+            case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
+                return settings.m_WGSProcessorIdGetExecTooLongMs * 1000;
+            case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
+                return settings.m_WGSProcessorIdGetBlobExecTooLongMs * 1000;
+            case CPSGS_Request::ePSGS_TSEChunkRequest:
+                return settings.m_WGSProcessorIdGetTseChunkExecTooLongMs * 1000;
+            default:
+                break;
+        }
+        return 0;
+    }
+    if (proc_group_name == "SNP") {
+        switch (request_type) {
+            case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
+                return settings.m_SNPProcessorIdGetBlobExecTooLongMs * 1000;
+            case CPSGS_Request::ePSGS_AnnotationRequest:
+                return settings.m_SNPProcessorIdGetNaExecTooLongMs * 1000;
+            case CPSGS_Request::ePSGS_TSEChunkRequest:
+                return settings.m_SNPProcessorIdGetTseChunkExecTooLongMs * 1000;
+            default:
+                break;
+        }
+        return 0;
+    }
+
+    return 0;
 }
 
