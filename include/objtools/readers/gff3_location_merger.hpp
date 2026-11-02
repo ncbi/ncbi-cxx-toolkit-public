@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objtools/readers/gff3_reader.hpp>
+#include <optional>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
@@ -46,6 +47,13 @@ class CGff3LocationRecord
 //  ============================================================================
 {
 public:
+    enum class EPartial {
+        eStart,
+        eEnd,
+        eBoth,
+    };
+
+
     CGff3LocationRecord(
         const CGff2Record&,
         CGff3Reader::TReaderFlags flags,
@@ -59,6 +67,8 @@ public:
     size_t mPartNum;
     CCdregion::EFrame mFrame;
     string mSeqId;
+    optional<EPartial> mPartial;
+
 
     static bool ComparePartNumbers(
         const CGff3LocationRecord& lhs,

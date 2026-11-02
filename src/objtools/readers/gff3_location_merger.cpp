@@ -35,6 +35,9 @@
 #include <objtools/readers/gff3_location_merger.hpp>
 #include "reader_message_handler.hpp"
 #include <objtools/readers/reader_listener.hpp>
+#include <array>
+#include <ranges>
+#include <unordered_set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
@@ -63,6 +66,16 @@ CGff3LocationRecord::CGff3LocationRecord(
     }
     mFrame = (mType == "cds" ? record.Phase() : CCdregion::eFrame_not_set);
     mSeqId = record.Id();
+    list<string> partials;
+
+    if (record.GetAttribute("partial", partials)) {
+        unordered_set<string> partials_set(partials.begin(), partials.end());
+        if (partials_set.contains("start")) {
+            mPartial = partials_set.contains("end") ? EPartial::eBoth : EPartial::eStart;
+        } else if (partials_set.contains("end")) {
+            mPartial = EPartial::eEnd;
+        }
+    }
 }
 
 
@@ -130,7 +143,7 @@ void CGffIdTracker::CheckAndIndexRecord(
             mParentIds.emplace(parentId);
         }
         return;
-    } 
+    }
 
 	if (!id.empty()) {
     	_ASSERT(!recordList.empty());
@@ -160,7 +173,7 @@ void CGffIdTracker::CheckAndIndexRecord(
 
 //  ============================================================================
 void CGffIdTracker::CheckIntegrity()
-// Check validity of GFF3 feature and parent IDs based on the assumption that 
+// Check validity of GFF3 feature and parent IDs based on the assumption that
 // all GFF3 records in the input have been seen and indexed.
 // =============================================================================
 {
@@ -170,7 +183,7 @@ void CGffIdTracker::CheckIntegrity()
             CReaderMessage errorBadParentId(
                 eDiag_Error,
                 0,
-                string("Bad data line: Parent \"" + parentId + 
+                string("Bad data line: Parent \"" + parentId +
                     "\" does not refer to a GFF3 record ID"));
             if (m_pMessageListener) {
                 m_pMessageListener->PutMessage(errorBadParentId);
@@ -221,7 +234,7 @@ CGff3LocationMerger::VerifyRecordLocation(
             0,
             message);
         if (m_pMessageListener) {
-            m_pMessageListener->PutMessage(error);    
+            m_pMessageListener->PutMessage(error);
         } else {
             throw error;
         }
@@ -307,8 +320,8 @@ bool CGff3LocationMerger::xGetLocationIds(
     if (NStr::EndsWith(recordType, "_gene_segment")) {
         return false;
     }
-    if (recordType == "exon" || 
-        recordType == "five_prime_utr" || 
+    if (recordType == "exon" ||
+        recordType == "five_prime_utr" ||
         recordType == "three_prime_utr") {
         return record.GetAttribute("Parent", ids);
     }
@@ -354,6 +367,56 @@ CGff3LocationMerger::GetSequenceSize(
     return sizeIt->second;
 }
 
+
+static bool s_IsPartialStart(const CGff3LocationRecord& record)
+{
+    using EPartial = CGff3LocationRecord::EPartial;
+    return record.mPartial &&
+        (*(record.mPartial) == EPartial::eStart || *(record.mPartial) == EPartial::eBoth);
+}
+
+
+static bool s_IsPartialEnd(const CGff3LocationRecord& record)
+{
+    using EPartial = CGff3LocationRecord::EPartial;
+    return record.mPartial &&
+        (*(record.mPartial) == EPartial::eEnd || *(record.mPartial) == EPartial::eBoth);
+}
+
+
+static void s_SetPartialness(const CGff3LocationRecord& record, CSeq_interval& interval)
+{
+    if (! record.mPartial){
+        return;
+    }
+    using EPartial = CGff3LocationRecord::EPartial;
+
+    auto partial = *(record.mPartial);
+    bool IsPartialStart = (partial == EPartial::eStart) || (partial == EPartial::eBoth);
+    bool IsPartialEnd = (partial == EPartial::eEnd) || (partial == EPartial::eBoth);
+
+    if (IsPartialStart) {
+        interval.SetPartialStart(true, eExtreme_Biological);
+    }
+
+    if (IsPartialEnd) {
+        interval.SetPartialStop(true, eExtreme_Biological);
+    }
+}
+
+
+static CRef<CSeq_interval> s_MakeInterval(const CSeq_id& seqId,
+        TSeqPos from, TSeqPos to, ENa_strand strand)
+{
+    auto pInterval = Ref(new CSeq_interval());
+    pInterval->SetId().Assign(seqId);
+    pInterval->SetFrom(from);
+    pInterval->SetTo(to);
+    pInterval->SetStrand(strand);
+    return pInterval;
+}
+
+
 //  ============================================================================
 CRef<CSeq_loc>
 CGff3LocationMerger::xGetRecordLocation(
@@ -366,65 +429,48 @@ CGff3LocationMerger::xGetRecordLocation(
     CRef<CSeq_loc> pLocation(new CSeq_loc);
     TSeqPos sequenceSize = GetSequenceSize(locRecord.mSeqId);
     if (sequenceSize == 0) {
-        CRef<CSeq_interval> pInterval(new CSeq_interval);
-        pInterval->SetId().Assign(seqId);
-        pInterval->SetFrom(locRecord.mStart);
-        pInterval->SetTo(locRecord.mStop);
-        pInterval->SetStrand(locRecord.mStrand);
+        auto pInterval =
+            s_MakeInterval(seqId, locRecord.mStart, locRecord.mStop, locRecord.mStrand);
+        s_SetPartialness(locRecord, *pInterval);
         pLocation->SetInt(*pInterval);
         return pLocation;
     }
 
-    if (locRecord.mStrand == eNa_strand_minus) {
-        if (locRecord.mStart >= sequenceSize  || locRecord. mStop < sequenceSize) {
-            CRef<CSeq_interval> pInterval(new CSeq_interval);
-            pInterval->SetId().Assign(seqId);
-            pInterval->SetFrom(locRecord.mStart % sequenceSize);
-            pInterval->SetTo(locRecord.mStop % sequenceSize);
-            pInterval->SetStrand(locRecord.mStrand);
-            pLocation->SetInt(*pInterval);
+    if (locRecord.mStart < sequenceSize && locRecord.mStop >= sequenceSize) { // Spans the origin
+
+        array<pair<TSeqPos, TSeqPos>, 2> interval_limits = {{
+            {locRecord.mStart, sequenceSize-1},
+            {0, locRecord.mStop % sequenceSize}
+        }};
+
+        auto strand = locRecord.mStrand;
+        if (strand == eNa_strand_minus) {
+            ranges::reverse(interval_limits);
         }
-        else {
-            CRef<CSeq_interval> pTop(new CSeq_interval);
-            pTop->SetId().Assign(seqId);
-            pTop->SetFrom(0);
-            pTop->SetTo(locRecord.mStop % sequenceSize);
-            pTop->SetStrand(locRecord.mStrand);
-            pLocation->SetPacked_int().AddInterval(*pTop);
-            CRef<CSeq_interval> pBottom(new CSeq_interval);
-            pBottom->SetId().Assign(seqId);
-            pBottom->SetFrom(locRecord.mStart % sequenceSize);
-            pBottom->SetTo(sequenceSize - 1);
-            pBottom->SetStrand(locRecord.mStrand);
-            pLocation->SetPacked_int().AddInterval(*pBottom);
-            pLocation->ChangeToMix();
+
+        const auto& start_limits = interval_limits[0];
+        auto pStartInt = s_MakeInterval(seqId, start_limits.first, start_limits.second, strand);
+        if (s_IsPartialStart(locRecord)) {
+            pStartInt->SetPartialStart(true, eExtreme_Biological);
         }
+        pLocation->SetPacked_int().AddInterval(*pStartInt);
+
+        const auto& stop_limits = interval_limits[1];
+        auto pStopInt = s_MakeInterval(seqId, stop_limits.first, stop_limits.second, strand);
+        if (s_IsPartialEnd(locRecord)) {
+            pStopInt->SetPartialStop(true, eExtreme_Biological);
+        }
+        pLocation->SetPacked_int().AddInterval(*pStopInt);
+
+        pLocation->ChangeToMix();
+    } else {
+        TSeqPos from {locRecord.mStart % sequenceSize};
+        TSeqPos to  {locRecord.mStop % sequenceSize};
+        auto pInterval = s_MakeInterval(seqId, from, to, locRecord.mStrand);
+        s_SetPartialness(locRecord, *pInterval);
+        pLocation->SetInt(*pInterval);
     }
-    else {
-        if (locRecord.mStart >= sequenceSize  ||  locRecord.mStop < sequenceSize) {
-            CRef<CSeq_interval> pInterval(new CSeq_interval);
-            pInterval->SetId().Assign(seqId);
-            pInterval->SetFrom(locRecord.mStart % sequenceSize);
-            pInterval->SetTo(locRecord.mStop % sequenceSize);
-            pInterval->SetStrand(locRecord.mStrand);
-            pLocation->SetInt(*pInterval);
-        }
-        else {
-            CRef<CSeq_interval> pBottom(new CSeq_interval);
-            pBottom->SetId().Assign(seqId);
-            pBottom->SetFrom(locRecord.mStart % sequenceSize);
-            pBottom->SetTo(sequenceSize - 1);
-            pBottom->SetStrand(locRecord.mStrand);
-            pLocation->SetPacked_int().AddInterval(*pBottom);
-            CRef<CSeq_interval> pTop(new CSeq_interval);
-            pTop->SetId().Assign(seqId);
-            pTop->SetFrom(0);
-            pTop->SetTo(locRecord.mStop % sequenceSize);
-            pTop->SetStrand(locRecord.mStrand);
-            pLocation->SetPacked_int().AddInterval(*pTop);
-            pLocation->ChangeToMix();
-        }
-    }
+
     return pLocation;
 }
 
@@ -460,7 +506,7 @@ CGff3LocationMerger::MergeLocation(
 
 
 //  ============================================================================
-void 
+void
 CGff3LocationMerger::Validate()
 //  ============================================================================
 {
