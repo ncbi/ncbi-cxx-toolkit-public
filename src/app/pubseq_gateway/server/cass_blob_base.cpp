@@ -658,6 +658,11 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
     if (m_Request->NeedTrace())
         trace_flag = SPSGS_RequestBase::ePSGS_WithTracing;
 
+    if (trace_flag) {
+        SendTrace("Requesting id2 chunks. Total chunks to request: " +
+                  to_string(m_Id2Info->GetChunks()));
+    }
+
     for (int  chunk_no = 1; chunk_no <= m_Id2Info->GetChunks(); ++chunk_no) {
         SCass_BlobId    chunks_blob_id(m_Id2Info->GetSat(),
                                        m_Id2Info->GetInfo() - m_Id2Info->GetChunks() - 1 + chunk_no);
@@ -807,6 +812,11 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
                      this, _1, _2, _3, _4, _5),
                 details.get()));
 
+        if (trace_flag) {
+            SendTrace("Cassandra request: " +
+                      ToJsonString(*load_task, cass_connection->GetDatacenterName()));
+        }
+
         m_RequestedID2BlobChunks.push_back(chunks_blob_id_as_str);
         details->SetNeedAddId2ChunkId2Info(true);
         m_FetchDetails.push_back(move(details));
@@ -949,6 +959,9 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
     if (m_Request->NeedTrace())
         trace_flag = SPSGS_RequestBase::ePSGS_WithTracing;
 
+    if (trace_flag) {
+        SendTrace("Requesting more chunks for smart TSE");
+    }
     for (auto chunk_no : extra_chunks) {
         SCass_BlobId    chunks_blob_id(m_Id2Info->GetSat(),
                                        m_Id2Info->GetInfo() - m_Id2Info->GetChunks() - 1 + chunk_no);
