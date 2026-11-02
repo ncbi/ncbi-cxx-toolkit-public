@@ -1989,6 +1989,11 @@ CMultiAligner::x_BuildAlignmentIterative(
 
         NCBI_THROW(CMultiAlignerException, eOutOfMemory, "Out of memory error");
     }
+    catch (...) {
+        // memory clean up
+        s_CleanUpConstraints(pair_info, num_queries);
+        throw;
+    }
 
     // clean up the constraints
     s_CleanUpConstraints(pair_info, num_queries);
