@@ -98,8 +98,9 @@ enum EPSGOperation {
     eBlobRetrieve,
     eNARetrieve,
 
-    eTseChunkRetrieve,      // Per processor
-    eNAResolve,             // SNP and CDD only
+    eTseChunkRetrieve,              // Per processor
+    eNAResolve,                     // SNP and CDD only
+    eNACDDResolveAndRetrieve,       // (2) CDD processor only
 
     eOperationLast  // Not for using in the processors' code.
                     // It is for allocating an array with an applog identifiers
