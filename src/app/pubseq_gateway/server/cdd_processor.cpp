@@ -552,7 +552,7 @@ void CPSGS_CDDProcessor::OnGotBlobBySeqId(void)
             if ( GetRequest()->NeedTrace() ) {
                 SendTrace(kCDDProcessorName + " processor did not find the requested blob");
             }
-            x_RegisterTimingNotFound(eNAResolve);
+            x_RegisterTimingNotFound(eNACDDResolveAndRetrieve);
             x_ReportResultStatus(SPSGS_AnnotRequest::ePSGS_RS_NotFound);
             x_Finish(ePSGS_NotFound);
         }
