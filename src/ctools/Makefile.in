@@ -6,9 +6,7 @@
 #################################
 
 LIB_PROJ = ctools
-SUB_PROJ = asn test
-
-EXPENDABLE_SUB_PROJ = ctransition
+SUB_PROJ = asn ctransition test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
