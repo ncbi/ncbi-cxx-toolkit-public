@@ -509,16 +509,26 @@ void CSingleFeatValidator::x_ValidateGbQual(const CGb_qual& qual)
                 "/pseudogene value should not be '" + qual.GetVal() + "'", m_Feat);
         }
     } else if (NStr::EqualNocase(qual.GetQual(), "number")) {
+        bool has_bad_char = false;
         bool has_space = false;
         bool has_char_after_space = false;
         ITERATE(string, it, qual.GetVal()) {
+            unsigned char ch = (unsigned char)(*it);
+            if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9')) {
+                // allow letters and digits
+            } else {
+                has_bad_char = true;
+            }
             if (isspace((unsigned char)(*it))) {
                 has_space = true;
             } else if (has_space) {
                 // non-space after space
                 has_char_after_space = true;
-                break;
             }
+        }
+        if (has_bad_char) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidNumberQualifier,
+                "Number qualifiers should not contain punctuation");
         }
         if (has_char_after_space) {
             PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidNumberQualifier,
