@@ -267,6 +267,9 @@ BEGIN_SCOPE()
                 atomic_store(&persistent_storage, std::move(shared_value));
                 return value;
             }
+            else {
+                return "";
+            }
         }
         else {
             return *shared_value;
