@@ -23065,6 +23065,8 @@ BOOST_AUTO_TEST_CASE(Test_VR_35)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidNumberQualifier",
+        "Number qualifiers should not contain punctuation"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidNumberQualifier",
         "Number qualifiers should not contain spaces"));
     // AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
