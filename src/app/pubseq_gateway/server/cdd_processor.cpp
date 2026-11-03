@@ -387,6 +387,7 @@ void CPSGS_CDDProcessor::GetBlobId(void)
     x_SetState("task_running");
     sm_QueuedTasks--;
     sm_RunningTasks++;
+    m_Start = psg_clock_t::now();
     for (auto id : m_SeqIds) {
         if (m_Canceled) break;
         try {
@@ -420,6 +421,7 @@ void CPSGS_CDDProcessor::GetBlobBySeqId(void)
     x_SetState("task_running");
     sm_QueuedTasks--;
     sm_RunningTasks++;
+    m_Start = psg_clock_t::now();
     for (auto id : m_SeqIds) {
         if (m_Canceled) break;
         try {
@@ -453,6 +455,7 @@ void CPSGS_CDDProcessor::GetBlobByBlobId(void)
     x_SetState("task_running");
     sm_QueuedTasks--;
     sm_RunningTasks++;
+    m_Start = psg_clock_t::now();
     if (!m_Canceled) {
         try {
             if ( GetRequest()->NeedTrace() ) {
@@ -512,6 +515,7 @@ void CPSGS_CDDProcessor::OnGotBlobId(void)
     }
     try {
         x_SendAnnotInfo(*m_CDDBlob.info);
+        x_RegisterTiming(eNAResolve, eOpStatusFound, 0);
     }
     catch (exception& exc) {
         m_Error = "Exception when sending get_na reply: " + string(exc.what());
@@ -559,7 +563,8 @@ void CPSGS_CDDProcessor::OnGotBlobBySeqId(void)
     }
     try {
         x_SendAnnotInfo(*m_CDDBlob.info);
-        x_SendAnnot(m_CDDBlob.info->GetBlob_id(), m_CDDBlob.data);
+        size_t blob_size = x_SendAnnot(m_CDDBlob.info->GetBlob_id(), m_CDDBlob.data);
+        x_RegisterTiming(eNACDDResolveAndRetrieve, eOpStatusFound, blob_size);
     }
     catch (exception& exc) {
         m_Error = "Exception when sending get_na reply: " + string(exc.what());
@@ -604,7 +609,8 @@ void CPSGS_CDDProcessor::OnGotBlobByBlobId(void)
         return;
     }
     try {
-        x_SendAnnot(*m_BlobId, m_CDDBlob.data);
+        size_t blob_size = x_SendAnnot(*m_BlobId, m_CDDBlob.data);
+        x_RegisterTiming(eNARetrieve, eOpStatusFound, blob_size);
     }
     catch (exception& exc) {
         m_Error = "Exception when sending getblob reply: " + string(exc.what());
@@ -644,8 +650,6 @@ void CPSGS_CDDProcessor::x_SendAnnotInfo(const CCDD_Reply_Get_Blob_Id& blob_info
         return;
     }
 
-    x_RegisterTiming(eNAResolve, eOpStatusFound, 0);
-    
     const CID2_Blob_Id& blob_id = blob_info.GetBlob_id();
     CJsonNode       json(CJsonNode::NewObjectNode());
     json.SetString("blob_id", CCDDClientPool::BlobIdToString(blob_id));
@@ -681,7 +685,7 @@ void CPSGS_CDDProcessor::x_SendAnnotInfo(const CCDD_Reply_Get_Blob_Id& blob_info
 }
 
 
-void CPSGS_CDDProcessor::x_SendAnnot(const CID2_Blob_Id& id2_blob_id, CRef<CSeq_annot>& annot)
+size_t CPSGS_CDDProcessor::x_SendAnnot(const CID2_Blob_Id& id2_blob_id, CRef<CSeq_annot>& annot)
 {
     string psg_blob_id = CCDDClientPool::BlobIdToString(id2_blob_id);
     CRef<CSeq_entry> entry(new CSeq_entry);
@@ -691,8 +695,6 @@ void CPSGS_CDDProcessor::x_SendAnnot(const CID2_Blob_Id& id2_blob_id, CRef<CSeq_
     blob_str << MSerial_AsnBinary << *entry;
     string blob_data = blob_str.str();
 
-    x_RegisterTiming(eNARetrieve, eOpStatusFound, blob_data.size());
-    
     CBlobRecord blob_props;
     if (id2_blob_id.IsSetVersion()) {
         blob_props.SetModified(int64_t(id2_blob_id.GetVersion()*60000));
@@ -713,6 +715,7 @@ void CPSGS_CDDProcessor::x_SendAnnot(const CID2_Blob_Id& id2_blob_id, CRef<CSeq_
         psg_blob_id,
         (const unsigned char*)blob_data.data(), blob_data.size(), 0);
     GetReply()->PrepareBlobCompletion(item_id, kCDDProcessorName, 2);
+    return blob_data.size(); // The caller needs blob size for time reporting.
 }
 
 

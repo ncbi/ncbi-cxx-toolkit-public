@@ -111,7 +111,7 @@ private:
                           EPSGOperationStatus status,
                           size_t size);
     void x_RegisterTimingNotFound(EPSGOperation operation);
-    void x_SendAnnot(const objects::CID2_Blob_Id& id2_blob_id, CRef<objects::CSeq_annot>& annot);
+    size_t x_SendAnnot(const objects::CID2_Blob_Id& id2_blob_id, CRef<objects::CSeq_annot>& annot);
     static void x_SendError(shared_ptr<CPSGS_Reply> reply,
                             const string& msg);
     static void x_SendError(shared_ptr<CPSGS_Reply> reply,
