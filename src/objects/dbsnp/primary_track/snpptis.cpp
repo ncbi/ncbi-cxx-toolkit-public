@@ -92,7 +92,22 @@ static int GetDebugLevel()
 static
 string x_GetAddress(CParamBase::EParamSource* srcp = nullptr)
 {
-    return g_NCBI_GRPC_GetAddress(kSection, kParam_PTISName, nullptr, srcp);
+    CParamBase::EParamSource src;
+    string s = g_NCBI_GRPC_GetAddress(kSection, kParam_PTISName, nullptr,
+                                      &src);
+    if (src == CParamBase::eSource_Default) {
+        const string& role = CDiagContext::GetHostRole();
+#define ADDR_START "hvar-dbsnpprimarytrack--"
+#define ADDR_END   ".p2.ncbi.nlm.nih.gov:80"
+        if (role == "development") {
+            s = ADDR_START "develop.ocpdev-be" ADDR_END;
+            src = CParamBase::eSource_Func;
+        }
+    }
+    if (srcp != nullptr) {
+        *srcp = src;
+    }
+    return s;
 }
 
 
