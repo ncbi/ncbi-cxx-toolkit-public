@@ -89,6 +89,13 @@ static int GetDebugLevel()
 #endif
 
 
+static
+string x_GetAddress(CParamBase::EParamSource* srcp = nullptr)
+{
+    return g_NCBI_GRPC_GetAddress(kSection, kParam_PTISName, nullptr, srcp);
+}
+
+
 bool CSnpPtisClient::IsEnabled()
 {
 #ifdef HAVE_LIBGRPC
@@ -97,7 +104,7 @@ bool CSnpPtisClient::IsEnabled()
     }
     // check if there's valid address
     CParamBase::EParamSource source;
-    auto addr = g_NCBI_GRPC_GetAddress(kSection, kParam_PTISName, nullptr, &source);
+    auto addr = x_GetAddress(&source);
 #ifndef NCBI_OS_LINUX
     if ( source == CParamBase::eSource_Default ) {
         // default grpc link to linkerd daemon works on Linux only
@@ -158,7 +165,7 @@ CSnpPtisClient_Impl::CSnpPtisClient_Impl()
     wait_time_max = (float)g_GetConfigDouble(kSection, kParam_WaitTimeMax, nullptr, kDefault_WaitTimeMax);
     
     grpc::ChannelArguments args;
-    string address = g_NCBI_GRPC_GetAddress(kSection, kParam_PTISName);
+    string address = x_GetAddress();
     //LOG_POST(Trace<<"CSnpPtisClient: connecting to "<<address);
     channel = grpc::CreateCustomChannel(address, grpc::InsecureChannelCredentials(), args);
     stub = ncbi::grpcapi::dbsnp::primary_track::DbSnpPrimaryTrack::NewStub(channel);
