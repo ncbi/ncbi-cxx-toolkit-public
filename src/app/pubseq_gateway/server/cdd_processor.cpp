@@ -552,7 +552,7 @@ void CPSGS_CDDProcessor::OnGotBlobBySeqId(void)
             if ( GetRequest()->NeedTrace() ) {
                 SendTrace(kCDDProcessorName + " processor did not find the requested blob");
             }
-            x_RegisterTimingNotFound(eNACDDResolveAndRetrieve);
+            x_RegisterTimingNotFound(eCDDNAResolveAndRetrieve);
             x_ReportResultStatus(SPSGS_AnnotRequest::ePSGS_RS_NotFound);
             x_Finish(ePSGS_NotFound);
         }
@@ -564,7 +564,7 @@ void CPSGS_CDDProcessor::OnGotBlobBySeqId(void)
     try {
         x_SendAnnotInfo(*m_CDDBlob.info);
         size_t blob_size = x_SendAnnot(m_CDDBlob.info->GetBlob_id(), m_CDDBlob.data);
-        x_RegisterTiming(eNACDDResolveAndRetrieve, eOpStatusFound, blob_size);
+        x_RegisterTiming(eCDDNAResolveAndRetrieve, eOpStatusFound, blob_size);
     }
     catch (exception& exc) {
         m_Error = "Exception when sending get_na reply: " + string(exc.what());

@@ -100,7 +100,7 @@ enum EPSGOperation {
 
     eTseChunkRetrieve,              // Per processor
     eNAResolve,                     // SNP and CDD only
-    eNACDDResolveAndRetrieve,       // (2) CDD processor only
+    eCDDNAResolveAndRetrieve,       // (2) CDD processor only
 
     eOperationLast  // Not for using in the processors' code.
                     // It is for allocating an array with an applog identifiers
@@ -272,6 +272,9 @@ TIMING_CLASS(CTSEChunkRetrieveTiming);
 // NA resolve for non-cassandra processors
 TIMING_CLASS(CNAResolveTiming);
 
+// NA resolve and retrieve for CDD processor
+TIMING_CLASS(CNAResolveAndRetrieveTiming);
+
 // VDB opening timing
 TIMING_CLASS(CVDBOpenTiming);
 
@@ -426,6 +429,7 @@ class COperationTiming
         // - at the time of serializing only SNP and CDD will be sent
         vector<vector<unique_ptr<CNAResolveTiming>>>        m_NAResolveTiming;
 
+        vector<unique_ptr<CNAResolveAndRetrieveTiming>>     m_CDDNAResolveAndRetrieveTiming;
         vector<unique_ptr<CSplitHistoryRetrieveTiming>>     m_SplitHistoryRetrieveTiming;
         vector<unique_ptr<CPublicCommentRetrieveTiming>>    m_PublicCommentRetrieveTiming;
         vector<unique_ptr<CAccVerHistoryRetrieveTiming>>    m_AccVerHistoryRetrieveTiming;

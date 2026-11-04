@@ -243,6 +243,7 @@ TIMING_CLASS_DEF(CAccVerHistoryRetrieveTiming);
 TIMING_CLASS_DEF(CIPGResolveRetrieveTiming);
 TIMING_CLASS_DEF(CTSEChunkRetrieveTiming);
 TIMING_CLASS_DEF(CNAResolveTiming);
+TIMING_CLASS_DEF(CNAResolveAndRetrieveTiming);
 TIMING_CLASS_DEF(CVDBOpenTiming);
 TIMING_CLASS_DEF(CSNPPTISLookupTiming);
 TIMING_CLASS_DEF(CWGSVDBLookupTiming);
@@ -405,6 +406,10 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                 new CWGSVDBLookupTiming(min_stat_value, max_stat_value,
                                         n_bins, scale_type, reset_to_default)));
 
+        m_CDDNAResolveAndRetrieveTiming.push_back(
+            unique_ptr<CNAResolveAndRetrieveTiming>(
+                new CNAResolveAndRetrieveTiming(min_stat_value, max_stat_value,
+                                                n_bins, scale_type, reset_to_default)));
     }
 
     m_RetrieveMyNCBIErrorTiming.reset(
@@ -566,17 +571,29 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                 "was found"
                )
         },
+        { "RetrieveMyNCBINotFound",
+          SInfo(m_RetrieveMyNCBITiming[1].get(),
+                "retrieve MyNCBI not found",
+                "The timing of the retrieve data from MyNCBI when there was no "
+                "record found"
+               )
+        },
         { "RetrieveMyNCBIError",
           SInfo(m_RetrieveMyNCBIErrorTiming.get(),
                 "MyNCBI retrieve timing in case of errors",
                 "The time MyNCBI replied within when there was an error"
                )
         },
-        { "RetrieveMyNCBINotFound",
-          SInfo(m_RetrieveMyNCBITiming[1].get(),
-                "retrieve MyNCBI not found",
-                "The timing of the retrieve data from MyNCBI when there was no "
-                "record found"
+        { "CDDNAResolveAndRetrieveFound",
+          SInfo(m_CDDNAResolveAndRetrieveTiming[0].get(),
+                "Resolve and retrieve CDD NA found",
+                "The timing of the CDD NA resolve and retrieve when data were found"
+               )
+        },
+        { "CDDNAResolveAndRetrieveNotFound",
+          SInfo(m_CDDNAResolveAndRetrieveTiming[1].get(),
+                "Resolve and retrieve CDD NA not found",
+                "The timing of the CDD NA resolve and retrieve when data were not found"
                )
         },
         { "ResolutionLmdbFound",
@@ -1048,6 +1065,7 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
     m_TooLongIDs[eIPGResolveRetrieve] = "ipg_resolve_retrieve_too_long";
     m_TooLongIDs[eTseChunkRetrieve] = "tse_chunk_retrieve_too_long";
     m_TooLongIDs[eNAResolve] = "na_resolve_too_long";
+    m_TooLongIDs[eCDDNAResolveAndRetrieve] = "cdd_na_resolve_and_retrieve_too_long";
     m_TooLongIDs[eVDBOpen] = "vdb_open_too_long";
     m_TooLongIDs[eBacklog] = "backlog_too_long";
     m_TooLongIDs[eSNP_PTISLookup] = "snp_ptis_lookup_too_long";
@@ -1288,6 +1306,21 @@ uint64_t COperationTiming::Register(IPSGS_Processor *  processor,
             } else {
                 PSG_ERROR("No processor for per processor timing (" +
                           to_string(eNAResolve) + "). Ignore and continue.");
+            }
+            break;
+        case eCDDNAResolveAndRetrieve:
+            if (processor) {
+                string      group_name = processor->GetGroupName();
+                if (group_name == "CDD") {
+                    m_CDDNAResolveAndRetrieveTiming[index]->Add(mks);
+                } else {
+                    PSG_ERROR("NA resolve and retrieve timing is supported for "
+                              "CDD only. Received from: " + group_name);
+                }
+            } else {
+                PSG_ERROR("No processor for per processor timing (" +
+                          to_string(eCDDNAResolveAndRetrieve) +
+                          "). Ignore and continue.");
             }
             break;
         case eVDBOpen:
@@ -1604,6 +1637,7 @@ void COperationTiming::Rotate(void)
         m_VDBOpenTiming[k]->Rotate();
         m_SNPPTISLookupTiming[k]->Rotate();
         m_WGSVDBLookupTiming[k]->Rotate();
+        m_CDDNAResolveAndRetrieveTiming[k]->Rotate();
     }
 
     for (size_t  k = 0; k < m_NARetrieveTiming.size(); ++k) {
@@ -1722,6 +1756,7 @@ void COperationTiming::RotateAvgPerfTimeSeries(void)
         m_VDBOpenTiming[k]->RotateAvgTimeSeries();
         m_SNPPTISLookupTiming[k]->RotateAvgTimeSeries();
         m_WGSVDBLookupTiming[k]->RotateAvgTimeSeries();
+        m_CDDNAResolveAndRetrieveTiming[k]->RotateAvgTimeSeries();
     }
 
     for (size_t  k = 0; k < m_NARetrieveTiming.size(); ++k) {
@@ -1831,6 +1866,7 @@ void COperationTiming::Reset(void)
             m_VDBOpenTiming[k]->Reset();
             m_SNPPTISLookupTiming[k]->Reset();
             m_WGSVDBLookupTiming[k]->Reset();
+            m_CDDNAResolveAndRetrieveTiming[k]->Reset();
         }
 
         for (size_t  k = 0; k < m_NARetrieveTiming.size(); ++k) {
