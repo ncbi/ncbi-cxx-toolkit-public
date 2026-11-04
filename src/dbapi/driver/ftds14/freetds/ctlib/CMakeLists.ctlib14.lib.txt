@@ -1,6 +1,6 @@
 # $Id$
 
-NCBI_begin_lib(ct_ftds14 STATIC)
+NCBI_begin_lib(ct_ftds14)
   NCBI_sources(ct cs blk ctutil ct_small_checks ct_large_checks)
   NCBI_headers(../*.h)
   NCBI_add_definitions(_FREETDS_LIBRARY_SOURCE HAVE_CONFIG_H=1)
