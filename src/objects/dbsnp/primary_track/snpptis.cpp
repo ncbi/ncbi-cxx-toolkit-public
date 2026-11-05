@@ -89,6 +89,7 @@ static int GetDebugLevel()
 #endif
 
 
+#ifdef HAVE_LIBGRPC
 static
 string x_GetAddress(CParamBase::EParamSource* srcp = nullptr)
 {
@@ -109,6 +110,7 @@ string x_GetAddress(CParamBase::EParamSource* srcp = nullptr)
     }
     return s;
 }
+#endif
 
 
 bool CSnpPtisClient::IsEnabled()
