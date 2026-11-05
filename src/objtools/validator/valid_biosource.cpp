@@ -2228,10 +2228,15 @@ const CSeq_entry *ctx)
                 obj, ctx);
         }
         if (genus.length() > 0 && species.length() > 0) {
-            string genusSpecies = genus.substr(0,1) + ". " + species;
+            string genusInitial = genus.substr(0,1);
+            string genusSpecies = genusInitial + ". " + species;
             if (NStr::FindNoCase(strain, genusSpecies) != string::npos) {
                 PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
                     "Orgmod.strain should not contain '" + genusSpecies + "'",
+                    obj, ctx);
+            } else if (NStr::StartsWith(strain, genusInitial) && NStr::EndsWith(strain, species)) {
+                PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
+                    "Orgmod.strain should not contain '" + genus.substr(0,1) + "..." + species + "'",
                     obj, ctx);
             }
         }
@@ -2258,10 +2263,15 @@ const CSeq_entry *ctx)
                 obj, ctx);
         }
         if (genus.length() > 0 && species.length() > 0) {
-            string genusSpecies = genus.substr(0,1) + ". " + species;
+            string genusInitial = genus.substr(0,1);
+            string genusSpecies = genusInitial + ". " + species;
             if (NStr::FindNoCase(isolate, genusSpecies) != string::npos) {
                 PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
                     "Orgmod.isolate should not contain '" + genusSpecies + "'",
+                    obj, ctx);
+            } else if (NStr::StartsWith(isolate, genusInitial) && NStr::EndsWith(isolate, species)) {
+                PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
+                    "Orgmod.isolate should not contain '" + genus.substr(0,1) + "..." + species + "'",
                     obj, ctx);
             }
         }
