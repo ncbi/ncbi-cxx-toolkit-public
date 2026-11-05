@@ -857,7 +857,6 @@ THREAD_LIBS
 DBAPI_ODBC
 DBAPI_MYSQL
 DBAPI_FTDS14
-DBAPI_FTDS100
 DBAPI_FTDS
 DBAPI_CTLIB
 DBAPI_DRIVER
@@ -1149,12 +1148,6 @@ FTDS14_CTLIB_INCLUDE
 FTDS14_LIB
 FTDS14_LIBS
 FTDS14_INCLUDE
-FTDS100_CTLIB_LIB
-FTDS100_CTLIB_LIBS
-FTDS100_CTLIB_INCLUDE
-FTDS100_LIB
-FTDS100_LIBS
-FTDS100_INCLUDE
 CURL_LIBS
 CURL_INCLUDE
 CURL_CONFIG
@@ -21500,9 +21493,6 @@ if test "$with_ftds" != "no" ; then
    ftds_ver=14
    try_local=yes
    case "$with_ftds" in
-      100 | 1.00 )
-         ftds_ver=100
-         ;;
       14* | 1.4 | 1.4.* | yes | '' )
          ;;
       * )
@@ -21567,23 +21557,6 @@ $as_echo "$as_me: WARNING: No supported TLS implementation available for --with-
     FTDS_CTLIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} $FTDS_CTLIBS"
  fi
    FTDS_INCLUDE="-I$FTDS_PATH/include"
-   d="dbapi/driver/ftds100/freetds"
-      if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
-         test "$ftds_ver" = 100  &&  FTDS_PATH="<$d>"
-         FTDS100_CTLIB_LIB="ct_ftds100${STATIC} tds_ftds100${STATIC}"
-         FTDS100_CTLIB_LIBS='$(ICONV_LIBS) $(KRB5_LIBS) $(NETWORK_LIBS)'
-         FTDS100_CTLIB_LIBS="$FTDS_TLS_LIBS $FTDS100_CTLIB_LIBS"
-         FTDS100_CTLIB_INCLUDE="-I\$(includedir)/$d -I\$(includedir0)/$d"
-         freetds=freetds
-      elif test -d "$FTDS_PATH" ; then
-         FTDS100_CTLIB_LIB=
-         FTDS100_CTLIB_LIBS=$FTDS_CTLIBS
-         FTDS100_CTLIB_INCLUDE=$FTDS_INCLUDE
-      fi
-      FTDS100_LIB='$(FTDS100_CTLIB_LIB)'
-      FTDS100_LIBS='$(FTDS100_CTLIB_LIBS)'
-      FTDS100_INCLUDE='$(FTDS100_CTLIB_INCLUDE)'
-
    d="dbapi/driver/ftds14/freetds"
       if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
          test "$ftds_ver" = 14  &&  FTDS_PATH="<$d>"
@@ -21664,12 +21637,6 @@ if test "$with_ftds" = "no" ; then
    FTDS_INCLUDE=
    FTDS_LIBS=
    FTDS_LIB=
-   FTDS100_INCLUDE=
-   FTDS100_LIBS=
-   FTDS100_LIB=
-   FTDS100_CTLIB_INCLUDE=
-   FTDS100_CTLIB_LIBS=
-   FTDS100_CTLIB_LIB=
    FTDS14_INCLUDE=
    FTDS14_LIBS=
    FTDS14_LIB=
@@ -21683,12 +21650,6 @@ $as_echo "#define HAVE_LIBFTDS 1" >>confdefs.h
 
              WithPackages="$WithPackages${WithPackagesSep}FreeTDS"; WithPackagesSep=" "
 fi
-
-
-
-
-
-
 
 
 
@@ -38691,7 +38652,6 @@ fi
 DBAPI_DRIVER=
 DBAPI_CTLIB=
 DBAPI_FTDS=
-DBAPI_FTDS100=
 DBAPI_MYSQL=
 DBAPI_ODBC=
 if test "$with_dbapi" = "no" ; then
@@ -38701,7 +38661,6 @@ else
    dbapi="dbapi"
    DBAPI_DRIVER=dbapi_driver
    DBAPI_FTDS=ncbi_xdbapi_ftds
-   DBAPI_FTDS100=ncbi_xdbapi_ftds100
    DBAPI_FTDS14=ncbi_xdbapi_ftds14
    test -n "$SYBASE_LIBS"    &&  DBAPI_CTLIB=ncbi_xdbapi_ctlib
    test -n "$MYSQL_LIBS"     &&  DBAPI_MYSQL=ncbi_xdbapi_mysql
@@ -39043,7 +39002,6 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
-
 
 
 

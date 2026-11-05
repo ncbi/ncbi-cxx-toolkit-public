@@ -5615,9 +5615,6 @@ if test "$with_ftds" != "no" ; then
    ftds_ver=14
    try_local=yes
    case "$with_ftds" in
-      100 | 1.00 )
-         ftds_ver=100
-         ;;
       14* | 1.4 | 1.4.* | yes | '' )
          ;;
       * )
@@ -5650,7 +5647,6 @@ if test "$with_ftds" != "no" ; then
    : ${FTDS_CTLIBS:="-lct -ltds $NETWORK_LIBS"}
    NCBI_RPATHIFY(FTDS_CTLIBS,   $FTDS_PATH/lib,      [ ]$FTDS_CTLIBS)
    FTDS_INCLUDE="-I$FTDS_PATH/include"
-   NCBI_LOCAL_FTDS(100)
    NCBI_LOCAL_FTDS(14)
    if test -n "$freetds" ; then
       FTDS_LIB="\$(FTDS${ftds_ver}_LIB)"
@@ -5691,12 +5687,6 @@ if test "$with_ftds" = "no" ; then
    FTDS_INCLUDE=
    FTDS_LIBS=
    FTDS_LIB=
-   FTDS100_INCLUDE=
-   FTDS100_LIBS=
-   FTDS100_LIB=
-   FTDS100_CTLIB_INCLUDE=
-   FTDS100_CTLIB_LIBS=
-   FTDS100_CTLIB_LIB=
    FTDS14_INCLUDE=
    FTDS14_LIBS=
    FTDS14_LIB=
@@ -5709,12 +5699,6 @@ else
              [Define to 1 if FreeTDS libraries are available.])
    NCBI_PACKAGE(FreeTDS)
 fi
-AC_SUBST(FTDS100_INCLUDE)
-AC_SUBST(FTDS100_LIBS)
-AC_SUBST(FTDS100_LIB)
-AC_SUBST(FTDS100_CTLIB_INCLUDE)
-AC_SUBST(FTDS100_CTLIB_LIBS)
-AC_SUBST(FTDS100_CTLIB_LIB)
 AC_SUBST(FTDS14_INCLUDE)
 AC_SUBST(FTDS14_LIBS)
 AC_SUBST(FTDS14_LIB)
@@ -9944,7 +9928,6 @@ fi
 DBAPI_DRIVER=
 DBAPI_CTLIB=
 DBAPI_FTDS=
-DBAPI_FTDS100=
 DBAPI_MYSQL=
 DBAPI_ODBC=
 if test "$with_dbapi" = "no" ; then
@@ -9954,7 +9937,6 @@ else
    dbapi="dbapi"
    DBAPI_DRIVER=dbapi_driver
    DBAPI_FTDS=ncbi_xdbapi_ftds
-   DBAPI_FTDS100=ncbi_xdbapi_ftds100
    DBAPI_FTDS14=ncbi_xdbapi_ftds14
    test -n "$SYBASE_LIBS"    &&  DBAPI_CTLIB=ncbi_xdbapi_ctlib
    test -n "$MYSQL_LIBS"     &&  DBAPI_MYSQL=ncbi_xdbapi_mysql
@@ -10376,7 +10358,6 @@ AC_SUBST(SQLITE3_WRAPPER)
 AC_SUBST(DBAPI_DRIVER)
 AC_SUBST(DBAPI_CTLIB)
 AC_SUBST(DBAPI_FTDS)
-AC_SUBST(DBAPI_FTDS100)
 AC_SUBST(DBAPI_FTDS14)
 AC_SUBST(DBAPI_MYSQL)
 AC_SUBST(DBAPI_ODBC)

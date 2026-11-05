@@ -63,31 +63,7 @@ EXCLUDE_FILES = ['asndbld/objDbld.c',
                  'ftds14/freetds/ctlib/unittests/rpc_ct_setparam.c',
                  'ftds14/freetds/ctlib/unittests/rpc_ct_param.c',
                  'ftds14/freetds/tds/unittests/freeze.c',
-                 'ftds14/freetds/ctlib/unittests/cs_convert.c',
-
-                 'ftds100/freetds/tds/data.c',
-                 'ftds100/freetds/odbc/prepare_query.c',
-                 'ftds100/freetds/dblib/dbpivot.c',
-                 'ftds100/freetds/tds/numeric.c',
-                 'ftds100/freetds/dblib/bcp.c',
-                 'ftds100/freetds/ctlib/unittests/rpc_ct_setparam.c',
-                 'ftds100/freetds/dblib/unittests/rpc.c',
-                 'ftds100/freetds/ctlib/ct.c',
-                 'ftds100/freetds/dblib/dblib.c',
-                 'ftds100/freetds/tds/config.c',
-                 'ftds100/freetds/odbc/unittests/describecol.c',
-                 'ftds100/freetds/odbc/odbc.c',
-                 'ftds100/freetds/odbc/unittests/describecol.c',
-                 'ftds100/freetds/odbc/connectparams.c',
-                 'ftds100/freetds/tds/token.c',
-                 'ftds100/freetds/tds/challenge.c',
-                 'ftds100/freetds/ctlib/unittests/t0006.c',
-                 'ftds100/freetds/ctlib/unittests/rpc_ct_param.c',
-                 'ftds100/freetds/ctlib/blk.c',
-                 'ftds100/freetds/replacements/daemon.c',
-                 'ftds100/freetds/dblib/dbpivot.c',
-                 'ftds100/freetds/tds/numeric.c',
-                 'ftds100/freetds/ctlib/unittests/ct_cursor.c']
+                 'ftds14/freetds/ctlib/unittests/cs_convert.c']
 
 
 def timestamp():
