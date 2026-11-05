@@ -94,9 +94,12 @@ GetTDSServerType(CS_CONNECTION* conn)
 #else
         const char* product = conn->tds_socket == NULL ? NULL :
             tds_conn(conn->tds_socket)->product_name;
+        if (product == NULL) {
+            return CDBConnParams::eUnknown;
+        }
 #endif
 
-        if (product != NULL && strlen(product) != 0) {
+        if (strlen(product) != 0) {
             if (strcmp(product, "sql server") == 0) {
                 return CDBConnParams::eSybaseSQLServer;
             } else if (strcmp(product, "ASE") == 0) {
