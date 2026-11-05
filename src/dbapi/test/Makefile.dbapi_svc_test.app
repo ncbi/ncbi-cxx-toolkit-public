@@ -8,7 +8,7 @@ SRC = dbapi_svc_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB  = sybdb_ftds100 $(DBAPI_CTLIB) $(SDBAPI_LIB) xconnect xutil xncbi
+LIB  = $(DBAPI_CTLIB) $(SDBAPI_LIB) xconnect xutil xncbi
 LIBS = $(SDBAPI_LIBS) $(SYBASE_LIBS) $(SYBASE_dllS) $(ORIG_LIBS)
 
 # LINK = purify $(C_LINK)

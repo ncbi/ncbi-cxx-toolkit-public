@@ -93,7 +93,6 @@ CDBSetConnParams::GetPassword(void) const
 
 
 ////////////////////////////////////////////////////////////////////////////////
-const char* ftds100_driver = "ftds100";
 const char* ftds14_driver = "ftds14";
 const char* ftds_driver = "ftds";
 
@@ -167,7 +166,6 @@ bool s_CommonInit(void)
 #endif
 
     DBAPI_RegisterDriver_FTDS();
-    DBAPI_RegisterDriver_FTDS100();
     DBAPI_RegisterDriver_FTDS14();
 
 #else
@@ -402,7 +400,6 @@ NCBITEST_INIT_VARIABLES(parser)
     parser->AddSymbol("SERVER_MicrosoftSQL", GetArgs().GetServerType() == CDBConnParams::eMSSqlServer);
 
     parser->AddSymbol("DRIVER_ftds", GetArgs().IsFreeTDS());
-    parser->AddSymbol("DRIVER_ftds100", GetArgs().GetDriverName() == ftds100_driver);
     parser->AddSymbol("DRIVER_ftds14", GetArgs().GetDriverName() == ftds14_driver);
     parser->AddSymbol("DRIVER_odbc", GetArgs().GetDriverName() == odbc_driver);
     parser->AddSymbol("DRIVER_ctlib", GetArgs().GetDriverName() == ctlib_driver);
@@ -582,7 +579,7 @@ void CTestArguments::PutMsgExpected(const char* msg, const char* replacement) co
 NCBITEST_INIT_CMDLINE(arg_desc)
 {
 // Describe the expected command-line arguments
-#define FTDS_DRIVERS ftds_driver, ftds100_driver, ftds14_driver
+#define FTDS_DRIVERS ftds_driver, ftds14_driver
 
 #define DEF_SERVER    "MSSQL"
 #define DEF_DRIVER    ftds_driver
