@@ -20,6 +20,8 @@
 #ifndef _tds_sysdep_public_h_
 #define _tds_sysdep_public_h_
 
+#error "Please switch to FreeTDS 1.4 (ftds or ftds14)."
+
 #include <corelib/ncbitype.h>
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
