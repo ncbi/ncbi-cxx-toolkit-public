@@ -22,6 +22,7 @@ APP_PROJ = example_value_convert \
            test_histogram_binning \
            test_logrotate \
            test_line_reader \
+           test_limited_map \
            test_math \
            test_porter_stemming \
            test_queue_mt \
@@ -54,10 +55,6 @@ APP_PROJ = example_value_convert \
            test_compile_time \
            test_ctre \
            test_memory_streambuf
-
-
-EXPENDABLE_APP_PROJ = \
-           test_limited_map
 
 PROJ_TAG = test
 
