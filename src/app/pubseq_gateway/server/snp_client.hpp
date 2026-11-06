@@ -308,20 +308,20 @@ protected:
 class CSNPClient
 {
 public:
-    CSNPClient(CPSGS_SNPProcessor& processor, const SSNPProcessor_Config& config);
+    CSNPClient(const SSNPProcessor_Config& config);
     ~CSNPClient(void);
 
     vector<string> WhatNACanProcess(SPSGS_AnnotRequest& annot_request,
                                     TProcessorPriority priority = 0) const;
     bool CanProcessRequest(CPSGS_Request& request, TProcessorPriority priority) const;
 
-    vector<SSNPData> GetAnnotInfo(const objects::CSeq_id_Handle& id,
+    vector<SSNPData> GetAnnotInfo(CPSGS_SNPProcessor& processor, const objects::CSeq_id_Handle& id,
         const string& name, objects::CSeq_id::ESNPScaleLimit scale_limit);
-    SSNPData GetBlobByBlobId(const string& blob_id);
-    SSNPData GetChunk(const string& id2info, int chunk_id);
+    SSNPData GetBlobByBlobId(CPSGS_SNPProcessor& processor, const string& blob_id);
+    SSNPData GetChunk(CPSGS_SNPProcessor& processor, const string& id2info, int chunk_id);
 
-    CRef<CSNPFileInfo> GetFileInfo(const string& acc);
-    CRef<CSNPSeqInfo> GetSeqInfo(const CSNPBlobId& blob_id);
+    CRef<CSNPFileInfo> GetFileInfo(CPSGS_SNPProcessor& processor, const string& acc);
+    CRef<CSNPSeqInfo> GetSeqInfo(CPSGS_SNPProcessor& processor, const CSNPBlobId& blob_id);
     
     bool HaveValidSeq_id(const SPSGS_AnnotRequest& request) const;
 
@@ -336,7 +336,8 @@ private:
     CRef<objects::CID2S_Seq_annot_Info> x_GetFeatInfo(const string& name, const objects::CSeq_id_Handle& id);
     CRef<objects::CID2S_Seq_annot_Info> x_GetGraphInfo(const string& name, const objects::CSeq_id_Handle& id);
 
-    void x_RegisterTiming(psg_time_point_t start,
+    void x_RegisterTiming(CPSGS_SNPProcessor& processor,
+                          psg_time_point_t start,
                           EPSGOperation operation,
                           EPSGOperationStatus status);
     
@@ -344,7 +345,6 @@ private:
     shared_ptr<objects::CVDBMgr> m_Mgr;
     CRef<objects::CSnpPtisClient> m_PTISClient;
     TSNPDbCache m_SNPDbCache;
-    CPSGS_SNPProcessor& m_Processor;
 };
 
 

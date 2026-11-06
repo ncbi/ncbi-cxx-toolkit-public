@@ -124,7 +124,7 @@ CPSGS_SNPProcessor::CPSGS_SNPProcessor(void)
       m_ScaleLimit(CSeq_id::eSNPScaleLimit_Default)
 {
     x_LoadConfig();
-    m_Client = make_shared<CSNPClient>(*this, *m_Config);
+    m_Client = make_shared<CSNPClient>(*m_Config);
 }
 
 
@@ -422,6 +422,7 @@ void CPSGS_SNPProcessor::GetAnnotation(void)
     x_SetState("task_running");
     sm_QueuedTasks--;
     sm_RunningTasks++;
+    m_Start = psg_clock_t::now(); // This time is used only to report not-found status.
     for ( auto& name : m_ProcessNAs ) {
         if (m_Canceled) {
             break;
@@ -429,7 +430,7 @@ void CPSGS_SNPProcessor::GetAnnotation(void)
         try {
             for (auto& id : m_SeqIds) {
                 if (!m_Client->IsValidSeqId(id)) continue;
-                auto data = m_Client->GetAnnotInfo(id, name, m_ScaleLimit);
+                auto data = m_Client->GetAnnotInfo(*this, id, name, m_ScaleLimit);
                 m_SNPData.insert(m_SNPData.end(), data.begin(), data.end());
                 if ( GetRequest()->NeedTrace() ) {
                     SendTrace(kSNPProcessorName +
@@ -550,13 +551,14 @@ void CPSGS_SNPProcessor::GetBlobByBlobId(void)
     x_SetState("task_running");
     sm_QueuedTasks--;
     sm_RunningTasks++;
+    m_Start = psg_clock_t::now(); // This time is used only to report not-found status.
     if (!m_Canceled) {
         try {
             if ( GetRequest()->NeedTrace() ) {
                 SendTrace(kSNPProcessorName +
                           " processor trying to get blob " + m_PSGBlobId);
             }
-            m_SNPData.push_back(m_Client->GetBlobByBlobId(m_PSGBlobId));
+            m_SNPData.push_back(m_Client->GetBlobByBlobId(*this, m_PSGBlobId));
         }
         catch (...) {
             if ( GetRequest()->NeedTrace() ) {
@@ -641,13 +643,14 @@ void CPSGS_SNPProcessor::GetChunk(void)
     x_SetState("task_running");
     sm_QueuedTasks--;
     sm_RunningTasks++;
+    m_Start = psg_clock_t::now(); // This time is used only to report not-found status.
     if (!m_Canceled) {
         try {
             if ( GetRequest()->NeedTrace() ) {
                 SendTrace(kSNPProcessorName +
                           " processor trying to get chunk " + m_Id2Info + "." + NStr::NumericToString(m_ChunkId));
             }
-            SSNPData data = m_Client->GetChunk(m_Id2Info, m_ChunkId);
+            SSNPData data = m_Client->GetChunk(*this, m_Id2Info, m_ChunkId);
             m_SNPData.push_back(data);
         }
         catch (...) {

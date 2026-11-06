@@ -754,11 +754,10 @@ bool CSNPClient::IsValidSeqId(const string& id, int id_type, int version) const
 }
 
 
-CSNPClient::CSNPClient(CPSGS_SNPProcessor& processor, const SSNPProcessor_Config& config)
+CSNPClient::CSNPClient(const SSNPProcessor_Config& config)
     : m_Config(config),
       m_Mgr(new CVDBMgr),
-      m_SNPDbCache(config.m_GCSize, config.m_FileReopenTime, config.m_FileRecheckTime),
-      m_Processor(processor)
+      m_SNPDbCache(config.m_GCSize, config.m_FileReopenTime, config.m_FileRecheckTime)
 {
     if (m_Config.m_AddPTIS) {
         m_PTISClient = CSnpPtisClient::CreateClient();
@@ -771,7 +770,7 @@ CSNPClient::~CSNPClient(void)
 }
 
 
-CRef<CSNPFileInfo> CSNPClient::GetFileInfo(const string& acc)
+CRef<CSNPFileInfo> CSNPClient::GetFileInfo(CPSGS_SNPProcessor& processor, const string& acc)
 {
     CRef<CSNPFileInfo> info;
     {{
@@ -794,7 +793,7 @@ CRef<CSNPFileInfo> CSNPClient::GetFileInfo(const string& acc)
                 --info->m_RemainingOpenRetries;
                 psg_time_point_t start = psg_clock_t::now();
                 info->m_SNPDb = CSNPDb(*m_Mgr, info->m_FileName);
-                x_RegisterTiming(start, eVDBOpen, eOpStatusFound);
+                x_RegisterTiming(processor, start, eVDBOpen, eOpStatusFound);
             }
             catch ( CSraException& exc ) {
                 if ( exc.GetErrCode() == exc.eNotFoundDb ||
@@ -845,9 +844,9 @@ CRef<CSNPFileInfo> CSNPClient::GetFileInfo(const string& acc)
 }
 
 
-CRef<CSNPSeqInfo> CSNPClient::GetSeqInfo(const CSNPBlobId& blob_id)
+CRef<CSNPSeqInfo> CSNPClient::GetSeqInfo(CPSGS_SNPProcessor& processor, const CSNPBlobId& blob_id)
 {
-    return GetFileInfo(blob_id.GetAccession())->GetSeqInfo(blob_id);
+    return GetFileInfo(processor, blob_id.GetAccession())->GetSeqInfo(blob_id);
 }
 
 
@@ -909,8 +908,10 @@ bool CSNPClient::CanProcessRequest(CPSGS_Request& request, TProcessorPriority pr
 }
 
 
-vector<SSNPData> CSNPClient::GetAnnotInfo(const CSeq_id_Handle& id,
-    const string& name, CSeq_id::ESNPScaleLimit scale_limit)
+vector<SSNPData> CSNPClient::GetAnnotInfo(CPSGS_SNPProcessor& processor,
+    const CSeq_id_Handle& id,
+    const string& name,
+    CSeq_id::ESNPScaleLimit scale_limit)
 {
     vector<SSNPData> ret;
     try {
@@ -927,14 +928,14 @@ vector<SSNPData> CSNPClient::GetAnnotInfo(const CSeq_id_Handle& id,
             // find default SNP track
             psg_time_point_t start = psg_clock_t::now();
             string na_acc = m_PTISClient->GetPrimarySnpTrackForAccVer(acc_ver);
-            x_RegisterTiming(start, eSNP_PTISLookup,
+            x_RegisterTiming(processor, start, eSNP_PTISLookup,
                              na_acc.empty()? eOpStatusNotFound: eOpStatusFound);
             if (na_acc.empty()) {
                 // no default SNP track
                 return ret;
             }
             size_t filter_index = s_ExtractFilterIndex(na_acc);
-            CRef<CSNPFileInfo> info = GetFileInfo(na_acc);
+            CRef<CSNPFileInfo> info = GetFileInfo(processor, na_acc);
             if ( !info ) {
                 return ret; // should it be an error since PTIS says SNPs should exist
             }
@@ -973,7 +974,7 @@ vector<SSNPData> CSNPClient::GetAnnotInfo(const CSeq_id_Handle& id,
                 // filter specification is required
                 return ret;
             }
-            CRef<CSNPFileInfo> info = GetFileInfo(acc);
+            CRef<CSNPFileInfo> info = GetFileInfo(processor, acc);
             if ( !info ) {
                 return ret;
             }
@@ -1006,22 +1007,22 @@ vector<SSNPData> CSNPClient::GetAnnotInfo(const CSeq_id_Handle& id,
 }
 
 
-SSNPData CSNPClient::GetBlobByBlobId(const string& blob_id)
+SSNPData CSNPClient::GetBlobByBlobId(CPSGS_SNPProcessor& processor, const string& blob_id)
 {
     SSNPData ret;
     CSNPBlobId snp_blob_id(blob_id);
-    GetSeqInfo(snp_blob_id)->LoadBlob(ret, m_Config.m_Split);
+    GetSeqInfo(processor, snp_blob_id)->LoadBlob(ret, m_Config.m_Split);
     return ret;
 }
 
 
-SSNPData CSNPClient::GetChunk(const string& id2info, int chunk_id)
+SSNPData CSNPClient::GetChunk(CPSGS_SNPProcessor& processor, const string& id2info, int chunk_id)
 {
     SSNPData ret;
     SParsedId2Info parsed_info(id2info);
     if (!parsed_info.blob_id) return ret;
     ret.m_SplitVersion = parsed_info.split_version;
-    GetSeqInfo(*parsed_info.blob_id)->LoadChunk(ret, chunk_id);
+    GetSeqInfo(processor, *parsed_info.blob_id)->LoadChunk(ret, chunk_id);
     return ret;
 }
 
@@ -1048,12 +1049,13 @@ CRef<CID2S_Seq_annot_Info> CSNPClient::x_GetGraphInfo(const string& name, const 
 }
 
 
-void CSNPClient::x_RegisterTiming(psg_time_point_t start,
+void CSNPClient::x_RegisterTiming(CPSGS_SNPProcessor& processor,
+                                  psg_time_point_t start,
                                   EPSGOperation operation,
                                   EPSGOperationStatus status)
 {
     CPubseqGatewayApp::GetInstance()->
-        GetTiming().Register(&m_Processor, operation, status, start, "snp");
+        GetTiming().Register(&processor, operation, status, start, "snp");
 }
 
 
