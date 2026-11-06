@@ -5,7 +5,7 @@
 APP = bam_compare
 SRC = bam_compare samtools bam_test_common
 
-REQUIRES = objects Linux Z
+REQUIRES = objects Linux Z in-house-resources
 
 SAMTOOLS = $(NCBI)/samtools
 SAMTOOLS_INCLUDE = -I$(SAMTOOLS)/include
