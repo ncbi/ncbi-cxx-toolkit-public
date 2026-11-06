@@ -1415,13 +1415,16 @@ class Scenario137( TestBase ):
         if not self.ns.isRunning():
             raise Exception( "Cannot start netschedule" )
 
-        ns_client = self.getNetScheduleService( 'TEST', 'scenario136' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario137' )
         ns_client.set_client_identification( 'node', 'session' )
 
         changeAffinity( ns_client, [ 'a1' ], [] )
 
         output = execAny( ns_client,
                           'GET2 wnode_aff=1 any_aff=0' )
+        if output.strip() == '':
+            raise Exception( "No output for getting a job with affinity = 1")
+
         if '&' in output:
             values = parse_qs( output, True, True )
             receivedJobID = values[ 'job_key' ][ 0 ]

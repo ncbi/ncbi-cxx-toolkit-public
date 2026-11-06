@@ -221,7 +221,8 @@ def testOneCombination( sandboxPath, nsPathVer, gcPath, port, verbose ):
         print(combination, file=sys.stderr)
         print("Error copying binary to sandbox: " + nsPath, file=sys.stderr)
         print("", file=sys.stderr)
-        logging.error( "Error copying binary to sandbox: " + nsPath )
+        logging.error( "Error copying binary to sandbox from: " + nsPath +
+                       " to: " + sandboxPath + os.path.sep + "netscheduled" )
         return 1
 
     if nsVer is None:
