@@ -265,7 +265,6 @@ connssl needs3party $(ORIG_LIBS)
 crypto needs $(Z_LIB)
 crypto needs3party $(ORIG_LIBS)
 crypto needs3party $(Z_LIBS)
-ct_ftds100 needs tds_ftds100
 ct_ftds14 needs tds_ftds14
 ctransition needs xncbi
 ctransition_nlmzip needs $(COMPRESS_LIBS)
@@ -298,10 +297,8 @@ dbapi_driver needs xncbi
 dbapi_driver_wrap_s needs dbapi_driver
 dbapi_sample_base needs $(DBAPI_CTLIB)
 dbapi_sample_base needs $(DBAPI_FTDS)
-dbapi_sample_base needs $(DBAPI_FTDS100)
 dbapi_sample_base needs $(DBAPI_FTDS14)
 dbapi_sample_base needs $(DBAPI_ODBC)
-dbapi_sample_base needs $(FTDS100_LIB)
 dbapi_sample_base needs $(FTDS_LIB)
 dbapi_sample_base needs $(XCONNEXT)
 dbapi_sample_base needs dbapi_driver
@@ -325,8 +322,6 @@ dbldasn_g needs splitdbasn_g
 dbloadb needs asnmuxdblb
 dbloadb needs tea_crypt
 dbloadb_asn needs asngendefs
-dbpool needs $(DBAPI_FTDS100)
-dbpool needs $(FTDS100_LIB)
 dbpool needs dbapi_driver
 dbpool needs ssssys
 dbsnp_ptis needs $(SEQ_LIBS)
@@ -763,8 +758,6 @@ ncbi_xdbapi_ctlib needs3party $(SYBASE_LIBS)
 ncbi_xdbapi_ftds needs $(FTDS_LIB)
 ncbi_xdbapi_ftds needs dbapi_driver
 ncbi_xdbapi_ftds needs3party $(FTDS_LIBS)
-ncbi_xdbapi_ftds100 needs $(FTDS100_LIB)
-ncbi_xdbapi_ftds100 needs dbapi_driver
 ncbi_xdbapi_ftds14 needs $(FTDS_LIB)
 ncbi_xdbapi_ftds14 needs dbapi_driver
 ncbi_xdbapi_ftds14 needs3party $(FTDS_LIBS)
@@ -889,7 +882,6 @@ objmmail needs3party $(NETWORK_LIBS)
 objprt needs xser
 objspdi needs xser
 objtax1 needs3party ncbiobj
-odbc_ftds100 needs tds_ftds100
 odbc_ftds14 needs tds_ftds14
 omssa needs $(SEQ_LIBS)
 omssa needs pub
@@ -1152,7 +1144,6 @@ sybdb64 includes3party sybcomn64
 sybdb64 includes3party sybintl64
 sybdb64 needs3party $(ORIG_LIBS)
 sybdb64 needs3party sybunic64
-sybdb_ftds100 needs tds_ftds100
 sybdb_ftds14 needs tds_ftds14
 sybintl64 needs3party $(ORIG_LIBS)
 sybtcl64 needs3party $(ORIG_LIBS)
@@ -1172,12 +1163,6 @@ taxoscli needs ssscli
 taxoscli needs staxupdcmn
 taxutl needs seqdb
 taxutl needs taxon1
-tds_ftds100 needs $(Z_LIB)
-tds_ftds100 needs3party $(KRB5_LIBS)
-tds_ftds100 needs3party $(NETWORK_LIBS)
-tds_ftds100 needs3party $(OPENSSL_LIBS)
-tds_ftds100 needs3party $(ORIG_LIBS)
-tds_ftds100 needs3party $(Z_LIBS)
 tds_ftds14 needs $(Z_LIB)
 tds_ftds14 needs3party $(KRB5_LIBS)
 tds_ftds14 needs3party $(NETWORK_LIBS)
