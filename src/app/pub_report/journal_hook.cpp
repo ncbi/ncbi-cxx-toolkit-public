@@ -38,7 +38,6 @@
 #include <objects/biblio/Cit_jour.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <misc/eutils_client/eutils_client.hpp>
-#include <objtools/validator/utilities.hpp>
 
 #include "journal_report.hpp"
 #include "utils.hpp"
@@ -82,23 +81,57 @@ void CSkipPubJournalHook::SkipObject(CObjectIStream& in, const CObjectTypeInfo& 
     }
 }
 
+// see also validator/utilities
+static bool s_ConvertChar(char& ch)
+{
+    if (ch < 0x02 || ch > 0x7F) {
+        // no change
+    } else if (isalpha(ch)) {
+        ch = tolower(ch);
+    } else if (isdigit(ch)) {
+        // no change
+    } else if (ch == '\'' || ch == '/' || ch == '@' || ch == '`' || ch == ',') {
+        // no change
+    } else {
+        ch = ' ';
+        return true;
+    }
+    return false;
+}
+
+static void ConvertToEntrezTerm(string& title)
+{
+    bool prev_space = true;
+    for (auto it = title.begin(); it != title.end();) {
+        bool cur_space = s_ConvertChar(*it);
+        if (cur_space && prev_space) {
+            it = title.erase(it);
+        } else {
+            prev_space = cur_space;
+            ++it;
+        }
+    }
+    NStr::TruncateSpacesInPlace(title);
+}
+
 bool CSkipPubJournalHook::IsJournalMissing(const string& title)
 {
     bool   ret  = false;
     string term = title;
-    validator::ConvertToEntrezTerm(term);
+    ConvertToEntrezTerm(term);
 
     auto cached_term = m_term_cache.find(term);
 
     if (cached_term != m_term_cache.end()) {
         ret = cached_term->second;
     } else {
-        Uint8 count = GetEUtils().Count("nlmcatalog", term + "[issn]");
+        CEutilsClient& eutils = GetEUtils();
+        Uint8 count = eutils.Count("nlmcatalog", term + "[issn]");
         if (count == 0) {
-            count = GetEUtils().Count("nlmcatalog", term + "[multi] AND ncbijournals[sb]");
+            count = eutils.Count("nlmcatalog", term + "[multi] AND ncbijournals[sb]");
         }
         if (count == 0) {
-            count = GetEUtils().Count("nlmcatalog", term + "[jour]");
+            count = eutils.Count("nlmcatalog", term + "[jour]");
         }
         ret                = (count == 0);
         m_term_cache[term] = ret;
