@@ -297,8 +297,6 @@ private:
     void*  m_PReg;   /// Pointer to compiled PCRE pattern.
 
 #ifdef USE_LIBPCRE2
-    friend class CRegexpUtil;
-
     void*    m_MatchData;
     TOffset* m_Results;
     int      m_JITStatus;
@@ -328,15 +326,6 @@ private:
 class NCBI_XREGEXP_EXPORT CRegexpUtil
 {
 public:
-    enum EReplace {
-        eReplace_literal,       ///< No substitutions
-        eReplace_traditional,   ///< Just $n and {$n}
-#ifdef USE_LIBPCRE2
-        eReplace_pcre_dollar,   ///< Most PCRE $... syntax
-        eReplace_pcre_extended, ///< Also \..., ${n:-...}, ${n:+...:...}
-#endif
-    };
-
     /// Constructor.
     ///
     /// Set string for processing.
@@ -423,15 +412,10 @@ public:
     /// @param search
     ///   Regular expression to match a substring value that is replaced.
     /// @param replace
-    ///   Replace "search" substring with this value.
-    ///   Except in literal mode, the matched subpatterns
+    ///   Replace "search" substring with this value. The matched subpatterns
     ///   (if any) can be found and inserted into replace string using
-    ///   variables $1, $2, $3, and so forth.  In traditional mode, the
-    ///   variable can be enclosed in braces (as {$n}), which will be
-    ///   deleted on substitution; corresponding PCRE syntax swaps the
-    ///   dollar sign with the opening brace (${n}).  See
-    ///   https://www.pcre.org/current/doc/html/pcre2api.html#SEC38
-    ///   for a full description of the syntax PCRE supports.
+    ///   variables $1, $2, $3, and so forth. The variable can be enclosed
+    ///   in the curly brackets {}, that will be deleted on substitution.
     /// @param compile_flags
     ///   Regular expression compilation flags.
     /// @param match_flags
@@ -440,8 +424,6 @@ public:
     ///   Replace no more than "max_replace" occurrences of substring "search".
     ///   If "max_replace" is zero (default), then replace all occurrences with
     ///   "replace".
-    /// @param syntax
-    ///   How to interpret @a replace.
     /// @return
     ///   Return the count of replacements.
     /// @sa
@@ -451,8 +433,7 @@ public:
         CTempString       replace,
         CRegexp::TCompile compile_flags = CRegexp::fCompile_default,
         CRegexp::TMatch   match_flags   = CRegexp::fMatch_default,
-        size_t            max_replace   = 0,
-        EReplace          syntax        = eReplace_traditional
+        size_t            max_replace   = 0
     );
 
 

@@ -205,27 +205,6 @@ int CRegexApplication::Run(void)
         assert(str == "good");
     }}
     {{
-        struct SExpected {
-            CRegexpUtil::EReplace replace;
-            const char*           content;
-        } expected[] = {
-            { CRegexpUtil::eReplace_literal,       "The \\U{$1}" },
-            { CRegexpUtil::eReplace_traditional,   "The \\Uquick, ${1}" },
-#ifdef USE_LIBPCRE2
-            { CRegexpUtil::eReplace_pcre_dollar,   "The \\U{quick}" },
-            { CRegexpUtil::eReplace_pcre_extended, "The {QUICK}" },
-#endif
-        };
-        for (const auto &x : expected) {
-            CRegexpUtil re(text);
-            // Force the initial length reservation to be too low
-            re.Replace(pat, "\\U{$1}, ${1}, $1, $1, $1, $1\\E cheetah",
-                       CRegexp::fCompile_default, CRegexp::fMatch_default,
-                       0, x.replace);
-            assert(NStr::StartsWith(re.GetResult(), x.content));
-        }
-    }}
-    {{
         // Replace by pattern in some range
         CRegexpUtil re("cats: dog_1, dog#2; dogs: dog_3, dog_4");
         re.SetRange("^cats:", "^dogs:", " ");
