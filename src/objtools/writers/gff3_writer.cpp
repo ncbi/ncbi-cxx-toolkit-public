@@ -2871,7 +2871,7 @@ bool CGff3Writer::xWriteFeatureGene(
 
 static int s_InitPhase(const CSeq_feat& feature, const CRange<TSeqPos>& range)
 {
-    _ASSERT(feature.IsCdregion());
+    _ASSERT(feature.IsSetData() && feature.GetData().IsCdregion());
 
     // phase 0 means that the first base is the first base of a codon.
     // phase 1 means that the second base is the first base of a codon.
