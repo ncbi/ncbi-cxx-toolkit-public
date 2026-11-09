@@ -351,7 +351,8 @@ size_t CRegexpUtil::Replace(
     CTempString       replace,
     CRegexp::TCompile compile_flags,
     CRegexp::TMatch   match_flags,
-    size_t            max_replace)
+    size_t            max_replace,
+    EReplace          syntax)
 {
     if ( search.empty() ) {
         return 0;
@@ -374,12 +375,63 @@ size_t CRegexpUtil::Replace(
             break;
         }
 
-        // Substitute all subpatterns "$<digit>" to values in the "replace" string
         const CRegexp::TOffset* result;
         string     x_replace(replace.data(), replace.length());
         size_t     pos = 0;
 
-        for (;;) {
+        switch (syntax) {
+        case eReplace_literal:
+            break;
+        case eReplace_traditional:
+            break; // handled below
+#ifdef USE_LIBPCRE2
+        case eReplace_pcre_dollar:
+        case eReplace_pcre_extended:
+        {
+            uint32_t pcre_options = (PCRE2_SUBSTITUTE_OVERFLOW_LENGTH |
+                                     PCRE2_SUBSTITUTE_REPLACEMENT_ONLY);
+            if (syntax == eReplace_pcre_extended) {
+                pcre_options |= PCRE2_SUBSTITUTE_EXTENDED;
+            }
+            result = re.GetResults(0);
+            PCRE2_SIZE outlen = replace.length() + result[1] - result[0];
+            x_replace.resize(outlen + 1);
+            do {
+                num_found = pcre2_substitute((const pcre2_code*) re.m_PReg,
+                                             (PCRE2_SPTR) m_Content.data(),
+                                             m_Content.length(), start_pos,
+                                             pcre_options,
+                                             (pcre2_match_data*)re.m_MatchData,
+                                             NULL /* mcontext */,
+                                             (PCRE2_SPTR) replace.data(),
+                                             replace.size(),
+                                             (PCRE2_UCHAR*) &x_replace[0],
+                                             &outlen);
+                if (num_found == PCRE2_ERROR_NOMEMORY) {
+                    _ASSERT(outlen > x_replace.length());
+                    x_replace.resize(outlen + 1);
+                    pcre_options &= ~PCRE2_SUBSTITUTE_OVERFLOW_LENGTH;
+                } else if (num_found >= 0) {
+                    x_replace.resize(outlen);
+                } else {
+                    char err[120];
+                    pcre2_get_error_message(num_found, (PCRE2_UCHAR*) err,
+                                            ArraySize(err));
+                    string msg = ("Applying the substitution '"
+                                  + string(replace) + "' failed");
+                    if (outlen != PCRE2_UNSET) {
+                        msg += " at position " + NStr::NumericToString(outlen);
+                    }
+                    NCBI_THROW(CRegexpException, eCompile, msg + ": " + err);
+                }
+            } while (num_found == PCRE2_ERROR_NOMEMORY);
+            break;
+        }
+#endif
+        }
+        
+        // Substitute all subpatterns "$<digit>" to values in the "replace" string
+        while (syntax == eReplace_traditional) {
             // Find "$"
             pos = x_replace.find("$", pos);
             if (pos == NPOS) {
