@@ -165,7 +165,7 @@ public:
         bool sortAlignments = false
         );
 
-    virtual ~CGff3Writer(); 
+    virtual ~CGff3Writer();
 
     void SetDefaultMethod(
         const string& defaultMethod) { m_sDefaultMethod = defaultMethod; };
@@ -244,6 +244,7 @@ protected:
     virtual bool xWriteFeatureCds(
         CGffFeatureContext&,
         const CMappedFeat& );
+
     virtual bool xWriteFeatureGeneric(
         CGffFeatureContext&,
         const CMappedFeat& );
@@ -268,6 +269,7 @@ protected:
     void xWriteAlignment(
         const CGffAlignRecord& record );
 
+    [[deprecated]]
     virtual bool xWriteFeatureRecords(
         const CGffFeatureRecord&,
         const CSeq_loc&,
@@ -500,7 +502,15 @@ protected:
     string xNextAlignId();
 
 private:
+    bool xWriteFeatureRecords(
+        const CGffFeatureRecord&);
+
     bool xAssignFeatureAttributePartial(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&) override;
+    
+    bool xAssignFeatureAttributeCodeBreak(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;
@@ -509,6 +519,21 @@ private:
             const CGff3FeatRecord& rna_record,
             const CGffFeatureContext& fc,
             const CMappedFeat& mf);
+
+    void xWriteFeatureCodeBreaks(
+            const CGff3FeatRecord& cdsRecord,
+            const CGffFeatureContext& fc,
+            const CMappedFeat& cds);
+
+    void xWriteFeatureCodeBreak(
+            const CGff3FeatRecord& cdsRecord,
+            const CCode_break& codeBreak,
+            const CGffFeatureContext& fc,
+            bool isTransSpliced);
+
+    void xWriteCdsProduct(
+        CGffFeatureContext& fc,
+        const CMappedFeat& cds);
 
     bool xIsInsdcMode() const;
 

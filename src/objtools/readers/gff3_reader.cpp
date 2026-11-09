@@ -67,6 +67,7 @@
 #include <algorithm>
 #include <util/regexp/ctre/ctre.hpp>
 #include "gff3_align_utils.hpp"
+#include <util/compile_time.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -542,6 +543,7 @@ bool CGff3Reader::xParseAlignment(
     return true;
 }
 
+
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xUpdateAnnotFeature(
     const CGff2Record& gffRecord,
@@ -549,41 +551,30 @@ bool CGff3Reader::xUpdateAnnotFeature(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    //if (gffRecord.Type() == "CDS") {
-    //    if (gffRecord.SeqStart() == 114392786) {
-    //        cerr << "";
-    //    }
-    //}
-
     mpLocations->AddRecord(gffRecord);
 
-    auto pFeature = Ref(new CSeq_feat);
-
     auto recType = gffRecord.NormalizedType();
-    bool result {true};
+
     if (recType == "exon" || recType == "five_prime_utr" || recType == "three_prime_utr") {
-        return xUpdateAnnotExon(gffRecord, pFeature, annot, pEC);
+        return xUpdateAnnotExon(gffRecord, annot, pEC);
     }
     if (recType == "cds") {
-        return xUpdateAnnotCds(gffRecord, pFeature, annot, pEC);
+        return xUpdateAnnotCds(gffRecord, annot, pEC);
+    }
+    if (xIsInsdcMode() && (recType == "recoded_codon" || recType == "stop_codon")) {
+        return xUpdateAnnotCodeBreak(gffRecord, annot);
     }
     if (recType == "gene") {
-         return xUpdateAnnotGene(gffRecord, pFeature, annot, pEC);
+         return xUpdateAnnotGene(gffRecord, annot, pEC);
     }
-    if (NStr::EndsWith(recType, "rna")) {
-        return xUpdateAnnotRna(gffRecord, pFeature, annot, pEC);
-    }
-    // allow exon before VDJC gene segment to not crash as data error
-    if (NStr::EndsWith(recType, "_gene_segment")) {
-        return xUpdateAnnotRna(gffRecord, pFeature, annot, pEC);
+    if (NStr::EndsWith(recType, "rna") || NStr::EndsWith(recType, "_gene_segment")) {
+        return xUpdateAnnotRna(gffRecord, annot, pEC);
     }
     if (recType == "region") {
-        return xUpdateAnnotRegion(gffRecord, pFeature, annot, pEC);
+        return xUpdateAnnotRegion(gffRecord, annot, pEC);
     }
-    if (!xUpdateAnnotGeneric(gffRecord, pFeature, annot, pEC)) {
-        return false;
-    }
-    return true;
+
+    return xUpdateAnnotGeneric(gffRecord, annot, pEC);
 }
 
 
@@ -620,6 +611,35 @@ void CGff3Reader::xVerifyExonLocation(
     }
 }
 
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::xUpdateAnnotExon(
+    const CGff2Record&  record,
+    CSeq_annot&         annot,
+    ILineErrorListener* /*pEC*/)
+//  ----------------------------------------------------------------------------
+{
+    string parentId;
+    if (record.GetAttribute("Parent", parentId)) {
+        CRef<CSeq_feat> pParent;
+        if (! x_GetFeatureById(parentId, pParent)) {
+            return true;
+        }
+        if (pParent->GetData().IsRna()) {
+            xVerifyExonLocation(parentId, record);
+        } else if (pParent->GetData().IsGene()) {
+            if (auto pFeature = xCreateFeature(record); pFeature) {
+                return CGff2Reader::xAddFeatureToAnnot(pFeature, annot);
+            } else {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xUpdateAnnotExon(
     const CGff2Record& record,
@@ -643,6 +663,7 @@ bool CGff3Reader::xUpdateAnnotExon(
             }
             return CGff2Reader::xAddFeatureToAnnot(pFeature, annot);
         }
+        /*
         IdToFeatureMap::iterator fit = m_MapIdToFeature.find(parentId);
         if (fit != m_MapIdToFeature.end()) {
             CRef<CSeq_feat> pParent = fit->second;
@@ -650,6 +671,7 @@ bool CGff3Reader::xUpdateAnnotExon(
                 return false;
             }
         }
+        */
     }
     return true;
 }
@@ -712,6 +734,49 @@ bool CGff3Reader::xUpdateAnnotCds(
 
 
 //  ----------------------------------------------------------------------------
+bool CGff3Reader::xUpdateAnnotCds(
+    const CGff2Record& record,
+    CSeq_annot&        annot,
+    ILineErrorListener* /*pEC*/)
+//  ----------------------------------------------------------------------------
+{
+    xVerifyCdsParents(record);
+
+    string cdsId = xMakeRecordId(record);
+    mpLocations->AddRecordForId(cdsId, record);
+
+    string parentId;
+    record.GetAttribute("Parent", parentId);
+
+    if (! parentId.empty()) {
+        mCdsParents.insert(parentId);
+        mpLocations->AddRecordForId(parentId, record);
+    }
+
+    if (m_MapIdToFeature.contains(cdsId)) { // Dates from RW-1325
+        return true;
+    }
+
+    auto pFeature = xCreateFeature(record);
+    if (! pFeature) {
+        return false;
+    }
+
+    m_MapIdToFeature[cdsId] = pFeature;
+    CGff2Reader::xAddFeatureToAnnot(pFeature, annot);
+
+    if (! parentId.empty()) {
+        s_FeatureSetQualifier("Parent", parentId, pFeature);
+        xFeatureSetXrefParent(parentId, pFeature);
+        if (m_iFlags & fGeneXrefs) {
+            xFeatureSetXrefGrandParent(parentId, pFeature);
+        }
+    }
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
 bool CGff3Reader::xFeatureSetXrefGrandParent(
     const string& parent,
     CRef<CSeq_feat> pFeature)
@@ -756,13 +821,11 @@ bool CGff3Reader::xFeatureSetXrefParent(
     CRef<CSeq_feat> pChild)
 //  ----------------------------------------------------------------------------
 {
-    IdToFeatureMap::iterator it = m_MapIdToFeature.find(parent);
-    if (it == m_MapIdToFeature.end()) {
+    CRef<CSeq_feat> pParent;
+    if (! x_GetFeatureById(parent, pParent)) {
         return false;
     }
-    CRef<CSeq_feat> pParent = it->second;
 
-    //xref child->parent
     CRef<CFeat_id> pParentId(new CFeat_id);
     pParentId->Assign(pParent->GetId());
     CRef<CSeqFeatXref> pParentXref(new CSeqFeatXref);
@@ -788,7 +851,7 @@ bool CGff3Reader::xFindFeatureUnderConstruction(
     if (!record.GetAttribute("ID", id)) {
         return false;
     }
-    IdToFeatureMap::iterator it = m_MapIdToFeature.find(id);
+    auto it = m_MapIdToFeature.find(id);
     if (it == m_MapIdToFeature.end()) {
         return false;
     }
@@ -876,6 +939,161 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     return true;
 }
 
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::xUpdateAnnotGeneric(
+    const CGff2Record& record,
+    CSeq_annot& annot,
+    ILineErrorListener* /*pEC*/)
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_feat> pUnderConstruction(new CSeq_feat);
+    if (xFindFeatureUnderConstruction(record, pUnderConstruction)) {
+        return record.UpdateFeature(m_iFlags, pUnderConstruction);
+    }
+
+    string featType = record.Type();
+    if (featType == "stop_codon_read_through"  ||  featType == "selenocysteine") {
+        string cdsParent;
+        if (!record.GetAttribute("Parent", cdsParent)) {
+            CReaderMessage error(
+                eDiag_Error,
+                m_uLineNumber,
+                "Bad data line: Unassigned code break.");
+            throw error;
+        }
+        IdToFeatureMap::iterator it = m_MapIdToFeature.find(cdsParent);
+        if (it == m_MapIdToFeature.end()) {
+            CReaderMessage error(
+                eDiag_Error,
+                m_uLineNumber,
+                "Bad data line: Code break assigned to missing feature.");
+            throw error;
+        }
+
+        CRef<CCode_break> pCodeBreak(new CCode_break);
+        CSeq_interval& cbLoc = pCodeBreak->SetLoc().SetInt();
+        CRef< CSeq_id > pId = mSeqIdResolve(record.Id(), m_iFlags, true);
+        cbLoc.SetId(*pId);
+        cbLoc.SetFrom(static_cast<TSeqPos>(record.SeqStart()));
+        cbLoc.SetTo(static_cast<TSeqPos>(record.SeqStop()));
+        if (record.IsSetStrand()) {
+            cbLoc.SetStrand(record.Strand());
+        }
+        pCodeBreak->SetAa().SetNcbieaa(
+            (featType == "selenocysteine") ? 'U' : 'X');
+        CRef<CSeq_feat> pCds = it->second;
+        CCdregion& cdRegion = pCds->SetData().SetCdregion();
+        list< CRef< CCode_break > >& codeBreaks = cdRegion.SetCode_break();
+        codeBreaks.push_back(pCodeBreak);
+        return true;
+    }
+
+    auto pFeature = xCreateFeature(record);
+    if (! pFeature) {
+        return false;
+    }
+    if (! CGff2Reader::xAddFeatureToAnnot(pFeature, annot)) {
+        return false;
+    }
+    string strId;
+    if ( record.GetAttribute("ID", strId)) {
+        m_MapIdToFeature[strId] = pFeature;
+    }
+    if (pFeature->GetData().IsRna()  ||
+            pFeature->GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_RNA) {
+        CRef<CSeq_interval> rnaLoc(new CSeq_interval);
+        rnaLoc->Assign(pFeature->GetLocation().GetInt());
+        mMrnaLocs[strId] = rnaLoc;
+    }
+    return true;
+}
+
+
+
+bool CGff3Reader::xUpdateAnnotCodeBreak(
+        const CGff2Record& record,
+        CSeq_annot& annot)
+{
+    string cdsParent;
+    if (! record.GetAttribute("Parent", cdsParent)) {
+        CReaderMessage error(
+            eDiag_Error,
+            m_uLineNumber,
+            "Bad data line: Unassigned code break.");
+        throw error;
+    }
+
+    auto pIt = m_MapIdToFeature.find(cdsParent);
+    if (pIt == m_MapIdToFeature.end()) {
+        CReaderMessage error(
+            eDiag_Error,
+            m_uLineNumber,
+            "Bad data line: Code break assigned to missing feature.");
+        throw error;
+    }
+
+
+    MAKE_CONST_MAP(aaMap, ct::tagStrNocase, char,
+    {
+        {"alanine",                     'A'},
+        {"aspartic_acid or asparagine", 'B'},
+        {"cysteine",                    'C'},
+        {"aspartic_acid",               'D'},
+        {"glutamic_acid",               'E'},
+        {"phenylalanine",               'F'},
+        {"glycine",                     'G'},
+        {"histidine",                   'H'},
+        {"isoleucine",                  'I'},
+        {"leucine or isoleucine",       'J'},
+        {"lysine",                      'K'},
+        {"leucine",                     'L'},
+        {"methionine",                  'M'},
+        {"asparagine",                  'N'},
+        {"pyrrolysine",                 'O'},
+        {"proline",                     'P'},
+        {"glutamine",                   'Q'},
+        {"arginine",                    'R'},
+        {"serine",                      'S'},
+        {"threonine",                   'T'},
+        {"selenocysteine",              'U'},
+        {"valine",                      'V'},
+        {"tryptophan",                  'W'},
+        {"other",                       'X'},
+        {"tyrosine",                    'Y'},
+        {"glutamic_acid or glutamine",  'Z'},
+        {"stop_codon",                  '*'}
+    });
+
+    string id;
+    record.GetAttribute("ID", id);
+    auto it = mIdToCodeBreakMap.find(id);
+    if (it == mIdToCodeBreakMap.end()) {
+        auto pCodeBreak = Ref(new CCode_break());
+
+        char aacode;
+        if (record.NormalizedType() == "recoded_codon") {
+            string aa;
+            aacode = 'X';
+            if (record.GetAttribute("codon_redefined", aa)) {
+                if (auto aaIt = aaMap.find(aa); aaIt != aaMap.end()) {
+                    aacode = aaIt->second;
+                }
+            }
+        } else {
+            aacode = '*';
+        }
+        pCodeBreak->SetAa().SetNcbieaa(aacode);
+        mIdToCodeBreakMap[id] = pCodeBreak;
+
+        auto pCds = pIt->second;
+        pCds->SetData().SetCdregion().SetCode_break().push_back(pCodeBreak);
+    }
+
+    return true;
+}
+
+
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xUpdateAnnotRna(
     const CGff2Record& record,
@@ -931,6 +1149,60 @@ bool CGff3Reader::xUpdateAnnotRna(
     return true;
 }
 
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::xUpdateAnnotRna(
+    const CGff2Record& record,
+    CSeq_annot& annot,
+    ILineErrorListener* /*pEC*/)
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_feat> pUnderConstruction(new CSeq_feat);
+    if (xFindFeatureUnderConstruction(record, pUnderConstruction)) {
+        return record.UpdateFeature(m_iFlags, pUnderConstruction);
+    }
+
+    auto pFeature = xCreateFeature(record);
+    if (! pFeature) {
+        return false;
+    }
+    string parentsStr;
+    if ((m_iFlags & fGeneXrefs)  &&  record.GetAttribute("Parent", parentsStr)) {
+        list<string> parents;
+        NStr::Split(parentsStr, ",", parents, 0);
+        for (list<string>::const_iterator cit = parents.begin();
+                cit != parents.end();
+                ++cit) {
+            if (!xFeatureSetXrefParent(*cit, pFeature)) {
+                CReaderMessage error(
+                    eDiag_Error,
+                    m_uLineNumber,
+                    "Bad data line: mRNA record with bad parent assignment.");
+                throw error;
+            }
+        }
+    }
+
+    string strId;
+    if ( record.GetAttribute("ID", strId)) {
+        m_MapIdToFeature[strId] = pFeature;
+    }
+    CRef<CSeq_interval> mrnaLoc(new CSeq_interval);
+    CSeq_loc::E_Choice choice = pFeature->GetLocation().Which();
+    if (choice != CSeq_loc::e_Int) {
+        CReaderMessage error(
+            eDiag_Error,
+            m_uLineNumber,
+            "Internal error: Unexpected location type.");
+        throw error;
+    }
+    mrnaLoc->Assign(pFeature->GetLocation().GetInt());
+    mMrnaLocs[strId] = mrnaLoc;
+
+    return CGff2Reader::xAddFeatureToAnnot(pFeature, annot);
+}
+
+
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xUpdateAnnotGene(
     const CGff2Record& record,
@@ -957,6 +1229,32 @@ bool CGff3Reader::xUpdateAnnotGene(
     return true;
 }
 
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::xUpdateAnnotGene(
+    const CGff2Record& record,
+    CSeq_annot& annot,
+    ILineErrorListener* /*pEC*/)
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_feat> pUnderConstruction(new CSeq_feat);
+    if (xFindFeatureUnderConstruction(record, pUnderConstruction)) {
+        return record.UpdateFeature(m_iFlags, pUnderConstruction);
+    }
+
+    auto pFeature = xCreateFeature(record);
+    if (! pFeature || ! CGff2Reader::xAddFeatureToAnnot(pFeature, annot)) {
+        return false;
+    }
+    string strId;
+    if ( record.GetAttribute("ID", strId)) {
+        m_MapIdToFeature[strId] = pFeature;
+    }
+    return true;
+}
+
+
+
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xUpdateAnnotRegion(
     const CGff2Record& record,
@@ -979,6 +1277,31 @@ bool CGff3Reader::xUpdateAnnotRegion(
     }
     return true;
 }
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::xUpdateAnnotRegion(
+    const CGff2Record& record,
+    CSeq_annot& annot,
+    ILineErrorListener* /*pEC*/)
+//  ----------------------------------------------------------------------------
+{
+    auto pFeature = Ref(new CSeq_feat());
+
+    if (!record.InitializeFeature(m_iFlags, pFeature)) {
+        return false;
+    }
+
+    if (! CGff2Reader::xAddFeatureToAnnot(pFeature, annot)) {
+        return false;
+    }
+    string strId;
+    if ( record.GetAttribute("ID", strId)) {
+        mIdToSeqIdMap[strId] = record.Id();
+        m_MapIdToFeature[strId] = pFeature;
+    }
+    return true;
+}
+
 
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xAddFeatureToAnnot(
@@ -1021,7 +1344,7 @@ void CGff3Reader::xVerifyCdsParents(
 bool CGff3Reader::xHasCdsChild(const string& id) const
 //  ----------------------------------------------------------------------------
 {
-    return (mCdsParents.find(id) != mCdsParents.end());
+    return mCdsParents.contains(id);
 }
 
 
@@ -1151,6 +1474,19 @@ CGff3Reader::xInitializeFeature(
     return true;
 }
 
+
+
+CRef<CSeq_feat>
+CGff3Reader::xCreateFeature(const CGff2Record& record)
+{
+    auto pFeature = Ref(new CSeq_feat());
+    if (xInitializeFeature(record, pFeature)) {
+        return pFeature;
+    }
+
+    return CRef<CSeq_feat>();
+}
+
 //  ----------------------------------------------------------------------------
 
 static bool s_TreatAsRna(const CSeqFeatData& featData)
@@ -1180,16 +1516,20 @@ void CGff3Reader::xPostProcessAnnot(
     }
 
     // location fixup:
-    for (auto itLocation : mpLocations->LocationMap()) {
-        auto id        = itLocation.first;
+    for (auto [id, locs] : mpLocations->LocationMap()) {
         auto itFeature = m_MapIdToFeature.find(id);
         if (itFeature == m_MapIdToFeature.end()) {
+            if (auto itCodeBreak = mIdToCodeBreakMap.find(id); itCodeBreak != mIdToCodeBreakMap.end()) {
+                auto pLoc = Ref(new CSeq_loc());
+                CCdregion::EFrame frame;
+                mpLocations->MergeLocation(pLoc, frame, locs);
+                itCodeBreak->second->SetLoc().Assign(*pLoc);
+            }
             continue;
         }
         CRef<CSeq_loc>    pNewLoc(new CSeq_loc);
         CRef<CSeq_feat>   pFeature = itFeature->second;
         CCdregion::EFrame frame;
-        const auto&       locs = itLocation.second;
 
         if (pFeature->GetData().IsImp() &&
             pFeature->GetData().GetImp().IsSetKey() &&
@@ -1230,8 +1570,7 @@ void CGff3Reader::xPostProcessAnnot(
             }
         }
 
-
-        mpLocations->MergeLocation(pNewLoc, frame, itLocation.second);
+        mpLocations->MergeLocation(pNewLoc, frame, locs);
         pFeature->SetLocation(*pNewLoc);
         if (pFeature->GetData().IsCdregion()) {
             auto& cdrData = pFeature->SetData().SetCdregion();

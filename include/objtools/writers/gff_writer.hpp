@@ -200,6 +200,10 @@ protected:
         CGffFeatureContext&,
         const CMappedFeat&);
 
+    virtual bool xAssignFeatureSeqId(
+        CGffFeatureRecord& record,
+        const CMappedFeat& mappedFeat) const;
+
     virtual bool xAssignFeatureMethod(
         CGffFeatureRecord&,
         CGffFeatureContext&,
@@ -288,7 +292,7 @@ protected:
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
-    bool xAssignFeatureAttributeCodeBreak(
+    virtual bool xAssignFeatureAttributeCodeBreak(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);

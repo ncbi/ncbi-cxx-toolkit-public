@@ -417,7 +417,7 @@ bool CGff2Writer::xAssignFeatureBasic(
     if (! xAssignFeatureType(record, fc, mf)) {
         return false;
     }
-    if (! xAssignFeatureSeqId(record, fc, mf)) {
+    if (! xAssignFeatureSeqId(record, mf)) {
         return false;
     }
     if (! xAssignFeatureMethod(record, fc, mf)) {
@@ -444,8 +444,17 @@ bool CGff2Writer::xAssignFeatureBasic(
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureSeqId(
     CGffFeatureRecord&  record,
-    CGffFeatureContext& fc,
+    CGffFeatureContext& /*fc*/,
     const CMappedFeat&  mf)
+//  ----------------------------------------------------------------------------
+{
+    return xAssignFeatureSeqId(record, mf);
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeatureSeqId(
+    CGffFeatureRecord&  record,
+    const CMappedFeat&  mf) const
 //  ----------------------------------------------------------------------------
 {
     string bestId;

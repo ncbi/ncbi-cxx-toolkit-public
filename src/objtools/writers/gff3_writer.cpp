@@ -35,6 +35,8 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/so_map.hpp>
+#include <objects/seq/seqport_util.hpp>
+
 #include <objects/seqfeat/Seq_feat.hpp>
 
 #include <objects/general/Object_id.hpp>
@@ -71,6 +73,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/feature_edit.hpp>
 #include <objmgr/util/weight.hpp>
+#include <objmgr/util/objutil.hpp>
 
 #include <objtools/writers/writer_exception.hpp>
 #include <objtools/writers/write_util.hpp>
@@ -79,7 +82,9 @@
 #include <objtools/writers/genbank_id_resolve.hpp>
 
 #include <array>
+#include <utility>
 #include <sstream>
+#include <algorithm>
 #include <util/compile_time.hpp>
 #include "gff3_idgen.hpp"
 
@@ -157,17 +162,21 @@ USING_SCOPE(objects);
 #define IS_MATCH(sf, tf) \
     ( ((sf) &  CAlnMap::fSeq) && ((tf) &  CAlnMap::fSeq) )
 
+
+struct SExtensionInfo { // Needed to move feature intervals into virtual space
+    unsigned int cutoff{0}; // intervals starting above this cutoff are not changed
+    unsigned int length{0}; // length of shift into virtual space = sequence length
+};
+
 //  ----------------------------------------------------------------------------
 void
-sGetWrapInfo(
-    const list<CRef<CSeq_interval> >& subInts,
+sGetExtensionInfo(
+    const list<CRef<CSeq_interval>>& subInts,
     const CGffFeatureContext& fc,
-    unsigned int& wrapSize,
-    unsigned int& wrapPoint)
+    SExtensionInfo& info)
     //  ----------------------------------------------------------------------------
 {
-    wrapSize = wrapPoint = 0;
-    if (subInts.empty()) {
+    if (subInts.size() <= 1) { // need at least 2 intervals to send coordinates into virtual space
         return;
     }
 
@@ -191,18 +200,15 @@ sGetWrapInfo(
         return;
     }
     auto frontStrand = front.GetStrand();
-    auto pCompare = subInts.begin()++;
-    while (pCompare != subInts.end()) {
-        const auto& interval = **pCompare;
-        if (!interval.CanGetStrand() || interval.GetStrand() != frontStrand) {
-            return;
-        }
-        ++pCompare;
+    if (any_of(next(subInts.begin()), subInts.end(), // subints contains at least 2 intervals
+                [frontStrand] (const auto& pInterval) {
+                    return ((! pInterval->CanGetStrand()) || (pInterval->GetStrand() != frontStrand));
+                })) {
+        return;
     }
 
-
-    wrapSize = bioH.GetInst_Length();
-    wrapPoint = (frontStrand == eNa_strand_minus) ?
+    info.length = bioH.GetInst_Length();
+    info.cutoff = (frontStrand == eNa_strand_minus) ?
         subInts.back()->GetFrom() :
         subInts.front()->GetFrom();
 }
@@ -1758,9 +1764,8 @@ bool CGff3Writer::xWriteNucleotideFeature(
                 return xWriteFeatureCDJVSegment( fc, mf );
             case CSeqFeatData::eSubtype_gene:
                 return xWriteFeatureGene( fc, mf );
-            case CSeqFeatData::eSubtype_cdregion: {
+            case CSeqFeatData::eSubtype_cdregion:
                 return xWriteFeatureCds( fc, mf );
-            }
             case CSeqFeatData::eSubtype_tRNA:
                 return xWriteFeatureTrna( fc, mf );
 
@@ -1828,9 +1833,9 @@ bool CGff3Writer::xWriteNucleotideFeatureTransSpliced(
         int partNum = 1;
         bool useParts = xIntervalsNeedPartNumbers(sublocs);
 
-        unsigned int wrapSize(0), wrapPoint(0);
+        SExtensionInfo extensionInfo;
         if (!isTransSpliced) {
-            sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+            sGetExtensionInfo(sublocs, fc, extensionInfo);
         }
 
         bool isInsdcMode = xIsInsdcMode();
@@ -1842,7 +1847,7 @@ bool CGff3Writer::xWriteNucleotideFeatureTransSpliced(
             pChild->DropAttributes("model_evidence");
             pChild->SetParent(parentId);
             pChild->SetType("exon");
-            pChild->SetLocation(*pSubint, isInsdcMode, wrapSize, wrapPoint);
+            pChild->SetLocation(*pSubint, isInsdcMode, extensionInfo.length, extensionInfo.cutoff);
             if (useParts) {
                 pChild->SetAttribute("part", NStr::NumericToString(partNum++));
             }
@@ -1869,13 +1874,7 @@ bool CGff3Writer::xWriteFeatureTrna(
 
     const auto isTransSpliced = CWriteUtil::IsTransspliced(mf);
     if(isTransSpliced){
-        xAssignFeatureAttributeParentGene(*pRna, fc, mf);
-        TSeqPos seqlength = 0;
-        if(fc.BioseqHandle() && fc.BioseqHandle().IsSetInst_Length()) {
-            seqlength = fc.BioseqHandle().GetInst_Length();
-        }
-
-        if (!xWriteFeatureRecords( *pRna, mf.GetLocation(), seqlength ) ) {
+        if (!xWriteFeatureRecords(*pRna) ) {
             return false;
         }
     }
@@ -1890,18 +1889,20 @@ bool CGff3Writer::xWriteFeatureTrna(
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         const auto& sublocs = PackedInt.GetPacked_int().Get();
 
-        unsigned int wrapSize(0), wrapPoint(0);
-        if (!isTransSpliced) {
-            sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+        SExtensionInfo extensionInfo;
+        if (! isTransSpliced) {
+            sGetExtensionInfo(sublocs, fc, extensionInfo);
         }
         int partNum = 1;
         bool useParts = xIntervalsNeedPartNumbers(sublocs);
 
+        bool isInsdcMode = xIsInsdcMode();
         for (const auto& pSubint : sublocs) {
             auto pChild = Ref(new CGff3FeatRecord(*pRna));
+            s_DropPartialness(*pChild, isInsdcMode);
             pChild->SetRecordId(m_pIdGenerator->GetNextGffExonId(rnaId));
             pChild->SetType("exon");
-            pChild->SetLocation(*pSubint, xIsInsdcMode(), wrapSize, wrapPoint);
+            pChild->SetLocation(*pSubint, isInsdcMode, extensionInfo.length, extensionInfo.cutoff);
             pChild->SetParent(rnaId);
             if (useParts) {
                 pChild->SetAttribute("part", NStr::NumericToString(partNum++));
@@ -2473,6 +2474,70 @@ bool CGff3Writer::xAssignFeatureAttributePartial(
 
 
 //  ----------------------------------------------------------------------------
+bool CGff3Writer::xAssignFeatureAttributeCodeBreak(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf)
+//  ----------------------------------------------------------------------------
+{
+    if (! xIsInsdcMode()) {
+        return CGff2Writer::xAssignFeatureAttributeCodeBreak(record, fc, mf);
+    }
+    return true;
+}
+
+
+static ENa_strand s_GetStrand(const CSeq_interval& interval)
+{
+    return interval.IsSetStrand() ? interval.GetStrand() : eNa_strand_plus;
+}
+
+static void s_MergeIntervalsAbuttingOrigin(list<CRef<CSeq_interval>>& intervals, unsigned int seqLength)
+{
+    if (intervals.size() <= 1) {
+        return;
+    }
+    // ASN.1 intervals are in biological order, 
+    // but 'from' and 'to' points are in sequence order.
+    // Therefore, on the minus strand, the interval with from==0 
+    // appears before the interval with to==seqLength-1.
+
+    auto it = intervals.begin();
+    while (it != intervals.end()) {
+        auto& interval = **it;
+        auto strand = s_GetStrand(interval);
+        if (strand == eNa_strand_plus) {
+            if (interval.GetTo() == seqLength-1) {
+                if (++it != intervals.end()) {
+                    auto& nextInterval = **it;
+                    auto nextStrand = s_GetStrand(nextInterval);
+                    if ((nextStrand == strand) && (nextInterval.GetFrom() == 0)) {
+                        interval.SetTo() += (nextInterval.GetTo()+1);
+                        intervals.erase(it);
+                    }
+                }
+                return;
+            }
+        } else if (strand == eNa_strand_minus) {
+            if (interval.GetFrom() == 0) {
+                auto firstIt = it;
+                if (++it != intervals.end()) {
+                    auto& nextInterval = **it;
+                    auto nextStrand = s_GetStrand(nextInterval);
+                    if ((nextStrand == strand) && (nextInterval.GetTo() == seqLength-1)) {
+                        nextInterval.SetTo() += (interval.GetTo()+1);
+                        intervals.erase(firstIt);
+                    }
+                }
+                return;
+            }
+        }
+        ++it;
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeature(
     CGffFeatureRecord& record,
     CGffFeatureContext& fc,
@@ -2504,7 +2569,7 @@ bool CGff3Writer::xAssignFeature(
 
     CWriteUtil::ChangeToPackedInt(*pLoc);
     CBioseq_Handle bsh = fc.BioseqHandle();
-    if (!CWriteUtil::IsSequenceCircular(bsh)) {
+    if (!CWriteUtil::IsSequenceCircular(bsh) || CWriteUtil::IsTransspliced(mf)) {
         record.InitLocation(*pLoc);
         return xAssignFeatureBasic(record, fc, mf);
     }
@@ -2513,30 +2578,10 @@ bool CGff3Writer::xAssignFeature(
     //  instead of breaking and restarting at the origin.
     //
     unsigned int len = bsh.GetInst_Length();
-    list< CRef< CSeq_interval > >& sublocs = pLoc->SetPacked_int().Set();
-    list< CRef<CSeq_interval> >::iterator it;
-    list< CRef<CSeq_interval> >::iterator it_ceil=sublocs.end();
-    list< CRef<CSeq_interval> >::iterator it_floor=sublocs.end();
-    if (sublocs.size() > 1) {
-        for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
-            //fix intervals broken in two for crossing the origin to extend
-            //  into virtual space instead
-            CSeq_interval& subint = **it;
-            if (subint.IsSetFrom()  &&  subint.GetFrom() == 0) {
-                it_floor = it;
-            }
-            if (subint.IsSetTo()  &&  subint.GetTo() == len-1) {
-                it_ceil = it;
-            }
-            if (it_floor != sublocs.end()  &&  it_ceil != sublocs.end()) {
-                break;
-            }
-        }
-        if ( it_ceil != sublocs.end()  &&  it_floor != sublocs.end() ) {
-            (*it_ceil)->SetTo( (*it_ceil)->GetTo() + (*it_floor)->GetTo() + 1 );
-            sublocs.erase(it_floor);
-        }
-    }
+    auto& sublocs = pLoc->SetPacked_int().Set();
+
+    s_MergeIntervalsAbuttingOrigin(sublocs, len);
+
     record.InitLocation(*pLoc);
     return xAssignFeatureBasic(record, fc, mf);
 }
@@ -2821,9 +2866,28 @@ bool CGff3Writer::xWriteFeatureGene(
         return false;
     }
     m_GeneMapNew[mf] = pRecord;
-    return xWriteFeatureRecords(*pRecord, pRecord->Location(), 0);
+    return xWriteFeatureRecords(*pRecord);
 }
 
+static int s_InitPhase(const CSeq_feat& feature, const CRange<TSeqPos>& range)
+{
+    _ASSERT(feature.IsCdregion());
+
+    // phase 0 means that the first base is the first base of a codon.
+    // phase 1 means that the second base is the first base of a codon.
+    // phase 2 means that the third base is the first base of a codon.
+    // frame = phase+1
+    // See RW-1098
+    if (range.IsWhole()) {
+        if (feature.GetData().GetCdregion().IsSetFrame()) {
+            return max(feature.GetData().GetCdregion().GetFrame()-1, 0);
+        }
+    } else {
+        return max(sequence::CFeatTrim::GetCdsFrame(feature, range)-1, 0);
+    }
+
+    return 0;
+}
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteFeatureCds(
@@ -2844,38 +2908,28 @@ bool CGff3Writer::xWriteFeatureCds(
         pCds->SetParent(parentOverride->Id());
     }
 
-    const CSeq_feat& feature = mf.GetMappedFeature();
-    const CSeq_loc& PackedInt = pCds->Location();
-    int /*CCdregion::EFrame*/ iPhase = 0;
-    const CRange<TSeqPos>& display_range = GetRange();
-    if (display_range.IsWhole())  {
-        if (feature.GetData().GetCdregion().IsSetFrame()) {
-            iPhase = max(feature.GetData().GetCdregion().GetFrame()-1, 0);
-        }
-    }
-    else {
-        iPhase = max(sequence::CFeatTrim::GetCdsFrame(feature, display_range)-1, 0);
-    }
-
+    const auto& feature = mf.GetMappedFeature();
+    int iPhase = s_InitPhase(feature, GetRange());
     int iTotSize = -iPhase;
-    if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
+    const CSeq_loc& PackedInt = pCds->Location();
+    if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) { // Shouldn't this be an assertion?
         const auto& sublocs = PackedInt.GetPacked_int().Get();
-        string cdsId = pCds->Id();
-        int partNum = 1;
         bool useParts = xIntervalsNeedPartNumbers(sublocs);
 
-        unsigned int wrapSize(0), wrapPoint(0);
+        SExtensionInfo extensionInfo;
         if (!CWriteUtil::IsTransspliced(mf)) {
-            sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+            sGetExtensionInfo(sublocs, fc, extensionInfo);
         }
 
         bool isInsdcMode = xIsInsdcMode();
+        string cdsId = pCds->Id();
+        int partNum = 1;
         for (const auto& pSubint : sublocs) {
             CRef<CGff3FeatRecord> pExon(new CGff3FeatRecord(*pCds));
             pExon->SetRecordId(cdsId);
             pExon->SetType("CDS");
             s_DropPartialness(*pExon, isInsdcMode);
-            pExon->SetLocation(*pSubint, isInsdcMode, wrapSize, wrapPoint);
+            pExon->SetLocation(*pSubint, isInsdcMode, extensionInfo.length, extensionInfo.cutoff);
             pExon->SetPhase(iPhase);
             if (useParts) {
                 pExon->SetAttribute("part", NStr::NumericToString(partNum++));
@@ -2890,23 +2944,168 @@ bool CGff3Writer::xWriteFeatureCds(
     }
     m_MrnaMapNew[mf] = pCds;
 
-    if (!fc.BioseqHandle()  ||  !mf.IsSetProduct()) {
-        return true;
+    if (xIsInsdcMode()) {
+        xWriteFeatureCodeBreaks(*pCds, fc, mf);
     }
-    CConstRef<CSeq_id> protId(mf.GetProduct().GetId());
+
+    xWriteCdsProduct(fc, mf);
+    return true;
+}
+
+
+void CGff3Writer::xWriteFeatureCodeBreaks(
+            const CGff3FeatRecord& cdsRecord,
+            const CGffFeatureContext& fc,
+            const CMappedFeat& cds)
+{
+    if (! cds.IsSetData() || ! cds.GetData().IsCdregion()) {
+        return;
+    }
+
+    const bool isTransSpliced = CWriteUtil::IsTransspliced(cds);
+    const auto& codeBreaks = cds.GetData().GetCdregion().GetCode_break();
+    if (const auto& displayRange = GetRange(); ! displayRange.IsWhole()) {
+        for (auto pCodeBreak : codeBreaks) {
+            auto pTrimmedCB = sequence::CFeatTrim::Apply(*pCodeBreak, displayRange);
+            if (pTrimmedCB) {
+                xWriteFeatureCodeBreak(cdsRecord, *pTrimmedCB, fc, isTransSpliced);
+            }
+        }
+    } else {
+        for (auto pCodeBreak : codeBreaks) {
+            xWriteFeatureCodeBreak(cdsRecord, *pCodeBreak, fc, isTransSpliced);
+        }
+    }
+}
+
+
+void CGff3Writer::xWriteFeatureCodeBreak(
+        const CGff3FeatRecord& cdsRecord,
+        const CCode_break& codeBreak,
+        const CGffFeatureContext& fc,
+        bool isTransSpliced)
+{
+    if (! codeBreak.IsSetLoc()) {
+        return;
+    }
+
+    int aaIndex {0};
+    switch (codeBreak.GetAa().Which()) {
+    case CCode_break::C_Aa::e_Ncbieaa:
+        aaIndex = codeBreak.GetAa().GetNcbieaa();
+        aaIndex = CSeqportUtil::GetMapToIndex(
+                CSeq_data::e_Ncbieaa, CSeq_data::e_Ncbistdaa, static_cast<CSeqportUtil::TIndex>(aaIndex));
+        break;
+    case CCode_break::C_Aa::e_Ncbi8aa:
+        aaIndex = codeBreak.GetAa().GetNcbi8aa();
+        break;
+    case CCode_break::C_Aa::e_Ncbistdaa:
+        aaIndex = codeBreak.GetAa().GetNcbistdaa();
+    default:
+        break;
+    }
+
+    static constexpr array<string_view, 28> aaNames = {
+        "other", // "gap" doesn't apply here
+        "alanine",
+        "aspartic_acid or asparagine",
+        "cysteine",
+        "aspartic_acid",
+        "glutamic_acid",
+        "phenylalanine",
+        "glycine",
+        "histidine",
+        "isoleucine",
+        "lysine",
+        "leucine",
+        "methionine",
+        "asparagine",
+        "proline",
+        "glutamine",
+        "arginine",
+        "serine",
+        "threonine",
+        "valine",
+        "tryptophan",
+        "other",
+        "tyrosine",
+        "glutamic_acid or glutamine",
+        "selenocysteine",
+        "stop_codon",
+        "pyrrolysine",
+        "leucine or isoleucine"
+    };
+
+    string_view aa = cmp_less(aaIndex, aaNames.size()) ? aaNames[aaIndex] : "other"sv;
+
+    bool isStopCodon = (aa == "stop_codon"sv);
+    string recordType = isStopCodon ? "stop_codon" : "recoded_codon";
+
+    auto pLoc = Ref(new CSeq_loc());
+    pLoc->Assign(codeBreak.GetLoc());
+    CWriteUtil::ChangeToPackedInt(*pLoc);
+    auto& intervals = pLoc->SetPacked_int().Set();
+
+    if (auto bsh = fc.BioseqHandle(); bsh) {
+        if (CWriteUtil::IsSequenceCircular(bsh) && bsh.IsSetInst_Length()) {
+            s_MergeIntervalsAbuttingOrigin(intervals, bsh.GetInst_Length());
+        }
+    }
+
+    SExtensionInfo extensionInfo;
+    if (! isTransSpliced) {
+        sGetExtensionInfo(intervals, fc, extensionInfo);
+    }
+
+    auto codonId = m_pIdGenerator->GetCodonId();
+    unsigned int currentPos {0};
+    for (const auto& pSubInt : intervals) {
+        auto pRecord = Ref(new CGff3FeatRecord());
+        pRecord->SetSeqId(cdsRecord.StrSeqId());
+        pRecord->SetMethod(cdsRecord.StrMethod());
+        pRecord->SetRecordId(codonId);
+        pRecord->SetType(recordType);
+        pRecord->SetParent(cdsRecord.Id());
+        auto strand = pSubInt->IsSetStrand() ? pSubInt->GetStrand() : eNa_strand_plus;
+        auto from = pSubInt->GetFrom();
+        auto to = pSubInt->GetTo();
+        if (from < extensionInfo.cutoff) {
+            from += extensionInfo.length;
+            to   += extensionInfo.length;
+        }
+        pRecord->SetEndpoints(from, to, strand);
+        pRecord->SetPhase((currentPos==0) ? 0 : 3-currentPos);
+        if (isStopCodon) {
+            pRecord->SetAttribute("Note", "stop codon completed");
+        } else {
+            pRecord->SetAttribute("codon_redefined", string(aa));
+        }
+        xWriteRecord(*pRecord);
+        currentPos += pSubInt->GetLength();
+    }
+}
+
+
+
+void CGff3Writer::xWriteCdsProduct(
+        CGffFeatureContext& fc,
+        const CMappedFeat& cds)
+{
+    if (!fc.BioseqHandle()  ||  !cds.IsSetProduct()) {
+        return;
+    }
+    CConstRef<CSeq_id> protId(cds.GetProduct().GetId());
     CBioseq_Handle protein_h = m_pScope->GetBioseqHandleFromTSE(*protId, fc.BioseqHandle());
     if (!protein_h) {
-        return true;
+        return;
     }
     CFeat_CI it(protein_h, SetAnnotSelector());
     fc.FeatTree().AddFeatures(it);
     for (; it; ++it) {
-        if (!it->GetData().IsProt()) {
-            continue;
+        if (it->GetData().IsProt()) {
+            xWriteFeatureProtein(fc, cds, *it);
         }
-        xWriteFeatureProtein(fc, mf, *it);
     }
-    return true;
 }
 
 
@@ -2922,9 +3121,9 @@ bool CGff3Writer::xWriteRnaExons(
         int         partNum  = 1;
         bool        useParts = xIntervalsNeedPartNumbers(sublocs);
 
-        unsigned int wrapSize(0), wrapPoint(0);
+        SExtensionInfo extensionInfo;
         if (! CWriteUtil::IsTransspliced(mf)) {
-            sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+            sGetExtensionInfo(sublocs, fc, extensionInfo);
         }
 
         auto parentId = rna_record.Id();
@@ -2937,7 +3136,7 @@ bool CGff3Writer::xWriteRnaExons(
             pChild->DropAttributes("model_evidence");
             pChild->SetParent(parentId);
             pChild->SetType("exon");
-            pChild->SetLocation(*pSubint, isInsdcMode, wrapSize, wrapPoint);
+            pChild->SetLocation(*pSubint, isInsdcMode, extensionInfo.length, extensionInfo.cutoff);
             if (useParts) {
                 pChild->SetAttribute("part", NStr::NumericToString(partNum++));
             }
@@ -3014,9 +3213,9 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
     if (PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         const auto& sublocs = PackedInt.GetPacked_int().Get();
 
-        unsigned int wrapSize(0), wrapPoint(0);
+        SExtensionInfo extensionInfo;
         if (!CWriteUtil::IsTransspliced(mf)) {
-            sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+            sGetExtensionInfo(sublocs, fc, extensionInfo);
         }
 
         bool isInsdcMode = xIsInsdcMode();
@@ -3027,7 +3226,7 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
             s_DropPartialness(*pChild, isInsdcMode);
             pChild->SetParent(parentId);
             pChild->SetType("exon");
-            pChild->SetLocation(*pSubint, isInsdcMode, wrapSize, wrapPoint);
+            pChild->SetLocation(*pSubint, isInsdcMode, extensionInfo.length, extensionInfo.cutoff);
             if (!xWriteRecord(*pChild)) {
                 return false;
             }
@@ -3042,15 +3241,12 @@ bool CGff3Writer::xWriteFeatureGeneric(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGff3FeatRecord> pParent(new CGff3FeatRecord());
-    if (!xAssignFeature(*pParent, fc, mf)) {
+    CRef<CGff3FeatRecord> pRecord(new CGff3FeatRecord());
+    if (!xAssignFeature(*pRecord, fc, mf)) {
         return false;
     }
 
-    TSeqPos seqlength = 0;
-    if(fc.BioseqHandle() && fc.BioseqHandle().IsSetInst_Length())
-        seqlength = fc.BioseqHandle().GetInst_Length();
-    return xWriteFeatureRecords( *pParent, mf.GetLocation(), seqlength );
+    return xWriteFeatureRecords(*pRecord);
 }
 
 //  ----------------------------------------------------------------------------
@@ -3113,15 +3309,15 @@ bool CGff3Writer::xWriteFeatureProtein(
 
     list< CRef< CSeq_interval > > sublocs( packedInt.GetPacked_int().Get() );
 
-    unsigned int wrapSize(0), wrapPoint(0);
-    if (!CWriteUtil::IsTransspliced(cds)) {
-        sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+    SExtensionInfo extensionInfo;
+    if (! CWriteUtil::IsTransspliced(cds)) {
+        sGetExtensionInfo(sublocs, fc, extensionInfo);
     }
 
     for ( auto it = sublocs.begin(); it != sublocs.end(); ++it ) {
         const CSeq_interval& subint = **it;
         CRef<CGff3FeatRecord> pExon(new CGff3FeatRecord(*pRecord));
-        pExon->SetLocation(subint, xIsInsdcMode(), wrapSize, wrapPoint);
+        pExon->SetLocation(subint, xIsInsdcMode(), extensionInfo.length, extensionInfo.cutoff);
         if (!xWriteRecord(*pExon)) {
             return false;
         }
@@ -3130,11 +3326,8 @@ bool CGff3Writer::xWriteFeatureProtein(
 }
 
 
-//  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteFeatureRecords(
-    const CGffFeatureRecord& record,
-    const CSeq_loc& location,
-    unsigned int seqLength )
+    const CGffFeatureRecord& record)
 //  ----------------------------------------------------------------------------
 {
     CRef<CGff3FeatRecord> pRecord(new CGff3FeatRecord(
@@ -3165,6 +3358,17 @@ bool CGff3Writer::xWriteFeatureRecords(
         }
     }
     return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xWriteFeatureRecords(
+    const CGffFeatureRecord& record,
+    const CSeq_loc& /* location */,
+    unsigned int /* seqLength */ ) // This method is deprecated
+//  ----------------------------------------------------------------------------
+{
+    return xWriteFeatureRecords(record);
 }
 
 //  ============================================================================

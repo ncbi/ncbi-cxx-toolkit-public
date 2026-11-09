@@ -121,6 +121,15 @@ string CGffIdGenerator::GetGffId()
     return string("id-") + NStr::NumericToString(++mLastTrulyGenericSuffix);
 }
 
+
+
+string CGffIdGenerator::GetCodonId()
+{
+    return string("codon") + NStr::NumericToString(++mCodonCount);
+}
+
+
+
 //  -----------------------------------------------------------------------------
 string CGffIdGenerator::GetGffSourceId(
     CBioseq_Handle bsh)
@@ -162,6 +171,7 @@ void CGffIdGenerator::Reset()
     mExistingIds.clear();
     mLastUsedExonIds.clear();
     mLastTrulyGenericSuffix = 0;
+    mCodonCount = 0;
 }
 
 //  -----------------------------------------------------------------------------

@@ -42,6 +42,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 class CGff3LocationMerger;
+class CCode_break;
 
 //  ============================================================================
 class CGff3ReadRecord
@@ -127,6 +128,42 @@ private:
 
     bool xIsInsdcMode() const;
 
+    CRef<CSeq_feat> xCreateFeature(const CGff2Record& record);
+
+    bool xUpdateAnnotExon(
+            const CGff2Record& record,
+            CSeq_annot& annot,
+            ILineErrorListener* pListener);
+
+    bool xUpdateAnnotCds(
+            const CGff2Record& record,
+            CSeq_annot& annot,
+            ILineErrorListener* pListener);
+
+    bool xUpdateAnnotGene(
+            const CGff2Record& record,
+            CSeq_annot& annot,
+            ILineErrorListener* pListener);
+
+    bool xUpdateAnnotRna(
+            const CGff2Record& record,
+            CSeq_annot& annot,
+            ILineErrorListener* pListener);
+
+    bool xUpdateAnnotRegion(
+            const CGff2Record& record,
+            CSeq_annot& annot,
+            ILineErrorListener* pListener);
+
+    bool xUpdateAnnotGeneric(
+            const CGff2Record& record,
+            CSeq_annot& annot,
+            ILineErrorListener* pListener);
+
+    bool xUpdateAnnotCodeBreak(
+            const CGff2Record& record,
+            CSeq_annot& annot);
+
 protected:
     void xProcessData(
         const TReaderData&,
@@ -148,36 +185,42 @@ protected:
         CRef< CSeq_feat >,
         CSeq_annot& ) override;
 
+    [[deprecated]]
     virtual bool xUpdateAnnotExon(
         const CGff2Record&,
         CRef<CSeq_feat>,
         CSeq_annot&,
         ILineErrorListener*);
 
+    [[deprecated]]
     virtual bool xUpdateAnnotCds(
         const CGff2Record&,
         CRef<CSeq_feat>,
         CSeq_annot&,
         ILineErrorListener*);
 
+    [[deprecated]]
     virtual bool xUpdateAnnotGene(
         const CGff2Record&,
         CRef<CSeq_feat>,
         CSeq_annot&,
         ILineErrorListener*);
 
+    [[deprecated]]
     virtual bool xUpdateAnnotRegion(
         const CGff2Record&,
         CRef<CSeq_feat>,
         CSeq_annot&,
         ILineErrorListener*);
 
+    [[deprecated]]
     virtual bool xUpdateAnnotGeneric(
         const CGff2Record&,
         CRef<CSeq_feat>,
         CSeq_annot&,
         ILineErrorListener*);
 
+    [[deprecated]]
     virtual bool xUpdateAnnotRna(
         const CGff2Record&,
         CRef<CSeq_feat>,
@@ -245,6 +288,9 @@ protected:
 
     shared_ptr<CGff3LocationMerger> mpLocations;
     static unsigned int msGenericIdCounter;
+
+private:
+    map<string, CRef<CCode_break>> mIdToCodeBreakMap;
 };
 
 

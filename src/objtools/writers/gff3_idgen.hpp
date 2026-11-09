@@ -64,6 +64,8 @@ public:
 
     std::string GetGffId();
 
+    std::string GetCodonId();
+
     std::string GetGffSourceId(
         CBioseq_Handle);
 
@@ -111,6 +113,7 @@ protected:
     std::set<std::string> mExistingIds;
     std::map<std::string, int> mLastUsedExonIds;
     unsigned int mLastTrulyGenericSuffix;
+    unsigned int mCodonCount{0};
     CGenbankIdResolve& mIdResolve;
 };
 
