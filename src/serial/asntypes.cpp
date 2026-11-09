@@ -257,7 +257,6 @@ void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
     const CAutoPointerTypeInfo* ptrInfo =
         dynamic_cast<const CAutoPointerTypeInfo*>(type);
     if ( ptrInfo != 0 ) {
-        // data type is auto_ptr
         TTypeInfo asnType = ptrInfo->GetPointedType();
         if ( asnType->GetTypeFamily() == eTypeFamilyChoice ) {
             // CHOICE
