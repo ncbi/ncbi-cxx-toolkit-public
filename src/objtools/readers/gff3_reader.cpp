@@ -223,6 +223,7 @@ void CGff3ReadRecord::xMigrateAttributePartial(
         TAttributes& attributes) const
 {
     if (flags & CGff3Reader::fInsdcMode) {
+        attributes.erase("partial"); // Erase so it isn't converted to feature qualifier
         return;
     }
 
