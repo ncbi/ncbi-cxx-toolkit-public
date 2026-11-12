@@ -613,12 +613,7 @@ endif()
 
 #############################################################################
 # EXSLT
-if(NOT NCBI_COMPONENT_EXSLT_FOUND)
-    NCBI_define_Xcomponent(NAME EXSLT INTERFACELIB libxslt::libxslt MODULE libexslt PACKAGE LibXslt LIB exslt ADD_COMPONENT XSLT GCRYPT CHECK_INCLUDE libexslt/exslt.h)
-    if(NCBI_COMPONENT_EXSLT_FOUND)
-        set(NCBI_COMPONENT_EXSLT_LIBS ${LIBXSLT_EXSLT_LIBRARIES} ${NCBI_COMPONENT_EXSLT_LIBS})
-    endif()
-endif()
+NCBI_define_Xcomponent(NAME EXSLT INTERFACELIB libxslt::libxslt MODULE libexslt PACKAGE LibXslt LIB exslt ADD_COMPONENT XSLT CHECK_INCLUDE libexslt/exslt.h)
 NCBIcomponent_report(EXSLT)
 
 #############################################################################
