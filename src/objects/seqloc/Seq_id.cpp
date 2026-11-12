@@ -2391,6 +2391,14 @@ static CRef<SAccGuide>* s_CreateGuide(void)
 }
 
 static CSafeStatic<CRef<SAccGuide> > s_Guide(s_CreateGuide, NULL);
+DEFINE_STATIC_FAST_MUTEX(s_GuideMutex);
+
+inline
+static CRef<SAccGuide> s_GetGuide(void)
+{
+    CFastMutexGuard LOCK(s_GuideMutex);
+    return *s_Guide;
+}
 
 CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const CTempString& acc,
                                                    TParseFlags flags)
@@ -2588,7 +2596,7 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
 
     SIZE_TYPE flag_len = (flag_char == '\0') ? 0 : 1;
     SIZE_TYPE digit_count = main_size - digit_pos - flag_len;
-    auto guide = *s_Guide;
+    auto guide = s_GetGuide();
     const EAccessionInfo& found_ai
         = guide->Find(SAccGuide::s_Key(digit_pos, digit_count), main_acc);
     EAccessionInfo ai = found_ai;
@@ -2696,7 +2704,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(TParseFlags flags) const
             return eAcc_general;
         }
         SAccGuide::TPrefix db(GetGeneral().GetDb());
-        auto guide = *s_Guide;
+        auto guide = s_GetGuide();
         NStr::ToUpper(db.data());
         SAccGuide::TPrefixes::const_iterator it = guide->general.find(db);
         return it == guide->general.end() ? eAcc_general : it->second;
@@ -2710,18 +2718,22 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(TParseFlags flags) const
 
 void CSeq_id::LoadAccessionGuide(const string& filename, TLoadFlags flags)
 {
-    s_Guide->Reset(new SAccGuide(filename, flags));
+    CRef<SAccGuide> guide(new SAccGuide(filename, flags));
+    CFastMutexGuard LOCK(s_GuideMutex);
+    s_Guide->Reset(std::move(guide));
 }
 
 void CSeq_id::LoadAccessionGuide(ILineReader& in, const CTime& t,
                                  TLoadFlags flags)
 {
-    s_Guide->Reset(new SAccGuide(kEmptyStr, in, t, flags));
+    CRef<SAccGuide> guide(new SAccGuide(kEmptyStr, in, t, flags));
+    CFastMutexGuard LOCK(s_GuideMutex);
+    s_Guide->Reset(std::move(guide));
 }
 
 bool CSeq_id::RefreshAccessionGuide(TLoadFlags flags)
 {
-    auto guide = *s_Guide;
+    auto guide = s_GetGuide();
     if ( !guide->filename.empty()
         &&  ((flags & fAlwaysLoad) != 0
              ||  !g_IsDataFileOld(guide->filename, guide->timestamp) )) {
@@ -3399,7 +3411,8 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags,
             if (colon_pos != NPOS) {
                 string db = the_id.substr(0, colon_pos);
                 NStr::ToUpper(db);
-                // const auto& whitelist = (*s_Guide)->general;
+                // auto guide = s_GetGuide();
+                // const auto& whitelist = guide->general;
                 const auto& whitelist = kSupportedRawDbtags;
                 if (whitelist.find(db) != whitelist.end()) {
                     // Reextract prefix to preserve case.
