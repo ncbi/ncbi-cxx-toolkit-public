@@ -374,7 +374,10 @@ void s_CompareIdSets(const char* type,
 
 CSeq_id_Handle s_Normalize(const CSeq_id_Handle& id)
 {
-    return CSeq_id_Handle::GetHandle(id.AsString());
+    auto s = id.AsString();
+    if ( NStr::StartsWith(s, "gnl|NCBI_GENOMES|") )
+        return CSeq_id_Handle();
+    return CSeq_id_Handle::GetHandle(s);
 }
 
 
@@ -382,7 +385,8 @@ vector<CSeq_id_Handle> s_Normalize(const vector<CSeq_id_Handle>& ids)
 {
     vector<CSeq_id_Handle> ret;
     ITERATE ( vector<CSeq_id_Handle>, it, ids ) {
-        ret.push_back(s_Normalize(*it));
+        if ( auto id = s_Normalize(*it) )
+            ret.push_back(id);
     }
     return ret;
 }
@@ -399,7 +403,7 @@ struct SBioseqInfo
 static const SBioseqInfo s_BioseqInfos[] = {
     {
         "NC_000001.10",
-        "gi|224589800;ref|NC_000001.10|;gpp|GPC_000001293.1|;gnl|NCBI_GENOMES|1;gnl|ASM:GCF_000001305|1",
+        "gi|224589800;ref|NC_000001.10|;gpp|GPC_000001293.1|;gnl|ASM:GCF_000001305|1",
         249250621,
         249250621
     }
