@@ -1441,6 +1441,7 @@ static bool IsPatentedAccPrefix(const Parser& parseInfo, string_view acc)
                  (acc == "QQ"sv) || (acc == "QR"sv) ||
                  (acc == "QS"sv) || (acc == "QT"sv) ||
                  (acc == "QU"sv) || (acc == "QV"sv) ||
+                 (acc == "QW"sv) || (acc == "QX"sv) ||
                  (acc == "RB"sv) || (acc == "RC"sv) ||
                  (acc == "RD"sv)))
                 return true;
