@@ -1049,7 +1049,7 @@ static int s_ExecShell(const char* command,
     size_t i;
     for (i = 0;  argv[i];  ++i);
     ++i; // last NULL element
-    assert(i > 1);
+    _ASSERT(i > 1);
 
     // Figure out the shell first
     string xshell = xenv.Get("SHELL");
@@ -1102,7 +1102,7 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
     // Get the PATH environment variable
     const string& xpath = env->Get("PATH");
     const char* path = xpath.empty() ? kDefaultPath : xpath.c_str();
-    assert(path[0]); // NB: strlen(path) >= 1
+    _ASSERT(path[0]); // NB: strlen(path) >= 1
 
     size_t file_len = strlen(file) + 1/*'\0'*/;
     char* buf = new char[strlen(path) + 1/*'/'*/ + file_len];
@@ -1144,7 +1144,7 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
             // Try next path element
             break;
         case 0:
-            assert(0);
+            _ASSERT(0);
             /*FALLTHRU*/
         default:
             // We found an executable file, but could not execute it
