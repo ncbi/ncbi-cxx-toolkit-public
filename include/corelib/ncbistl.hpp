@@ -200,43 +200,7 @@ namespace ncbi { /* the fake one */ }
 
     #endif
 
-    /// @deprecated
-    #if defined(NCBI_HAVE_CXX11) && !defined(NCBI_TEST_CXX17)
-    // Avoid (copious) warnings from using auto_ptr in C++ '11.
-    #  if defined(_GLIBCXX_DEPRECATED_ATTR)
-    #    include <string>
-    #    undef _GLIBCXX_DEPRECATED_ATTR
-    #    define _GLIBCXX_DEPRECATED_ATTR /* temporarily empty */
-    #    include <backward/auto_ptr.h>
-    #    undef _GLIBCXX_DEPRECATED_ATTR
-    #    define _GLIBCXX_DEPRECATED_ATTR NCBI_DEPRECATED
-    #  elif defined(_GLIBCXX_DEPRECATED)
-    #    include <string>
-    #    include <ext/concurrence.h>
-    #    ifdef _GLIBCXX_THROW_OR_ABORT /* using libstdc++ from GCC 4.8 or later */
-    #      include <typeinfo>
-    #      include <bits/alloc_traits.h>
-    #      include <bits/unique_ptr.h>
-    #      include <bits/shared_ptr.h>
-    #    endif
-    #    undef _GLIBCXX_DEPRECATED
-    #    define _GLIBCXX_DEPRECATED /* temporarily empty */
-    #    include <backward/auto_ptr.h>
-    #    undef _GLIBCXX_DEPRECATED
-    #    define _GLIBCXX_DEPRECATED NCBI_DEPRECATED
-    #  elif defined(_LIBCPP_DEPRECATED_IN_CXX11)
-    #    include <atomic>
-    #    include <cassert>
-    #    include <iterator>
-    #    include <stdexcept>
-    #    include <tuple>
-    #    undef _LIBCPP_DEPRECATED_IN_CXX11
-    #    define _LIBCPP_DEPRECATED_IN_CXX11 /**/
-    #    include <memory>
-    #    undef _LIBCPP_DEPRECATED_IN_CXX11
-    #    define _LIBCPP_DEPRECATED_IN_CXX11 _LIBCPP_DEPRECATED
-    #  endif
-    #endif
+
 #endif // NCBISTL_ENABLE_DEPRECATED
 
 #if defined(_LIBCPP_VERSION)  &&  defined(__cpp_lib_hardware_interference_size)
