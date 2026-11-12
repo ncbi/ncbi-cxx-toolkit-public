@@ -284,7 +284,8 @@ public:
 private:
     void x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
                             CRequestStatus::ECode  status,
-                            size_t  bytes_sent);
+                            size_t  bytes_sent,
+                            size_t  bytes_received);
     CRequestStatus::ECode
     x_ConcludeIDGetNARequestStatus(shared_ptr<CPSGS_Request> request,
                                    shared_ptr<CPSGS_Reply> reply,

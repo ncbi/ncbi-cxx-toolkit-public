@@ -1456,12 +1456,14 @@ CRef<CRequestContext> CreateErrorRequestContext(const string &  client_ip,
 
 
 void DismissErrorRequestContext(CRef<CRequestContext> &  context,
-                                int  status, size_t  bytes_sent)
+                                int  status, size_t  bytes_sent,
+                                size_t  bytes_received)
 {
     CDiagContext::SetRequestContext(context);
     context->SetReadOnly(false);
     context->SetRequestStatus(status);
     context->SetBytesWr(bytes_sent);
+    context->SetBytesRd(bytes_received);
     GetDiagContext().PrintRequestStop();
     context.Reset();
     CDiagContext::SetRequestContext(NULL);

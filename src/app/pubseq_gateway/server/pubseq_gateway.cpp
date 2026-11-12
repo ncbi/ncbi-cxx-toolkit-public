@@ -1021,7 +1021,8 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
             // processing a request.
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                                CRequestStatus::e503_ServiceUnavailable,
-                               reply->GetBytesSent());
+                               reply->GetBytesSent(),
+                               reply->GetBytesReceived());
             x_CloseThrottledConnection(reply);
             break;
         case ePSGS_OtherClosed:
@@ -1036,7 +1037,8 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
 void CPubseqGatewayApp::x_PrintRequestStop(CRef<CRequestContext> &   context,
                                            CPSGS_Request::EPSGS_Type  request_type,
                                            CRequestStatus::ECode  status,
-                                           size_t  bytes_sent)
+                                           size_t  bytes_sent,
+                                           size_t  bytes_received)
 {
     m_Counters->IncrementRequestStopCounter(status);
 
@@ -1048,6 +1050,7 @@ void CPubseqGatewayApp::x_PrintRequestStop(CRef<CRequestContext> &   context,
     context->SetReadOnly(false);
     context->SetRequestStatus(status);
     context->SetBytesWr(bytes_sent);
+    context->SetBytesRd(bytes_received);
     GetDiagContext().PrintRequestStop();
     context.Reset();
     CDiagContext::SetRequestContext(NULL);

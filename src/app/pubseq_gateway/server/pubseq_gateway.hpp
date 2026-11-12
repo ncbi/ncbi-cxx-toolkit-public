@@ -318,7 +318,8 @@ private:
     void x_PrintRequestStop(CRef<CRequestContext> &  context,
                             CPSGS_Request::EPSGS_Type  request_type,
                             CRequestStatus::ECode  status,
-                            size_t  bytes_sent);
+                            size_t  bytes_sent,
+                            size_t  bytes_received);
 
     SRequestParameter  x_GetParam(CHttpRequest &  req, string_view  name) const;
     bool  x_GetSendBlobIfSmallParameter(CHttpRequest &  req,

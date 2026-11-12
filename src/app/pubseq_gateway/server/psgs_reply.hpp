@@ -66,7 +66,8 @@ public:
         m_ConnectionCanceled(false),
         m_RequestId(0),
         m_LastActivityTimestamp(psg_clock_t::now()),
-        m_Prefinished(false)
+        m_Prefinished(false),
+        m_BytesPassedToH2o(0)
     {
         SetContentType(ePSGS_PSGMime);
         m_Chunks.reserve(64);
@@ -82,7 +83,8 @@ public:
         m_ConnectionCanceled(false),
         m_RequestId(0),
         m_LastActivityTimestamp(psg_clock_t::now()),
-        m_Prefinished(false)
+        m_Prefinished(false),
+        m_BytesPassedToH2o(0)
     {
         SetContentType(ePSGS_PSGMime);
         m_Chunks.reserve(64);
@@ -118,6 +120,7 @@ public:
     void SetContentType(EPSGS_ReplyMimeType  mime_type);
     void SetContentLength(uint64_t  content_length);
     size_t GetBytesSent(void) const;
+    size_t GetBytesReceived(void) const;
 
     void SendOk(const char *  payload, size_t  payload_len, bool  is_persist);
     void Send202(const char *  payload, size_t  payload_len);
@@ -401,6 +404,8 @@ private:
     size_t                  m_RequestId;
     psg_time_point_t        m_LastActivityTimestamp;
     bool                    m_Prefinished;
+
+    size_t                  m_BytesPassedToH2o;
 };
 
 

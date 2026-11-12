@@ -852,7 +852,7 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         app->GetCounters().IncrementRequestStopCounter(503);
 
         DismissErrorRequestContext(context,
-                                   CRequestStatus::e503_ServiceUnavailable, 0);
+                                   CRequestStatus::e503_ServiceUnavailable, 0, 0);
         return;
     }
 
@@ -887,7 +887,7 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         app->GetCounters().IncrementRequestStopCounter(503);
 
         DismissErrorRequestContext(context,
-                                   CRequestStatus::e503_ServiceUnavailable, 0);
+                                   CRequestStatus::e503_ServiceUnavailable, 0, 0);
 
         uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
         return;
@@ -942,7 +942,7 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         app->GetAlerts().Register(ePSGS_TcpConnHardLimitExceeded, err_msg);
 
         DismissErrorRequestContext(context,
-                                   CRequestStatus::e503_ServiceUnavailable, 0);
+                                   CRequestStatus::e503_ServiceUnavailable, 0, 0);
 
         uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
         return;
@@ -982,7 +982,7 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         app->GetCounters().IncrementRequestStopCounter(100);
         app->GetAlerts().Register(ePSGS_TcpConnAlertLimitExceeded, warn_msg);
 
-        DismissErrorRequestContext(context, CRequestStatus::e100_Continue, 0);
+        DismissErrorRequestContext(context, CRequestStatus::e100_Continue, 0, 0);
     }
 
     m_protocol.OnNewConnection(reinterpret_cast<uv_stream_t*>(tcp),

@@ -208,13 +208,15 @@ int CPubseqGatewayApp::x_ReadyzHealthzImplementation(CHttpRequest &  http_req,
     if (x_IsShuttingDownForZEndPoints(reply, verbose)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e503_ServiceUnavailable,
-                           reply->GetBytesSent());
+                           reply->GetBytesSent(),
+                           reply->GetBytesReceived());
         return 0;
     }
     if (x_IsConnectionAboveSoftLimitForZEndPoints(reply, verbose)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e503_ServiceUnavailable,
-                           reply->GetBytesSent());
+                           reply->GetBytesSent(),
+                           reply->GetBytesReceived());
         return 0;
     }
 
@@ -269,7 +271,8 @@ int CPubseqGatewayApp::x_ReadyzHealthzImplementation(CHttpRequest &  http_req,
     }
 
     x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
-                       CRequestStatus::e200_Ok, reply->GetBytesSent());
+                       CRequestStatus::e200_Ok, reply->GetBytesSent(),
+                       reply->GetBytesReceived());
     return 0;
 }
 
@@ -386,14 +389,16 @@ CPubseqGatewayApp::x_SelfZEndPointCheck(CHttpRequest &  req,
     if (x_IsShuttingDownForZEndPoints(reply, verbose)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e503_ServiceUnavailable,
-                           reply->GetBytesSent());
+                           reply->GetBytesSent(),
+                           reply->GetBytesReceived());
         return 0;
     }
     if (check_id != "connections") {
         if (x_IsConnectionAboveSoftLimitForZEndPoints(reply, verbose)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                                CRequestStatus::e503_ServiceUnavailable,
-                               reply->GetBytesSent());
+                               reply->GetBytesSent(),
+                               reply->GetBytesReceived());
             return 0;
         }
     }
@@ -450,7 +455,8 @@ CPubseqGatewayApp::x_SelfZEndPointCheck(CHttpRequest &  req,
 
     x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                        CRequestStatus::e500_InternalServerError,
-                       reply->GetBytesSent());
+                       reply->GetBytesSent(),
+                       reply->GetBytesReceived());
     return 0;
 }
 
@@ -486,7 +492,8 @@ int CPubseqGatewayApp::OnLivez(CHttpRequest &  http_req,
     }
 
     x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
-                       CRequestStatus::e200_Ok, reply->GetBytesSent());
+                       CRequestStatus::e200_Ok, reply->GetBytesSent(),
+                       reply->GetBytesReceived());
 
     m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_LiveZRequest);
     return 0;
@@ -777,7 +784,8 @@ void CPSGS_ZEndPointRequests::OnFinilizeHealthZRequest(size_t  request_id)
                                             it->second.m_RequestContext,
                                             CPSGS_Request::ePSGS_UnknownRequest,
                                             final_http_status,
-                                            it->second.m_Reply->GetBytesSent());
+                                            it->second.m_Reply->GetBytesSent(),
+                                            it->second.m_Reply->GetBytesReceived());
 
     // close uv_handle
     uv_close(reinterpret_cast<uv_handle_t*>(&it->second.m_FinilizeEvent),

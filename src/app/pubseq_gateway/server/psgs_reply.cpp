@@ -67,6 +67,11 @@ void CPSGS_Reply::Flush(EPSGS_ReplyFlush  how)
         return;
     }
 
+    // This is the moment when chunks are passed to libh2o for sending
+    for (const auto &  item : m_Chunks) {
+        m_BytesPassedToH2o += item.len;
+    }
+
     if (how == ePSGS_SendAccumulated) {
         // Only chunks
         if (m_Chunks.empty()) {
@@ -220,11 +225,20 @@ void CPSGS_Reply::SetContentLength(uint64_t  content_length)
 
 size_t CPSGS_Reply::GetBytesSent(void) const
 {
-    if (m_Reply)
-        return m_Reply->GetBytesSent();
-    return 0;
+    if (m_Reply) {
+        return max(m_Reply->GetBytesSent(), m_BytesPassedToH2o);
+    }
+    return m_BytesPassedToH2o;
 }
 
+
+size_t CPSGS_Reply::GetBytesReceived(void) const
+{
+    if (m_Reply) {
+        return m_Reply->GetBytesReceived();
+    }
+    return 0;
+}
 
 void CPSGS_Reply::SendOk(const char *  payload, size_t  payload_len, bool  is_persist)
 {
@@ -233,6 +247,7 @@ void CPSGS_Reply::SendOk(const char *  payload, size_t  payload_len, bool  is_pe
 
     x_UpdateLastActivity();
 
+    m_BytesPassedToH2o += payload_len;
     m_Reply->SendOk(payload, payload_len, is_persist);
 
     // OK is always the last so the reply is not needed anymore.
@@ -251,6 +266,7 @@ void CPSGS_Reply::Send202(const char *  payload, size_t  payload_len)
 
     x_UpdateLastActivity();
 
+    m_BytesPassedToH2o += payload_len;
     m_Reply->Send202(payload, payload_len);
 
     // 202 is always the last so the reply is not needed anymore.
@@ -269,6 +285,9 @@ void CPSGS_Reply::Send400(const char *  payload)
 
     x_UpdateLastActivity();
 
+    if (payload) {
+        m_BytesPassedToH2o += strlen(payload);
+    }
     m_Reply->Send400(payload);
 
     // 400 is always the last so the reply is not needed anymore.
@@ -287,6 +306,9 @@ void CPSGS_Reply::Send401(const char *  payload)
 
     x_UpdateLastActivity();
 
+    if (payload) {
+        m_BytesPassedToH2o += strlen(payload);
+    }
     m_Reply->Send401(payload);
 
     // 401 is always the last so the reply is not needed anymore.
@@ -305,6 +327,9 @@ void CPSGS_Reply::Send404(const char *  payload)
 
     x_UpdateLastActivity();
 
+    if (payload) {
+        m_BytesPassedToH2o += strlen(payload);
+    }
     m_Reply->Send404(payload);
 
     // 404 is always the last so the reply is not needed anymore.
@@ -323,6 +348,9 @@ void CPSGS_Reply::Send409(const char *  payload)
 
     x_UpdateLastActivity();
 
+    if (payload) {
+        m_BytesPassedToH2o += strlen(payload);
+    }
     m_Reply->Send409(payload);
 
     // 409 is always the last so the reply is not needed anymore.
@@ -341,6 +369,9 @@ void CPSGS_Reply::Send500(const char *  payload)
 
     x_UpdateLastActivity();
 
+    if (payload) {
+        m_BytesPassedToH2o += strlen(payload);
+    }
     m_Reply->Send500(payload);
 
     // 500 is always the last so the reply is not needed anymore.
@@ -359,6 +390,9 @@ void CPSGS_Reply::Send502(const char *  payload)
 
     x_UpdateLastActivity();
 
+    if (payload) {
+        m_BytesPassedToH2o += strlen(payload);
+    }
     m_Reply->Send502(payload);
 
     // 502 is always the last so the reply is not needed anymore.
@@ -377,6 +411,9 @@ void CPSGS_Reply::Send503(const char *  payload)
 
     x_UpdateLastActivity();
 
+    if (payload) {
+        m_BytesPassedToH2o += strlen(payload);
+    }
     m_Reply->Send503(payload);
 
     // 503 is always the last so the reply is not needed anymore.
@@ -395,6 +432,9 @@ void CPSGS_Reply::Send504(const char *  payload)
 
     x_UpdateLastActivity();
 
+    if (payload) {
+        m_BytesPassedToH2o += strlen(payload);
+    }
     m_Reply->Send504(payload);
 
     // 504 is always the last so the reply is not needed anymore.

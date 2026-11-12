@@ -397,6 +397,7 @@ CRef<CRequestContext> CreateErrorRequestContext(const string &  client_ip,
                                                 int64_t  connection_id);
 void DismissErrorRequestContext(CRef<CRequestContext> &  context,
                                 int  status,
-                                size_t  bytes_sent);
+                                size_t  bytes_sent,
+                                size_t  bytes_received);
 
 #endif

@@ -136,6 +136,16 @@ public:
         return 0;
     }
 
+    size_t GetBytesReceived(void) const
+    {
+        // The server does not receive anything but a URL with parameters
+        // That URL is stored in the path member of a libh2o structure
+        // The only ommitted part is headers though...
+        if (m_Req)
+            return m_Req->path.len;
+        return 0;
+    }
+
     void Send(const char *  payload, size_t  payload_len,
               bool  is_persist, bool  is_last)
     {

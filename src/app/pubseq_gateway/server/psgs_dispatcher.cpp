@@ -362,7 +362,8 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
         reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
         reply->SetCompleted();
 
-        x_PrintRequestStop(request, status_code, reply->GetBytesSent());
+        x_PrintRequestStop(request, status_code,
+                           reply->GetBytesSent(), reply->GetBytesReceived());
     } else {
         auto *  grp = procs.release();
 
@@ -792,7 +793,8 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
             reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
             reply->SetCompleted();
 
-            x_PrintRequestStop(request, request_status, reply->GetBytesSent());
+            x_PrintRequestStop(request, request_status,
+                               reply->GetBytesSent(), reply->GetBytesReceived());
         }
     }
 
@@ -853,7 +855,8 @@ void CPSGS_Dispatcher::SignalConnectionCanceled(size_t      request_id)
 
 void CPSGS_Dispatcher::x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
                                           CRequestStatus::ECode  status,
-                                          size_t  bytes_sent)
+                                          size_t  bytes_sent,
+                                          size_t  bytes_received)
 {
     auto    request_type = request->GetRequestType();
     auto &  counters = CPubseqGatewayApp::GetInstance()->GetCounters();
@@ -898,6 +901,7 @@ void CPSGS_Dispatcher::x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
     request->SetRequestContext();
     CDiagContext::GetRequestContext().SetRequestStatus(status);
     CDiagContext::GetRequestContext().SetBytesWr(bytes_sent);
+    CDiagContext::GetRequestContext().SetBytesRd(bytes_received);
     GetDiagContext().PrintRequestStop();
     CDiagContext::GetRequestContext().Reset();
     CDiagContext::SetRequestContext(NULL);
@@ -1437,7 +1441,7 @@ void CPSGS_Dispatcher::EraseProcessorGroup(size_t  request_id)
                 // Note: the number of bytes sent is not available here because
                 // libh2o may already free the corresponding data structures.
                 // Thus, use 0 instead of reply->GetBytesSent()
-                x_PrintRequestStop(request, request_status, 0);
+                x_PrintRequestStop(request, request_status, 0, 0);
             } else {
                 // That means the request stop has not been really issued before
                 // the group is removed
