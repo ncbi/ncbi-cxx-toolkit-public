@@ -143,7 +143,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
             assert((size_t) info->vhost == len);
         }
     } else {
-        assert((type & fSERV_Standalone)  &&  data->port);
+        assert(data->port);
         info = SERV_CreateStandaloneInfo(ipv4, 0/*port,assigned later*/);
     }
 
