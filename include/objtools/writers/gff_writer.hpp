@@ -179,6 +179,11 @@ public:
         const string& asmblyName="",
         const string& asmblyAccession="" ) override;
 
+private:
+    bool xAssignFeatureSeqId(
+        CGffFeatureRecord& record,
+        const CMappedFeat& mappedFeat) const;
+
 protected:
     virtual bool xAssignFeature(
         CGffFeatureRecord&,
@@ -195,14 +200,11 @@ protected:
         CGffFeatureContext&,
         const CMappedFeat&);
 
+    [[deprecated]]
     virtual bool xAssignFeatureSeqId(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
-
-    virtual bool xAssignFeatureSeqId(
-        CGffFeatureRecord& record,
-        const CMappedFeat& mappedFeat) const;
 
     virtual bool xAssignFeatureMethod(
         CGffFeatureRecord&,

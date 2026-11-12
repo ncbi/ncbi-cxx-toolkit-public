@@ -325,53 +325,23 @@ void CGff3Reader::xProcessAlignmentData(
 }
 
 
-static bool s_IsIgnoredFeatureType(const CTempString& featureType, bool in_genbank_mode)
+static bool s_IsIgnoredFeatureType(const CTempString& featureType, bool isInsdcMode, bool IsGenbankMode)
 {
-    typedef CStaticArraySet<string, PNocase> STRINGARRAY;
-
     string ftype(CSoMap::ResolveSoAlias(featureType));
 
-    static const char* const ignoredTypesAlways_[] = {
-        "protein",
-        "start_codon", // also part of a cds feature
-        "stop_codon", // in GFF3, also part of a cds feature
-    };
-    DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, ignoredTypesAlways, ignoredTypesAlways_);
-    STRINGARRAY::const_iterator cit = ignoredTypesAlways.find(ftype);
-    if (cit != ignoredTypesAlways.end()) {
+    if (ftype == "stop_codon") { // Only allowed in INSDC mode
+        return (! isInsdcMode);
+    }
+
+    if (NStr::EqualNocase(ftype, "protein") || NStr::EqualNocase(ftype, "start_codon")) {
         return true;
     }
-    if (!in_genbank_mode) {
+
+    if (! IsGenbankMode) {
         return false;
     }
 
-    /* -genbank mode:*/
-    static const char* const specialTypesGenbank_[] = {
-        "antisense_RNA",
-        "autocatalytically_spliced_intron",
-        "guide_RNA",
-        "hammerhead_ribozyme",
-        "lnc_RNA",
-        "miRNA",
-        "piRNA",
-        "rasiRNA",
-        "ribozyme",
-        "RNase_MRP_RNA",
-        "RNase_P_RNA",
-        "scRNA",
-        "selenocysteine",
-        "siRNA",
-        "snoRNA",
-        "snRNA",
-        "SRP_RNA",
-        "stop_codon_read_through",
-        "telomerase_RNA",
-        "vault_RNA",
-        "Y_RNA"
-    };
-    DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, specialTypesGenbank, specialTypesGenbank_);
-
-    static const char* const ignoredTypesGenbank_[] = {
+    MAKE_CONST_SET(ignoredTypesGenbank, ct::tagStrNocase, {
         "apicoplast_chromosome",
         "assembly",
         "cDNA_match",
@@ -402,20 +372,9 @@ static bool s_IsIgnoredFeatureType(const CTempString& featureType, bool in_genba
         "supercontig",
         "translated_nucleotide_match",
         "ultracontig",
-    };
-    DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, ignoredTypesGenbank, ignoredTypesGenbank_);
+    });
 
-    cit = specialTypesGenbank.find(ftype);
-    if (cit != specialTypesGenbank.end()) {
-        return false;
-    }
-
-    cit = ignoredTypesGenbank.find(ftype);
-    if (cit != ignoredTypesGenbank.end()) {
-        return true;
-    }
-
-    return false;
+    return (ignoredTypesGenbank.find(ftype) != ignoredTypesGenbank.end());
 }
 
 //  ----------------------------------------------------------------------------
@@ -460,7 +419,7 @@ cerr << "Parent " << parent << " not yet seen for ID " << id << endl;
     }
 
     //make sure we are interested:
-    if (s_IsIgnoredFeatureType(pRecord->Type(), IsInGenbankMode())) {
+    if (s_IsIgnoredFeatureType(pRecord->Type(), xIsInsdcMode(), IsInGenbankMode())) {
         return true;
     }
 
@@ -1089,6 +1048,17 @@ bool CGff3Reader::xUpdateAnnotCodeBreak(
 
         auto pCds = pIt->second;
         pCds->SetData().SetCdregion().SetCode_break().push_back(pCodeBreak);
+
+        string note; // Add codon note to parent CDS
+        if (record.GetAttribute("Note", note)) {
+            if (pCds->IsSetComment()) {
+                if (NStr::Find(pCds->GetComment(), note) == NPOS) {
+                    pCds->SetComment() += "; " + note;
+                }
+            } else {
+                pCds->SetComment() = note;
+            }
+        }
     }
 
     return true;
@@ -1363,98 +1333,10 @@ bool CGff3Reader::xReadInit()
 
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xIsIgnoredFeatureType(
-    const CTempString& featureType)
+    const CTempString& featureType) // DEPRECATED
 //  ----------------------------------------------------------------------------
 {
-    typedef CStaticArraySet<string, PNocase> STRINGARRAY;
-
-    string ftype(CSoMap::ResolveSoAlias(featureType));
-
-    static const char* const ignoredTypesAlways_[] = {
-        "protein",
-        "start_codon", // also part of a cds feature
-        "stop_codon", // in GFF3, also part of a cds feature
-    };
-    DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, ignoredTypesAlways, ignoredTypesAlways_);
-    STRINGARRAY::const_iterator cit = ignoredTypesAlways.find(ftype);
-    if (cit != ignoredTypesAlways.end()) {
-        return true;
-    }
-    if (!IsInGenbankMode()) {
-        return false;
-    }
-
-    /* -genbank mode:*/
-    static const char* const specialTypesGenbank_[] = {
-        "antisense_RNA",
-        "autocatalytically_spliced_intron",
-        "guide_RNA",
-        "hammerhead_ribozyme",
-        "lnc_RNA",
-        "miRNA",
-        "piRNA",
-        "rasiRNA",
-        "ribozyme",
-        "RNase_MRP_RNA",
-        "RNase_P_RNA",
-        "scRNA",
-        "selenocysteine",
-        "siRNA",
-        "snoRNA",
-        "snRNA",
-        "SRP_RNA",
-        "stop_codon_read_through",
-        "telomerase_RNA",
-        "vault_RNA",
-        "Y_RNA"
-    };
-    DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, specialTypesGenbank, specialTypesGenbank_);
-
-    static const char* const ignoredTypesGenbank_[] = {
-        "apicoplast_chromosome",
-        "assembly",
-        "cDNA_match",
-        "chloroplast_chromosome",
-        "chromoplast_chromosome",
-        "chromosome",
-        "contig",
-        "cyanelle_chromosome",
-        "dna_chromosome",
-        "EST_match",
-        "expressed_sequence_match",
-        "intron",
-        "leucoplast_chromosome",
-        "macronuclear_chromosome",
-        "match",
-        "match_part",
-        "micronuclear_chromosome",
-        "mitochondrial_chromosome",
-        "nuclear_chromosome",
-        "nucleomorphic_chromosome",
-        "nucleotide_motif",
-        "nucleotide_to_protein_match",
-        "partial_genomic_sequence_assembly",
-        "protein_match",
-        "replicon",
-        "rna_chromosome",
-        "sequence_assembly",
-        "supercontig",
-        "translated_nucleotide_match",
-        "ultracontig",
-    };
-    DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, ignoredTypesGenbank, ignoredTypesGenbank_);
-
-    cit = specialTypesGenbank.find(ftype);
-    if (cit != specialTypesGenbank.end()) {
-        return false;
-    }
-
-    cit = ignoredTypesGenbank.find(ftype);
-    if (cit != ignoredTypesGenbank.end()) {
-        return true;
-    }
-
-    return false;
+    return s_IsIgnoredFeatureType(featureType, xIsInsdcMode(), IsInGenbankMode());
 }
 
 //  ----------------------------------------------------------------------------
