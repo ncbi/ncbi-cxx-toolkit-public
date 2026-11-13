@@ -1,5 +1,5 @@
 /*
- * nm -g --defined-only ~/c++/Clang-DebugMTDLL64/build/connect/parson.o \
+ * nm -g --defined-only .../parson.o \
  * | sed -e 's/.* [x_]*\(json.*\)/#define \1 x_\1/'
  */
 #define json_array x_json_array
