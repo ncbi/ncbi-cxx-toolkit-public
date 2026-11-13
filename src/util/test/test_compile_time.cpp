@@ -1587,12 +1587,33 @@ BOOST_AUTO_TEST_CASE(test_index_table)
         { 700, 10, "ii", {1, 1}, 0 },
     });
 
+#if defined(__clang__)
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wconstant-conversion"
+#elif defined(__GNUC__)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Woverflow"
+#elif defined(_MSC_VER)
+#   pragma warning(push)
+#   pragma warning(disable: 4309 4305)
+#endif
+
     compile_time_bits::DeduceIndexSize<1>::type v1 = 1000; // must be overflow
+
+#if defined(__clang__)
+#   pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#   pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
+
     BOOST_CHECK_EQUAL(v1, 232);
     //compile_time_bits::DeduceIndexSize<256>::type v256 = 256*256;
     //compile_time_bits::DeduceIndexSize<1024>::type v1024 = 1024;
     //compile_time_bits::DeduceIndexSize<1000000>::type v10000000 = 1000000;
     auto i0 = ind1.get_index<0>();
+    NCBI_UNUSED 
     auto i1 = ind1.get_index<1>();
     auto i2 = ind1.get_index<2>();
     //auto i3 = ind1.get_index<3>();  // fourth column is pair and not searchable
