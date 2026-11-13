@@ -1,6 +1,6 @@
 # $Id$
 
-EXPENDABLE_APP_PROJ = pubseq_gateway
+APP_PROJ = pubseq_gateway
 # SUB_PROJ = test
 
 srcdir = @srcdir@
