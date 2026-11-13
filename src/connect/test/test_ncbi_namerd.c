@@ -534,9 +534,9 @@ out:
 /* mostly error-handling-free for the moment  :-/  */
 static int run_tests(int live, const char *test_nums)
 {
-    x_JSON_Value    *root_value = NULL;
-    x_JSON_Object   *root_obj;
-    x_JSON_Array    *test_arr;
+    JSON_Value      *root_value = NULL;
+    JSON_Object     *root_obj;
+    JSON_Array      *test_arr;
     const char      *test_num = test_nums;
     size_t          n_tests = 0, n_pass = 0, n_fail = 0, n_skip = 0;
     size_t          n_comm_unset, n_comm_set;
@@ -546,26 +546,26 @@ static int run_tests(int live, const char *test_nums)
         "============================================================");
     CORE_LOGF(eLOG_Note, ("Test file: %s", s_json_file));
 
-    root_value = x_json_parse_file(s_json_file);
-    root_obj   = x_json_value_get_object(root_value);
+    root_value = json_parse_file(s_json_file);
+    root_obj   = json_value_get_object(root_value);
 
-    if (x_json_object_has_value_of_type(root_obj, "all_enabled", JSONNumber)  &&
-        (int)x_json_object_get_number(root_obj, "all_enabled") != 0)
+    if (json_object_has_value_of_type(root_obj, "all_enabled", JSONNumber)  &&
+        (int)json_object_get_number(root_obj, "all_enabled") != 0)
     {
         all_enabled = 1;
     }
 
-    test_arr = x_json_object_get_array(root_obj, "tests");
-    n_tests = x_json_array_get_count(test_arr);
+    test_arr = json_object_get_array(root_obj, "tests");
+    n_tests = json_array_get_count(test_arr);
     size_t it;
     for (it = 0; it < n_tests; ++it) {
-        x_JSON_Object   *test_obj;
-        x_JSON_Array    *hit_arr;
-        const char      *svc, *hdr;
-        int             err = 0;
+        JSON_Object   *test_obj;
+        JSON_Array    *hit_arr;
+        const char    *svc, *hdr;
+        int           err = 0;
 
-        test_obj = x_json_array_get_object(test_arr, it);
-        s_results[it].name = x_json_object_get_string(test_obj, "alias");
+        test_obj = json_array_get_object(test_arr, it);
+        s_results[it].name = json_object_get_string(test_obj, "alias");
 
         /* Skip tests not in user-supplied test numbers list. */
         if (test_nums  &&  *test_nums) {
@@ -593,13 +593,13 @@ static int run_tests(int live, const char *test_nums)
 
         /* Skip disabled tests. */
         if ( ! all_enabled) {
-            if (x_json_object_has_value_of_type(test_obj, "disabled",
+            if (json_object_has_value_of_type(test_obj, "disabled",
                 JSONNumber))
             {
-                if ((int)x_json_object_get_number(test_obj, "disabled") == 1) {
+                if ((int)json_object_get_number(test_obj, "disabled") == 1) {
                     ++n_skip;
                     CORE_LOGF(eLOG_Note, ("Skipping test " FMT_SIZE_T ": %s",
-                        it+1, x_json_object_get_string(test_obj, "alias")));
+                        it+1, json_object_get_string(test_obj, "alias")));
                     s_results[it].result = "skip";
                     continue;
                 }
@@ -609,26 +609,26 @@ static int run_tests(int live, const char *test_nums)
         CORE_LOGF(eLOG_Note, ("Running test " FMT_SIZE_T ": %s", it+1,
             s_results[it].name));
 
-        svc = x_json_object_get_string(test_obj, "service");
-        if (x_json_object_has_value_of_type(test_obj, "http_user_header",
+        svc = json_object_get_string(test_obj, "service");
+        if (json_object_has_value_of_type(test_obj, "http_user_header",
                 JSONString))
-            hdr = x_json_object_get_string(test_obj, "http_user_header");
+            hdr = json_object_get_string(test_obj, "http_user_header");
         else
             hdr = "";
 
-        if (x_json_object_has_value_of_type(test_obj, "expect_error",
+        if (json_object_has_value_of_type(test_obj, "expect_error",
             JSONString))
         {
-            if (strcmp(x_json_object_get_string(test_obj, "expect_error"),
+            if (strcmp(json_object_get_string(test_obj, "expect_error"),
                         "yes") == 0)
             {
                 err = 1;
             }
         }
 
-        if (x_json_object_has_value_of_type(test_obj, "url", JSONString))
+        if (json_object_has_value_of_type(test_obj, "url", JSONString))
             CORE_LOGF(eLOG_Note, ("    url:              %s",
-                x_json_object_get_string(test_obj, "url")));
+                json_object_get_string(test_obj, "url")));
         CORE_LOGF(eLOG_Note, ("    service:          %s", svc));
         CORE_LOGF(eLOG_Note, ("    header:           %s",
             *hdr ? hdr : "(none)"));
@@ -636,17 +636,17 @@ static int run_tests(int live, const char *test_nums)
 
         /* Redo common unset/set - they could have been changed by a prior
             test. */
-        if (x_json_object_dothas_value_of_type(root_obj, "common.env_unset",
+        if (json_object_dothas_value_of_type(root_obj, "common.env_unset",
             JSONArray))
         {
-            x_JSON_Array    *comm_unset_arr;
+            JSON_Array    *comm_unset_arr;
 
-            comm_unset_arr = x_json_object_dotget_array(root_obj,
+            comm_unset_arr = json_object_dotget_array(root_obj,
                                 "common.env_unset");
-            n_comm_unset   = x_json_array_get_count(comm_unset_arr);
+            n_comm_unset   = json_array_get_count(comm_unset_arr);
 
             for (size_t it2 = 0; it2 < n_comm_unset; ++it2) {
-                const char  *name = x_json_array_get_string(
+                const char  *name = json_array_get_string(
                                     comm_unset_arr, it2);
 
                 CORE_LOGF(eLOG_Note, ("    Unsetting common var: %s", name));
@@ -658,21 +658,21 @@ static int run_tests(int live, const char *test_nums)
                 }
             }
         }
-        if (x_json_object_dothas_value_of_type(root_obj, "common.env_set",
+        if (json_object_dothas_value_of_type(root_obj, "common.env_set",
             JSONArray))
         {
-            x_JSON_Array    *comm_set_arr;
+            JSON_Array    *comm_set_arr;
 
-            comm_set_arr   = x_json_object_dotget_array(root_obj,
+            comm_set_arr   = json_object_dotget_array(root_obj,
                                 "common.env_set");
-            n_comm_set     = x_json_array_get_count(comm_set_arr);
+            n_comm_set     = json_array_get_count(comm_set_arr);
 
             for (size_t it2 = 0; it2 < n_comm_set; ++it2) {
-                x_JSON_Object   *env_obj = x_json_array_get_object(comm_set_arr,
+                JSON_Object     *env_obj = json_array_get_object(comm_set_arr,
                                             it2);
-                const char      *name = x_json_object_get_name(env_obj, 0);
-                const char      *val = x_json_value_get_string(
-                                        x_json_object_get_value_at(env_obj, 0));
+                const char      *name = json_object_get_name(env_obj, 0);
+                const char      *val = json_value_get_string(
+                                        json_object_get_value_at(env_obj, 0));
                 const char      *temp;
 
                 CORE_LOGF(eLOG_Note, ("    Setting common var: %s=%s", name,
@@ -689,18 +689,18 @@ static int run_tests(int live, const char *test_nums)
         }
 
         /* Per-test unset/set */
-        if (x_json_object_has_value_of_type(test_obj, "env_unset", JSONArray)) {
-            x_JSON_Array    *unset_arr;
-            size_t          n_unset;
+        if (json_object_has_value_of_type(test_obj, "env_unset", JSONArray)) {
+            JSON_Array    *unset_arr;
+            size_t        n_unset;
 
-            unset_arr = x_json_object_get_array(test_obj, "env_unset");
-            n_unset = x_json_array_get_count(unset_arr);
+            unset_arr = json_object_get_array(test_obj, "env_unset");
+            n_unset = json_array_get_count(unset_arr);
             CORE_LOGF(eLOG_Note, (
                 "    Unset per-test environment variables: " FMT_SIZE_T,
                 n_unset));
             if (n_unset) {
                 for (size_t it2 = 0; it2 < n_unset; ++it2) {
-                    const char  *name = x_json_array_get_string(unset_arr, it2);
+                    const char  *name = json_array_get_string(unset_arr, it2);
 
                     CORE_LOGF(eLOG_Note, ("        %s", name));
                     unsetenv(name);
@@ -712,22 +712,22 @@ static int run_tests(int live, const char *test_nums)
                 }
             }
         }
-        if (x_json_object_has_value_of_type(test_obj, "env_set", JSONArray)) {
-            x_JSON_Array    *set_arr;
-            size_t          n_set;
+        if (json_object_has_value_of_type(test_obj, "env_set", JSONArray)) {
+            JSON_Array    *set_arr;
+            size_t        n_set;
 
-            set_arr = x_json_object_get_array(test_obj, "env_set");
-            n_set = x_json_array_get_count(set_arr);
+            set_arr = json_object_get_array(test_obj, "env_set");
+            n_set = json_array_get_count(set_arr);
             CORE_LOGF(eLOG_Note, (
                 "    Set per-test environment variables: " FMT_SIZE_T,
                 n_set));
             if (n_set) {
                 for (size_t it2 = 0; it2 < n_set; ++it2) {
-                    x_JSON_Object   *env_obj = x_json_array_get_object(set_arr,
+                    JSON_Object     *env_obj = json_array_get_object(set_arr,
                                                 it2);
-                    const char      *name = x_json_object_get_name(env_obj, 0);
-                    const char      *val = x_json_value_get_string(
-                                        x_json_object_get_value_at(env_obj, 0));
+                    const char      *name = json_object_get_name(env_obj, 0);
+                    const char      *val = json_value_get_string(
+                                        json_object_get_value_at(env_obj, 0));
                     const char      *temp;
 
                     CORE_LOGF(eLOG_Note, ("        %s=%s", name, val));
@@ -743,8 +743,8 @@ static int run_tests(int live, const char *test_nums)
             }
         }
 
-        hit_arr = x_json_object_get_array(test_obj, "expect_hits");
-        s_n_hits_exp = (int)x_json_array_get_count(hit_arr);
+        hit_arr = json_object_get_array(test_obj, "expect_hits");
+        s_n_hits_exp = (int)json_array_get_count(hit_arr);
         if (s_n_hits_exp >= MAX_HITS) {
             CORE_LOG(eLOG_Critical, "Too many expected hits.");
             return 0;
@@ -752,20 +752,20 @@ static int run_tests(int live, const char *test_nums)
         CORE_LOGF(eLOG_Note, ("    Expected hits: %d", s_n_hits_exp));
         int it2;
         for (it2 = 0; it2 < s_n_hits_exp; ++it2) {
-            x_JSON_Object   *hit_obj = x_json_array_get_object(hit_arr, it2);
+            JSON_Object     *hit_obj = json_array_get_object(hit_arr, it2);
             const char      *type = "HTTP", *loc = "no", *priv = "no";
             const char      *xtra = "", *stfl = "no";
 
-            if (x_json_object_has_value_of_type(hit_obj, "type", JSONString))
-                type = x_json_object_get_string(hit_obj, "type");
-            if (x_json_object_has_value_of_type(hit_obj, "xtra", JSONString))
-                xtra = x_json_object_get_string(hit_obj, "xtra");
-            if (x_json_object_has_value_of_type(hit_obj, "loc",  JSONString))
-                loc  = x_json_object_get_string(hit_obj, "loc" );
-            if (x_json_object_has_value_of_type(hit_obj, "priv", JSONString))
-                priv = x_json_object_get_string(hit_obj, "priv");
-            if (x_json_object_has_value_of_type(hit_obj, "stfl", JSONString))
-                stfl = x_json_object_get_string(hit_obj, "stfl");
+            if (json_object_has_value_of_type(hit_obj, "type", JSONString))
+                type = json_object_get_string(hit_obj, "type");
+            if (json_object_has_value_of_type(hit_obj, "xtra", JSONString))
+                xtra = json_object_get_string(hit_obj, "xtra");
+            if (json_object_has_value_of_type(hit_obj, "loc",  JSONString))
+                loc  = json_object_get_string(hit_obj, "loc" );
+            if (json_object_has_value_of_type(hit_obj, "priv", JSONString))
+                priv = json_object_get_string(hit_obj, "priv");
+            if (json_object_has_value_of_type(hit_obj, "stfl", JSONString))
+                stfl = json_object_get_string(hit_obj, "stfl");
 
             if (strlen(type) > LEN_TYPE) {
                 CORE_LOGF(eLOG_Critical, ("type string '%s' too long.", type));
@@ -794,18 +794,18 @@ static int run_tests(int live, const char *test_nums)
             strcpy(s_hits_exp[it2].priv, priv);
             strcpy(s_hits_exp[it2].stfl, stfl);
 
-            if ( ! x_json_object_has_value_of_type(hit_obj, "host",
+            if ( ! json_object_has_value_of_type(hit_obj, "host",
                 JSONString))
             {
                 CORE_LOG(eLOG_Critical, "hit object missing host.");
                 return 0;
             }
-            if (strlen(x_json_object_get_string(hit_obj, "host")) > LEN_HOST)
+            if (strlen(json_object_get_string(hit_obj, "host")) > LEN_HOST)
             {
                 CORE_LOG(eLOG_Critical, "host string too long.");
                 return 0;
             }
-            strcpy(s_hits_exp[it2].host, x_json_object_get_string(hit_obj,
+            strcpy(s_hits_exp[it2].host, json_object_get_string(hit_obj,
                 "host"));
 
             if ( ! (strcmp(s_hits_exp[it2].loc , "no" ) == 0  ||
@@ -827,13 +827,13 @@ static int run_tests(int live, const char *test_nums)
                 return 0;
             }
 
-            if ( ! x_json_object_has_value_of_type(hit_obj, "port",
+            if ( ! json_object_has_value_of_type(hit_obj, "port",
                 JSONNumber))
             {
                 CORE_LOG(eLOG_Critical, "JSON hit missing a port.");
                 return 0;
             }
-            double dbl_port = x_json_object_get_number(hit_obj, "port");
+            double dbl_port = json_object_get_number(hit_obj, "port");
             if (dbl_port < 1.0  ||  dbl_port > 65535.0)
             {
                 CORE_LOGF(eLOG_Critical, ("Invalid JSON hit port, %lf.",
@@ -855,9 +855,9 @@ static int run_tests(int live, const char *test_nums)
         }
 
         const char *mock_body = NULL;
-        if (x_json_object_has_value_of_type(test_obj, "mock_body", JSONString))
+        if (json_object_has_value_of_type(test_obj, "mock_body", JSONString))
         {
-            mock_body = x_json_object_get_string(test_obj, "mock_body");
+            mock_body = json_object_get_string(test_obj, "mock_body");
             if (mock_body  &&  *mock_body)
                 CORE_LOG(eLOG_Note, "    Mock HTTP body found.");
             else
@@ -865,9 +865,9 @@ static int run_tests(int live, const char *test_nums)
         }
 
         int reset = 0;
-        if (x_json_object_has_value_of_type(
+        if (json_object_has_value_of_type(
                 test_obj, "iter-reset", JSONString)  &&
-            strcmp(x_json_object_get_string(
+            strcmp(json_object_get_string(
                 test_obj, "iter-reset"), "yes") == 0)
         {
             reset = 1;
@@ -913,7 +913,7 @@ static int run_tests(int live, const char *test_nums)
     }
 
     if (root_value)
-        x_json_value_free(root_value);
+        json_value_free(root_value);
 
     return (n_tests > 0  &&  n_pass == n_tests - n_skip) ? 1 : 0;
 }

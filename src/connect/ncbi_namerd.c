@@ -427,12 +427,12 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
 {
     struct SNAMERD_Data* data = (struct SNAMERD_Data*) iter->data;
     size_t               found = 0;
-    x_JSON_Value*        root = 0;
+    JSON_Value*          root = 0;
     size_t               i, n = 0;
     const char*          response;
-    x_JSON_Array*        addrs;
+    JSON_Array*          addrs;
     const char*          type;
-    x_JSON_Object*       top;
+    JSON_Object*         top;
 
     CORE_TRACEF(("Enter NAMERD::s_ParseResponse(\"%s\")", iter->name));
 
@@ -440,18 +440,18 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         goto out;
 
     /* root object */
-    root = x_json_parse_string(response);
+    root = json_parse_string(response);
     if ( ! root) {
         CORE_LOGF_X(eNSub_Json, eLOG_Error,
                     ("[%s]  Response failed to parse as JSON", iter->name));
         goto out;
     }
-    if (x_json_value_get_type(root) != JSONObject) {
+    if (json_value_get_type(root) != JSONObject) {
         CORE_LOGF_X(eNSub_Json, eLOG_Error,
                     ("[%s]  Response is not a JSON object", iter->name));
         goto out;
     }
-    top = x_json_value_get_object(root);
+    top = json_value_get_object(root);
     if ( ! top) {
         CORE_LOGF_X(eNSub_Json, eLOG_Error,
                     ("[%s]  Unable to get JSON root object", iter->name));
@@ -461,7 +461,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
 #if defined(_DEBUG)  &&  ! defined(NDEBUG)
     {{
         char json[9999];
-        if (x_json_serialize_to_buffer_pretty(root, json, sizeof(json)-1)
+        if (json_serialize_to_buffer_pretty(root, json, sizeof(json)-1)
             == JSONSuccess) {
             json[sizeof(json)-1] = '\0';
             CORE_TRACEF(("[%s]  Got JSON:\n%s", iter->name, json));
@@ -473,7 +473,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
 #endif /*_DEBUG && !NDEBUG*/
 
     /* top-level {"type" : "bound"} expected for successful lookup */
-    type = x_json_object_get_string(top, "type");
+    type = json_object_get_string(top, "type");
     if ( ! type) {
         CORE_LOGF_X(eNSub_Json, eLOG_Error,
                     ("[%s]  Unable to get JSON {\"type\"} value", iter->name));
@@ -486,7 +486,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
     }
 
     /* top-level {"addrs" : []} contains endpoint data */
-    addrs = x_json_object_get_array(top, "addrs");
+    addrs = json_object_get_array(top, "addrs");
     if ( ! addrs) {
         CORE_LOGF_X(eNSub_Json, eLOG_Error,
                     ("[%s]  Unable to get JSON {\"addrs\"} array",iter->name));
@@ -496,11 +496,11 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
     /* Note: top-level {"meta" : {}} not currently used */
 
     /* Iterate through addresses, adding to "candidates" */
-    n = x_json_array_get_count(addrs);
+    n = json_array_get_count(addrs);
     for (i = 0;  i < n;  ++i) {
         const char*    host, *extra, *mime, *mode, *local,
                        *privat, *stateful, *secure;
-        x_JSON_Object* address;
+        JSON_Object*   address;
         char*          infostr;
         ESERV_Type     atype;
         SSERV_Info*    info;
@@ -537,7 +537,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         */
 
         /* get a handle on the object for this iteration */
-        address = x_json_array_get_object(addrs, i);
+        address = json_array_get_object(addrs, i);
         if ( ! address) {
             CORE_LOGF_X(eNSub_Json, eLOG_Error,
                         ("[%s]  Unable to get JSON {\"addrs[" FMT_SIZE_T
@@ -546,7 +546,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         }
 
         /* SSERV_Info.host <=== addrs[i].ip */
-        host = x_json_object_get_string(address, "ip");
+        host = json_object_get_string(address, "ip");
         if ( ! host  ||  ! *host) {
             CORE_LOGF_X(eNSub_Json, eLOG_Error,
                         ("[%s]  Unable to get JSON {\"addrs[" FMT_SIZE_T
@@ -555,16 +555,16 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         }
 
         /* SSERV_Info.port <=== addrs[i].port */
-        /* Unfortunately the x_json_object_get_number() function does
+        /* Unfortunately the json_object_get_number() function does
            not distinguish failure from a legitimate zero value :-/
            Therefore, first explicitly check for the value. */
-        if ( ! x_json_object_has_value_of_type(address, "port", JSONNumber)) {
+        if ( ! json_object_has_value_of_type(address, "port", JSONNumber)) {
             CORE_LOGF_X(eNSub_Json, eLOG_Error,
                         ("[%s]  Unable to get JSON {\"addrs[" FMT_SIZE_T
                          "].port\"} type", iter->name, i));
             continue;
         }
-        port = (int) x_json_object_get_number(address, "port");
+        port = (int) json_object_get_number(address, "port");
         if (port <= 0  ||  port > 65535) {
             CORE_LOGF_X(eNSub_Json, eLOG_Error,
                         ("[%s]  Invalid JSON {\"addrs[" FMT_SIZE_T
@@ -573,7 +573,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         }
 
         /* SSERV_Info.type <=== addrs[i].meta.serviceType */
-        type = x_json_object_dotget_string(address, "meta.serviceType");
+        type = json_object_dotget_string(address, "meta.serviceType");
         if ( ! type  ||  ! *type) {
             atype = SERV_GetImplicitServerTypeInternal(iter->name);
             type  = SERV_TypeStr(atype);
@@ -599,9 +599,9 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         ++found;
 
         /* SSERV_Info.mode <=== addrs[i].meta.secure */
-        if (x_json_object_dothas_value_of_type(address, "meta.secure",
-                                               JSONBoolean)) {
-            int sec = x_json_object_dotget_boolean(address, "meta.secure");
+        if (json_object_dothas_value_of_type(address, "meta.secure",
+                                             JSONBoolean)) {
+            int sec = json_object_dotget_boolean(address, "meta.secure");
             if (sec == 0) {
                 secure = "";
             } else if (sec != 1) {
@@ -621,9 +621,9 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             secure = "";
 
         /* SSERV_Info.mode <=== addrs[i].meta.stateful */
-        if (x_json_object_dothas_value_of_type(address, "meta.stateful",
-                                               JSONBoolean)) {
-            int st = x_json_object_dotget_boolean(address, "meta.stateful");
+        if (json_object_dothas_value_of_type(address, "meta.stateful",
+                                             JSONBoolean)) {
+            int st = json_object_dotget_boolean(address, "meta.stateful");
             if (st == 0) {
                 stateful = "";
             } else if (st != 1) {
@@ -645,9 +645,9 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         /* SSERV_Info.site <=== addrs[i].meta.mode */
         privat = "";
         local  = "No";
-        if (x_json_object_dothas_value_of_type(address, "meta.mode",
-                                               JSONString)) {
-            mode = x_json_object_dotget_string(address, "meta.mode");
+        if (json_object_dothas_value_of_type(address, "meta.mode",
+                                             JSONString)) {
+            mode = json_object_dotget_string(address, "meta.mode");
             if ( ! mode  ||  ! *mode) {
                 CORE_LOGF_X(eNSub_Json, eLOG_Error,
                             ("[%s]  Unable to get JSON {\"addrs[" FMT_SIZE_T
@@ -677,9 +677,9 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         }
 
         /* SSERV_Info.rate <=== addrs[i].meta.rate */
-        if (x_json_object_dothas_value_of_type(address, "meta.rate",
-                                               JSONNumber)) {
-            rate = x_json_object_dotget_number(address, "meta.rate");
+        if (json_object_dothas_value_of_type(address, "meta.rate",
+                                             JSONNumber)) {
+            rate = json_object_dotget_number(address, "meta.rate");
             /* verify magnitude */
             if (rate < SERV_MINIMAL_RATE  ||  SERV_MAXIMAL_RATE < rate) {
                 CORE_LOGF_X(eNSub_Json, eLOG_Error,
@@ -691,9 +691,9 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             rate = LBSM_DEFAULT_RATE;
 
         /* SSERV_Info.time <=== addrs[i].meta.expires */
-        if (x_json_object_dothas_value_of_type(address, "meta.expires",
-                                               JSONString)) {
-            time = x_ParseExpires(x_json_object_dotget_string
+        if (json_object_dothas_value_of_type(address, "meta.expires",
+                                             JSONString)) {
+            time = x_ParseExpires(json_object_dotget_string
                                   (address, "meta.expires"),
                                   (time_t) iter->time, iter->name, i);
             if ( ! time)
@@ -704,7 +704,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         /* SSERV_Info.mime_t
            SSERV_Info.mime_s
            SSERV_Info.mime_e <=== addrs[i].meta.contentType */
-        mime = x_json_object_dotget_string(address, "meta.contentType");
+        mime = json_object_dotget_string(address, "meta.contentType");
         if (mime  &&  !*mime)
             mime = 0;
         if (mime  &&  atype == fSERV_Dns) {
@@ -716,7 +716,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         }
 
         /* SSERV_Info.extra <=== addrs[i].meta.extra */
-        extra = x_json_object_dotget_string(address, "meta.extra");
+        extra = json_object_dotget_string(address, "meta.extra");
         if ( ! extra  ||  ! *extra) {
             if (atype & fSERV_Http) {
                 CORE_LOGF_X(eNSub_Json, eLOG_Trace,
@@ -817,7 +817,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
 
  out:
     if (root)
-        x_json_value_free(root);
+        json_value_free(root);
     if (response)
         free((void*) response);
     CORE_TRACEF(("Leave NAMERD::s_ParseResponse(\"%s\"): " FMT_SIZE_T "/"
