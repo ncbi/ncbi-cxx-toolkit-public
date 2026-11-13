@@ -4,7 +4,7 @@ NCBI_begin_lib(xbiosample_util)
   NCBI_sources(biosample_util struc_table_column)
   NCBI_uses_toolkit_libraries(
     xmlwrapp xobjedit
-    taxon3 seqset macro valid
+    seqset macro
   )
   NCBI_project_watchers(stakhovv)
 NCBI_end_lib()

@@ -22,9 +22,9 @@ NCBI_begin_app(pubseq_gateway)
     active_proc_per_request z_end_points myncbi_monitor throttling ssl
     seq_id_classification_monitor
   )
-  NCBI_uses_toolkit_libraries(cdd_access xregexp psg_client id2 seq psg_ipg psg_cassandra
-    psg_protobuf psg_cache psg_myncbi xcgi xconnext connext xconnserv xconnect xcompress
-    sraread dbsnp_ptis grpc_integration)
+  NCBI_uses_toolkit_libraries(cdd_access xregexp psg_client psg_ipg
+    psg_cache psg_myncbi xcgi xcompress
+    sraread dbsnp_ptis)
   NCBI_requires(OpenSSL XML XSLT CURL CASSANDRA MT Linux H2O LMDB UV PROTOBUF connext -ICC)
   NCBI_project_watchers(satskyse)
 

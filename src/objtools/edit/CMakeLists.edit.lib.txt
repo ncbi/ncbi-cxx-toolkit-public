@@ -12,6 +12,6 @@ NCBI_begin_lib(xobjedit)
     external_annots feature_propagate text_object_description
     seq_edit pub_fix
   )
-  NCBI_uses_toolkit_libraries(eutils efetch esearch esummary taxon3 valid xobjread xobjutil xlogging)
+  NCBI_uses_toolkit_libraries(eutils efetch taxon3 valid xobjread xobjutil)
   NCBI_project_watchers(stakhovv gotvyans foleyjp choi)
 NCBI_end_lib()

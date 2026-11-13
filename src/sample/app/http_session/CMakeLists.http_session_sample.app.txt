@@ -2,7 +2,7 @@
 
 NCBI_begin_app(http_session_sample)
   NCBI_sources(http_session_sample)
-  NCBI_uses_toolkit_libraries(connssl xconnect xxconnect2)
+  NCBI_uses_toolkit_libraries(connssl xxconnect2)
   NCBI_set_test_requires(in-house-resources)
   NCBI_add_test()
   NCBI_project_watchers(grichenk sadyrovr)

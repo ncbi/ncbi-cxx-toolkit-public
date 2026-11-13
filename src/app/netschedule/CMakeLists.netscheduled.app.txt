@@ -12,7 +12,7 @@ NCBI_begin_app(netscheduled)
     ns_scope ns_restore_state
   )
   NCBI_add_definitions(BMCOUNTOPT)
-  NCBI_uses_toolkit_libraries(bdb xconnserv xthrserv)
+  NCBI_uses_toolkit_libraries(bdb xconnserv)
   NCBI_project_watchers(satskyse)
 NCBI_end_app()
 

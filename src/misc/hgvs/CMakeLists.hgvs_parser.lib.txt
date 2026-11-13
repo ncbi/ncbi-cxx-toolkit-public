@@ -9,7 +9,7 @@ NCBI_begin_lib(hgvs)
     entrez2cli ncbi_xloader_genbank objcoords
     variation xobjread xobjutil
     xregexp
-    seq variation objcoords
+    variation objcoords
   )
   NCBI_project_tags(gbench)
   NCBI_project_watchers(astashya)

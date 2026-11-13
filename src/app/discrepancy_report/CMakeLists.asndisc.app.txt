@@ -6,5 +6,5 @@ NCBI_begin_app(asndisc)
   endif()
 
   NCBI_sources(asndisc)
-  NCBI_uses_toolkit_libraries(xcompress xdiscrepancy data_loaders_util)
+  NCBI_uses_toolkit_libraries(xdiscrepancy data_loaders_util)
 NCBI_end_app()

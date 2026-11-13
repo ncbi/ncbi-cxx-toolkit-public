@@ -30,7 +30,7 @@ NCBI_begin_lib(xdiscrepancy)
         ${_discrepancy_modules}
     )
     NCBI_generated_sources(${_discrepancy_testnames_inc})
-    NCBI_uses_toolkit_libraries(xcompress macro xcleanup xobjedit)
+    NCBI_uses_toolkit_libraries(xcompress macro xcleanup)
     NCBI_project_watchers(gotvyans)
 
     if (NCBI_FSM_COMPILER_ENABLED)

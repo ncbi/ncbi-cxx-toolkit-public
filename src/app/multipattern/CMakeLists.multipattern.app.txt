@@ -2,6 +2,6 @@
 
 NCBI_begin_app(multipattern)
   NCBI_sources(multipattern)
-  NCBI_uses_toolkit_libraries(xncbi xutil)
+  NCBI_uses_toolkit_libraries(xutil)
   NCBI_project_watchers(gotvyans)
 NCBI_end_app()

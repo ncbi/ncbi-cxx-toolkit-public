@@ -9,7 +9,7 @@ NCBI_begin_lib(psg_cassandra)
     bioseq_info/record bioseq_info_task/fetch status_history/get_public_comment
     status_history/fetch acc_ver_hist/fetch
   )
-  NCBI_uses_toolkit_libraries(xconnect connect xncbi)
+  NCBI_uses_toolkit_libraries(xconnect connect)
   NCBI_add_definitions(RAPIDJSON_HAS_STDSTRING)
   NCBI_requires(CASSANDRA)
   NCBI_project_watchers(satskyse saprykin)

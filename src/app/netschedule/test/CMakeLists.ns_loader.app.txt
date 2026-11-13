@@ -2,6 +2,6 @@
 
 NCBI_begin_app(ns_loader)
   NCBI_sources(ns_loader)
-  NCBI_uses_toolkit_libraries(xconnserv xthrserv xconnect )
+  NCBI_uses_toolkit_libraries(xconnserv )
   NCBI_project_watchers(satskyse)
 NCBI_end_app()

@@ -9,7 +9,7 @@ NCBI_begin_app(dbapi_context_test)
   NCBI_optional_components(Sybase ODBC connext)
   NCBI_uses_toolkit_libraries(
     ncbi_xdbapi_ftds ncbi_xdbapi_ftds14
-    dbapi xconnect
+    dbapi
   )
   NCBI_project_watchers(ucko satskyse)
 

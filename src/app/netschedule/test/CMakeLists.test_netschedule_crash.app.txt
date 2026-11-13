@@ -2,7 +2,7 @@
 
 NCBI_begin_app(test_netschedule_crash)
   NCBI_sources(test_netschedule_crash)
-  NCBI_uses_toolkit_libraries(xconnserv xthrserv xconnect )
+  NCBI_uses_toolkit_libraries(xconnserv)
   NCBI_project_watchers(satskyse)
 NCBI_end_app()
 
