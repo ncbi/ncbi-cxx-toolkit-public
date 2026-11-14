@@ -3060,7 +3060,6 @@ HER<CAN>	c	Felix d'Herelle Reference Center for Bacterial Viruses (Bacteriophage
 HER<ZAF>	s	Hermanus Botanical Society			
 HERA	s	Altinbas University			
 HERBAM	s	Universidade do Estado de Mato Grosso			
-herbarium	T	Centre for Implementation and Research of Plant Health Clinic			
 HERT	s	Fundacao Universidade Estadual do Ceara			
 HERVA	s	Universidade Federal de Mato Grosso			
 HERW	s	University of State of Rio Grande do Sul			
