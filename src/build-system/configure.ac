@@ -927,8 +927,12 @@ if test "$with_bin_release" = "yes" ; then
    : ${with_sse42=no}
    AC_DEFINE(NCBI_BIN_RELEASE, 1,
              [Define to 1 when building binaries for public release.])
+elif test "$with_dll" = "yes ; then
+   : ${with_static_deps=no}
+else
+   : ${with_static_deps=yes}
 fi
-favor_static_deps=${with_static_deps-no}
+favor_static_deps=$with_static_deps
 
 case "$with_strip:$with_symbols" in
    yes:yes )
