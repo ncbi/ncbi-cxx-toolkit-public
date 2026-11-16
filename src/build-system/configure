@@ -6474,7 +6474,7 @@ if test "$with_bin_release" = "yes" ; then
 
 $as_echo "#define NCBI_BIN_RELEASE 1" >>confdefs.h
 
-elif test "$with_dll" = "yes ; then
+elif test "$with_dll" = "yes" ; then
    : ${with_static_deps=no}
 else
    : ${with_static_deps=yes}
