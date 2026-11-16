@@ -365,36 +365,36 @@ BOOST_AUTO_TEST_CASE(test_ctre_mutable_string)
 
     std::string s_AAA{"aaa"};
     const std::string& cref_AAA = s_AAA;
-    std::string& ref_AAA = s_AAA;
+    NCBI_UNUSED std::string& ref_AAA = s_AAA;
 
     ct_regex_details::mutable_string s_mut1{s_AAA};
 
     std::string_view view1 = s_mut1.to_view();
-    const std::string& cref1 = s_mut1;
-    std::string& ref1 = s_mut1;
+    NCBI_UNUSED const std::string& cref1 = s_mut1;
+    NCBI_UNUSED std::string& ref1 = s_mut1;
     s_mut1 = "bbb";
     view1 = s_mut1.to_view();
-    const std::string& cref2 = s_mut1;
-    std::string& ref2 = s_mut1;
+    NCBI_UNUSED const std::string& cref2 = s_mut1;
+    NCBI_UNUSED std::string& ref2 = s_mut1;
     s_mut1 = "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc";
     view1 = s_mut1.to_view();
     //size_t s1 = s_mut1->size();
 
 
     ct_regex_details::mutable_string s_mut2{cref_AAA};
-    const std::string& cref3 = s_mut2;
+    NCBI_UNUSED const std::string& cref3 = s_mut2;
     //std::string& ref3 = s_mut2;
-    std::string_view view3 = s_mut2.to_view();
+    NCBI_UNUSED std::string_view view3 = s_mut2.to_view();
     //size_t s2 = s_mut2->size();
 
 
     ct_regex_details::mutable_string s_mut3(s_AAA.data());
     //const std::string& cref4 = s_mut3;
-    std::string_view view4 = s_mut3;
+    NCBI_UNUSED std::string_view view4 = s_mut3;
     //size_t s3 = s_mut3->size();
 
     ct_regex_details::mutable_string s_mut4{(const char*)s_AAA.data()};
-    std::string_view view5 = s_mut4.to_view();
+    NCBI_UNUSED std::string_view view5 = s_mut4.to_view();
     //const std::string& cref5 = s_mut4;
     //size_t s4 = s_mut4->size();
 
