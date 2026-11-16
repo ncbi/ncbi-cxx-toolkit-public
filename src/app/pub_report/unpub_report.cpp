@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include <iostream>
+#include <optional>
 
 #include <corelib/ncbistr.hpp>
 
@@ -137,11 +138,7 @@ class CPubData
 public:
     typedef set<string> TSeqIds;
 
-    CPubData() :
-        m_title_words_set(false),
-        m_full_title_set(false)
-    {
-    }
+    CPubData() {}
 
     const list<string>& GetAuthors() const
     {
@@ -155,20 +152,18 @@ public:
 
     const list<string>& GetTitleWords() const
     {
-        if (! m_title_words_set) {
-            CreateTitleWords();
-            m_title_words_set = true;
+        if (! m_title_words) {
+            m_title_words = CreateTitleWords();
         }
-        return m_titlewords;
+        return *m_title_words;
     }
 
     const string& GetFullTitle() const
     {
-        if (! m_full_title_set) {
-            CreateFullTitle();
-            m_full_title_set = true;
+        if (! m_full_title) {
+            m_full_title = CreateFullTitle();
         }
-        return m_full_title;
+        return *m_full_title;
     }
 
     const string& GetTitle() const
@@ -204,12 +199,9 @@ public:
 
     void SetTitle(const string& title)
     {
-        m_title           = title;
-        m_title_words_set = false;
-        m_full_title_set  = false;
-
-        m_full_title.clear();
-        m_titlewords.clear();
+        m_title = title;
+        m_full_title.reset();
+        m_title_words.reset();
     }
 
     void SetJournal(const string& journal)
@@ -270,45 +262,53 @@ private:
     list<string> m_authors;
     TSeqIds      m_seq_ids;
 
-    mutable list<string> m_titlewords;
-
     string m_journal;
-    string m_title;
     string m_unique;
 
-    mutable string  m_full_title;
-    CRef<CDate_std> m_date;
+    string m_title;
+    // computed from m_title
+    mutable optional<string> m_full_title;
+    mutable optional<list<string>> m_title_words;
 
-    mutable bool m_title_words_set,
-        m_full_title_set;
+    CRef<CDate_std> m_date;
 
     string m_volume,
         m_pages;
 
-    void CreateTitleWords() const
+    list<string> CreateTitleWords() const
     {
         string title = NStr::Sanitize(m_title);
-        NStr::ReplaceInPlace(title, ",", " ");
-        NStr::ReplaceInPlace(title, ":", " ");
-        NStr::ReplaceInPlace(title, "(", " ");
-        NStr::ReplaceInPlace(title, ")", " ");
-        NStr::ReplaceInPlace(title, "-", " ");
-        NStr::ReplaceInPlace(title, ".", " ");
-
-        NStr::Split(title, " ", m_titlewords, NStr::fSplit_Tokenize);
-    }
-
-    void CreateFullTitle() const
-    {
-        m_full_title = NStr::Sanitize(m_title);
-
-        if (! m_full_title.empty() && m_full_title.front() == '[' && m_full_title.back() == ']') {
-            m_full_title = m_full_title.substr(1, m_full_title.size() - 2);
-            m_full_title = NStr::Sanitize(m_full_title);
+        for (char& c : title) {
+            switch (c) {
+            case ',':
+            case ':':
+            case '(':
+            case ')':
+            case '-':
+            case '.':
+                c = ' ';
+                break;
+            }
         }
 
-        if (m_full_title.back() == '.')
-            m_full_title.pop_back();
+        list<string> l;
+        NStr::Split(title, " ", l, NStr::fSplit_Tokenize);
+        return l;
+    }
+
+    string CreateFullTitle() const
+    {
+        string s = NStr::Sanitize(m_title);
+
+        if (! s.empty() && s.front() == '[' && s.back() == ']') {
+            s = s.substr(1, s.size() - 2);
+            s = NStr::Sanitize(s);
+        }
+
+        if (s.back() == '.')
+            s.pop_back();
+
+        return s;
     }
 };
 
@@ -523,34 +523,36 @@ CEutilsClient& CUnpublishedReport::GetEUtils() const
     return *m_eutils;
 }
 
-static void GetOneInitialAuthorName(const string& author, string& name)
+static string GetOneInitialAuthorName(const string& author)
 {
     size_t space = author.rfind(' ');
     if (space == string::npos) {
-        name = author;
+        return author;
     } else {
-        name = author.substr(0, space + 1);
+        string name = author.substr(0, space + 1);
         if (space + 1 < author.size()) {
             name += author[space + 1];
         }
+        return name;
     }
 }
 
-static void GetNameFromStdName(const CPerson_id& person, string& name)
+static string GetNameFromStdName(const CPerson_id& person)
 {
     if (person.IsName()) {
         if (person.GetName().IsSetLast()) {
-            name = person.GetName().GetLast();
-
+            string name = person.GetName().GetLast();
             if (person.GetName().IsSetInitials()) {
                 name += ' ' + person.GetName().GetInitials();
             }
+            return name;
         }
     } else if (person.IsMl()) {
-        name = person.GetMl();
+        return person.GetMl();
     } else if (person.IsStr()) {
-        name = person.GetStr();
+        return person.GetStr();
     }
+    return {};
 }
 
 static bool FirstOrLastAuthorMatches(const list<string>& authors, const CAuth_list::C_Names& pubmed_authors)
@@ -558,22 +560,20 @@ static bool FirstOrLastAuthorMatches(const list<string>& authors, const CAuth_li
     string first_author,
         last_author;
 
-    if (authors.size()) {
-        GetOneInitialAuthorName(authors.front(), first_author);
+    if (authors.size() > 0) {
+        first_author = GetOneInitialAuthorName(authors.front());
     }
 
     if (authors.size() > 1) {
-        GetOneInitialAuthorName(authors.back(), last_author);
+        last_author = GetOneInitialAuthorName(authors.back());
     }
 
     bool ret = false;
     if (pubmed_authors.IsStd()) {
         for (const auto& auth : pubmed_authors.GetStd()) {
             if (auth->IsSetName()) {
-                string name;
-                GetNameFromStdName(auth->GetName(), name);
-                string cur_name;
-                GetOneInitialAuthorName(name, cur_name);
+                string name = GetNameFromStdName(auth->GetName());
+                string cur_name = GetOneInitialAuthorName(name);
                 if (NStr::EqualNocase(cur_name, first_author) || NStr::EqualNocase(cur_name, last_author)) {
                     ret = true;
                     break;
@@ -583,8 +583,7 @@ static bool FirstOrLastAuthorMatches(const list<string>& authors, const CAuth_li
     } else {
         const list<string>& names = pubmed_authors.IsMl() ? pubmed_authors.GetMl() : pubmed_authors.GetStr();
         for (const string& name : names) {
-            string cur_name;
-            GetOneInitialAuthorName(name, cur_name);
+            string cur_name = GetOneInitialAuthorName(name);
             if (cur_name == first_author || cur_name == last_author) {
                 ret = true;
                 break;
