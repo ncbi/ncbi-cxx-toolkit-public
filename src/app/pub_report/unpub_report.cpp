@@ -864,11 +864,11 @@ static void ReportSeqIds(CNcbiOstream& out, const CPubData::TSeqIds& ids)
     }
 }
 
-static string authors_cmp_result_label[] = {
+static const string authors_cmp_result_label[eLastValue] = {
     "AUTH_MISMATCH", "LAST_NAMES", "ONE_INIT", "TWO_INITS", "NO_HYPHENS", "FULL_NAMES"
 };
 
-static string GetAuthorsCmpResultStr(AuthorNameMatch res)
+static const string& GetAuthorsCmpResultStr(AuthorNameMatch res)
 {
     NCBI_ASSERT(res < eLastValue, "Invalid res value");
     return authors_cmp_result_label[res];
@@ -876,6 +876,12 @@ static string GetAuthorsCmpResultStr(AuthorNameMatch res)
 
 static bool ReportAuthorDiff(CNcbiOstream& out, const list<string>& pubmed_auths, const list<string>& auths)
 {
+    AuthorNameMatch authors_cmp_res = CompareAuthors(pubmed_auths, auths);
+    if (authors_cmp_res != eNoMatch) {
+        out << "AUTHORS_SAME [" << GetAuthorsCmpResultStr(authors_cmp_res) << "]\t";
+        return true;
+    }
+
     AuthorNameMatch best_match = eFullMatch;
 
     size_t matches = 0;
@@ -891,8 +897,6 @@ static bool ReportAuthorDiff(CNcbiOstream& out, const list<string>& pubmed_auths
         }
     }
 
-    bool both_ok = true;
-
     size_t pubmed_size = pubmed_auths.size(),
             cur_size    = auths.size();
     string result_str  = GetAuthorsCmpResultStr(best_match);
@@ -900,22 +904,30 @@ static bool ReportAuthorDiff(CNcbiOstream& out, const list<string>& pubmed_auths
     if (! auths.empty() && matches == cur_size) {
         if (cur_size < 3 && pubmed_size > 4) {
             out << "AUTHORS_QUESTIONABLE [" << result_str << "] " << cur_size << " -> " << pubmed_size << '\t';
-            both_ok = false;
+            return false;
         } else if (cur_size < pubmed_size) {
             out << "AUTHORS_ADDED [" << result_str << "] " << pubmed_size - cur_size << '\t';
+            return true;
         } else {
             out << "AUTHORS_REORDERED [" << result_str << "]\t";
+            return true;
         }
     } else {
         out << "AUTHORS_CHANGED [" << result_str << "] " << matches << " / " << pubmed_size << '\t';
-        both_ok = false;
+        return false;
     }
-
-    return both_ok;
 }
 
-static bool ReportTitleDiff(CNcbiOstream& out, const list<string>& pubmed_title_words, const list<string>& title_words)
+static bool ReportTitleDiff(CNcbiOstream& out, const CPubData& pubmed_data, const CPubData& data)
 {
+    if (NStr::EqualNocase(pubmed_data.GetFullTitle(), data.GetFullTitle())) {
+        out << "TITLE_SAME [IDENTICAL]\t";
+        return true;
+    }
+
+    const list<string>& pubmed_title_words = pubmed_data.GetTitleWords();
+    const list<string>& title_words        = data.GetTitleWords();
+
     size_t matches = 0;
     for (const string& word : title_words) {
         if (NStr::FindNoCase(pubmed_title_words, word)) {
@@ -923,26 +935,23 @@ static bool ReportTitleDiff(CNcbiOstream& out, const list<string>& pubmed_title_
         }
     }
 
-    bool both_ok = true;
-
     size_t pubmed_size = pubmed_title_words.size(),
             cur_size    = title_words.size();
 
     if (cur_size < 3 && pubmed_size > 4) {
         out << "TITLE_QUESTIONABLE " << cur_size << " -> " << pubmed_size << '\t';
-        both_ok = false;
+        return false;
     } else if (pubmed_size && cur_size && NStr::EqualNocase(pubmed_title_words.front(), title_words.front()) &&
                 matches == pubmed_size) {
         out << "TITLE_SAME [SIMILAR] " << matches << '\t';
+        return true;
     } else if (pubmed_size && matches == pubmed_size) {
         out << "TITLE_ALTERED " << matches << '\t';
-        both_ok = false;
+        return false;
     } else {
         out << "TITLE_DIFFERS " << matches << " / " << pubmed_size << '\t';
-        both_ok = false;
+        return false;
     }
-
-    return both_ok;
 }
 
 static void ReportAuththors(CNcbiOstream& out, const char* prefix, const list<string>& auths)
@@ -1012,9 +1021,6 @@ static void ReportOnePub(CNcbiOstream& out, const CCit_art& pubmed_cit_art, cons
 
     if (! pubmed_data.GetAuthors().empty() && ! pubmed_data.GetTitleWords().empty()) {
 
-        AuthorNameMatch authors_cmp_res = CompareAuthors(pubmed_data.GetAuthors(), data.GetAuthors());
-        bool            title_same      = NStr::EqualNocase(pubmed_data.GetFullTitle(), data.GetFullTitle());
-
         out << "PMID " << ENTREZ_ID_TO(int, pmid) << '\t';
         ReportSeqIds(out, data.GetSeqIds());
 
@@ -1024,21 +1030,11 @@ static void ReportOnePub(CNcbiOstream& out, const CCit_art& pubmed_cit_art, cons
             out << "UNIQ_CIT " << data.GetUnique() << '\t';
         }
 
-        bool both_ok = true;
-        if (authors_cmp_res == eNoMatch) {
-            both_ok = ReportAuthorDiff(out, pubmed_data.GetAuthors(), data.GetAuthors());
-        } else {
-            out << "AUTHORS_SAME [" << GetAuthorsCmpResultStr(authors_cmp_res) << "]\t";
-        }
+        bool auth_same = ReportAuthorDiff(out, pubmed_data.GetAuthors(), data.GetAuthors());
 
-        if (title_same) {
-            out << "TITLE_SAME [IDENTICAL]\t";
-        } else {
-            if (! ReportTitleDiff(out, pubmed_data.GetTitleWords(), data.GetTitleWords()))
-                both_ok = false;
-        }
+        bool title_same = ReportTitleDiff(out, pubmed_data, data);
 
-        out << (both_ok ? "PROBABLE\t" : "POSSIBLE\t");
+        out << ((auth_same && title_same) ? "PROBABLE\t" : "POSSIBLE\t");
 
         ReportAuththors(out, "OLD_AUTH ", data.GetAuthors());
         ReportAuththors(out, "NEW_AUTH ", pubmed_data.GetAuthors());
