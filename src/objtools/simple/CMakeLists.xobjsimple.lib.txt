@@ -2,7 +2,7 @@
 
 NCBI_begin_lib(xobjsimple)
   NCBI_sources(simple_om)
-  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank seqset)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank)
   NCBI_project_watchers(jcherry)
 NCBI_end_lib()
 

@@ -2,6 +2,6 @@
 
 NCBI_begin_lib(eMyNCBI_result)
   NCBI_dataspecs(eMyNCBI_result.xsd)
-  NCBI_uses_toolkit_libraries(seqset id2)
+  NCBI_uses_toolkit_libraries(id2)
 NCBI_end_lib()
 

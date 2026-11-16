@@ -7,7 +7,7 @@ NCBI_begin_lib(xalnmgr)
     alnseq alnvec alnvec_iterator alnvecprint pairwise_aln sparse_aln
     sparse_ci alntext score_builder_base aln_container
   )
-  NCBI_uses_toolkit_libraries(tables xobjutil seqset)
+  NCBI_uses_toolkit_libraries(tables xobjutil)
   NCBI_project_watchers(grichenk)
 NCBI_end_lib()
 

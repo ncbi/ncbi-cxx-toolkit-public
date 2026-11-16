@@ -6,7 +6,7 @@ NCBI_begin_lib(xobjreadex)
     idmapper_database idmapper_gcassembly idmapper_scope
     source_mod_parser_wrapper
   )
-  NCBI_uses_toolkit_libraries(xobjread xobjutil seqset)
+  NCBI_uses_toolkit_libraries(xobjread xobjutil)
   NCBI_project_watchers(gotvyans dicuccio)
 NCBI_end_lib()
 

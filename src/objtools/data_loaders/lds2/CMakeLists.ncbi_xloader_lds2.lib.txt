@@ -3,7 +3,7 @@
 NCBI_begin_lib(ncbi_xloader_lds2 SHARED)
   NCBI_sources(lds2_dataloader)
   NCBI_add_definitions(NCBI_XLOADER_LDS2_EXPORTS)
-  NCBI_uses_toolkit_libraries(lds2 xobjmgr seq)
+  NCBI_uses_toolkit_libraries(lds2 xobjmgr)
   NCBI_project_watchers(grichenk)
 NCBI_end_lib()
 

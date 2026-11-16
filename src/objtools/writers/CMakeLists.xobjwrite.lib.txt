@@ -23,7 +23,7 @@ NCBI_begin_lib(xobjwrite)
     async_writers
     writer
   )
-  NCBI_uses_toolkit_libraries(variation_utils xformat xobjread xser)
+  NCBI_uses_toolkit_libraries(variation_utils xformat)
   NCBI_project_watchers(gotvyans boukn foleyjp)
 NCBI_end_lib()
 
