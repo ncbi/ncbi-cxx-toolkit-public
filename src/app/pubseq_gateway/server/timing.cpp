@@ -1161,19 +1161,20 @@ ssize_t COperationTiming::x_GetBlobRetrievalBinIndex(unsigned long  blob_size)
 }
 
 
-uint64_t COperationTiming::Register(IPSGS_Processor *  processor,
-                                    EPSGOperation  operation,
-                                    EPSGOperationStatus  status,
-                                    const psg_time_point_t &  op_begin_ts,
-                                    const string &  datacenter,
-                                    unsigned long  blob_size)
+// true => too long
+bool COperationTiming::Register(IPSGS_Processor *  processor,
+                                EPSGOperation  operation,
+                                EPSGOperationStatus  status,
+                                const psg_time_point_t &  op_begin_ts,
+                                const string &  datacenter,
+                                unsigned long  blob_size)
 {
     if (!m_OnlyForProcessor.empty()) {
         // May need to skip timing collection
         if (processor != nullptr) {
             if (m_OnlyForProcessor != processor->GetGroupName()) {
                 // Skipping because it is not the configured group
-                return 0;
+                return false;
             }
         }
     }
@@ -1371,11 +1372,12 @@ uint64_t COperationTiming::Register(IPSGS_Processor *  processor,
                                             .Print(m_TooLongIDs[operation], mks)
                                             .Print("processor", proc_group);
                 }
+                return true;
             }
         }
     }
 
-    return mks;
+    return false;
 }
 
 

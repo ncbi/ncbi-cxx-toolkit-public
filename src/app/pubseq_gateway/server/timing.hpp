@@ -79,10 +79,10 @@ enum EPSGOperation {
 
     eResolutionFoundInCassandra,    // (5) From cassandra start
 
-    eSplitHistoryRetrieve,
-    ePublicCommentRetrieve,
-    eAccVerHistRetrieve,
-    eIPGResolveRetrieve,
+    eSplitHistoryRetrieve,          // (2)
+    ePublicCommentRetrieve,         // (2)
+    eAccVerHistRetrieve,            // (2)
+    eIPGResolveRetrieve,            // (2)
 
     eVDBOpen,
     eBacklog,
@@ -350,12 +350,13 @@ class COperationTiming
     public:
         // Blob size is taken into consideration only if
         // operation == eBlobRetrieve
-        uint64_t Register(IPSGS_Processor *  processor,
-                          EPSGOperation  operation,
-                          EPSGOperationStatus  status,
-                          const psg_time_point_t &  op_begin_ts,
-                          const string &  datacenter,
-                          size_t  blob_size=0);
+        // returns true => too long
+       bool Register(IPSGS_Processor *  processor,
+                     EPSGOperation  operation,
+                     EPSGOperationStatus  status,
+                     const psg_time_point_t &  op_begin_ts,
+                     const string &  datacenter,
+                     size_t  blob_size=0);
         void RegisterForTimeSeries(CPSGS_Request::EPSGS_Type  request_type,
                                    CRequestStatus::ECode  status);
         void RegisterProcessorDone(CPSGS_Request::EPSGS_Type  request_type,

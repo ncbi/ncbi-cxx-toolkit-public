@@ -74,14 +74,25 @@ class CBlobChunkCallback
                         const unsigned char *  chunk_data,
                         unsigned int  data_size, int  chunk_no)
         {
-            if (chunk_no >= 0)
+            if (chunk_no >= 0) {
                 m_BlobSize += data_size;
-            else
-                CPubseqGatewayApp::GetInstance()->GetTiming().
-                    Register(m_Processor, m_RetrieveStatistic, eOpStatusFound,
-                             m_BlobRetrieveTiming,
-                             m_FetchDetails->GetLoader()->GetConnectionDatacenterName(),
-                             m_BlobSize);
+            } else {
+                bool    too_long = CPubseqGatewayApp::GetInstance()->GetTiming().
+                                        Register(m_Processor, m_RetrieveStatistic,
+                                                 eOpStatusFound,
+                                                 m_BlobRetrieveTiming,
+                                                 m_FetchDetails->GetLoader()->GetConnectionDatacenterName(),
+                                                 m_BlobSize);
+                if (too_long) {
+                    auto    request = m_Processor->GetRequest();
+
+                    CRequestContextResetter     context_resetter;
+                    request->SetRequestContext();
+
+                    GetDiagContext().Extra().Print("too_long_fetch",
+                                                   m_FetchDetails->Serialize());
+                }
+            }
 
             m_BlobChunkCB(m_FetchDetails, blob, chunk_data, data_size, chunk_no);
         }

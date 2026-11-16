@@ -622,15 +622,10 @@ void CHttpConnection::x_MaintainBacklog(void)
         UnregisterBackloggedRequest(request->GetRequestType());
 
         auto *      app = CPubseqGatewayApp::GetInstance();
-        uint64_t    mks = app->GetTiming().Register(nullptr, eBacklog,
-                                                    eOpStatusFound,
-                                                    backlog_start,
-                                                    "conn");
-        if (mks == 0) {
-            // The timing was disabled
-            auto            now = psg_clock_t::now();
-            mks = chrono::duration_cast<chrono::microseconds>(now - backlog_start).count();
-        }
+        app->GetTiming().Register(nullptr, eBacklog, eOpStatusFound,
+                                  backlog_start, "conn");
+        auto        now = psg_clock_t::now();
+        uint64_t    mks = chrono::duration_cast<chrono::microseconds>(now - backlog_start).count();
         request->SetBacklogTime(mks);
 
         auto    context = request->GetRequestContext();
