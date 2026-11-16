@@ -167,22 +167,31 @@ void CExceptApplication::f1(void)
 
 void CExceptApplication::f2(void)
 {
+// catch() produce warning on GCC only
+#if defined(__GNUC__) && !defined(__clang__)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Wcatch-value"
+#endif
     try {
         f3();
     }
-    catch (CSubsystemException e) { /* NCBI_FAKE_WARNING */  // catch by value
-/*
-    catching exception by value results in copying
-    CSupersystemException into CSubsystemException and
-    loosing all meaning of the "original" exception
-    i.e. only location and message info is preserved
-    while err.code becomes invalid
-*/
+    catch (CSubsystemException e) { // catch by value
+    /*
+        EXPECTED:
+        catching exception by value results in copying
+        CSupersystemException into CSubsystemException and
+        loosing all meaning of the "original" exception
+        i.e. only location and message info is preserved
+        while err.code becomes invalid
+    */
         // verify error code
         assert((int)e.GetErrCode() == (int)CException::eInvalid);
 
         NCBI_RETHROW(e,CSubsystemException,eType2,"calling f3 from f2");
     }
+#if defined(__GNUC__) && !defined(__clang__)
+#   pragma GCC diagnostic pop
+#endif
 }
 
 void CExceptApplication::f3(void)
