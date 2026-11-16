@@ -243,9 +243,14 @@ s_GetBlastScore(const container&  scoreList,
         if (id.IsStr()) {
             if (id.GetStr()=="score"){
                 score = (*iter)->GetValue().GetInt();
-            } else if (id.GetStr()=="bit_score"){
-                bits = (*iter)->GetValue().GetReal();
-            } else if (id.GetStr()=="e_value" || id.GetStr()=="sum_e") {
+            } else if (id.GetStr()=="bit_score" || ((int)bits == (-1) && id.GetStr()=="seq_bit_score")){
+				if ((*iter)->GetValue().IsReal()) {
+					bits = (*iter)->GetValue().GetReal();
+				}
+				else if ((*iter)->GetValue().IsInt()) {
+					bits = (double)(*iter)->GetValue().GetInt();		
+				}
+            } else if (id.GetStr()=="e_value" || id.GetStr()=="sum_e" || ((int)evalue == (-1) && id.GetStr()=="seq_evalue")) {
                 evalue = (*iter)->GetValue().GetReal();
                 hasScore = true;
             } else if (id.GetStr()=="use_this_gi"){
