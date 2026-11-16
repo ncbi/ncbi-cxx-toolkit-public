@@ -11,7 +11,6 @@ NCBI_begin_lib(blastinput)
   NCBI_requires(SQLITE3)
   NCBI_add_definitions(NCBI_MODULE=BLAST)
   NCBI_uses_toolkit_libraries(
-    seqset xnetblast
     align_format ncbi_xloader_blastdb_rmt xblast
     sqlitewrapp
   )

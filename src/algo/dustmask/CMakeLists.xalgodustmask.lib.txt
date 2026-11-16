@@ -2,7 +2,7 @@
 
 NCBI_begin_lib(xalgodustmask)
   NCBI_sources(symdust)
-  NCBI_uses_toolkit_libraries(seqset xobjmgr)
+  NCBI_uses_toolkit_libraries(xobjmgr)
   NCBI_project_watchers(morgulis)
 NCBI_end_lib()
 
