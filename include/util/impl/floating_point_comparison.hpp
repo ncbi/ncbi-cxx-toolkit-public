@@ -231,7 +231,7 @@ struct check_is_close_t {
 };
 
 namespace {
-check_is_close_t check_is_close;
+[[maybe_unused]] check_is_close_t check_is_close;
 }
 
 //____________________________________________________________________________//
@@ -253,7 +253,7 @@ struct check_is_small_t {
 };
 
 namespace {
-check_is_small_t check_is_small; /* NCBI_FAKE_WARNING */
+[[maybe_unused]] check_is_small_t check_is_small;
 }
 
 //____________________________________________________________________________//
