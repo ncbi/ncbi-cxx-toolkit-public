@@ -1,7 +1,6 @@
 # $Id$
 
 SUB_PROJ = cassandra client protobuf cache ipg
-EXPENDABLE_SUB_PROJ = myncbi
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

@@ -1,8 +1,7 @@
 # $Id$
 
-EXPENDABLE_LIB_PROJ = psg_ipg
 SUB_PROJ = test
-REQUIRES = MT
+REQUIRES = CASSANDRA MT Linux GCC
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

@@ -1,4 +1,2 @@
-EXPENDABLE_APP_PROJ=psg_cassandra_test
-
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

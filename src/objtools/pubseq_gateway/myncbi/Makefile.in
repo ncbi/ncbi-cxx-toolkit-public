@@ -3,7 +3,7 @@
 LIB_PROJ = psg_myncbi
 SUB_PROJ = test
 
-REQUIRES = MT
+REQUIRES = CASSANDRA MT Linux GCC
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
