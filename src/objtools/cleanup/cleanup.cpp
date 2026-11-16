@@ -5449,6 +5449,127 @@ static CMolInfo::TBiomol s_ReportLineageConflictWithMol(
     return CMolInfo::eBiomol_unknown;
 }
 
+MAKE_CONST_MAP(kViralMolMap, string, string,
+{
+//  {"Retroviridae",                                "RNA"}, // retrovirus can be rna or dna
+    {"Tospovirus",                                  "RNA"},
+    {"Tenuivirus",                                  "RNA"},
+    {"Arenaviridae",                                "RNA"},
+    {"Phlebovirus",                                 "RNA"},
+    {"negative-strand viruses",                     "RNA"},
+    {"positive-strand viruses",                     "RNA"},
+    {"root",                                        "DNA"},
+    {"Alphasatellitidae",                           "DNA"},
+    {"Anelloviridae",                               "DNA"},
+    {"Bacilladnaviridae",                           "DNA"},
+    {"Bidnaviridae",                                "DNA"},
+    {"Circoviridae",                                "DNA"},
+    {"Geminiviridae",                               "DNA"},
+    {"Genomoviridae",                               "DNA"},
+    {"Hepadnaviridae",                              "DNA"},
+    {"Inoviridae",                                  "DNA"},
+    {"Microviridae",                                "DNA"},
+    {"Nanoviridae",                                 "DNA"},
+    {"Ortervirales",                                "RNA"},
+    {"Caulimoviridae",                              "DNA"},
+    {"Parvoviridae",                                "DNA"},
+    {"Alphapleolipovirus",                          "DNA"},
+    {"Riboviria",                                   "RNA"},
+    {"Albetovirus",                                 "RNA"},
+    {"Alphatetraviridae",                           "RNA"},
+    {"Alvernaviridae",                              "RNA"},
+    {"Amalgaviridae",                               "RNA"},
+    {"Astroviridae",                                "RNA"},
+    {"Aumaivirus",                                  "RNA"},
+    {"Avsunviroidae",                               "RNA"},
+    {"Barnaviridae",                                "RNA"},
+    {"Benyviridae",                                 "RNA"},
+    {"Birnaviridae",                                "RNA"},
+    {"Botourmiaviridae",                            "RNA"},
+    {"Botybirnavirus",                              "RNA"},
+    {"Bromoviridae",                                "RNA"},
+    {"Caliciviridae",                               "RNA"},
+    {"Carmotetraviridae",                           "RNA"},
+    {"Chrysoviridae",                               "RNA"},
+    {"Closteroviridae",                             "RNA"},
+    {"Cystoviridae",                                "RNA"},
+    {"Deltavirus",                                  "RNA"},
+    {"RNA viruses",                                 "RNA"},
+    {"Endornaviridae",                              "RNA"},
+    {"Flaviviridae",                                "RNA"},
+    {"Hepeviridae",                                 "RNA"},
+    {"Hypoviridae",                                 "RNA"},
+    {"Idaeovirus",                                  "RNA"},
+    {"Kitaviridae",                                 "RNA"},
+    {"Leviviridae",                                 "RNA"},
+    {"Luteoviridae",                                "RNA"},
+    {"Matonaviridae",                               "RNA"},
+    {"Megabirnaviridae",                            "RNA"},
+    {"Narnaviridae",                                "RNA"},
+    {"Haploviricotina",                             "RNA"},
+    {"Coguvirus",                                   "RNA"},
+    {"Cruliviridae",                                "RNA"},
+    {"Fimoviridae",                                 "RNA"},
+    {"Hantaviridae",                                "RNA"},
+    {"Leishbuviridae",                              "RNA"},
+    {"Mypoviridae",                                 "RNA"},
+    {"Nairoviridae",                                "RNA"},
+    {"Peribunyaviridae",                            "RNA"},
+    {"Phasmaviridae",                               "RNA"},
+    {"Banyangvirus",                                "RNA"},
+    {"Beidivirus",                                  "RNA"},
+    {"Goukovirus",                                  "RNA"},
+    {"Horwuvirus",                                  "RNA"},
+    {"Hudivirus",                                   "RNA"},
+    {"Hudovirus",                                   "RNA"},
+    {"Kabutovirus",                                 "RNA"},
+    {"Laulavirus",                                  "RNA"},
+    {"Mobuvirus",                                   "RNA"},
+    {"Phasivirus",                                  "RNA"},
+    {"Pidchovirus",                                 "RNA"},
+    {"Wenrivirus",                                  "RNA"},
+    {"Wubeivirus",                                  "RNA"},
+    {"Tospoviridae",                                "RNA"},
+    {"Wupedeviridae",                               "RNA"},
+    {"Insthoviricetes",                             "RNA"},
+    {"Nidovirales",                                 "RNA"},
+    {"Nodaviridae",                                 "RNA"},
+    {"Papanivirus",                                 "RNA"},
+    {"Partitiviridae",                              "RNA"},
+    {"Permutotetraviridae",                         "RNA"},
+    {"Picobirnaviridae",                            "RNA"},
+    {"Picornavirales",                              "RNA"},
+    {"Pospiviroidae",                               "RNA"},
+    {"Potyviridae",                                 "RNA"},
+    {"Quadriviridae",                               "RNA"},
+    {"Reoviridae",                                  "RNA"},
+    {"Sarthroviridae",                              "RNA"},
+    {"Sinaivirus",                                  "RNA"},
+    {"Solemoviridae",                               "RNA"},
+    {"Solinviviridae",                              "RNA"},
+    {"Togaviridae",                                 "RNA"},
+    {"Tombusviridae",                               "RNA"},
+    {"Totiviridae",                                 "RNA"},
+    {"Tymovirales",                                 "RNA"},
+    {"Virgaviridae",                                "RNA"},
+    {"Virtovirus",                                  "RNA"},
+    {"unclassified RNA viruses",                    "RNA"},
+    {"unclassified RNA negative-strand viruses",    "RNA"},
+    {"unclassified RNA positive-strand viruses",    "RNA"},
+    {"unclassified viroids",                        "RNA"},
+    {"DNA satellites",                              "DNA"},
+    {"RNA satellites",                              "RNA"},
+    {"Smacoviridae",                                "DNA"},
+    {"Spiraviridae",                                "DNA"},
+    {"Tolecusatellitidae",                          "DNA"},
+    {"unclassified viruses",                        "unknown"},
+    {"unclassified DNA viruses",                    "DNA"},
+    {"unclassified archaeal DNA viruses",           "DNA"},
+    {"unclassified DNA phages",                     "DNA"},
+    {"unclassified DNA bacterial viruses",          "DNA"},
+    {"environmental samples",                       "unknown"},
+});
+
 void CCleanup::FixViralMolInfo(CSeq_entry_Handle seh)
 {
     for (CBioseq_CI b(seh); b; ++b) {
@@ -5498,13 +5619,28 @@ void CCleanup::FixViralMolInfo(CSeq_entry_Handle seh)
             mol = bsh.GetInst_Mol();
         }
 
+        // use custom kViralMolMap to set Inst.Mol, default to DNA
+        string vmol = "DNA";
+        for (const auto& x : kViralMolMap) {
+            if (NStr::FindNoCase(lineage, x.first) != NPOS) {
+                vmol = x.second;
+                break;
+            }
+        }
+        if (vmol != "") {
+            if (NStr::EqualNocase(vmol, "DNA") && mol != CSeq_inst::eMol_dna) {
+                bsh.GetEditHandle().SetInst_Mol(CSeq_inst::eMol_dna);
+            } else if (NStr::EqualNocase(vmol, "RNA") && mol != CSeq_inst::eMol_rna) {
+                bsh.GetEditHandle().SetInst_Mol(CSeq_inst::eMol_rna);
+            }
+        }
+
         string stranded_mol = s_GetStrandedMolStringFromLineage(lineage);
         if (NStr::FindNoCase(stranded_mol, "unknown") != NPOS) {
             continue;
         }
 
         CMolInfo::TBiomol newbiomol = s_CheckSingleStrandedRNAViruses(lineage, division, origin, stranded_mol, biomol, bsh);
-
         if (newbiomol != CMolInfo::eBiomol_unknown) {
             CRef<CSeqdesc> new_desc(new CSeqdesc);
             new_desc->Assign(*closest_molinfo);
