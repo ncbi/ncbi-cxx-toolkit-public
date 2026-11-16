@@ -1563,7 +1563,7 @@ bool SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         return true;
     } else if (auto m = ctre::match<kValidThreadDecl>(rule)) {
         auto n = NStr::StringToNonNegativeInt(m.get<1>().view());
-        auto expected = hints.threads.size() + 1;
+        intptr_t expected = hints.threads.size() + 1;
         if (n != expected) {
             NCBI_THROW_FMT(CSeqIdException, eFormat,
                            hints.where
