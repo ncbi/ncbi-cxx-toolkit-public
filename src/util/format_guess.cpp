@@ -912,9 +912,7 @@ CFormatGuess::TestFormatGffInsdc(
     if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
         return false;
     }
-
     bool hasInsdcVersion {false};
-    unsigned int uGffLineCount = 0;
     for (const auto& line : m_TestLines) {
         if (line.starts_with("#!insdc-gff-version")) {
             hasInsdcVersion = true;
@@ -925,7 +923,6 @@ CFormatGuess::TestFormatGffInsdc(
             return false;
         }
     }
-
     return hasInsdcVersion;
 }
 
