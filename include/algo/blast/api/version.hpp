@@ -75,6 +75,7 @@ public:
         eCompAdjustedMatrices,      ///< submitted for publication
         eIndexedMegablast,          ///< 2008 Bioinformatics on indexed megablast
         eDeltaBlast,          	    ///< 2012 Biology Direct on DeltaBLAST
+        eGlobalAlign,               ///< 1970 J Mol Biol on global alignment
         eMaxPublications            ///< Used as sentinel value
     };
 
