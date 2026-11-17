@@ -79,6 +79,9 @@ Bioinformatics 24:1757-1764.",
     "Grzegorz M. Boratyn, Alejandro A. Schaffer, Richa Agarwala, Stephen F. Altschul, \
 David J. Lipman and Thomas L. Madden (2012) \"Domain enhanced lookup time \
 accelerated BLAST\", Biology Direct 7:12.",
+    // eGlobalAlign
+    "Needleman SB, Wunsch CD. A general method applicable to the search for similarities \\
+in the amino acid sequence of two proteins. J Mol Biol. 1970 48:443-53",
     // eMaxPublications
     kEmptyStr
 };
@@ -104,6 +107,8 @@ entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=16218944&dopt=Citation",
     "//www.ncbi.nlm.nih.gov/pubmed/18567917",
     // eDeltaBlast
     "//www.ncbi.nlm.nih.gov/pubmed/22510480",
+    // eGlobalAlign
+    "//pubmed.ncbi.nlm.nih.gov/5420325",
     // eMaxPublications
     kEmptyStr
 };
