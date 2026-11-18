@@ -1,5 +1,6 @@
 # $Id$
 
+LIB_PROJ = psg_ipg
 SUB_PROJ = test
 REQUIRES = CASSANDRA MT Linux GCC
 

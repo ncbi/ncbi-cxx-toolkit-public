@@ -1,3 +1,4 @@
+APP_PROJ=psg_ipg_test
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
 
