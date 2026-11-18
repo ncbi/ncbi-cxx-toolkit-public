@@ -47,14 +47,14 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             // Execute it first time ...
             query.SetSql("exec sp_databases");
             query.Execute();
-            for (const auto& row: query.SingleSet()) {
+            for ([[maybe_unused]] const auto& row: query.SingleSet()) {
             }
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             // Execute it second time ...
             query.SetSql("exec sp_databases");
             query.Execute();
-            for (const auto& row: query.SingleSet()) {
+            for ([[maybe_unused]] const auto& row: query.SingleSet()) {
             }
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
@@ -68,14 +68,14 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             // Execute it first time ...
             CQuery query = GetDatabase().NewQuery();
             query.ExecuteSP("sp_databases");
-            for (const auto& row: query.SingleSet()) {
+            for ([[maybe_unused]] const auto& row: query.SingleSet()) {
             }
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             BOOST_CHECK_EQUAL(query.GetStatus(), 0);
 
             // Execute it second time ...
             query.ExecuteSP("sp_databases");
-            for (const auto& row: query.SingleSet()) {
+            for ([[maybe_unused]] const auto& row: query.SingleSet()) {
             }
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             BOOST_CHECK_EQUAL(query.GetStatus(), 0);

@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE(Test_xact_abort)
             query.SetSql("SELECT * FROM " + table_name_2);
             query.Execute();
 
-            for (const auto& row: query.SingleSet()) {
+            for ([[maybe_unused]] const auto& row: query.SingleSet()) {
                 ++num;
             }
             query.PurgeResults();
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(Test_xact_abort)
             query.SetSql("SELECT * FROM " + table_name_2);
             query.Execute();
 
-            for (const auto& row: query.SingleSet()) {
+            for ([[maybe_unused]] const auto& row: query.SingleSet()) {
                 ++num;
             }
             query.PurgeResults();
