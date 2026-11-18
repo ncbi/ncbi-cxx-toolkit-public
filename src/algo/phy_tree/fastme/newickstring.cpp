@@ -348,8 +348,7 @@ void NewickPrintTree(meTree *T, FILE *ofile)
       NewickPrintSubtree(T,f,ofile);
     }
   fprintf(ofile,")");
-  if (NULL != rootchild->label)
-    fprintf(ofile,"%s",rootchild->label);
+  fprintf(ofile,"%s",rootchild->label);
   fprintf(ofile,";\n");
 }
 
