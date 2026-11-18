@@ -252,8 +252,8 @@
 1.16.n.n	Oxidizing metal ions
 1.16.1.-	With NAD(+) or NADP(+) as acceptor
 1.16.1.n	With NAD(+) or NADP(+) as acceptor
-1.16.2.-	With a cytochrome as acceptor.
-1.16.2.n	With a cytochrome as acceptor.
+1.16.2.-	With a cytochrome as acceptor
+1.16.2.n	With a cytochrome as acceptor
 1.16.3.-	With oxygen as acceptor
 1.16.3.n	With oxygen as acceptor
 1.16.5.-	With a quinone or similar compound as acceptor
