@@ -17777,7 +17777,7 @@ special  CFVKAB000000000-CFVKDX999999999  embl_tpa_wgs_nuc # 6+9
 special  CFVKDZ000000000-CFVKMF999999999  embl_tpa_wgs_nuc # 6+9
 special  CFVKMH000000000-CFVKPI999999999  embl_tpa_wgs_nuc # 6+9
 special  CFVKPL000000000-CFVXXR999999999  embl_tpa_wgs_nuc # 6+9
-special  CFVXXT000000000-CFWANI999999999  embl_tpa_wgs_nuc # 6+9
+special  CFVXXT000000000-CFWANJ999999999  embl_tpa_wgs_nuc # 6+9
 special  CFWANL000000000-CFWEEC999999999  embl_tpa_wgs_nuc # 6+9
 special  CFWEEE000000000-CFWIYW999999999  embl_tpa_wgs_nuc # 6+9
 special  CFWIYY000000000-CFWJCE999999999  embl_tpa_wgs_nuc # 6+9
@@ -17893,6 +17893,1167 @@ special2 CFXAHH+9 embl_tpa_wgs_nuc
 special2 CFYARB+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CFYARE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMKT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMLB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMLL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMMI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMMR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMNQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMPL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMPO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMPV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMQE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMQN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMSE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMSI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMSX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMTG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMTW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMUH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMUV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMVS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUMXD000000000-CGUMXE999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUMXI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMYB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMYU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMZG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUMZJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNAH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNAN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUNAR000000000-CGUNAS999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUNBU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNDD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNDF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNDV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNDZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUNEN000000000-CGUNEO999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUNFP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNGO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNHA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNHG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNJA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNJL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUNJS000000000-CGUNJT999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUNJZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNKI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNLP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNNA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNNF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNNQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNNV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNNX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNOB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNOF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNPR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNPV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNPY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNQG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNQV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNRH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNTJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNTQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNTY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNUP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNUS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNUX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNVC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNVK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNWD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNWI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNWK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNXC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNXJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNXS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNXZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNZC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNZH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNZO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNZQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUNZZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUOAM000000000-CGUOAN999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUOBZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOCV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUODN000000000-CGUODO999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUODY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOEE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOEG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOER+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOEX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOFP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOGC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOHK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUOHV000000000-CGUOHW999999999  embl_tpa_wgs_nuc # 6+9
+special  CGUOIC000000000-CGUOID999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUOIJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOIY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOJJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOKA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOKH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOKL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOLF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOLT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOML+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOMW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUONM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUONU000000000-CGUONV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUOPQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOQY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUORG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUORP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOSD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOSK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOSM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOTA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOTD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOTH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOUE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOUO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOUY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOVP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOXA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUOXU000000000-CGUOXV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUOYJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUOZB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUPUR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUPUT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUPUV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUPVG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUPVT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUPWA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUPXB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUPXG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUPXU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUPYJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUPYW000000000-CGUPYX999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUPZH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUPZK000000000-CGUPZL999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUPZT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUPZX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUQAH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUQAP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUQBB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGURKJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGURKW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGURLF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGURMF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGURMM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGURMY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUROR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUROX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGURQR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUSMC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUSMG000000000-CGUSMH999999999  embl_tpa_wgs_nuc # 6+9
+special  CGUSNR000000000-CGUSNS999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUSOE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUSOS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUSPZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUSQC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUSQF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUSQH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUSQW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUSRB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUSRI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUSYB000000000-CGUSYC999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUSYK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUSYV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUSZS000000000-CGUSZT999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUTAE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTBD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTBQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTBS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTCI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTDD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTDP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTDW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTED+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTEL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTEN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTFZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTGO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTGU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTHN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTHR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTIF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTIH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTJP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTKR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTKZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTLO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTLX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTMP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTMY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUTNF000000000-CGUTNH999999999  embl_tpa_wgs_nuc # 6+9
+special  CGUTNV000000000-CGUTNX999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUTOR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUTPA000000000-CGUTPB999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUTPR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTQA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTQS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTQU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTRA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTRG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTRK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTRR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTSN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUTSX000000000-CGUTSY999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUTTS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTUL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTVF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTVH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTVM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTWC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUTWJ000000000-CGUTWK999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUTWW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTXM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTXO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTXY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTYC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTYJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTYO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTYX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTZE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTZM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUTZZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUAI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUAY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUBG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUBL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUCS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUDE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUDJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUDU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUEG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUFD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUFL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUGB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUGS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUHN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUIC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUIM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUJM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUJS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUKI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUKM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUKX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUULY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUMC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUMG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUNO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUUNT000000000-CGUUNU999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUUOU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUOZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUPH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUPN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUPP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUQI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUQS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUQU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUQX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUURI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUURS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUSP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUST+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUSY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUTB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUTW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUUZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUVK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUVS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUVZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUWB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUWG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUWV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUXE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUXI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUXV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUYC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUYF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUUYZ000000000-CGUUZA999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUUZK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUZP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUUZZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUVAM000000000-CGUVAN999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUVBX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUVCC000000000-CGUVCD999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUVCS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUVDC000000000-CGUVDD999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUVDF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUVDR000000000-CGUVDS999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUVEB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVFE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVFJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVFS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVFV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVFX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUVGJ000000000-CGUVGK999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUVGQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVHF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVHN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVHZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVIF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVIQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVJM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVJP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVKS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVLR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVME+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVMT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVMY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVNA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVNN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVNV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVNZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVOB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVOZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVPH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVPP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVPX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVQN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVQU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUVSK000000000-CGUVSL999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUVSS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVTT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVTV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVUE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVUI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVUM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUVVD000000000-CGUVVE999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUVVY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVWK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVWW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVWY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVXJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVXV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVYS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVYU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVZE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUVZM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUWAQ000000000-CGUWAR999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUWAW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWBO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWBU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWCA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWCE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWCN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWDE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUWDT000000000-CGUWDU999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUWEG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWEO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWEU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWFD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWFK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWFU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWGU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWGW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWHM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWHQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWHT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWIJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWJC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWJN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWKE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWLE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWLS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWMB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWMM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWMU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWMZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWNC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWNI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWOJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWPK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWQC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWQI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWQN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWQQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWQS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGUWRL000000000-CGUWRM999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGUWSR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWTM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWUG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWUW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWVA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWVC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWWF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWWJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWWW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWXC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWXI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWYD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUWYH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUYCE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUYCQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUYCS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUYCX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUYFY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUYGZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUYHH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUYHM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUYHR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUYIR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUYJB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGUYJJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVAOD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVAOJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVAOO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVAOW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVAPB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVAPL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVAQE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVAQS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVAQY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVARC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVARN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVARV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVASH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGVASV000000000-CGVASW999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGVATF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVATH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVATK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVAWR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVAXR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGVAYM000000000-CGVAYN999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGVAYS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVAYU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVAYZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBAK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBAN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBCB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBCM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBDC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBDM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBDW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBEH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGVBER000000000-CGVBES999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGVBFW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBGA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBGW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBGY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBHC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBHL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBHQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBID+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBIK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBIV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBJM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBJW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGVBKR000000000-CGVBKS999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGVBKZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBLY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBMD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBMF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBMX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBOD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBOT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBOW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBPA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBPP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBRC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBRY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBSB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBTQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBUQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBUX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBVA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBVI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGVBVS000000000-CGVBVT999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGVBVY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBWM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBWT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBWW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBWY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBXN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBXS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBZM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVBZZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCAJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCAL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGVCAT000000000-CGVCAU999999999  embl_tpa_wgs_nuc # 6+9
+special  CGVCBC000000000-CGVCBD999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGVCBU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCBW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCCH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCCP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCCT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCCY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCDB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCDH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCDT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCDX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCED+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCES+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCEW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCFF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCFM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGVCFP000000000-CGVCFQ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGVCFX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCGA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCGR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGVCHC000000000-CGVCHD999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGVCHJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCKE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCKV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCLE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCLP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCME+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGVCMQ000000000-CGVCMR999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGVCMZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCNG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCNJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCNL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCNN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCNV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCOH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCOJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCPI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCPL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCQQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCRA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCSZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCUH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCUV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCVD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCVG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGVCVV000000000-CGVCVW999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGVCWX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCXD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCXS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCXU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCXX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCYG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCYT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCYX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCZM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCZO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCZS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVCZZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDAR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDAT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDAW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDAZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDBG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDBY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDCL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDDE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDDG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDDI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGVDDL000000000-CGVDDM999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGVDDO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDEG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDER+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDET+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDFF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDFR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDFT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDGC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDGE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDGR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDHR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDHW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGVDHY000000000-CGVDHZ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGVDID+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDIP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDIU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDIY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGVDJJ000000000-CGVDJK999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGVDJP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDKA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDKR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDLV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CGVDMG000000000-CGVDMH999999999  embl_tpa_wgs_nuc # 6+9
+special  CGVDTF000000000-CGVDTG999999999  embl_tpa_wgs_nuc # 6+9
+special2 CGVDVO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDVX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDWJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDWW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDXV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDYY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDZA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVDZK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVEBE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVEBU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVECA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVEFO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVEGP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVEHB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVEJB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVEJK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVEJZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVELP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVENG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVENR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVEOM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVEOU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVEPJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVEPO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVEPX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVERF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVERM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVEUT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVEWE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVEWK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVEXV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVIWT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVJAM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVJCH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVJCQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CGVJDE+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 
 # Some "EMBL" TPA nucleotide accessions are really third-party annotations.
