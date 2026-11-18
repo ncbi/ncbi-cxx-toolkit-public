@@ -28,7 +28,7 @@ Here is the complete list, with an example value for each:
 | program | blastp | Which BLAST program you ran |
 | task | blastp | The specific task / algorithm variant |
 | version | 2.18.0 | Your BLAST+ version |
-| db_name | swissprot | Name of the database searched |
+| db_name | swissprot | Name of the database searched. Only the names of NCBI provided BLAST databases are recorded. |
 | db_date | Aug 26, 2025 | When that database was created |
 | db_length | 179658219 | Size of the database in letters (bases or residues) |
 | db_num_seqs | 474714 | Number of sequences in the database |
