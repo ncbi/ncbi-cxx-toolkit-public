@@ -113,7 +113,8 @@ void weighTree(meTree *T)
 
 void bNNI(meTree *T, double **avgDistArray, int *count)
 {
-  meEdge *e, *centerEdge;
+  meEdge *e;
+  NCBI_UNUSED meEdge *centerEdge;
   meEdge **edgeArray;
   int *p, *location, *q;
   int i;
