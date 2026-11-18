@@ -176,12 +176,24 @@ SUv_Connect::SUv_Connect(void* user_data, const SSocketAddress& address)
 {
     m_Request.data = user_data;
 
-    m_Address.sin_family = AF_INET;
-    m_Address.sin_addr.s_addr = address.host;
-    m_Address.sin_port = CSocketAPI::HostToNetShort(address.port);
+    if (NcbiIsIPv4(&address.host.GetAddr())) {
+        auto& ipv4 = m_Address.ipv4;
+        ipv4.sin_family = AF_INET;
+        ipv4.sin_addr.s_addr = static_cast<unsigned>(address.host);
+        ipv4.sin_port = CSocketAPI::HostToNetShort(address.port);
 #ifdef HAVE_SIN_LEN
-    m_Address.sin_len = sizeof(m_Address);
+        ipv4.sin_len = sizeof(ipv4);
 #endif
+    } else {
+        m_Address.ipv6 = {}; // Also activates ipv6 union member
+        auto& ipv6 = m_Address.ipv6;
+        ipv6.sin6_family = AF_INET6;
+        memcpy(&ipv6.sin6_addr, address.host.GetAddr().octet, sizeof(ipv6.sin6_addr));
+        ipv6.sin6_port = CSocketAPI::HostToNetShort(address.port);
+#ifdef HAVE_SIN_LEN
+        ipv6.sin6_len = sizeof(ipv6);
+#endif
+    }
 }
 
 int SUv_Connect::operator()(uv_tcp_t* handle, uv_connect_cb cb)
@@ -332,6 +344,9 @@ void SUv_Tcp::OnConnect(uv_connect_t*, int status)
                     if (name.ss_family == AF_INET) {
                         auto sin = reinterpret_cast<sockaddr_in*>(&name);
                         m_LocalPort = CSocketAPI::NetToHostShort(sin->sin_port);
+                    } else if (name.ss_family == AF_INET6) {
+                        auto sin6 = reinterpret_cast<sockaddr_in6*>(&name);
+                        m_LocalPort = CSocketAPI::NetToHostShort(sin6->sin6_port);
                     }
 
                     NCBI_UV_TCP_TRACE(this << " connected: " << m_LocalPort);

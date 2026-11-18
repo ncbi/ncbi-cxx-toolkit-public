@@ -165,7 +165,7 @@ private:
     SUv_Connect(const SUv_Connect&) = delete;
     SUv_Connect& operator=(const SUv_Connect&) = delete;
 
-    struct sockaddr_in m_Address;
+    union { sockaddr_in ipv4; sockaddr_in6 ipv6; } m_Address{};
     uv_connect_t m_Request;
 };
 
