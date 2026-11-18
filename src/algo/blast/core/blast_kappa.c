@@ -3000,7 +3000,8 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
     double localScalingFactor;
     /* forbidden ranges for each database position (used in
      * Smith-Waterman alignments) */
-    Blast_ForbiddenRanges forbidden = {0,};
+    /* looks like unused
+    Blast_ForbiddenRanges forbidden = {0,};*/
     /* a collection of alignments for each query sequence with
      * sequences from the database */
     BlastCompo_Heap* redoneMatches = NULL;
