@@ -300,6 +300,7 @@ int SUv_Tcp::Connect()
         return rv;
     }
 
+    m_State = eConnecting;
     rv = m_Connect(this, s_OnConnect);
 
     if (rv < 0) {
@@ -309,7 +310,6 @@ int SUv_Tcp::Connect()
     }
 
     NCBI_UV_TCP_TRACE(this << " connecting");
-    m_State = eConnecting;
 
     return 0;
 }
