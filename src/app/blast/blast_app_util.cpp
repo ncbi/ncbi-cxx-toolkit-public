@@ -967,6 +967,9 @@ void LogCmdOptions(blast::CBlastUsageReport & report, const CBlastAppArgs & args
 	    if (off != -1) {
 	    	db_name.erase(0, off+1);
 		}
+        if (!CBlastUsageReport::IsNcbiDbName(db_name)) {
+            db_name = "custom_user_db";
+        }
 		report.AddParam(CBlastUsageReport::eDBName, db_name);
 		report.AddParam(CBlastUsageReport::eDBLength, (Int8) db->GetTotalLength());
 		report.AddParam(CBlastUsageReport::eDBNumSeqs, db->GetNumSeqs());

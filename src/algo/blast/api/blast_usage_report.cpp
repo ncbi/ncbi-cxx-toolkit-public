@@ -449,6 +449,146 @@ void CBlastUsageReport::AddParam(EUsageParams p, bool val)
 
 }
 
+bool CBlastUsageReport::IsNcbiDbName(string_view dbname) noexcept
+{
+    switch (dbname.size()) {
+    case 2:
+        // nr, nt
+        return dbname[0] == 'n' &&
+               (dbname[1] == 'r' || dbname[1] == 't');
+
+    case 3:
+        return dbname == "cdd"sv;
+
+    case 4:
+        return dbname == "mito"sv;
+
+    case 5:
+        switch (dbname[0]) {
+        case 'p':
+            // pataa, patnt, pdbaa, pdbnt
+            switch (dbname[1]) {
+            case 'a':
+                return dbname == "pataa"sv || dbname == "patnt"sv;
+            case 'd':
+                return dbname == "pdbaa"sv || dbname == "pdbnt"sv;
+            }
+            return false;
+
+        case 't':
+            return dbname == "taxdb"sv;
+
+        default:
+            return false;
+        }
+
+    case 6:
+        switch (dbname[0]) {
+        case 'e':
+            // env_nt, env_nr
+            return dbname == "env_nt"sv || dbname == "env_nr"sv;
+
+        case 'n':
+            return dbname == "nt_euk"sv;
+
+        case 't':
+            // tsa_nr, tsa_nt
+            return dbname == "tsa_nr"sv || dbname == "tsa_nt"sv;
+
+        default:
+            return false;
+        }
+
+    case 7:
+        switch (dbname[0]) {
+        case 'n': return dbname == "nt_prok"sv;
+        case 'c': return dbname == "core_nt"sv;
+        default:  return false;
+        }
+
+    case 8:
+        return dbname == "landmark"sv;
+
+    case 9:
+        switch (dbname[0]) {
+        case 'c': return dbname == "cdd_delta"sv;
+        case 'n': return dbname == "nt_others"sv;
+        case 's': return dbname == "swissprot"sv;
+        default:  return false;
+        }
+
+    case 10:
+        switch (dbname[0]) {
+        case 'n': return dbname == "nt_viruses"sv;
+        case 'r': return dbname == "refseq_rna"sv;
+        default:  return false;
+        }
+
+    case 12:
+        switch (dbname[0]) {
+        case 'h': return dbname == "human_genome"sv;
+        case 'm': return dbname == "mouse_genome"sv;
+        case 'c': return dbname == "clustered_nr"sv;
+        default:  return false;
+        }
+
+    case 14:
+        return dbname == "refseq_protein"sv;
+
+    case 15:
+        return dbname == "Betacoronavirus"sv;
+
+    case 16:
+        return dbname == "ITS_RefSeq_Fungi"sv;
+
+    case 17:
+        switch (dbname[0]) {
+        case '1': return dbname == "16S_ribosomal_RNA"sv;
+        case 'r': return dbname == "refseq_select_rna"sv;
+        default:  return false;
+        }
+
+    case 18:
+        switch (dbname[0]) {
+        case 'L': return dbname == "LSU_eukaryote_rRNA"sv;
+        case 'S': return dbname == "SSU_eukaryote_rRNA"sv;
+        case 'r': return dbname == "refseq_select_prot"sv;
+        default:  return false;
+        }
+
+    case 19:
+        switch (dbname[0]) {
+        case 'L': return dbname == "LSU_prokaryote_rRNA"sv;
+        case 'r': return dbname == "ref_euk_rep_genomes"sv;
+        default:  return false;
+        }
+
+    case 20:
+        switch (dbname[0]) {
+        case '1': return dbname == "18S_fungal_sequences"sv;
+        case '2': return dbname == "28S_fungal_sequences"sv;
+        case 'r': return dbname == "ref_prok_rep_genomes"sv;
+        default:  return false;
+        }
+
+    case 23:
+        if (dbname[0] == 'I')
+            return dbname == "ITS_eukaryote_sequences"sv;
+
+        if (dbname[0] != 'r')
+            return false;
+
+        // ref_viroids_rep_genomes
+        // ref_viruses_rep_genomes
+        return dbname == "ref_viroids_rep_genomes"sv ||
+               dbname == "ref_viruses_rep_genomes"sv;
+
+    default:
+        return false;
+    }
+}
+
+
 /*****************************************************************************/
 CBlastPhoneHomePolicy::CBlastPhoneHomePolicy():
 CBlastPhoneHomePolicy(GetLocalNcbiConfigFilePath())

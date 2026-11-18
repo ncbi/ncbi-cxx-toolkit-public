@@ -2520,6 +2520,9 @@ void CBlastFormat::LogBlastSearchInfo(CBlastUsageReport & report)
 				db_name.resize(500);
 				NStr::TruncateSpacesInPlace(db_name, NStr::eTrunc_End);
 			}
+            if (!CBlastUsageReport::IsNcbiDbName(db_name)) {
+                db_name = "custom_user_db";
+            }
 			report.AddParam(CBlastUsageReport::eDBName, db_name);
 			report.AddParam(CBlastUsageReport::eDBLength, GetDbTotalLength());
 			report.AddParam(CBlastUsageReport::eDBNumSeqs, num_seqs);
