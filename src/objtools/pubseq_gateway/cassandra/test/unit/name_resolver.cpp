@@ -174,27 +174,27 @@ TEST(CCassNameResolverTest, DefaultResolverTest) {
 TEST(CCassNameResolverTest, HostListTest) {
     const string config_section = "TEST";
     CNcbiRegistry r;
-    r.Set(config_section, "service", "idtest111:9999", IRegistry::fPersistent);
+    r.Set(config_section, "service", "idtest112:9999", IRegistry::fPersistent);
     auto factory = CCassConnectionFactory::s_Create();
     factory->LoadConfig(r, config_section);
     string host;
     short port;
     factory->GetHostPort(host, port);
     EXPECT_EQ(9999, port);
-    EXPECT_EQ("idtest111", host);
+    EXPECT_EQ("idtest112", host);
 }
 
 TEST(CCassNameResolverTest, HostListTest2) {
     const string config_section = "TEST";
     CNcbiRegistry r;
-    r.Set(config_section, "service", "idtest111,idtest112", IRegistry::fPersistent);
+    r.Set(config_section, "service", "idtest112,idtest113", IRegistry::fPersistent);
     auto factory = CCassConnectionFactory::s_Create();
     factory->LoadConfig(r, config_section);
     string host;
     short port;
     factory->GetHostPort(host, port);
     EXPECT_EQ(0, port);
-    EXPECT_EQ("idtest111,idtest112", host);
+    EXPECT_EQ("idtest112,idtest113", host);
 }
 
 }  // namespace

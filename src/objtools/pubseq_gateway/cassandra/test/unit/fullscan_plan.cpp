@@ -68,7 +68,7 @@ protected:
         const string config_section = "TEST";
         CNcbiRegistry r;
         //r.Set(config_section, "service", string(s_TestClusterName), IRegistry::fPersistent);
-        r.Set(config_section, "service", "idtest112,idtest111", IRegistry::fPersistent);
+        r.Set(config_section, "service", "idtest112,idtest113", IRegistry::fPersistent);
         //r.Set(config_section, "service", "idstore11,idstore12", IRegistry::fPersistent);
         //r.Set(config_section, "password_file", "/home/saprykin/devel/id/id-blob-storage/src/sync/cassandra.access.ini", IRegistry::fPersistent);
         //r.Set(config_section, "password_section", "cassandra", IRegistry::fPersistent);
