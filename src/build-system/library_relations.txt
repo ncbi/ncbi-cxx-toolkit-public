@@ -608,7 +608,7 @@ intvarutil needs ncbi_xloader_asn_cache
 intvarutil needs xid_mapper
 ipg_assembly_index needs xncbi
 ipg_storage needs $(SEQ_LIBS)
-ipg_storage needs psg_ipg
+ipg_storage needs psg_cassandra
 ipg_storage needs pub
 jaeger_tracer needs $(Z_LIB)
 jaeger_tracer needs xncbi
@@ -987,7 +987,6 @@ psg_client needs seqsplit
 psg_client needs xconnserv
 psg_client needs xxconnect2
 psg_client needs3party $(PSG_CLIENT_LIBS)
-psg_ipg needs psg_cassandra
 psg_myncbi needs xmlwrapp
 psg_myncbi needs3party $(CURL_LIBS)
 psg_myncbi needs3party $(LIBUV_LIBS)
