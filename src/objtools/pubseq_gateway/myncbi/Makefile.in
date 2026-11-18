@@ -1,7 +1,11 @@
 # $Id$
 
 LIB_PROJ = psg_myncbi
-SUB_PROJ = test
+
+# Commented out as it cannot be build as part of pubseq_gateway/cassandra tree
+# It depends on xmlwrap which in Toolkit builds later than pubseq_gateway/cassandra and is not available for usage
+# Build it manually if you need it
+#SUB_PROJ = test
 
 REQUIRES = CASSANDRA MT Linux GCC
 
