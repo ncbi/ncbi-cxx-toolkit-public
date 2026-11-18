@@ -281,31 +281,31 @@ Int2 BlastProgram2Number(const char *program, EBlastProgramType *number)
 	if (program == NULL)
 		return 1;
 
-	if (strcasecmp("blastn", program) == 0)
-		*number = eBlastTypeBlastn;
-	else if (strcasecmp("blastp", program) == 0)
-		*number = eBlastTypeBlastp;
-	else if (strcasecmp("blastx", program) == 0)
-		*number = eBlastTypeBlastx;
-	else if (strcasecmp("tblastn", program) == 0)
-		*number = eBlastTypeTblastn;
-	else if (strcasecmp("tblastx", program) == 0)
-		*number = eBlastTypeTblastx;
-	else if (strcasecmp("rpsblast", program) == 0)
-		*number = eBlastTypeRpsBlast;
-	else if (strcasecmp("rpstblastn", program) == 0)
-		*number = eBlastTypeRpsTblastn;
-    else if (strcasecmp("psiblast", program) == 0)
+    if (strcasecmp("blastn", program) == 0) {
+        *number = eBlastTypeBlastn;
+    } else if (strcasecmp("blastp", program) == 0) {
+        *number = eBlastTypeBlastp;
+    } else if (strcasecmp("blastx", program) == 0) {
+        *number = eBlastTypeBlastx;
+    } else if (strcasecmp("tblastn", program) == 0) {
+        *number = eBlastTypeTblastn;
+    } else if (strcasecmp("tblastx", program) == 0) {
+        *number = eBlastTypeTblastx;
+    } else if (strcasecmp("rpsblast", program) == 0) {
+        *number = eBlastTypeRpsBlast;
+    } else if (strcasecmp("rpstblastn", program) == 0) {
+        *number = eBlastTypeRpsTblastn;
+    } else if (strcasecmp("psiblast", program) == 0) {
         *number = eBlastTypePsiBlast;
-    else if (strcasecmp("psitblastn", program) == 0)
+    } else if (strcasecmp("psitblastn", program) == 0) {
         *number = eBlastTypePsiTblastn;
-    else if (strcasecmp("phiblastn", program) == 0)
+    } else if (strcasecmp("phiblastn", program) == 0) {
         *number = eBlastTypePhiBlastn;
-    else if (strcasecmp("phiblastp", program) == 0)
+    } else if (strcasecmp("phiblastp", program) == 0) {
         *number = eBlastTypePhiBlastp;
-    else if (strcasecmp("mapper", program) == 0)
+    } else if (strcasecmp("mapper", program) == 0) {
         *number = eBlastTypeMapping;
-
+    }
 	return 0;
 }
 
