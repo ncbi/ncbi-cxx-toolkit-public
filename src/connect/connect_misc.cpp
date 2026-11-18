@@ -55,12 +55,12 @@ BEGIN_NCBI_SCOPE
 struct SSocketAddressImpl : protected CConnIniter
 {
     // Do not make static (see above)
-    unsigned GetHost(const string& name) const
+    SSocketAddress::SIPAddr GetHost(const string& name) const
     {
         return CSocketAPI::gethostbyname(name, eOn);
     }
 
-    const string& GetName(unsigned host)
+    const string& GetName(const SSocketAddress::SIPAddr& host)
     {
         auto& name = m_Data[host];
 
@@ -83,7 +83,7 @@ struct SSocketAddressImpl : protected CConnIniter
     }
 
 private:
-    map<unsigned, string> m_Data;
+    map<SSocketAddress::SIPAddr, string> m_Data;
 };
 
 SSocketAddress::SHost::SHost(const string& h, EName n) :
@@ -106,9 +106,30 @@ string SSocketAddress::GetHostName() const
     return m_Name ? m_Name.value() : SSocketAddressImpl::GetInstance().GetName(host);
 }
 
+string SSocketAddress::AsString() const
+{
+    auto host_name = GetHostName();
+    if (host_name.find(':') != string::npos) {
+        host_name = '[' + host_name + ']';
+    }
+    return host_name + ':' + NStr::UIntToString(port);
+}
+
 SSocketAddress SSocketAddress::Parse(const string& address, SHost::EName name)
 {
     string host, port;
+
+    if (!address.empty() && address.front() == '[') {
+        const auto end = address.find("]:");
+        if (end == string::npos || end <= 1) {
+            return { 0, 0 };
+        }
+        return { { address.substr(1, end - 1), name }, address.substr(end + 2) };
+    }
+
+    if (address.find(':') != address.rfind(':')) {
+        return { 0, 0 };
+    }
 
     if (NStr::SplitInTwo(address, ":", host, port)) {
         return { { host, name }, port };
@@ -181,7 +202,7 @@ CServiceDiscovery::TServers CServiceDiscovery::DiscoverImpl(const string& servic
 
             while (auto info = SERV_GetNextInfoEx(it.get(), 0)) {
                 if (info->time > 0 && info->time != NCBI_TIME_INFINITE && info->rate != 0.0) {
-                    rv.emplace_back(SSocketAddress(info->host, info->port), info->rate);
+                    rv.emplace_back(SSocketAddress(SERV_AddrOfInfo(info), info->port), info->rate);
                 }
             }
 

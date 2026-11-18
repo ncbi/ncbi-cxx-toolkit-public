@@ -31,12 +31,14 @@
  */
 
 #include <connect/connect_export.h>
+#include <connect/ncbi_socket.hpp>
 
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbitime.hpp>
 
 #include <chrono>
+#include <compare>
 #include <condition_variable>
 #include <deque>
 #include <memory>
@@ -53,7 +55,24 @@ BEGIN_NCBI_SCOPE
 
 struct NCBI_XCONNECT_EXPORT SSocketAddress
 {
-    unsigned host;
+    struct NCBI_XCONNECT_EXPORT SIPAddr : CNCBI_IPAddr
+    {
+        using CNCBI_IPAddr::CNCBI_IPAddr;
+        SIPAddr(const CNCBI_IPAddr& h) : CNCBI_IPAddr(h) {}
+
+        friend std::strong_ordering operator<=>(const SIPAddr& lhs, const SIPAddr& rhs)
+        {
+            return memcmp(lhs.GetAddr().octet, rhs.GetAddr().octet, sizeof(lhs.GetAddr().octet)) <=> 0;
+        }
+
+        template <typename T, enable_if_t<is_base_of_v<CNCBI_IPAddr, T>, int> = 0>
+        friend bool operator==(const SIPAddr& lhs, const T& rhs) { return (lhs <=> rhs) == 0; }
+
+        template <typename T, enable_if_t<is_integral_v<T>, int> = 0>
+        friend bool operator==(const SIPAddr& lhs, T rhs) { return rhs == 0 ? lhs.IsEmpty() : static_cast<unsigned>(lhs) == rhs; }
+    };
+
+    SIPAddr host;
     unsigned short port;
 
     struct NCBI_XCONNECT_EXPORT SHost
@@ -61,9 +80,11 @@ struct NCBI_XCONNECT_EXPORT SSocketAddress
         enum class EName { eResolved, eOriginal };
 
         std::optional<string> name;
-        unsigned host;
+        SIPAddr host;
 
         SHost(unsigned h) : host(h) {}
+        SHost(const CNCBI_IPAddr& h) : host(h) {}
+        SHost(const TNCBI_IPv6Addr& h) : host(h) {}
         SHost(const string& h, EName n = EName::eResolved);
     };
 
@@ -82,7 +103,7 @@ struct NCBI_XCONNECT_EXPORT SSocketAddress
 
     explicit operator bool() const { return host && port; }
     string GetHostName() const;
-    string AsString() const { return GetHostName() + ':' + NStr::UIntToString(port); }
+    string AsString() const;
 
     static SSocketAddress Parse(const string& address, SHost::EName name = SHost::EName::eResolved);
 
