@@ -63,8 +63,6 @@ public:
     bool IsEmpty(const CObject& object) const override;
     void ClearVal(CObject& object) override;
     bool SetVal(CObject& object, const string& val, EExistingText existing_text) override;
-    string IsValid(const string& value) override { return string(); }
-    vector<string> IsValid(const vector<string>& values) override { return vector<string>(); }
     void SetConstraint(const string& field, CConstRef<CStringConstraint> string_constraint) override;
     bool AllowMultipleValues() override;
 
