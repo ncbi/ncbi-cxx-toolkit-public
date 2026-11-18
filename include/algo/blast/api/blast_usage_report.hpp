@@ -264,6 +264,12 @@ public:
 
     void SetUsageReport(bool enable);
 
+    /// Is dbname one of the NCBI BLAST databases.
+    /// Checks whether the database name is one of those downloadable by
+    /// update_blastdb.pl plus cdd and cdd_delta.
+    /// @param dbname Database name
+    static bool IsNcbiDbName(string_view dbname) noexcept;
+    
 private:
     void x_CheckRunEnv();
     string x_EUsageParamsToString(EUsageParams p);

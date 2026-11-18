@@ -755,6 +755,74 @@ BOOST_FIXTURE_TEST_CASE(Check_inherited_ncbi_configuration_hierarchy,
     env.Unset(kNcbiConfigOverridesEnv);
 }
 
+BOOST_AUTO_TEST_CASE(StandardDbNames)
+{
+    // NCBI databases downloadable by update_blastdb.pl + cdd, cdd_delta
+    const string kStandardDbNames[] = {
+        "Betacoronavirus",
+        "ITS_RefSeq_Fungi",
+        "16S_ribosomal_RNA",
+        "28S_fungal_sequences",
+        "18S_fungal_sequences",
+        "ITS_eukaryote_sequences",
+        "LSU_eukaryote_rRNA",
+        "LSU_prokaryote_rRNA",
+        "SSU_eukaryote_rRNA",
+        "cdd",
+        "cdd_delta",
+        "env_nt",
+        "env_nr",
+        "human_genome",
+        "landmark",
+        "mito",
+        "mouse_genome",
+        "nr",
+        "nt_euk",
+        "nt",
+        "nt_others",
+        "nt_prok",
+        "nt_viruses",
+        "pataa",
+        "patnt",
+        "pdbaa",
+        "pdbnt",
+        "ref_euk_rep_genomes",
+        "ref_prok_rep_genomes",
+        "ref_viroids_rep_genomes",
+        "ref_viruses_rep_genomes",
+        "refseq_select_rna",
+        "refseq_select_prot",
+        "refseq_protein",
+        "refseq_rna",
+        "swissprot",
+        "tsa_nr",
+        "tsa_nt",
+        "taxdb",
+        "core_nt",
+        "clustered_nr",
+    };
+
+    for (auto& it: kStandardDbNames) {
+        BOOST_REQUIRE_MESSAGE(CBlastUsageReport::IsNcbiDbName(it),
+                              it + " was not recognised as an NCBI database");
+    }
+
+    const string kUserDbNames[] = {
+        "mydb",
+        "NC_000001",
+        "humandb",
+        "my_sequences",
+        "mynr"        
+    };
+
+    for (auto& it: kUserDbNames) {
+        BOOST_REQUIRE_MESSAGE(! CBlastUsageReport::IsNcbiDbName(it),
+                              it + " was not recognised as a user database name");
+    }    
+}
+
+
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* SKIP_DOXYGEN_PROCESSING */
