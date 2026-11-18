@@ -108,7 +108,7 @@ entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=16218944&dopt=Citation",
     // eDeltaBlast
     "//www.ncbi.nlm.nih.gov/pubmed/22510480",
     // eGlobalAlign
-    "//pubmed.ncbi.nlm.nih.gov/5420325",
+    "//www.pubmed.ncbi.nlm.nih.gov/5420325",
     // eMaxPublications
     kEmptyStr
 };
