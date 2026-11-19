@@ -102,8 +102,10 @@ string x_GetAddress(CParamBase::EParamSource* srcp = nullptr)
 #define ADDR_END   ".p2.ncbi.nlm.nih.gov:80"
         if (role == "development") {
             s = ADDR_START "develop.ocpdev-be" ADDR_END;
-            src = CParamBase::eSource_Func;
+        } else {
+            s = ADDR_START "production.ocpprod-be" ADDR_END;
         }
+        src = CParamBase::eSource_Func;
     }
     if (srcp != nullptr) {
         *srcp = src;
