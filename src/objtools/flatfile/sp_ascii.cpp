@@ -727,7 +727,7 @@ static void MakeChainPDBSeqId(CSP_block_Base::TSeqref& refs, const char* mol, ch
  *                                              10-1-93
  *
  **********************************************************/
-static void MakePDBSeqId(CSP_block_Base::TSeqref& refs, const char* mol, const char* rel, char* chain, bool* drop, Parser::ESource source)
+static void MakePDBSeqId(CSP_block_Base::TSeqref& refs, const char* mol, const char* rel, char* chain, bool* /*drop*/, Parser::ESource source)
 {
     if (! mol)
         return;
@@ -837,7 +837,7 @@ static void SpAddToIndexBlk(const DataBlk& entry, IndexblkPtr pIndex)
  *                                              9-23-93
  *
  **********************************************************/
-static void GetSprotSubBlock(ParserPtr pp, const DataBlk& entry)
+static void GetSprotSubBlock(ParserPtr, const DataBlk& entry)
 {
     DataBlk* dbp = TrackNodeType(entry, ParFlatSP_OS);
     if (dbp) {
@@ -1866,7 +1866,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
             if (ntype == CSeq_id::e_not_set) {
                 FtaErrPost(SEV_ERROR, ERR_SPROT_DRLine, "Incorrect NA accession is used in DR line: \"{}\". Skipped...", token2);
             } else if (AddToList(acc_list, token2)) {
-                CRef<CSeq_id> id(MakeAccSeqId(token2, ntype, p ? true : false,
+                CRef<CSeq_id> id(MakeAccSeqId(token2, Uint1(ntype), p ? true : false,
                                               p ? fta_atoi<Int2>(p + 1) : 0));
                 if (id.NotEmpty())
                     spb.SetSeqref().push_back(id);
@@ -1905,7 +1905,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                 id = AddPIDToSeqId(token3, token2);
             else {
                 *p++ = '\0';
-                id   = MakeAccSeqId(token3, ptype, true, fta_atoi<Int2>(p));
+                id   = MakeAccSeqId(token3, Uint1(ptype), true, fta_atoi<Int2>(p));
             }
 
             if (id.NotEmpty())
@@ -1961,7 +1961,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                 continue;
 
             *p++ = '\0';
-            CRef<CSeq_id> id(MakeAccSeqId(token2, ptype, true, fta_atoi<Int2>(p)));
+            CRef<CSeq_id> id(MakeAccSeqId(token2, Uint1(ptype), true, fta_atoi<Int2>(p)));
             if (id.NotEmpty())
                 spb.SetSeqref().push_back(id);
         } else {
@@ -2443,7 +2443,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
      */
     CRef<CSP_block> spb = GetDescrSPBlock(pp, entry, bioseq);
 
-    GetSPDescrComment(entry, descr.Set(), ibp->acnum, spb->GetClass());
+    GetSPDescrComment(entry, descr.Set(), ibp->acnum, Uint1(spb->GetClass()));
 
     if (spb.NotEmpty() && pp->accver && pp->histacc && pp->source == Parser::ESource::SPROT) {
         CSeq_hist_rec::TIds rep_ids;
@@ -3012,7 +3012,7 @@ static SPFeatInputList ParseSPFeat(const DataBlk& entry, size_t seqlen)
         q = (char*)temp.to.c_str();
         if (*q == '<' || *q == '>')
             q++;
-        if ((*p != '?' && fta_atoi<Int4>(p) > seqlen) || (*q != '?' && fta_atoi<Int4>(q) > seqlen)) {
+        if ((*p != '?' && fta_atoi<size_t>(p) > seqlen) || (*q != '?' && fta_atoi<size_t>(q) > seqlen)) {
             FtaErrPost(SEV_WARNING, ERR_LOCATION_FailedCheck, "Location range exceeds the sequence length: feature={}, length={}, from={}, to={}", temp.key, seqlen, temp.from, temp.to);
             FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped, "Location range exceeds the sequence length: feature={}, length={}, from={}, to={}", temp.key, seqlen, temp.from, temp.to);
             continue;
@@ -4296,7 +4296,7 @@ static SPSegLocList GetSPSegLocInfo(CBioseq& bioseq, const SPFeatInputList& spfi
  *                                              11-1-93
  *
  **********************************************************/
-static void CkInitMetSP(ParserPtr pp, const SPFeatInputList& spfil, CSeq_entry& seq_entry, SPFeatBlnPtr spfbp)
+static void CkInitMetSP(ParserPtr, const SPFeatInputList& spfil, CSeq_entry& seq_entry, SPFeatBlnPtr spfbp)
 {
     Int2 count = 0;
     Int4 from  = 0;
@@ -4489,7 +4489,7 @@ static void SeqToDeltaSP(CBioseq& bioseq, const SPSegLocList& spsll)
  *                                              10-15-93
  *
  **********************************************************/
-static void GetSPAnnot(ParserPtr pp, const DataBlk& entry, const unsigned char* protconv)
+static void GetSPAnnot(ParserPtr pp, const DataBlk& entry, const unsigned char* /*protconv*/)
 {
     EntryBlkPtr  ebp;
     SPFeatBlnPtr spfbp;
