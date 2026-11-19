@@ -297,9 +297,9 @@ static void ParseRLDataSP(ParserPtr pp, ParRefBlkPtr prbp, char* str)
     if (NStr::StartsWith(str, "UNPUBLISHED"sv, NStr::eNocase)) {
         prbp->reftype = ParFlat_ReftypeUnpub;
         prbp->journal = str;
-    } else if (StringEquNI(str, "(IN)")) {
+    } else if (ConsumeStrI(str, "(IN)")) {
         prbp->reftype = ParFlat_ReftypeBook;
-        for (str += 4; *str == ' ';)
+        while (*str == ' ')
             str++;
         prbp->journal = str;
     } else if (NStr::StartsWith(str, "SUBMITTED"sv, NStr::eNocase)) {
@@ -357,7 +357,6 @@ static void ParseRLDataSP(ParserPtr pp, ParRefBlkPtr prbp, char* str)
 static void GetSprotIds(ParRefBlk* prbp, char* str)
 {
     char* p;
-    char* q;
     bool  dois;
     bool  muids;
     bool  pmids;
@@ -377,31 +376,27 @@ static void GetSprotIds(ParRefBlk* prbp, char* str)
     for (p = str; p;) {
         while (*p == ' ' || *p == '\t' || *p == ';')
             p++;
-        q = p;
+        const char* q = p;
         p = StringChr(p, ';');
         if (p)
             *p = '\0';
 
-        if (StringEquNI(q, "MEDLINE=")) {
-            q += 8;
+        if (ConsumeStrI(q, "MEDLINE=")) {
             if (prbp->muid == 0)
                 prbp->muid = fta_atoi(q);
             else
                 muids = true;
-        } else if (StringEquNI(q, "PUBMED=")) {
-            q += 7;
+        } else if (ConsumeStrI(q, "PUBMED=")) {
             if (prbp->pmid == ZERO_ENTREZ_ID)
                 prbp->pmid = ENTREZ_ID_FROM(int, fta_atoi(q));
             else
                 pmids = true;
-        } else if (StringEquNI(q, "DOI=")) {
-            q += 4;
+        } else if (ConsumeStrI(q, "DOI=")) {
             if (prbp->doi.empty())
                 prbp->doi = q;
             else
                 dois = true;
-        } else if (StringEquNI(q, "AGRICOLA=")) {
-            q += 9;
+        } else if (ConsumeStrI(q, "AGRICOLA=")) {
             if (prbp->agricola.empty())
                 prbp->agricola = q;
             else
@@ -475,8 +470,7 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, const DataBlk& dbp, Uint2 col_d
             break; /* old format for muid */
         case ParFlatSP_RX:
             s = str;
-            if (StringEquNI(s, "MEDLINE;")) {
-                s += 8;
+            if (ConsumeStrI(s, "MEDLINE;")) {
                 while (*s == ' ')
                     s++;
                 prbp->muid = (Int4)atol(s);
@@ -653,7 +647,7 @@ static bool GetCitSubmit(ParRefBlkPtr prbp, CCit_sub& sub)
 
 #ifdef DIFF
 
-    ConsumeString(s, " TO ");
+    ConsumeStr(s, " TO ");
 
 #endif
 

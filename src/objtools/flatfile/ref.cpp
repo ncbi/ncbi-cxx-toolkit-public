@@ -406,13 +406,13 @@ static CRef<CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
         s = bptr;
     else {
         string_view sv = (pp->format == Parser::EFormat::EMBL) ? "Patent number" : "Patent:";
-        if (! StringEquNI(bptr, sv)) {
+        if (! ConsumeStrI(bptr, sv)) {
             FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Illegal format: \"{}\"", temp);
             MemFree(temp);
             return cit_pat;
         }
 
-        for (s = bptr + sv.size(); *s == ' ';)
+        for (s = bptr; *s == ' ';)
             s++;
     }
 
@@ -1014,11 +1014,9 @@ static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTi
         for (bptr = s; *s != ';' && *s != '(' && *s != '\0';)
             s++;
         char* tit = s;
-        if (StringEquNI(tit, "(Eds.)")) {
-            tit += 6;
+        if (ConsumeStrI(tit, "(Eds.)")) {
             IS_AUTH = true;
-        } else if (StringEquNI(tit, "(Ed.)")) {
-            tit += 5;
+        } else if (ConsumeStrI(tit, "(Ed.)")) {
             IS_AUTH = true;
         } else if (*tit != ';') {
             tit = nullptr;
@@ -1292,8 +1290,7 @@ static CRef<CCit_sub> get_sub(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
     if (StringStr(s, "E-mail"))
         medium = CCit_sub::eMedium_email;
 
-    if (StringEquNI(s, " on tape")) {
-        s += 8;
+    if (ConsumeStrI(s, " on tape")) {
         medium = CCit_sub::eMedium_tape;
         while (*s != '\0' && *s != ':')
             s++;

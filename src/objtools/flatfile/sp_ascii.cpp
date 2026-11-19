@@ -766,16 +766,15 @@ static void GetIntFuzzPtr(Uint1 choice, Int4 a, Int4 b, CInt_fuzz& fuzz)
 /**********************************************************/
 static CBioSource::EGenome GetSPGenomeFrom_OS_OG(const TDataBlkList& dbl)
 {
-    char* p;
     Int4  gmod = -1;
 
     for (const auto& dbp : dbl)
         if (dbp.mType == ParFlatSP_OS) {
             for (const auto& subdbp : dbp.GetSubBlocks())
                 if (subdbp.mType == ParFlatSP_OG) {
-                    p = subdbp.mBuf.ptr + ParFlat_COL_DATA_SP;
-                    if (StringEquNI(p, "Plastid;"))
-                        for (p += 8; *p == ' ';)
+                    const char* p = subdbp.mBuf.ptr + ParFlat_COL_DATA_SP;
+                    if (ConsumeStrI(p, "Plastid;"))
+                        while (*p == ' ')
                             p++;
                     gmod = StringMatchIcase(SP_organelle, p);
                 }
@@ -1981,9 +1980,8 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                 token1 = "HGNC";
             else if (NStr::EqualNocase(token1, "GeneDB_Spombe"))
                 token1 = "PomBase";
-            else if (NStr::EqualNocase(token1, "PomBase") &&
-                     StringEquNI(token2, "PomBase:"))
-                token2 += 8;
+            else if (NStr::EqualNocase(token1, "PomBase"))
+                ConsumeStrI(token2, "PomBase:");
 
             CRef<CDbtag> tag = MakeStrDbtag(token1, token2);
             if (tag.NotEmpty()) {
@@ -3710,8 +3708,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, s
         }
         if (q)
             *q++ = '\0';
-        if (StringEquNI(p, "Name=")) {
-            p += 5;
+        if (ConsumeStrI(p, "Name=")) {
             if (name) {
                 FtaErrPost(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"Name=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = true;
@@ -3719,8 +3716,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, s
             }
             if (p != q)
                 name = StringSave(p);
-        } else if (StringEquNI(p, "Synonyms=")) {
-            p += 9;
+        } else if (ConsumeStrI(p, "Synonyms=")) {
             if (syns) {
                 FtaErrPost(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"Synonyms=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = true;
@@ -3728,8 +3724,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, s
             }
             if (p != q)
                 syns = StringSave(p);
-        } else if (StringEquNI(p, "OrderedLocusNames=")) {
-            p += 18;
+        } else if (ConsumeStrI(p, "OrderedLocusNames=")) {
             if (ltags) {
                 FtaErrPost(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"OrderedLocusNames=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = true;
@@ -3737,8 +3732,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, s
             }
             if (p != q)
                 ltags = StringSave(p);
-        } else if (StringEquNI(p, "ORFNames=")) {
-            p += 9;
+        } else if (ConsumeStrI(p, "ORFNames=")) {
             if (orfs) {
                 FtaErrPost(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"ORFNames=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = true;
@@ -3746,8 +3740,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, s
             }
             if (p != q)
                 orfs = StringSave(p);
-        } else if (StringEquNI(p, "and ")) {
-            p += 4;
+        } else if (ConsumeStrI(p, "and ")) {
             if (q)
                 *--q = ';';
             q = p;
