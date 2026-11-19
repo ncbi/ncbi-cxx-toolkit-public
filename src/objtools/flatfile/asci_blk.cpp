@@ -99,13 +99,12 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-const char* magic_phrases[] = {
+string_view magic_phrases[] = {
     "*** SEQUENCING IN PROGRESS ***",
     "***SEQUENCING IN PROGRESS***",
     "WORKING DRAFT SEQUENCE",
     "LOW-PASS SEQUENCE SAMPLING",
     "*** IN PROGRESS ***",
-    nullptr
 };
 
 extern vector<string> genbankKeywords;
@@ -726,7 +725,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
         GetLenSubNode(os_blk);
     }
 
-    for (auto& ref_blk: chain) {
+    for (auto& ref_blk : chain) {
         if (ref_blk.mType != ParFlat_RN)
             continue;
 
@@ -1679,18 +1678,15 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodety
     if (str)
         MemFree(str);
 
-    if(seq_data_type == CSeq_data::e_Iupacaa)
-    {
-        if(pp->format == Parser::EFormat::XML &&
-           pp->source == Parser::ESource::USPTO &&
-           bioseq.GetLength() < 4)
-        {
+    if (seq_data_type == CSeq_data::e_Iupacaa) {
+        if (pp->format == Parser::EFormat::XML &&
+            pp->source == Parser::ESource::USPTO &&
+            bioseq.GetLength() < 4) {
             FtaErrPost(SEV_REJECT, ERR_SEQUENCE_TooShortIsPatent,
                        "This sequence for this patent record falls below the minimum length requirement of 4 amino acids.");
             ibp->drop = true;
         }
-    }
-    else if (seq_data_type == CSeq_data::e_Iupacna) {
+    } else if (seq_data_type == CSeq_data::e_Iupacna) {
         if (bioseq.GetLength() < 10) {
             if (pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) {
                 if (ibp->is_pat == false)
@@ -1748,7 +1744,7 @@ DEFINE_STATIC_MUTEX(s_DNAConvMutex);
 const unsigned char* GetDNAConvTable()
 {
     static unique_ptr<unsigned char[]> dnaconv;
-    
+
     if (! dnaconv.get()) {
         CMutexGuard guard(s_DNAConvMutex);
         if (! dnaconv.get()) {
@@ -1763,7 +1759,7 @@ const unsigned char* GetDNAConvTable()
             }
         }
     }
-    
+
     return dnaconv.get();
 }
 
@@ -2038,9 +2034,9 @@ static void CheckDivCode(TEntryList& seq_entries, ParserPtr pp)
     for (auto& entry : seq_entries) {
         for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             ispat = false;
-            if(bioseq->IsSetId()) {
-                for(const auto& id : bioseq->GetId()) {
-                    if(id->IsPatent()) {
+            if (bioseq->IsSetId()) {
+                for (const auto& id : bioseq->GetId()) {
+                    if (id->IsPatent()) {
                         ispat = true;
                         break;
                     }
@@ -2125,28 +2121,31 @@ void EntryCheckDivCode(TEntryList& seq_entries, ParserPtr pp)
 void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int2 ori, bool cancelled)
 {
     const DataBlk* dbp = TrackNodeType(entry, what);
+
     bool in_progress = false;
     if (dbp && dbp->mBuf.ptr && dbp->mBuf.len > 0) {
-        char* tmp = StringSave(string_view(dbp->mBuf.ptr, dbp->mBuf.len - 1));
-        for (char* q = tmp; *q != '\0'; q++) {
-            if (*q == '\n' && fta_StartsWith(q + 1, "DE   "sv))
-                fta_StringCpy(q, q + 5);
+        string tmp(dbp->mBuf.ptr, dbp->mBuf.len - 1);
+        for (auto q = tmp.begin(); q != tmp.end(); q++) {
+            if (*q == '\n' && string_view(q + 1, tmp.end()).starts_with("DE   "sv))
+                tmp.erase(q, q + 5);
             else if (*q == '\n' || *q == '\t')
                 *q = ' ';
         }
-        char* q = tmp;
-        for (const char* p = tmp; *p != '\0'; p++) {
-            if (*p == ' ' && p[1] == ' ')
+
+        auto q = tmp.begin();
+        for (auto p = tmp.cbegin(); p != tmp.cend(); p++) {
+            if (*p == ' ' && (p + 1) != tmp.cend() && *(p + 1) == ' ')
                 continue;
             *q++ = *p;
         }
-        *q = '\0';
-        for (const char** b = magic_phrases; *b; b++)
-            if (StringStr(tmp, *b)) {
+        if (q < tmp.end())
+            tmp.resize(q - tmp.begin());
+
+        for (auto b : magic_phrases)
+            if (fta_contains(tmp, b)) {
                 in_progress = true;
                 break;
             }
-        MemFree(tmp);
     }
 
     if ((tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1 ||
@@ -2162,26 +2161,26 @@ void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int
 
     dbp = TrackNodeType(entry, ori);
     if (dbp && dbp->mBuf.ptr && dbp->mBuf.len > 0) {
-        char* r = StringSave(string_view(dbp->mBuf.ptr, dbp->mBuf.len));
-        if (! r)
+        string r(dbp->mBuf.ptr, dbp->mBuf.len);
+        if (r.empty())
             return;
 
-        char* q = r;
-        for (const char* p = r; *p != '\0'; p++)
+        auto q = r.begin();
+        for (auto p = r.cbegin(); p != r.cend(); p++)
             if (IS_LOWER(*p))
                 *q++ = *p;
-        *q = '\0';
+        if (q < r.end())
+            r.resize(q - r.begin());
 
         unsigned count = 0;
-        for (const char* p = r; *p != '\0'; p++) {
-            if (*p != 'n')
+        for (auto c : r) {
+            if (c != 'n')
                 count = 0;
             else if (++count > 10) {
                 FtaErrPost(SEV_WARNING, ERR_SEQUENCE_UnknownBaseHTG3, "This complete Phase 3 HTGS sequence has one or more runs of 10 contiguous unknown ('n') bases.");
                 break;
             }
         }
-        MemFree(r);
     }
 }
 
@@ -2190,24 +2189,28 @@ void XMLDefVsHTGKeywords(CMolInfo::TTech tech, const char* entry, const TXmlInde
 {
     if (! entry || xil.empty())
         return;
+
     bool in_progress = false;
-    if (char* tmp = StringSave(XMLFindTagValue(entry, xil, INSDSEQ_DEFINITION))) {
-        for (char* q = tmp; *q != '\0'; q++)
-            if (*q == '\n' || *q == '\t')
-                *q = ' ';
-        char* q = tmp;
-        for (const char* p = tmp; *p != '\0'; p++) {
-            if (*p == ' ' && p[1] == ' ')
+    if (auto tmp_ = XMLFindTagValue(entry, xil, INSDSEQ_DEFINITION)) {
+        string& tmp = *tmp_;
+        for (char& c : tmp)
+            if (c == '\n' || c == '\t')
+                c = ' ';
+
+        auto q = tmp.begin();
+        for (auto p = tmp.cbegin(); p != tmp.cend(); p++) {
+            if (*p == ' ' && (p + 1) != tmp.cend() && *(p + 1) == ' ')
                 continue;
             *q++ = *p;
         }
-        *q = '\0';
-        for (const char** b = magic_phrases; *b; b++)
-            if (StringStr(tmp, *b)) {
+        if (q < tmp.end())
+            tmp.resize(q - tmp.begin());
+
+        for (auto b : magic_phrases)
+            if (fta_contains(tmp, b)) {
                 in_progress = true;
                 break;
             }
-        MemFree(tmp);
     }
 
     if ((tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1 ||
@@ -2221,20 +2224,19 @@ void XMLDefVsHTGKeywords(CMolInfo::TTech tech, const char* entry, const TXmlInde
     if (tech != CMolInfo::eTech_htgs_3)
         return;
 
-    char* r = StringSave(XMLFindTagValue(entry, xil, INSDSEQ_SEQUENCE));
+    auto r = XMLFindTagValue(entry, xil, INSDSEQ_SEQUENCE);
     if (! r)
         return;
 
     unsigned count = 0;
-    for (const char* p = r; *p != '\0'; p++) {
-        if (*p != 'n')
+    for (auto c : *r) {
+        if (c != 'n')
             count = 0;
         else if (++count > 10) {
             FtaErrPost(SEV_WARNING, ERR_SEQUENCE_UnknownBaseHTG3, "This complete Phase 3 HTGS sequence has one or more runs of 10 contiguous unknown ('n') bases.");
             break;
         }
     }
-    MemFree(r);
 }
 
 /**********************************************************/
