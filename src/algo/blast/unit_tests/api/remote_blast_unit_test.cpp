@@ -39,6 +39,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/seqalign_exception.hpp>
 #include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/api/blast_rps_options.hpp>
 #include <algo/blast/api/blast_nucl_options.hpp>
@@ -1285,6 +1286,31 @@ BOOST_AUTO_TEST_CASE(ReadBadArchiveFormat)
     ifstream in(fname);
     BOOST_REQUIRE_THROW(CRemoteBlast rb(in), CBlastException);
 
+}
+
+BOOST_AUTO_TEST_CASE(ReadArchiveWithInvalidDenseSeg)
+{
+    ifstream in("data/archive.asn");
+    BOOST_REQUIRE(in);
+    const string archive((istreambuf_iterator<char>(in)),
+                         istreambuf_iterator<char>());
+    const string replacements[][2] = {
+        { "dim 2", "dim 0" },
+        { "numseg 9", "numseg 10" }
+    };
+
+    const size_t denseg_pos = archive.find("segs denseg");
+    BOOST_REQUIRE(denseg_pos != string::npos);
+    for (const auto& replacement : replacements) {
+        string malformed = archive;
+        const size_t pos = malformed.find(replacement[0], denseg_pos);
+        BOOST_REQUIRE(pos != string::npos);
+        malformed.replace(pos, replacement[0].size(), replacement[1]);
+
+        CNcbiIstrstream input(malformed);
+        CRemoteBlast rb(input);
+        BOOST_REQUIRE_THROW(rb.LoadFromArchive(), CSeqalignException);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(ReadBl2seqArchiveFormat)

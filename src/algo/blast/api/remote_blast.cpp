@@ -47,6 +47,7 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/scoremat/Pssm.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/blast/blastclient.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
@@ -1662,6 +1663,11 @@ CRemoteBlast::LoadFromArchive()
 
       m_Archive.Reset(new CBlast4_archive);
       *m_ObjectStream >> *m_Archive;
+
+      CTypeConstIterator<CDense_seg> denseg(ConstBegin(*m_Archive, eDetectLoops));
+      for (; denseg; ++denseg) {
+          denseg->Validate();
+      }
 
       m_Errs.clear();
       if(m_Archive->IsSetMessages()) {

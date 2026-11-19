@@ -41,6 +41,7 @@
 #include <algo/blast/blastinput/blast_input.hpp>
 
 #include <objects/blast/Blast4_request.hpp>
+#include <objects/seqalign/seqalign_exception.hpp>
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
@@ -180,6 +181,11 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
     }                                                                       \
     catch (const CObjReaderParseException& e) {                             \
         LOG_POST(Error << "BLAST query error: " << e.GetMsg());             \
+        exit_code = BLAST_INPUT_ERROR;                                      \
+    }                                                                       \
+    catch (const objects::CSeqalignException& e) {                          \
+        LOG_POST(Error << "BLAST input error: Invalid sequence alignment "  \
+                       << "data: " << e.GetMsg());                          \
         exit_code = BLAST_INPUT_ERROR;                                      \
     }                                                                       \
     catch (const CSeqDBException& e) {                                      \
@@ -344,4 +350,3 @@ void CheckMTByQueries_QuerySize(blast::EProgram prog, int batch_size);
 END_NCBI_SCOPE
 
 #endif /* APP__BLAST_APP_UTIL__HPP */
-
