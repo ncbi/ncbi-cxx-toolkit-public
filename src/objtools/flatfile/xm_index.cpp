@@ -42,6 +42,7 @@
 #include "indx_def.h"
 #include "utilfun.h"
 #include "fta_xml.h"
+#include <span>
 
 #ifdef THIS_FILE
 #  undef THIS_FILE
@@ -52,15 +53,15 @@
 
 BEGIN_NCBI_SCOPE
 
-struct XmlKwordBlk {
+struct XmlKword {
     const char* str;
     Int4        order;
     Int4        tag;
 };
-using XmlKwordBlkPtr = const XmlKwordBlk*;
+using XmlKwordBlk = span<const XmlKword>;
 
 // clang-format off
-XmlKwordBlk xmkwl[] = {
+const XmlKword xmkwl[] = {
     {"<INSDSeq_locus>",                 1, INSDSEQ_LOCUS},
     {"<INSDSeq_length>",                2, INSDSEQ_LENGTH},
     {"<INSDSeq_strandedness>",          3, INSDSEQ_STRANDEDNESS},
@@ -90,26 +91,23 @@ XmlKwordBlk xmkwl[] = {
     {"<INSDSeq_feature-table>",        27, INSDSEQ_FEATURE_TABLE},
     {"<INSDSeq_sequence>",             28, INSDSEQ_SEQUENCE},
     {"<INSDSeq_contig>",               29, INSDSEQ_CONTIG},
-    {nullptr,                         -1, -1}
 };
 
-XmlKwordBlk xmfeatkwl[] = {
+const XmlKword xmfeatkwl[] = {
     {"<INSDFeature_key>",               1, INSDFEATURE_KEY},
     {"<INSDFeature_location>",          2, INSDFEATURE_LOCATION},
     {"<INSDFeature_intervals>",         3, INSDFEATURE_INTERVALS},
     {"<INSDFeature_quals>",             4, INSDFEATURE_QUALS},
-    {nullptr,                          -1, -1}
 };
 
-XmlKwordBlk xmintkwl[] = {
+const XmlKword xmintkwl[] = {
     {"<INSDInterval_from>",             1, INSDINTERVAL_FROM},
     {"<INSDInterval_to>",               2, INSDINTERVAL_TO},
     {"<INSDInterval_point>",            3, INSDINTERVAL_POINT},
     {"<INSDInterval_accession>",        4, INSDINTERVAL_ACCESSION},
-    {nullptr,                          -1, -1}
 };
 
-XmlKwordBlk xmrefkwl[] = {
+const XmlKword xmrefkwl[] = {
     {"<INSDReference_reference>",       1, INSDREFERENCE_REFERENCE},
     {"<INSDReference_position>",        2, INSDREFERENCE_POSITION},
     {"<INSDReference_authors>",         3, INSDREFERENCE_AUTHORS},
@@ -120,22 +118,19 @@ XmlKwordBlk xmrefkwl[] = {
     {"<INSDReference_medline>",         8, INSDREFERENCE_MEDLINE},
     {"<INSDReference_pubmed>",          9, INSDREFERENCE_PUBMED},
     {"<INSDReference_remark>",         10, INSDREFERENCE_REMARK},
-    {nullptr,                          -1, -1}
 };
 
-XmlKwordBlk xmqualkwl[] = {
+const XmlKword xmqualkwl[] = {
     {"<INSDQualifier_name>",            1, INSDQUALIFIER_NAME},
     {"<INSDQualifier_value>",           2, INSDQUALIFIER_VALUE},
-    {nullptr,                          -1, -1}
 };
 
-XmlKwordBlk xmxrefkwl[] = {
+const XmlKword xmxrefkwl[] = {
     {"<INSDXref_dbname>",               1, INSDXREF_DBNAME},
     {"<INSDXref_id>",                   2, INSDXREF_ID},
-    {nullptr,                          -1, -1}
 };
 
-XmlKwordBlk xmsubkwl[] = {
+const XmlKword xmsubkwl[] = {
     {"<INSDSecondary-accn>",            1, INSDSECONDARY_ACCN},
     {"<INSDKeyword>",                   1, INSDKEYWORD},
     {"<INSDFeature>",                   1, INSDFEATURE},
@@ -144,7 +139,6 @@ XmlKwordBlk xmsubkwl[] = {
     {"<INSDReference>",                 1, INSDREFERENCE},
     {"<INSDAuthor>",                    1, INSDAUTHOR},
     {"<INSDXref>",                      1, INSDXREF},
-    {nullptr,                          -1, -1}
 };
 // clang-format on
 
@@ -226,7 +220,6 @@ void s_SetPointer(Parser& config, size_t offset)
 /**********************************************************/
 static void XMLPerformIndex(ParserPtr pp)
 {
-    XmlKwordBlkPtr xkbp;
     TXmlIndexList::iterator xip;
     IndexblkPtr    ibp;
     char*          p;
@@ -308,10 +301,13 @@ static void XMLPerformIndex(ParserPtr pp)
             continue;
         }
         p = s + ((s[1] == '/') ? 2 : 1);
-        for (xkbp = xmkwl; xkbp->str; xkbp++)
-            if (StringEqu(p, xkbp->str + 1))
+        const XmlKword* xkbp = nullptr;
+        for (const auto& i : xmkwl)
+            if (StringEqu(p, i.str + 1)) {
+                xkbp = &i;
                 break;
-        if (! xkbp->str)
+            }
+        if (! xkbp)
             continue;
         if (ibp->xip.empty() || xip->tag != xkbp->tag) {
             xip        = ibp->xip.emplace_after(xip);
@@ -495,31 +491,29 @@ static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Par
 }
 
 /**********************************************************/
-static const char* XMLStringByTag(XmlKwordBlkPtr xkbp, Int4 tag)
+static const char* XMLStringByTag(XmlKwordBlk xkb, Int4 tag)
 {
-    for (; xkbp->str; xkbp++)
-        if (xkbp->tag == tag)
-            break;
-    if (! xkbp->str)
-        return ("???");
-    return (xkbp->str);
+    for (const auto& i : xkb)
+        if (i.tag == tag)
+            return i.str;
+    return "???";
 }
 
 /**********************************************************/
-static bool XMLTagCheck(const TXmlIndexList& xil, XmlKwordBlkPtr xkbp)
+static bool XMLTagCheck(const TXmlIndexList& xil, XmlKwordBlk xkb)
 {
     bool ret = true;
     for (auto txip = xil.begin(); txip != xil.end(); ++txip) {
         if (txip->start == 0) {
-            FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLMissingStartTag, "XML record's missing start tag for \"{}\" at line {}.", XMLStringByTag(xkbp, txip->tag), txip->end_line);
+            FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLMissingStartTag, "XML record's missing start tag for \"{}\" at line {}.", XMLStringByTag(xkb, txip->tag), txip->end_line);
             ret = false;
         }
         if (txip->end == 0) {
-            FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLMissingEndTag, "XML record's missing end tag for \"{}\" at line {}.", XMLStringByTag(xkbp, txip->tag), txip->start_line);
+            FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLMissingEndTag, "XML record's missing end tag for \"{}\" at line {}.", XMLStringByTag(xkb, txip->tag), txip->start_line);
             ret = false;
         }
         if (auto const nxt = next(txip); nxt != xil.end() && txip->order >= nxt->order) {
-            FtaErrPost(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "XML tag \"{}\" at line {} is out of order.", XMLStringByTag(xkbp, nxt->tag), (nxt->start > 0) ? nxt->start_line : nxt->end_line);
+            FtaErrPost(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "XML tag \"{}\" at line {} is out of order.", XMLStringByTag(xkb, nxt->tag), (nxt->start > 0) ? nxt->start_line : nxt->end_line);
             ret = false;
         }
     }
@@ -848,9 +842,8 @@ unique_ptr<string> XMLLoadEntry(ParserPtr pp, bool err)
 
 
 /**********************************************************/
-static bool XMLIndexSubTags(const char* entry, XmlIndex& xip, XmlKwordBlkPtr xkbp)
+static bool XMLIndexSubTags(const char* entry, XmlIndex& xip, XmlKwordBlk xkb)
 {
-    XmlKwordBlkPtr txkbp;
     auto           xipsub = xip.subtags.before_begin();
     const char*    c;
     char*          p;
@@ -894,10 +887,13 @@ static bool XMLIndexSubTags(const char* entry, XmlIndex& xip, XmlKwordBlkPtr xkb
             continue;
         s[++i] = '\0';
         p      = s + ((s[1] == '/') ? 2 : 1);
-        for (txkbp = xkbp; txkbp->str; txkbp++)
-            if (StringEqu(p, txkbp->str + 1))
+        const XmlKword* txkbp = nullptr;
+        for (const auto& i : xkb)
+            if (StringEqu(p, i.str + 1)) {
+                txkbp = &i;
                 break;
-        if (! txkbp->str)
+            }
+        if (! txkbp)
             continue;
         if (xip.subtags.empty() || xipsub->tag != txkbp->tag) {
             xipsub        = xip.subtags.emplace_after(xipsub);
@@ -931,7 +927,7 @@ static bool XMLIndexSubTags(const char* entry, XmlIndex& xip, XmlKwordBlkPtr xkb
         }
     }
 
-    if (! XMLTagCheck(xip.subtags, xkbp))
+    if (! XMLTagCheck(xip.subtags, xkb))
         return false;
 
     return true;
