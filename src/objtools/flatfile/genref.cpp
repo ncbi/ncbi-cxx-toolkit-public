@@ -1986,7 +1986,7 @@ static void GeneCheckForStrands(const TGeneList& gl)
 }
 
 /**********************************************************/
-static bool LocusTagCheck(TGeneList& gl, bool& resort)
+static bool LocusTagCheck(TGeneList& gl, bool& resort, ParserPtr pp)
 {
     TGeneList::iterator glpstart;
     TGeneList::iterator glpstop;
@@ -2026,11 +2026,15 @@ static bool LocusTagCheck(TGeneList& gl, bool& resort)
                 continue;
 
             for (glp = glpstart;; ++glp) {
-                FtaErrPost(SEV_REJECT, ERR_FEATURE_InconsistentLocusTagAndGene, "Inconsistent pairs /gene+/locus_tag are encountered: \"{}\"+\"{}\" : {} feature at {} : \"{}\"+\"{}\" : {} feature at {}. Entry dropped.", (glp->locus.empty()) ? "(NULL)" : glp->locus, (glp->locus_tag.empty()) ? "(NULL)" : glp->locus_tag, glp->fname, glp->location, (tglp->locus.empty()) ? "(NULL)" : tglp->locus, (tglp->locus_tag.empty()) ? "(NULL)" : tglp->locus_tag, tglp->fname, tglp->location);
+                if (pp->diff_lt && pp->source == Parser::ESource::EMBL) {
+                    FtaErrPost(SEV_ERROR, ERR_FEATURE_InconsistentLocusTagAndGene, "Inconsistent pairs /gene+/locus_tag are encountered: \"{}\"+\"{}\" : {} feature at {} : \"{}\"+\"{}\" : {} feature at {}.", (glp->locus.empty()) ? "(NULL)" : glp->locus, (glp->locus_tag.empty()) ? "(NULL)" : glp->locus_tag, glp->fname, glp->location, (tglp->locus.empty()) ? "(NULL)" : tglp->locus, (tglp->locus_tag.empty()) ? "(NULL)" : tglp->locus_tag, tglp->fname, tglp->location);
+                } else {
+                    FtaErrPost(SEV_REJECT, ERR_FEATURE_InconsistentLocusTagAndGene, "Inconsistent pairs /gene+/locus_tag are encountered: \"{}\"+\"{}\" : {} feature at {} : \"{}\"+\"{}\" : {} feature at {}. Entry dropped.", (glp->locus.empty()) ? "(NULL)" : glp->locus, (glp->locus_tag.empty()) ? "(NULL)" : glp->locus_tag, glp->fname, glp->location, (tglp->locus.empty()) ? "(NULL)" : tglp->locus, (tglp->locus_tag.empty()) ? "(NULL)" : tglp->locus_tag, tglp->fname, tglp->location);
+                    ret = false;
+                }
                 if (glp == glpstop)
                     break;
             }
-            ret = false;
         }
 
         if (! glpstart->locus.empty() && ! glpstart->locus_tag.empty() &&
@@ -2224,7 +2228,7 @@ static void CheckGene(CRef<CSeq_entry> entry, ParserPtr pp, GeneRefFeats& gene_r
         gnp->gl.sort(CompareGeneListName);
 
         resort = false;
-        if (LocusTagCheck(gnp->gl, resort) == false) {
+        if (LocusTagCheck(gnp->gl, resort, pp) == false) {
             ibp->drop = true;
             delete gnp;
             return;
