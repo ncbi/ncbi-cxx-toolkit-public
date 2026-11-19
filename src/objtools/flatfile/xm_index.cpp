@@ -387,9 +387,9 @@ static void XMLParseVersion(IndexblkPtr ibp, const string* line)
             return;
         }
     }
-    ibp->vernum = NStr::StringToInt(ver, NStr::fConvErr_NoThrow);
+    ibp->vernum = NStr::StringToNumeric<Int2>(ver, NStr::fConvErr_NoThrow);
     if (ibp->vernum < 1) {
-        FtaErrPost(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"{}\" from Accession.Version value \"{}.{}\" is not a positive integer. Entry dropped.", ibp->vernum, ibp->acnum, ibp->vernum);
+        FtaErrPost(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"{}\" from Accession.Version value \"{}\" is not a positive integer. Entry dropped.", ver, acc_ver);
         ibp->drop = true;
         return;
     }

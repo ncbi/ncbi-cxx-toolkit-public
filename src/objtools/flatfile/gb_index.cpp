@@ -124,7 +124,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, string_view line, Parser::ESo
 
     if (string_view(entry->acnum) != acc) {
         if (mode != Parser::EMode::Relaxed) {
-            FtaErrPost(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in VERSION and ACCESSION lines don't match: \"{}\" vs \"{}\".", line, entry->acnum);
+            FtaErrPost(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in VERSION and ACCESSION lines don't match: \"{}\" vs \"{}\".", acc, entry->acnum);
             entry->drop = true;
         }
         return;
@@ -132,7 +132,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, string_view line, Parser::ESo
 
     entry->vernum = fta_atoi<Int2>(ver);
     if (entry->vernum < 1) {
-        FtaErrPost(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"{}\" from Accession.Version value \"{}.{}\" is not a positive integer.", entry->vernum, entry->acnum, entry->vernum);
+        FtaErrPost(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"{}\" from Accession.Version value \"{}\" is not a positive integer.", ver, acc_ver);
         entry->drop = true;
         return;
     }
