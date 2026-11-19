@@ -238,7 +238,7 @@ static void AddToIndexBlk(const DataBlk& entry, IndexblkPtr ibp, Parser::EFormat
         eptr = offset + len - 1;
         while (div < eptr && *div == ' ')
             div++;
-        ibp->bases = fta_atoi(div);
+        ibp->bases = fta_atoi<size_t>(div);
         return;
     }
 
@@ -256,7 +256,7 @@ static void AddToIndexBlk(const DataBlk& entry, IndexblkPtr ibp, Parser::EFormat
         eptr--;
     while (isdigit(*eptr) != 0 && eptr > offset)
         eptr--;
-    ibp->bases = fta_atoi(eptr + 1);
+    ibp->bases = fta_atoi<size_t>(eptr + 1);
     while (*eptr == ' ' && eptr > offset)
         eptr--;
     if (*eptr == ';')

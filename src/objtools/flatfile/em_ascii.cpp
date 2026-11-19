@@ -1809,7 +1809,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     if (pp->medserver == 1) {
         for (const string& val : dr_pubmed) {
-            CRef<CPubdesc> pubdesc = EmblDescrRefsDr(pp, ENTREZ_ID_FROM(int, fta_atoi(val)));
+            CRef<CPubdesc> pubdesc = EmblDescrRefsDr(pp, ENTREZ_ID_FROM(int, fta_atoi<int>(val)));
             if (! pubdesc) {
                 FtaErrPost(SEV_ERROR, ERR_DRXREF_PMIDNotFoundInPubMed,
                            "PMID \"{}\" cited by DR-Line cross reference does not exist in PubMed.",

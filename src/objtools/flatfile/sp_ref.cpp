@@ -383,12 +383,12 @@ static void GetSprotIds(ParRefBlk* prbp, char* str)
 
         if (ConsumeStrI(q, "MEDLINE=")) {
             if (prbp->muid == 0)
-                prbp->muid = fta_atoi(q);
+                prbp->muid = fta_atoi<Int4>(q);
             else
                 muids = true;
         } else if (ConsumeStrI(q, "PUBMED=")) {
             if (prbp->pmid == ZERO_ENTREZ_ID)
-                prbp->pmid = ENTREZ_ID_FROM(int, fta_atoi(q));
+                prbp->pmid = ENTREZ_ID_FROM(int, fta_atoi<int>(q));
             else
                 pmids = true;
         } else if (ConsumeStrI(q, "DOI=")) {

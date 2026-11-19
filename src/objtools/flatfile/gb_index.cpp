@@ -130,7 +130,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, string_view line, Parser::ESo
         return;
     }
 
-    entry->vernum = fta_atoi(ver);
+    entry->vernum = fta_atoi<Int2>(ver);
     if (entry->vernum < 1) {
         FtaErrPost(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"{}\" from Accession.Version value \"{}.{}\" is not a positive integer.", entry->vernum, entry->acnum, entry->vernum);
         entry->drop = true;
@@ -215,10 +215,10 @@ static bool fta_check_mga_line(char* line, IndexblkPtr ibp)
 
     for (q = str + 5; *q == '0';)
         q++;
-    from = fta_atoi(q);
+    from = fta_atoi<Int4>(q);
     for (q = p + 5; *q == '0';)
         q++;
-    to = fta_atoi(q);
+    to = fta_atoi<Int4>(q);
 
     if (from > to) {
         MemFree(str);
