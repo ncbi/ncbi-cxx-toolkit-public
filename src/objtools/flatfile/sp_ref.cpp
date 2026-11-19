@@ -297,7 +297,7 @@ static void ParseRLDataSP(ParserPtr pp, ParRefBlkPtr prbp, char* str)
     if (NStr::StartsWith(str, "UNPUBLISHED"sv, NStr::eNocase)) {
         prbp->reftype = ParFlat_ReftypeUnpub;
         prbp->journal = str;
-    } else if (StringEquNI(str, "(IN)", 4)) {
+    } else if (StringEquNI(str, "(IN)")) {
         prbp->reftype = ParFlat_ReftypeBook;
         for (str += 4; *str == ' ';)
             str++;
@@ -382,24 +382,28 @@ static void GetSprotIds(ParRefBlk* prbp, char* str)
         if (p)
             *p = '\0';
 
-        if (StringEquNI(q, "MEDLINE=", 8)) {
+        if (StringEquNI(q, "MEDLINE=")) {
+            q += 8;
             if (prbp->muid == 0)
-                prbp->muid = fta_atoi(q + 8);
+                prbp->muid = fta_atoi(q);
             else
                 muids = true;
-        } else if (StringEquNI(q, "PUBMED=", 7)) {
+        } else if (StringEquNI(q, "PUBMED=")) {
+            q += 7;
             if (prbp->pmid == ZERO_ENTREZ_ID)
-                prbp->pmid = ENTREZ_ID_FROM(int, fta_atoi(q + 7));
+                prbp->pmid = ENTREZ_ID_FROM(int, fta_atoi(q));
             else
                 pmids = true;
-        } else if (StringEquNI(q, "DOI=", 4)) {
+        } else if (StringEquNI(q, "DOI=")) {
+            q += 4;
             if (prbp->doi.empty())
-                prbp->doi = (q + 4);
+                prbp->doi = q;
             else
                 dois = true;
-        } else if (StringEquNI(q, "AGRICOLA=", 9)) {
+        } else if (StringEquNI(q, "AGRICOLA=")) {
+            q += 9;
             if (prbp->agricola.empty())
-                prbp->agricola = (q + 9);
+                prbp->agricola = q;
             else
                 agricolas = true;
         }
@@ -470,8 +474,10 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, const DataBlk& dbp, Uint2 col_d
         case ParFlatSP_RM:
             break; /* old format for muid */
         case ParFlatSP_RX:
-            if (StringEquNI(str, "MEDLINE;", 8)) {
-                for (s = str + 8; *s == ' ';)
+            s = str;
+            if (StringEquNI(s, "MEDLINE;")) {
+                s += 8;
+                while (*s == ' ')
                     s++;
                 prbp->muid = (Int4)atol(s);
             } else
@@ -525,7 +531,7 @@ static CRef<CDate> get_s_date(const Char* str, bool bstring)
     Int2               year;
     Int2               month = 0;
     Int2               cal;
-    static const char* months[12] = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC" };
+    static string_view months[12] = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC" };
 
     for (s = str; *s != '\0' && *s != ')';)
         s++;
@@ -537,7 +543,7 @@ static CRef<CDate> get_s_date(const Char* str, bool bstring)
         ret->SetStr(string(str, s));
     else {
         for (cal = 0; cal < 12; cal++) {
-            if (StringEquNI(str, months[cal], 3)) {
+            if (StringEquNI(str, months[cal])) {
                 month = cal + 1;
                 break;
             }
