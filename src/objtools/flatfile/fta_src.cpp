@@ -1,5 +1,4 @@
-/* $Id$
- * ===========================================================================
+/* ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
@@ -110,6 +109,7 @@ struct SourceFeatBlk {
     CRef<COrgName>   orgname;
 
     bool full   = false;
+    bool toolong = false;
     bool focus  = false;
     bool tg     = false;
     bool lookup = false;
@@ -967,8 +967,12 @@ static Int4 CheckSourceFeatCoverage(SourceFeatBlkList& sfbl, MinMaxList& mml, si
                 }
             }
             if (min > 0 && max > 0) {
-                if (min == 1 && (size_t)max == len)
-                    tsfbp->full = true;
+                if (min == 1) {
+                    if ((size_t)max == len)
+                        tsfbp->full = true;
+                    else if ((size_t)max > len)
+                        tsfbp->toolong = true;
+                }
                 MinMax newval(tsfbp->name, min, max, tsfbp->skip);
                 for (auto tmmp = mml.begin();; ++tmmp) {
                     if (min < tmmp->min) {
@@ -1507,6 +1511,7 @@ static void SourceFeatDerive(SourceFeatBlkList& sfbl,
     sfb.namstr   = res->namstr ? StringSave(res->namstr) : nullptr;
     sfb.location = res->location ? StringSave(res->location) : nullptr;
     sfb.full     = res->full;
+    sfb.toolong  = res->toolong;
     sfb.focus    = res->focus;
     sfb.lookup   = res->lookup;
     sfb.genome   = res->genome;
@@ -1574,7 +1579,11 @@ static void PickTheDescrSource(SourceFeatBlkList& sfbl)
 
     if (next(sfbl.begin()) == sfbl.end()) {
         if (! sfbl.front().full) {
-            FtaErrPost(SEV_WARNING, ERR_SOURCE_SingleSourceTooShort, "Source feature does not span the entire length of the sequence.");
+            if (sfbl.front().toolong) {
+                FtaErrPost(SEV_REJECT, ERR_SOURCE_SingleSourceTooLong, "Source feature exceeds the entire length of the sequence.");
+            } else {
+                FtaErrPost(SEV_REJECT, ERR_SOURCE_SingleSourceTooShort, "Source feature does not span the entire length of the sequence.");
+            }
         }
         return;
     }

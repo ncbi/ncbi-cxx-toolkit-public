@@ -549,6 +549,7 @@
 #define ERR_SOURCE_SubmitterSeqidDropped               29,66
 #define ERR_SOURCE_SubmitterSeqidIgnored               29,67
 #define ERR_SOURCE_DescriptorDropped                   29,71
+#define ERR_SOURCE_SingleSourceTooLong                 29,72
 
 #define ERR_QSCORE                                     30,0
 #define ERR_QSCORE_MissingByteStore                    30,1
