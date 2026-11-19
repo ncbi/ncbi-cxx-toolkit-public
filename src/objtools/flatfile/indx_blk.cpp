@@ -379,9 +379,8 @@ bool SkipTitleBuf(FileBuf& fbuf, FinfoBlk& finfo, string_view keyword)
 static bool CheckLocus(const char* locus, Parser::ESource source)
 {
     const char* p = locus;
-    if (StringEquN(locus, "SEG_", 4) &&
-        (source == Parser::ESource::NCBI || source == Parser::ESource::DDBJ))
-        p += 4;
+    if (source == Parser::ESource::NCBI || source == Parser::ESource::DDBJ)
+        ConsumeStr(p, "SEG_");
     for (; *p != '\0'; p++) {
         if (IS_DIGIT(*p) || IS_UPPER(*p))
             continue;

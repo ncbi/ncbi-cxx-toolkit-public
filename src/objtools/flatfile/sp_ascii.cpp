@@ -2938,8 +2938,7 @@ static SPFeatInputList ParseSPFeat(const DataBlk& entry, size_t seqlen)
             while (*bptr == ' ')
                 bptr++;
 
-            if (StringEquN(bptr, "/note=\"", 7)) {
-                bptr += 7;
+            if (ConsumeStr(bptr, "/note=\"")) {
                 quotes = nullptr;
             } else if (StringEquN(bptr, "/evidence=\"", 11)) {
                 quotes = bptr + 10;
