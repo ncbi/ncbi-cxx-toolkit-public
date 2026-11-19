@@ -179,13 +179,12 @@ string CGffIdGenerator::GetNextGffExonId(
     const string& rnaId)
 //  -----------------------------------------------------------------------------
 {
-    auto idIt = mLastUsedExonIds.find(rnaId);
-    if (idIt == mLastUsedExonIds.end()) {
+    if (mLastUsedExonIds.contains(rnaId)) {
+        ++mLastUsedExonIds[rnaId];
+    } else {
         mLastUsedExonIds[rnaId] = 1;
     }
-    else {
-        mLastUsedExonIds[rnaId]++;
-    }
+
     string id("exon-");
     auto suffix = string("-") + NStr::NumericToString(mLastUsedExonIds[rnaId]);
     if (NStr::StartsWith(rnaId, "rna-")) {
@@ -196,6 +195,7 @@ string CGffIdGenerator::GetNextGffExonId(
     }
     return id;
 }
+
 
 //  -----------------------------------------------------------------------------
 string CGffIdGenerator::xGetIdForGene(
@@ -285,7 +285,7 @@ string CGffIdGenerator::xGetIdForCds(
             const auto& tag = pId->GetGeneral().GetTag();
             const string& tagStr = tag.IsStr() ? tag.GetStr() : to_string(tag.GetId());
             return (commonPrefix + tagStr);
-        } 
+        }
     }
 
     //try to inherit from gene

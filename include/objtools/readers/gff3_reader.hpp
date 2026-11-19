@@ -43,6 +43,7 @@ BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 class CGff3LocationMerger;
 class CCode_break;
+class CTrna_ext;
 
 //  ============================================================================
 class CGff3ReadRecord
@@ -161,6 +162,10 @@ private:
             ILineErrorListener* pListener);
 
     bool xUpdateAnnotCodeBreak(
+            const CGff2Record& record,
+            CSeq_annot& annot);
+
+    bool xUpdateAnnotAntiCodon(
             const CGff2Record& record,
             CSeq_annot& annot);
 
@@ -291,6 +296,7 @@ protected:
 
 private:
     map<string, CRef<CCode_break>> mIdToCodeBreakMap;
+    map<string, CRef<CSeq_loc>> mIdToAnticodonMap;
 };
 
 

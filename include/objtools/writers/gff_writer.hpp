@@ -40,6 +40,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
+class CTrna_ext;
 //  ============================================================================
 /// CWriterBase implementation that formats Genbank objects as plain GFF files.
 /// GFF (or GFF2) is a predecessor of GTF, GFF3, GVF and probably half a dozen
@@ -274,6 +275,11 @@ protected:
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
+
+    virtual void xAssignFeatureAttributeAntiCodon(
+        CGffFeatureRecord& trnaRecord,
+        const CTrna_ext& trnaExt) const;
+
     virtual bool xAssignFeatureAttributeProteinId(
         CGffFeatureRecord&,
         CGffFeatureContext&,

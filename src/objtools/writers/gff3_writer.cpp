@@ -81,12 +81,12 @@
 #include <objtools/writers/gff3_writer.hpp>
 #include <objtools/writers/genbank_id_resolve.hpp>
 
-#include <array>
 #include <utility>
 #include <sstream>
 #include <algorithm>
 #include <util/compile_time.hpp>
 #include "gff3_idgen.hpp"
+#include "insdc_aa_utils.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -1867,53 +1867,175 @@ bool CGff3Writer::xWriteFeatureTrna(
 //  ----------------------------------------------------------------------------
 {
 
-    CRef<CGff3FeatRecord> pRna( new CGff3FeatRecord() );
-    if (!xAssignFeature(*pRna, fc, mf)) {
+    CRef<CGff3FeatRecord> pRna(new CGff3FeatRecord());
+    if (! xAssignFeature(*pRna, fc, mf)) {
         return false;
     }
 
     const auto isTransSpliced = CWriteUtil::IsTransspliced(mf);
-    if(isTransSpliced){
-        if (!xWriteFeatureRecords(*pRna) ) {
+    if (isTransSpliced) {
+        if (! xWriteFeatureRecords(*pRna)) {
             return false;
         }
-    }
-    else {
-        if(!xWriteRecord(*pRna)){
+    } else {
+        if (! xWriteRecord(*pRna)) {
             return false;
         }
     }
     const auto rnaId = pRna->Id();
     const CSeq_loc& PackedInt = pRna->Location();
 
-    if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
-        const auto& sublocs = PackedInt.GetPacked_int().Get();
+    _ASSERT(PackedInt.IsPacked_int() && PackedInt.GetPacked_int().IsSet());
 
-        SExtensionInfo extensionInfo;
-        if (! isTransSpliced) {
-            sGetExtensionInfo(sublocs, fc, extensionInfo);
+    const auto& sublocs = PackedInt.GetPacked_int().Get();
+
+    SExtensionInfo extensionInfo;
+    if (! isTransSpliced) {
+        sGetExtensionInfo(sublocs, fc, extensionInfo);
+    }
+    int partNum = 1;
+    bool useParts = xIntervalsNeedPartNumbers(sublocs);
+    bool isInsdcMode = xIsInsdcMode();
+    for (const auto& pSubint : sublocs) {
+        auto pChild = Ref(new CGff3FeatRecord(*pRna));
+        s_DropPartialness(*pChild, isInsdcMode);
+        pChild->SetRecordId(m_pIdGenerator->GetNextGffExonId(rnaId));
+        pChild->SetType("exon");
+        pChild->SetLocation(*pSubint, isInsdcMode, extensionInfo.length, extensionInfo.cutoff);
+        pChild->SetParent(rnaId);
+        if (useParts) {
+            pChild->SetAttribute("part", NStr::NumericToString(partNum++));
         }
-        int partNum = 1;
-        bool useParts = xIntervalsNeedPartNumbers(sublocs);
-
-        bool isInsdcMode = xIsInsdcMode();
-        for (const auto& pSubint : sublocs) {
-            auto pChild = Ref(new CGff3FeatRecord(*pRna));
-            s_DropPartialness(*pChild, isInsdcMode);
-            pChild->SetRecordId(m_pIdGenerator->GetNextGffExonId(rnaId));
-            pChild->SetType("exon");
-            pChild->SetLocation(*pSubint, isInsdcMode, extensionInfo.length, extensionInfo.cutoff);
-            pChild->SetParent(rnaId);
-            if (useParts) {
-                pChild->SetAttribute("part", NStr::NumericToString(partNum++));
-            }
-            if ( ! xWriteRecord(*pChild ) ) {
-                return false;
-            }
+        if ( ! xWriteRecord(*pChild ) ) {
+            return false;
         }
     }
+
+    if (xIsInsdcMode()) {
+        xWriteFeatureAntiCodon(*pRna,
+            mf.GetData().GetRna().GetExt().GetTRNA(),
+            fc,
+            isTransSpliced);
+    }
+
     return true;
 }
+
+static ENa_strand s_GetStrand(const CSeq_interval& interval)
+{
+    return interval.IsSetStrand() ? interval.GetStrand() : eNa_strand_plus;
+}
+
+static void s_MergeIntervalsAbuttingOrigin(list<CRef<CSeq_interval>>& intervals, unsigned int seqLength)
+{
+    if (intervals.size() <= 1) {
+        return;
+    }
+    // ASN.1 intervals are in biological order,
+    // but 'from' and 'to' points are in sequence order.
+    // Therefore, on the minus strand, the interval with from==0
+    // appears before the interval with to==seqLength-1.
+
+    auto it = intervals.begin();
+    while (it != intervals.end()) {
+        auto& interval = **it;
+        auto strand = s_GetStrand(interval);
+        if (strand == eNa_strand_plus) {
+            if (interval.GetTo() == seqLength-1) {
+                if (++it != intervals.end()) {
+                    auto& nextInterval = **it;
+                    auto nextStrand = s_GetStrand(nextInterval);
+                    if ((nextStrand == strand) && (nextInterval.GetFrom() == 0)) {
+                        interval.SetTo() += (nextInterval.GetTo()+1);
+                        intervals.erase(it);
+                    }
+                }
+                return;
+            }
+        } else if (strand == eNa_strand_minus) {
+            if (interval.GetFrom() == 0) {
+                auto firstIt = it;
+                if (++it != intervals.end()) {
+                    auto& nextInterval = **it;
+                    auto nextStrand = s_GetStrand(nextInterval);
+                    if ((nextStrand == strand) && (nextInterval.GetTo() == seqLength-1)) {
+                        nextInterval.SetTo() += (interval.GetTo()+1);
+                        intervals.erase(firstIt);
+                    }
+                }
+                return;
+            }
+        }
+        ++it;
+    }
+}
+
+
+void CGff3Writer::xWriteFeatureAntiCodon(
+        const CGff3FeatRecord& trnaRecord,
+        const CTrna_ext& trnaExt,
+        const CGffFeatureContext& fc,
+        bool isTransSpliced
+    )
+{
+    if (! trnaExt.IsSetAnticodon()) {
+        return;
+    }
+
+    auto pLoc = Ref(new CSeq_loc());
+    pLoc->Assign(trnaExt.GetAnticodon());
+    CWriteUtil::ChangeToPackedInt(*pLoc);
+    auto& intervals = pLoc->SetPacked_int().Set();
+
+    if (auto bsh = fc.BioseqHandle(); bsh) {
+        if(CWriteUtil::IsSequenceCircular(bsh) && bsh.IsSetInst_Length()) {
+            s_MergeIntervalsAbuttingOrigin(intervals, bsh.GetInst_Length());
+        }
+    }
+
+    SExtensionInfo extensionInfo;
+    if (! isTransSpliced) {
+        sGetExtensionInfo(intervals, fc, extensionInfo);
+    }
+
+    auto aa = g_GetAminoAcid(trnaExt);
+
+    auto anticodonId = trnaRecord.Id();
+    _ASSERT(NStr::StartsWith(anticodonId, "rna-"));
+    anticodonId.replace(0, 3, "anticodon");
+
+    for (const auto& pSubInt : intervals) {
+        auto pRecord = Ref(new CGff3FeatRecord());
+        pRecord->SetSeqId(trnaRecord.StrSeqId());
+        pRecord->SetMethod(trnaRecord.StrMethod());
+        pRecord->SetRecordId(anticodonId);
+        pRecord->SetType("anticodon");
+        pRecord->SetParent(trnaRecord.Id());
+        auto strand = pSubInt->IsSetStrand() ? pSubInt->GetStrand() : eNa_strand_plus;
+        auto from = pSubInt->GetFrom();
+        auto to = pSubInt->GetTo();
+        if (from < extensionInfo.cutoff) {
+            from += extensionInfo.length;
+            to   += extensionInfo.length;
+        }
+        pRecord->SetEndpoints(from, to, strand);
+        if (aa) {
+            pRecord->SetAttribute("amino_acid", string(*aa));
+        }
+        xWriteRecord(*pRecord);
+    }
+}
+
+void CGff3Writer::xAssignFeatureAttributeAntiCodon(
+        CGffFeatureRecord& record,
+        const CTrna_ext& trna) const
+{
+    if (xIsInsdcMode()) {
+        return;
+    }
+    CGff2Writer::xAssignFeatureAttributeAntiCodon(record, trna);
+}
+
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureType(
@@ -2487,56 +2609,6 @@ bool CGff3Writer::xAssignFeatureAttributeCodeBreak(
 }
 
 
-static ENa_strand s_GetStrand(const CSeq_interval& interval)
-{
-    return interval.IsSetStrand() ? interval.GetStrand() : eNa_strand_plus;
-}
-
-static void s_MergeIntervalsAbuttingOrigin(list<CRef<CSeq_interval>>& intervals, unsigned int seqLength)
-{
-    if (intervals.size() <= 1) {
-        return;
-    }
-    // ASN.1 intervals are in biological order, 
-    // but 'from' and 'to' points are in sequence order.
-    // Therefore, on the minus strand, the interval with from==0 
-    // appears before the interval with to==seqLength-1.
-
-    auto it = intervals.begin();
-    while (it != intervals.end()) {
-        auto& interval = **it;
-        auto strand = s_GetStrand(interval);
-        if (strand == eNa_strand_plus) {
-            if (interval.GetTo() == seqLength-1) {
-                if (++it != intervals.end()) {
-                    auto& nextInterval = **it;
-                    auto nextStrand = s_GetStrand(nextInterval);
-                    if ((nextStrand == strand) && (nextInterval.GetFrom() == 0)) {
-                        interval.SetTo() += (nextInterval.GetTo()+1);
-                        intervals.erase(it);
-                    }
-                }
-                return;
-            }
-        } else if (strand == eNa_strand_minus) {
-            if (interval.GetFrom() == 0) {
-                auto firstIt = it;
-                if (++it != intervals.end()) {
-                    auto& nextInterval = **it;
-                    auto nextStrand = s_GetStrand(nextInterval);
-                    if ((nextStrand == strand) && (nextInterval.GetTo() == seqLength-1)) {
-                        nextInterval.SetTo() += (interval.GetTo()+1);
-                        intervals.erase(firstIt);
-                    }
-                }
-                return;
-            }
-        }
-        ++it;
-    }
-}
-
-
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeature(
     CGffFeatureRecord& record,
@@ -3005,38 +3077,7 @@ void CGff3Writer::xWriteFeatureCodeBreak(
         break;
     }
 
-    static constexpr array<string_view, 28> aaNames = {
-        "other", // "gap" doesn't apply here
-        "alanine",
-        "aspartic_acid or asparagine",
-        "cysteine",
-        "aspartic_acid",
-        "glutamic_acid",
-        "phenylalanine",
-        "glycine",
-        "histidine",
-        "isoleucine",
-        "lysine",
-        "leucine",
-        "methionine",
-        "asparagine",
-        "proline",
-        "glutamine",
-        "arginine",
-        "serine",
-        "threonine",
-        "valine",
-        "tryptophan",
-        "other",
-        "tyrosine",
-        "glutamic_acid or glutamine",
-        "selenocysteine",
-        "stop_codon",
-        "pyrrolysine",
-        "leucine or isoleucine"
-    };
-
-    string_view aa = cmp_less(aaIndex, aaNames.size()) ? aaNames[aaIndex] : "other"sv;
+    string_view aa = g_GetAminoAcid(aaIndex);
 
     bool isStopCodon = (aa == "stop_codon"sv);
     string recordType = isStopCodon ? "stop_codon" : "recoded_codon";

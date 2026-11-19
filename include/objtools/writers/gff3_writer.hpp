@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 class CGffIdGenerator;
-
+class CTrna_ext;
 //  ============================================================================
 class CGff3SourceRecord
     //  ============================================================================
@@ -509,7 +509,7 @@ private:
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;
-    
+
     bool xAssignFeatureAttributeCodeBreak(
         CGffFeatureRecord&,
         CGffFeatureContext&,
@@ -530,6 +530,16 @@ private:
             const CCode_break& codeBreak,
             const CGffFeatureContext& fc,
             bool isTransSpliced);
+
+    void xWriteFeatureAntiCodon(
+            const CGff3FeatRecord& trnaRecord,
+            const CTrna_ext& trnaExt,
+            const CGffFeatureContext& fc,
+            bool isTransSpliced);
+
+    void xAssignFeatureAttributeAntiCodon(
+            CGffFeatureRecord& trnaRecord,
+            const CTrna_ext& trnaExt) const override;
 
     void xWriteCdsProduct(
         CGffFeatureContext& fc,

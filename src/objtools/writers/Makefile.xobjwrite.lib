@@ -8,7 +8,7 @@ SRC = agp_write \
       gff_base_record gff_feature_record \
       gff_writer gff2_write_data \
       gff3_writer gff3_alignment_data gff3_idgen \
-      gff3flybase_writer \
+      gff3flybase_writer insdc_aa_utils \
       gtf_writer gtf_write_data exon_number_assignment \
       gvf_writer gvf_write_data \
       wiggle_writer \

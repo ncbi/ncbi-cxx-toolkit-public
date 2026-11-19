@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(test_insdc_aa_utils)
+  NCBI_sources(test_insdc_aa_utils)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xobjwrite)
+  NCBI_add_test()
+  NCBI_project_watchers(foleyjp)
+NCBI_end_app()
+

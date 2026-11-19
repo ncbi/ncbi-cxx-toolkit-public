@@ -62,8 +62,8 @@ USING_SCOPE(objects);
 
 
 static auto s_GffIdFormatter = [](const CSeq_id& id) {
-    const auto label_type = id.IsGeneral() ? 
-        CSeq_id::eFasta : 
+    const auto label_type = id.IsGeneral() ?
+        CSeq_id::eFasta :
         CSeq_id::eContent;
 
     string label;
@@ -91,7 +91,7 @@ static void s_SetAttributes(const string& name, const list<string>& vals, CGffFe
         return;
     }
     auto it = vals.begin();
-    record.SetAttribute(name, *it); // SetAttribute() clears any existing value. 
+    record.SetAttribute(name, *it); // SetAttribute() clears any existing value.
     while (it != vals.end()) {      // There *shouldn't* be an existing value, but can't guarantee that in this legacy code.
         record.AddAttribute(name, *it);
         ++it;
@@ -845,6 +845,17 @@ bool CGff2Writer::xAssignFeatureAttributeProteinId(
     return true;
 }
 
+void CGff2Writer::xAssignFeatureAttributeAntiCodon(
+        CGffFeatureRecord& record,
+        const CTrna_ext& trna) const
+{
+    string anticodon;
+    if (CWriteUtil::GetTrnaAntiCodon(trna, anticodon)) {
+        record.SetAttribute("anticodon", anticodon);
+    }
+}
+
+
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureAttributeProduct(
     CGffFeatureRecord& record,
@@ -906,13 +917,11 @@ bool CGff2Writer::xAssignFeatureAttributeProduct(
                     trimmed_trna = sequence::CFeatTrim::Apply(rna.GetExt().GetTRNA(), display_range);
                 const CTrna_ext& trna = display_range.IsWhole() ? rna.GetExt().GetTRNA() : *trimmed_trna;
 
-                string anticodon;
-                if (CWriteUtil::GetTrnaAntiCodon(trna, anticodon)) {
-                    record.SetAttribute("anticodon", anticodon);
-                }
+                xAssignFeatureAttributeAntiCodon(record, trna);
+
                 string codons;
                 if (CWriteUtil::GetTrnaCodons(trna, codons)) {
-                    record.SetAttribute("codons", codons);
+                    record.SetAttribute("codon_recognized", codons);
                 }
                 string aa;
                 if (CWriteUtil::GetTrnaProductName(trna, aa)) {

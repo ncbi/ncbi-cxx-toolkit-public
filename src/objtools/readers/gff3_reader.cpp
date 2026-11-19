@@ -54,6 +54,7 @@
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 
@@ -68,6 +69,7 @@
 #include <util/regexp/ctre/ctre.hpp>
 #include "gff3_align_utils.hpp"
 #include <util/compile_time.hpp>
+#include <optional>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -530,6 +532,9 @@ bool CGff3Reader::xUpdateAnnotFeature(
     if (NStr::EndsWith(recType, "rna") || NStr::EndsWith(recType, "_gene_segment")) {
         return xUpdateAnnotRna(gffRecord, annot, pEC);
     }
+    if (recType == "anticodon") {
+        return xUpdateAnnotAntiCodon(gffRecord, annot);
+    }
     if (recType == "region") {
         return xUpdateAnnotRegion(gffRecord, annot, pEC);
     }
@@ -970,30 +975,8 @@ bool CGff3Reader::xUpdateAnnotGeneric(
 }
 
 
-
-bool CGff3Reader::xUpdateAnnotCodeBreak(
-        const CGff2Record& record,
-        CSeq_annot& annot)
+static optional<char> s_GetNcbieaaCode(const string& aaName)
 {
-    string cdsParent;
-    if (! record.GetAttribute("Parent", cdsParent)) {
-        CReaderMessage error(
-            eDiag_Error,
-            m_uLineNumber,
-            "Bad data line: Unassigned code break.");
-        throw error;
-    }
-
-    auto pIt = m_MapIdToFeature.find(cdsParent);
-    if (pIt == m_MapIdToFeature.end()) {
-        CReaderMessage error(
-            eDiag_Error,
-            m_uLineNumber,
-            "Bad data line: Code break assigned to missing feature.");
-        throw error;
-    }
-
-
     MAKE_CONST_MAP(aaMap, ct::tagStrNocase, char,
     {
         {"alanine",                     'A'},
@@ -1025,6 +1008,98 @@ bool CGff3Reader::xUpdateAnnotCodeBreak(
         {"stop_codon",                  '*'}
     });
 
+    if (auto it = aaMap.find(aaName); it != aaMap.end()) {
+        return it->second;
+    } else {
+        return nullopt;
+    }
+}
+
+
+bool CGff3Reader::xUpdateAnnotAntiCodon(
+        const CGff2Record& record,
+        CSeq_annot& annot)
+{
+    string trnaParent;
+    if (! record.GetAttribute("Parent", trnaParent)) {
+        CReaderMessage error(
+            eDiag_Error,
+            m_uLineNumber,
+            "Bad data line: Unassigned anticodon.");
+        throw error;
+    }
+
+    auto pIt = m_MapIdToFeature.find(trnaParent);
+    if (pIt == m_MapIdToFeature.end()) {
+        CReaderMessage error(
+            eDiag_Error,
+            m_uLineNumber,
+            "Bad data line: Anticodon assigned to missing feature.");
+        throw error;
+    }
+
+    auto pTrna = pIt->second;
+    if (! pTrna->IsSetData() || (pTrna->GetData().GetSubtype() != CSeqFeatData::eSubtype_tRNA)) {
+        CReaderMessage error(
+                eDiag_Error,
+                m_uLineNumber,
+                "Bad data line: Anticodon assigned to invalid feature.");
+        throw error;
+    }
+
+    auto& trnaExt = pTrna->SetData().SetRna().SetExt().SetTRNA();
+    if (! trnaExt.IsSetAa()) {
+        string aa;
+        if (record.GetAttribute("amino_acid", aa)) {
+            if (auto aaCode = s_GetNcbieaaCode(aa); aaCode) {
+                trnaExt.SetAa().SetNcbieaa(*aaCode);
+            }
+        }
+    }
+
+    string id;
+    record.GetAttribute("ID", id);
+    if (! mIdToAnticodonMap.contains(id)) {
+        CRef<CSeq_loc> pLoc(&trnaExt.SetAnticodon());
+        mIdToAnticodonMap[id] = pLoc;
+    }
+
+    return true;
+}
+
+
+bool CGff3Reader::xUpdateAnnotCodeBreak(
+        const CGff2Record& record,
+        CSeq_annot& annot)
+{
+    string cdsParent;
+    if (! record.GetAttribute("Parent", cdsParent)) {
+        CReaderMessage error(
+            eDiag_Error,
+            m_uLineNumber,
+            "Bad data line: Unassigned code break.");
+        throw error;
+    }
+
+    auto pIt = m_MapIdToFeature.find(cdsParent);
+    if (pIt == m_MapIdToFeature.end()) {
+        CReaderMessage error(
+            eDiag_Error,
+            m_uLineNumber,
+            "Bad data line: Code break assigned to missing feature.");
+        throw error;
+    }
+
+    auto pCds = pIt->second;
+    if (! pCds->IsSetData() || ! pCds->GetData().IsCdregion()) {
+        CReaderMessage error(
+                eDiag_Error,
+                m_uLineNumber,
+                "Bad data line: Code break assigned to invalid feature.");
+        throw error;
+    }
+
+
     string id;
     record.GetAttribute("ID", id);
     auto it = mIdToCodeBreakMap.find(id);
@@ -1036,8 +1111,8 @@ bool CGff3Reader::xUpdateAnnotCodeBreak(
             string aa;
             aacode = 'X';
             if (record.GetAttribute("codon_redefined", aa)) {
-                if (auto aaIt = aaMap.find(aa); aaIt != aaMap.end()) {
-                    aacode = aaIt->second;
+                if (auto aaCode = s_GetNcbieaaCode(aa); aaCode) {
+                    aacode = *aaCode;
                 }
             }
         } else {
@@ -1046,7 +1121,6 @@ bool CGff3Reader::xUpdateAnnotCodeBreak(
         pCodeBreak->SetAa().SetNcbieaa(aacode);
         mIdToCodeBreakMap[id] = pCodeBreak;
 
-        auto pCds = pIt->second;
         pCds->SetData().SetCdregion().SetCode_break().push_back(pCodeBreak);
 
         string note; // Add codon note to parent CDS
@@ -1407,6 +1481,11 @@ void CGff3Reader::xPostProcessAnnot(
                 CCdregion::EFrame frame;
                 mpLocations->MergeLocation(pLoc, frame, locs);
                 itCodeBreak->second->SetLoc().Assign(*pLoc);
+            } else if (auto itAnticodon = mIdToAnticodonMap.find(id); itAnticodon != mIdToAnticodonMap.end()) {
+                auto pLoc = Ref(new CSeq_loc());
+                CCdregion::EFrame frame;
+                mpLocations->MergeLocation(pLoc, frame, locs);
+                itAnticodon->second->Assign(*pLoc);
             }
             continue;
         }

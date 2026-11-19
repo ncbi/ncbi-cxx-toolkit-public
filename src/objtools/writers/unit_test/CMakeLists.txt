@@ -5,6 +5,7 @@ NCBI_set_test_resources(ServiceMapper)
 NCBI_add_app(
   unit_test_gtfwriter
   unit_test_gff3writer
+  test_insdc_aa_utils
   unit_test_gff3flybasewriter
   unit_test_vcfwriter
   unit_test_wigwriter
