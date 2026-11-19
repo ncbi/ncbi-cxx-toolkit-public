@@ -356,41 +356,43 @@ static void XMLParseVersion(IndexblkPtr ibp, const string* line)
         return;
     }
 
-    for (char c : *line) {
+    string_view acc_ver(*line);
+    for (char c : acc_ver) {
         if (c == ' ' || c == '\t') {
-            FtaErrPost(SEV_FATAL, ERR_VERSION_BadVersionLine, "Incorrect <INSDSeq_accession-version> line: \"{}\". Entry dropped.", *line);
+            FtaErrPost(SEV_FATAL, ERR_VERSION_BadVersionLine, "Incorrect <INSDSeq_accession-version> line: \"{}\". Entry dropped.", acc_ver);
             ibp->drop = true;
             return;
         }
     }
 
-    auto q = line->rfind('.');
-    if (q == string::npos) {
-        FtaErrPost(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing version number in <INSDSeq_accession-version> line: \"{}\". Entry dropped.", *line);
+    auto dot = acc_ver.rfind('.');
+    if (dot == string_view::npos) {
+        FtaErrPost(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing version number in <INSDSeq_accession-version> line: \"{}\". Entry dropped.", acc_ver);
         ibp->drop = true;
         return;
     }
-    if (ibp->acnum != line->substr(0, q)) {
-        FtaErrPost(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in <INSDSeq_accession-version> and <INSDSeq_primary-accession> lines don't match: \"{}\" vs \"{}\". Entry dropped.", *line, ibp->acnum);
-        ibp->drop = true;
-        return;
-    }
-    q++;
 
-    for (auto p = line->begin() + q; p < line->end(); ++p) {
-        char ch = *p;
-        if (! (ch >= '0' && ch <= '9')) {
-            FtaErrPost(SEV_FATAL, ERR_VERSION_NonDigitVerNum, "Incorrect VERSION number in <INSDSeq_accession-version> line: \"{}\". Entry dropped.", *line);
+    string_view acc(acc_ver.substr(0, dot));
+    if (string_view(ibp->acnum) != acc) {
+        FtaErrPost(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in <INSDSeq_accession-version> and <INSDSeq_primary-accession> lines don't match: \"{}\" vs \"{}\". Entry dropped.", acc_ver, ibp->acnum);
+        ibp->drop = true;
+        return;
+    }
+
+    string_view ver(acc_ver.substr(dot + 1));
+    for (char c : ver) {
+        if (! IS_DIGIT(c)) {
+            FtaErrPost(SEV_FATAL, ERR_VERSION_NonDigitVerNum, "Incorrect VERSION number in <INSDSeq_accession-version> line: \"{}\". Entry dropped.", acc_ver);
             ibp->drop = true;
             return;
         }
     }
-    ibp->vernum = NStr::StringToInt(line->substr(q), NStr::fConvErr_NoThrow);
-    if (ibp->vernum > 0)
+    ibp->vernum = NStr::StringToInt(ver, NStr::fConvErr_NoThrow);
+    if (ibp->vernum < 1) {
+        FtaErrPost(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"{}\" from Accession.Version value \"{}.{}\" is not a positive integer. Entry dropped.", ibp->vernum, ibp->acnum, ibp->vernum);
+        ibp->drop = true;
         return;
-
-    FtaErrPost(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"{}\" from Accession.Version value \"{}.{}\" is not a positive integer. Entry dropped.", ibp->vernum, ibp->acnum, ibp->vernum);
-    ibp->drop = true;
+    }
 }
 
 /**********************************************************/
