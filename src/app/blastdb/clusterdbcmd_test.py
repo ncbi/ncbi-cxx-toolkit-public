@@ -40,6 +40,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import shutil
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import clusterdbcmd_test_data as test_data  # noqa: E402
@@ -57,7 +58,7 @@ class TestClusterDBCmd(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.tmpdir = tempfile.TemporaryDirectory(prefix="clusterdbcmd_test.")
-        cls.workdir = cls.tmpdir.name
+        cls.workdir = cls._cygwinToWindowsPath(cls.tmpdir.name)
         cls.cluster_db = os.path.join(cls.workdir, "cluster_test.sqlite3")
         tax_db = os.path.join(cls.workdir, "taxonomy4blast.sqlite3")
         test_data.create_cluster_db(cls.cluster_db)
@@ -69,6 +70,17 @@ class TestClusterDBCmd(unittest.TestCase):
         cls.env = dict(os.environ)
         cls.env["BLASTDB"] = cls.workdir
         cls.env["PATH"] = os.getcwd() + os.pathsep + cls.env.get("PATH", "")
+        exe = shutil.which("clusterdbcmd", path=cls.env["PATH"])
+
+    @staticmethod
+    def _cygwinToWindowsPath(input_path: str) -> str:
+        cygpath = shutil.which("cygpath")
+        if not cygpath:
+            return input_path 
+        rv = subprocess.run(
+        [cygpath, "-w", input_path], capture_output=True, text=True, check=True
+        )
+        return rv.stdout.strip()
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -239,7 +251,6 @@ class TestClusterDBCmd(unittest.TestCase):
         self._check(1, "",
                     "-db", os.path.join(self.workdir, "does_not_exist.sqlite3"),
                     "-representative", "REPR_A")
-
 
 if __name__ == "__main__":
     unittest.main()
