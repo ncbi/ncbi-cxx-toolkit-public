@@ -41,9 +41,11 @@ BEGIN_SCOPE(objects)
 
 class CTrna_ext;
 
-std::string_view NCBI_XOBJWRITE_EXPORT g_GetAminoAcid(int aaIndex);
+NCBI_XOBJWRITE_EXPORT 
+std::string_view g_GetAminoAcid(int aaIndex);
 
-std::optional<std::string_view> NCBI_XOBJWRITE_EXPORT g_GetAminoAcid(const CTrna_ext& trnaExt);
+NCBI_XOBJWRITE_EXPORT 
+std::optional<std::string_view> g_GetAminoAcid(const CTrna_ext& trnaExt);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
