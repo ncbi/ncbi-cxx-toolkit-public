@@ -626,11 +626,11 @@ string GetTheCurrentToken(char** ptr)
  *   a pointer points first occurrence The character.
  *
  **********************************************************/
-char* SrchTheChar(string_view sv, Char letter)
+char* SrchTheChar(const char* bptr, const char* eptr, Char letter)
 {
-    auto i = sv.find(letter);
-    if (i != string_view::npos)
-        return const_cast<char*>(sv.data() + i);
+    auto i = std::find(bptr, eptr, letter);
+    if (i != eptr)
+        return const_cast<char*>(i);
     else
         return nullptr;
 }
