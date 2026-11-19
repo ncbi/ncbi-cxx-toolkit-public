@@ -209,7 +209,7 @@ const char* leave_imp_feat[] = {
     "satellite",
 };
 
-Int2 leave_rna_feat[] = {
+const CRNA_ref::EType leave_rna_feat[] = {
     CRNA_ref::eType_tRNA,
     CRNA_ref::eType_rRNA,
     CRNA_ref::eType_snRNA,
@@ -1544,7 +1544,7 @@ static bool fta_rnas_cds_feat(const CSeq_feat& feat)
         return false;
 
     const CRNA_ref& rna_ref = feat.GetData().GetRna();
-    if (rna_ref.IsSetType() && rna_ref.GetType() > 1 && rna_ref.GetType() < 5) /* mRNA, tRNA or rRNA */
+    if (rna_ref.IsSetType() && rna_ref.GetType() >= CRNA_ref::eType_mRNA && rna_ref.GetType() <= CRNA_ref::eType_rRNA) /* mRNA, tRNA or rRNA */
         return true;
 
     return false;
@@ -1586,28 +1586,28 @@ static bool GetFeatNameAndLoc(Gene* glp, const CSeq_feat& feat, GeneNodePtr gnp)
 
             if (rna_ref.IsSetType()) {
                 switch (rna_ref.GetType()) {
-                case 1:
+                case CRNA_ref::eType_premsg:
                     p = "precursor_RNA";
                     break;
-                case 2:
+                case CRNA_ref::eType_mRNA:
                     p = "mRNA";
                     break;
-                case 3:
+                case CRNA_ref::eType_tRNA:
                     p = "tRNA";
                     break;
-                case 4:
+                case CRNA_ref::eType_rRNA:
                     p = "rRNA";
                     break;
-                case 5:
+                case CRNA_ref::eType_snRNA:
                     p = "snRNA";
                     break;
-                case 6:
+                case CRNA_ref::eType_scRNA:
                     p = "scRNA";
                     break;
-                case 7:
+                case CRNA_ref::eType_snoRNA:
                     p = "snoRNA";
                     break;
-                case 255:
+                case CRNA_ref::eType_other:
                     p = "misc_RNA";
                     break;
                 default:
