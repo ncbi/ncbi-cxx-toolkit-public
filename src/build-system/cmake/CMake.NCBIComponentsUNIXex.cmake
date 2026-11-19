@@ -525,7 +525,7 @@ if(NOT NCBI_COMPONENT_VDB_DISABLED AND NOT NCBI_COMPONENT_VDB_FOUND)
         )
         if(NCBI_PTB_COMPONENT_StaticComponents
            AND NCBI_COMPONENT_ZSTD_FOUND)
-            target_link_libs(ncbi-vdb::ncbi-vdb zstd::zstd)
+            target_link_libraries(ncbi-vdb::ncbi-vdb zstd::zstd)
         endif()
         set(HAVE_NCBI_VDB 1)
     endif()
