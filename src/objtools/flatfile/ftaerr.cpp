@@ -291,6 +291,9 @@ void FtaInstallPrefix(int prefix, string_view name, string_view location)
     if (name.empty())
         return;
 
+    if (! bmp)
+        FtaErrInit();
+
     if ((prefix & PREFIX_ACCESSION) == PREFIX_ACCESSION) {
         bmp->prefix_accession = name;
     }
@@ -309,6 +312,9 @@ void FtaInstallPrefix(int prefix, string_view name, string_view location)
 /**********************************************************/
 void FtaDeletePrefix(int prefix)
 {
+    if (! bmp)
+        return;
+
     if ((prefix & PREFIX_ACCESSION) == PREFIX_ACCESSION) {
         bmp->prefix_accession.clear();
     }
