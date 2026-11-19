@@ -770,7 +770,7 @@ CPSGSCounters::~CPSGSCounters()
 }
 
 
-void CPSGSCounters::Increment(IPSGS_Processor *  processor,
+void CPSGSCounters::Increment(const IPSGS_Processor *  processor,
                               EPSGS_CounterType  counter)
 {
     if (counter >= ePSGS_LastCounter) {

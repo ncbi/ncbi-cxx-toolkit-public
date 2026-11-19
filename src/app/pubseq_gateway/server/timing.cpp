@@ -391,11 +391,6 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                 new CIPGResolveRetrieveTiming(min_stat_value, max_stat_value,
                                               n_bins, scale_type, reset_to_default)));
 
-        m_VDBOpenTiming.push_back(
-            unique_ptr<CVDBOpenTiming>(
-                new CVDBOpenTiming(min_stat_value, max_stat_value,
-                                   n_bins, scale_type, reset_to_default)));
-
         m_SNPPTISLookupTiming.push_back(
             unique_ptr<CSNPPTISLookupTiming>(
                 new CSNPPTISLookupTiming(min_stat_value, max_stat_value,
@@ -679,18 +674,6 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                 "when nothing was found"
                )
         },
-        { "VDBOpenSuccess",
-          SInfo(m_VDBOpenTiming[0].get(),
-                "VDB opening success",
-                "The timing of the successful VDB opening"
-               )
-        },
-        { "VDBOpenFailed",
-          SInfo(m_VDBOpenTiming[1].get(),
-                "VDB opening failure",
-                "The timing of the failed VDB opening"
-               )
-        },
         { "SNPPTISLookupFound",
           SInfo(m_SNPPTISLookupTiming[0].get(),
                 "SNP PTIS lookup found",
@@ -762,10 +745,6 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
     string      proc_group_names[m_ProcGroupToIndex.size()];
     for (const auto &  item : m_ProcGroupToIndex) {
         proc_group_names[item.second] = item.first;
-
-        // Prepare individual processor thresholds for the processor indexes
-        // for faster access
-        m_ProcIndexToLogTimingThreshold[item.second] = x_GetLogThreshold(item.first);
     }
 
     for (size_t  req_index = 0;
@@ -917,6 +896,38 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                                proc_group + " TSE chunk not found",
                                "The timing of a TSE chunk retrieval "
                                "when nothing was found (by " + proc_group + ")");
+
+        m_VDBOpenTiming.push_back(vector<unique_ptr<CVDBOpenTiming>>());
+        m_VDBOpenTiming.back().push_back(
+            unique_ptr<CVDBOpenTiming>(
+                new CVDBOpenTiming(min_stat_value, max_stat_value,
+                                   n_bins, scale_type, reset_to_default)));
+        id = proc_group + "VDBOpenSuccess";
+
+        // VDB Open timing is only for WGS and SNP processors
+        if (proc_group == "WGS" || proc_group == "SNP") {
+            m_NamesMap[id] = SInfo(m_VDBOpenTiming.back().back().get(),
+                                   proc_group + " VDB open success",
+                                   "The timing of the successful VDB open (by " + proc_group + ")");
+        } else {
+            m_NamesMap[id] = SInfo(nullptr, "uninitialized", "uninitialized");
+        }
+
+        m_VDBOpenTiming.back().push_back(
+            unique_ptr<CVDBOpenTiming>(
+                new CVDBOpenTiming(min_stat_value, max_stat_value,
+                                   n_bins, scale_type, reset_to_default)));
+        id = proc_group + "VDBOpenFailure";
+
+        // VDB Open timing is only for WGS and SNP processors
+        if (proc_group == "WGS" || proc_group == "SNP") {
+            m_NamesMap[id] = SInfo(m_VDBOpenTiming.back().back().get(),
+                                   proc_group + " VDB open failure",
+                                   "The timing of VDB open failure "
+                                   "(by " + proc_group + ")");
+        } else {
+            m_NamesMap[id] = SInfo(nullptr, "uninitialized", "uninitialized");
+        }
 
         m_NAResolveTiming.push_back(vector<unique_ptr<CNAResolveTiming>>());
         m_NAResolveTiming.back().push_back(
@@ -1078,10 +1089,10 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
             max_index = proc_index;
         }
     }
-    // Allocate space for matrix processor group <-> request type
+    // Allocate space for exec too long matrix processor group <-> request type
     m_ExecTooLongThresholdMks.assign(max_index + 1, RequestThresholds{});
 
-    // Populate the thresholds
+    // Populate the exec too long thresholds
     for (const auto& [proc_name, proc_index] : m_ProcGroupToIndex) {
         for (size_t  req_index = 0;
              req_index < static_cast<size_t>(CPSGS_Request::ePSGS_UnknownRequest);
@@ -1092,6 +1103,90 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
 
         }
     }
+
+    // Save op too long thresholds for fast access
+    m_LookupLmdbSi2csiOpTooLong[0] = app->Settings().GetTooLongValueMks("CASSANDRA", "lookup_lmdb_si2csi_found_op_too_long_ms");
+    m_LookupLmdbSi2csiOpTooLong[1] = app->Settings().GetTooLongValueMks("CASSANDRA", "lookup_lmdb_si2csi_not_found_op_too_long_ms");
+    m_LookupLmdbBioseqInfoOpTooLong[0] = app->Settings().GetTooLongValueMks("CASSANDRA", "lookup_lmdb_bioseq_info_found_op_too_long_ms");
+    m_LookupLmdbBioseqInfoOpTooLong[1] = app->Settings().GetTooLongValueMks("CASSANDRA", "lookup_lmdb_bioseq_info_not_found_op_too_long_ms");
+    m_LookupLmdbBlobPropOpTooLong[0] = app->Settings().GetTooLongValueMks("CASSANDRA", "lookup_lmdb_blob_prop_found_op_too_long_ms");
+    m_LookupLmdbBlobPropOpTooLong[1] = app->Settings().GetTooLongValueMks("CASSANDRA", "lookup_lmdb_blob_prop_not_found_op_too_long_ms");
+    m_LookupCassSi2csiOpTooLong[0] = app->Settings().GetTooLongValueMks("CASSANDRA", "lookup_cass_si2csi_found_op_too_long_ms");
+    m_LookupCassSi2csiOpTooLong[1] = app->Settings().GetTooLongValueMks("CASSANDRA", "lookup_cass_si2csi_not_found_op_too_long_ms");
+    m_LookupCassBioseqInfoOpTooLong[0] = app->Settings().GetTooLongValueMks("CASSANDRA", "lookup_cass_bioseq_info_found_op_too_long_ms");
+    m_LookupCassBioseqInfoOpTooLong[1] = app->Settings().GetTooLongValueMks("CASSANDRA", "lookup_cass_bioseq_info_not_found_op_too_long_ms");
+    m_LookupCassBlobPropOpTooLong[0] = app->Settings().GetTooLongValueMks("CASSANDRA", "lookup_cass_blob_prop_found_op_too_long_ms");
+    m_LookupCassBlobPropOpTooLong[1] = app->Settings().GetTooLongValueMks("CASSANDRA", "lookup_cass_blob_prop_not_found_op_too_long_ms");
+    m_MyNCBIRetrieveOpTooLong[0] = app->Settings().GetTooLongValueMks("CASSANDRA", "myncbi_retrieve_found_op_too_long_ms");
+    m_MyNCBIRetrieveOpTooLong[1] = app->Settings().GetTooLongValueMks("CASSANDRA", "myncbi_retrieve_not_found_op_too_long_ms");
+    m_MyNCBIRetrieveErrorOpTooLong = app->Settings().GetTooLongValueMks("CASSANDRA", "myncbi_retrieve_error_op_too_long_ms");
+    m_ResolutionLmdbOpTooLong[0] = app->Settings().GetTooLongValueMks("CASSANDRA", "resolution_lmdb_found_op_too_long_ms");
+    m_ResolutionLmdbOpTooLong[1] = app->Settings().GetTooLongValueMks("CASSANDRA", "resolution_lmdb_not_found_op_too_long_ms");
+    m_ResolutionCassOpTooLong[0] = app->Settings().GetTooLongValueMks("CASSANDRA", "resolution_cass_found_op_too_long_ms");
+    m_ResolutionCassOpTooLong[1] = app->Settings().GetTooLongValueMks("CASSANDRA", "resolution_cass_not_found_op_too_long_ms");
+    m_SplitHistoryOpTooLong[0] = app->Settings().GetTooLongValueMks("CASSANDRA", "split_history_retrieve_found_op_too_long_ms");
+    m_SplitHistoryOpTooLong[1] = app->Settings().GetTooLongValueMks("CASSANDRA", "split_history_retrieve_not_found_op_too_long_ms");
+    m_PublicCommentOpTooLong[0] = app->Settings().GetTooLongValueMks("CASSANDRA", "public_comment_retrieve_found_op_too_long_ms");
+    m_PublicCommentOpTooLong[1] = app->Settings().GetTooLongValueMks("CASSANDRA", "public_comment_retrieve_not_found_op_too_long_ms");
+    m_AccVerHistOpTooLong[0] = app->Settings().GetTooLongValueMks("CASSANDRA", "acc_ver_hist_retrieve_found_op_too_long_ms");
+    m_AccVerHistOpTooLong[1] = app->Settings().GetTooLongValueMks("CASSANDRA", "acc_ver_hist_retrieve_not_found_op_too_long_ms");
+    m_IpgResolveOpTooLong[0] = app->Settings().GetTooLongValueMks("CASSANDRA", "ipg_resolve_page_found_op_too_long_ms");
+    m_IpgResolveOpTooLong[1] = app->Settings().GetTooLongValueMks("CASSANDRA", "ipg_resolve_not_found_op_too_long_ms");
+    m_ResolutionCassFoundNOpTooLong[0] = app->Settings().GetTooLongValueMks("CASSANDRA", "resolution_cass_found_1_op_too_long_ms");
+    m_ResolutionCassFoundNOpTooLong[1] = app->Settings().GetTooLongValueMks("CASSANDRA", "resolution_cass_found_2_op_too_long_ms");
+    m_ResolutionCassFoundNOpTooLong[2] = app->Settings().GetTooLongValueMks("CASSANDRA", "resolution_cass_found_3_op_too_long_ms");
+    m_ResolutionCassFoundNOpTooLong[3] = app->Settings().GetTooLongValueMks("CASSANDRA", "resolution_cass_found_4_op_too_long_ms");
+    m_ResolutionCassFoundNOpTooLong[4] = app->Settings().GetTooLongValueMks("CASSANDRA", "resolution_cass_found_5_plus_op_too_long_ms");
+    m_CDDNaResolveAndRetrieveOpTooLong[0] = app->Settings().GetTooLongValueMks("CDD", "na_resolve_and_retrieve_found_op_too_long_ms");
+    m_CDDNaResolveAndRetrieveOpTooLong[1] = app->Settings().GetTooLongValueMks("CDD", "na_resolve_and_retrieve_not_found_op_too_long_ms");
+    m_PtisLookupOpTooLong[0] = app->Settings().GetTooLongValueMks("SNP", "ptis_lookup_found_op_too_long_ms");
+    m_PtisLookupOpTooLong[1] = app->Settings().GetTooLongValueMks("SNP", "ptis_lookup_not_found_op_too_long_ms");
+    m_WGSVDBLookupOpTooLong[0] = app->Settings().GetTooLongValueMks("WGS", "vdb_lookup_found_op_too_long_ms");
+    m_WGSVDBLookupOpTooLong[1] = app->Settings().GetTooLongValueMks("WGS", "vdb_lookup_not_found_op_too_long_ms");
+
+
+    m_BlobRetrieveNotFoundOpTooLong.assign(max_index + 1, 0);
+    m_BlobRetrieveFoundOpTooLong.assign(max_index + 1, 0);
+    m_NARetrieveFoundOpTooLong.assign(max_index + 1, 0);
+    m_NARetrieveNotFoundOpTooLong.assign(max_index + 1, 0);
+    m_ResolutionErrorOpTooLong.assign(max_index + 1, 0);
+    m_ResolutionNotFoundOpTooLong.assign(max_index + 1, 0);
+    m_ResolutionFoundOpTooLong.assign(max_index + 1, 0);
+    m_TseChunkFoundOpTooLong.assign(max_index + 1, 0);
+    m_TseChunkNotFoundOpTooLong.assign(max_index + 1, 0);
+    m_NAResolveFoundOpTooLong.assign(max_index + 1, 0);
+    m_NAResolveNotFoundOpTooLong.assign(max_index + 1, 0);
+    m_VDBOpenSuccessOpTooLong.assign(max_index + 1, 0);
+    m_VDBOpenFailureOpTooLong.assign(max_index + 1, 0);
+    for (const auto& [proc_name, proc_index] : m_ProcGroupToIndex) {
+        m_BlobRetrieveNotFoundOpTooLong[proc_index] =
+            app->Settings().GetTooLongValueMks(proc_name, "blob_retrieve_not_found_op_too_long_ms");
+        m_BlobRetrieveFoundOpTooLong[proc_index] =
+            app->Settings().GetTooLongValueMks(proc_name, "blob_retrieve_found_op_too_long_ms");
+        m_NARetrieveFoundOpTooLong[proc_index] =
+            app->Settings().GetTooLongValueMks(proc_name, "na_retrieve_found_op_too_long_ms");
+        m_NARetrieveNotFoundOpTooLong[proc_index] =
+            app->Settings().GetTooLongValueMks(proc_name, "na_retrieve_not_found_op_too_long_ms");
+        m_ResolutionErrorOpTooLong[proc_index] =
+            app->Settings().GetTooLongValueMks(proc_name, "resolution_error_op_too_long_ms");
+        m_ResolutionNotFoundOpTooLong[proc_index] =
+            app->Settings().GetTooLongValueMks(proc_name, "resolution_not_found_op_too_long_ms");
+        m_ResolutionFoundOpTooLong[proc_index] =
+            app->Settings().GetTooLongValueMks(proc_name, "resolution_found_op_too_long_ms");
+        m_TseChunkFoundOpTooLong[proc_index] =
+            app->Settings().GetTooLongValueMks(proc_name, "tse_chunk_retrieve_found_op_too_long_ms");
+        m_TseChunkNotFoundOpTooLong[proc_index] =
+            app->Settings().GetTooLongValueMks(proc_name, "tse_chunk_retrieve_not_found_op_too_long_ms");
+        m_NAResolveFoundOpTooLong[proc_index] =
+            app->Settings().GetTooLongValueMks(proc_name, "na_resolve_found_op_too_long_ms");
+        m_NAResolveNotFoundOpTooLong[proc_index] =
+            app->Settings().GetTooLongValueMks(proc_name, "na_resolve_not_found_op_too_long_ms");
+        m_VDBOpenSuccessOpTooLong[proc_index] =
+            app->Settings().GetTooLongValueMks(proc_name, "vdb_open_success_op_too_long_ms");
+        m_VDBOpenFailureOpTooLong[proc_index] =
+            app->Settings().GetTooLongValueMks(proc_name, "vdb_open_failure_op_too_long_ms");
+    }
+
 }
 
 
@@ -1162,10 +1257,24 @@ ssize_t COperationTiming::x_GetBlobRetrievalBinIndex(unsigned long  blob_size)
 
 
 // true => too long
-bool COperationTiming::Register(IPSGS_Processor *  processor,
+bool COperationTiming::Register(const IPSGS_Processor *  processor,
                                 EPSGOperation  operation,
                                 EPSGOperationStatus  status,
                                 const psg_time_point_t &  op_begin_ts,
+                                const string &  datacenter,
+                                unsigned long  blob_size)
+{
+    return Register(processor, operation, status, op_begin_ts,
+                    psg_clock_t::now(), datacenter, blob_size);
+}
+
+
+// true => too long
+bool COperationTiming::Register(const IPSGS_Processor *  processor,
+                                EPSGOperation  operation,
+                                EPSGOperationStatus  status,
+                                const psg_time_point_t &  op_begin_ts,
+                                const psg_time_point_t &  op_end_ts,
                                 const string &  datacenter,
                                 unsigned long  blob_size)
 {
@@ -1179,51 +1288,68 @@ bool COperationTiming::Register(IPSGS_Processor *  processor,
         }
     }
 
-
-    auto            now = psg_clock_t::now();
-    uint64_t        mks = chrono::duration_cast<chrono::microseconds>(now - op_begin_ts).count();
+    uint64_t        mks = chrono::duration_cast<chrono::microseconds>(op_end_ts - op_begin_ts).count();
 
     size_t          index = 0;
     if (status == eOpStatusNotFound)
         index = 1;
 
+    unsigned int    op_too_long_threshold = 0;
+
+    size_t      proc_index = 0;
+    string      group_name = "";
+    if (processor) {
+        group_name = processor->GetGroupName();
+        proc_index = m_ProcGroupToIndex[group_name];
+    }
+
     switch (operation) {
         case eLookupLmdbSi2csi:
             m_LookupLmdbSi2csiTiming[index]->Add(mks);
+            op_too_long_threshold = m_LookupLmdbSi2csiOpTooLong[index];
             break;
         case eLookupLmdbBioseqInfo:
             m_LookupLmdbBioseqInfoTiming[index]->Add(mks);
+            op_too_long_threshold = m_LookupLmdbBioseqInfoOpTooLong[index];
             break;
         case eLookupLmdbBlobProp:
             m_LookupLmdbBlobPropTiming[index]->Add(mks);
+            op_too_long_threshold = m_LookupLmdbBlobPropOpTooLong[index];
             break;
         case eLookupCassSi2csi:
             m_LookupCassSi2csiTiming[index]->Add(mks);
+            op_too_long_threshold = m_LookupCassSi2csiOpTooLong[index];
             break;
         case eLookupCassBioseqInfo:
             m_LookupCassBioseqInfoTiming[index]->Add(mks);
+            op_too_long_threshold = m_LookupCassBioseqInfoOpTooLong[index];
             break;
         case eLookupCassBlobProp:
             m_LookupCassBlobPropTiming[index]->Add(mks);
+            op_too_long_threshold = m_LookupCassBlobPropOpTooLong[index];
             break;
         case eMyNCBIRetrieve:
             m_RetrieveMyNCBITiming[index]->Add(mks);
+            op_too_long_threshold = m_MyNCBIRetrieveOpTooLong[index];
             break;
         case eMyNCBIRetrieveError:
             m_RetrieveMyNCBIErrorTiming->Add(mks);
+            op_too_long_threshold = m_MyNCBIRetrieveErrorOpTooLong;
             break;
         case eResolutionLmdb:
             m_ResolutionLmdbTiming[index]->Add(mks);
+            op_too_long_threshold = m_ResolutionLmdbOpTooLong[index];
             break;
         case eResolutionCass:
             m_ResolutionCassTiming[index]->Add(mks);
+            op_too_long_threshold = m_ResolutionCassOpTooLong[index];
             break;
         case eBlobRetrieve:
             if (processor) {
-                size_t      proc_index = m_ProcGroupToIndex[processor->GetGroupName()];
-                if (status == eOpStatusNotFound)
+                if (status == eOpStatusNotFound) {
                     m_NotFoundBlobRetrievalTiming[proc_index]->Add(mks);
-                else {
+                    op_too_long_threshold = m_BlobRetrieveNotFoundOpTooLong[proc_index];
+                } else {
                     ssize_t     bin_index = x_GetBlobRetrievalBinIndex(blob_size);
                     if (bin_index < 0) {
                         m_HugeBlobByteCounter[proc_index] += blob_size;
@@ -1232,6 +1358,9 @@ bool COperationTiming::Register(IPSGS_Processor *  processor,
                         m_BlobByteCounters[proc_index][bin_index] += blob_size;
                         m_BlobRetrieveTiming[proc_index][bin_index]->Add(mks);
                     }
+                    // The threshold has to be prorated by 64kb
+                    op_too_long_threshold = m_BlobRetrieveFoundOpTooLong[proc_index];
+                    op_too_long_threshold *= (unsigned int)(blob_size / 65536) + 1;
                 }
             } else {
                 PSG_ERROR("No processor for per processor timing (" +
@@ -1239,44 +1368,64 @@ bool COperationTiming::Register(IPSGS_Processor *  processor,
             }
             break;
         case eNARetrieve:
-            if (processor)
-                m_NARetrieveTiming[m_ProcGroupToIndex[processor->GetGroupName()]][index]->Add(mks);
-            else
+            if (processor) {
+                m_NARetrieveTiming[proc_index][index]->Add(mks);
+                if (status == eOpStatusNotFound) {
+                    op_too_long_threshold = m_NARetrieveNotFoundOpTooLong[proc_index];
+                } else {
+                    op_too_long_threshold = m_NARetrieveFoundOpTooLong[proc_index];
+                }
+            } else {
                 PSG_ERROR("No processor for per processor timing (" +
                           to_string(eNARetrieve) + "). Ignore and continue.");
+            }
             break;
         case eSplitHistoryRetrieve:
             m_SplitHistoryRetrieveTiming[index]->Add(mks);
+            op_too_long_threshold = m_SplitHistoryOpTooLong[index];
             break;
         case ePublicCommentRetrieve:
             m_PublicCommentRetrieveTiming[index]->Add(mks);
+            op_too_long_threshold = m_PublicCommentOpTooLong[index];
             break;
         case eAccVerHistRetrieve:
             m_AccVerHistoryRetrieveTiming[index]->Add(mks);
+            op_too_long_threshold = m_AccVerHistOpTooLong[index];
             break;
         case eIPGResolveRetrieve:
             m_IPGResolveRetrieveTiming[index]->Add(mks);
+            op_too_long_threshold = m_IpgResolveOpTooLong[index];
+            if (status == eOpStatusFound) {
+                // blob_size for this case is a number of pages got from ipg
+                op_too_long_threshold *= blob_size;
+            }
             break;
         case eResolutionError:
-            if (processor)
-                m_ResolutionErrorTiming[m_ProcGroupToIndex[processor->GetGroupName()]]->Add(mks);
-            else
+            if (processor) {
+                m_ResolutionErrorTiming[proc_index]->Add(mks);
+                op_too_long_threshold = m_ResolutionErrorOpTooLong[proc_index];
+            } else {
                 PSG_ERROR("No processor for per processor timing (" +
                           to_string(eResolutionError) + "). Ignore and continue.");
+            }
             break;
         case eResolutionNotFound:
-            if (processor)
-                m_ResolutionNotFoundTiming[m_ProcGroupToIndex[processor->GetGroupName()]]->Add(mks);
-            else
+            if (processor) {
+                m_ResolutionNotFoundTiming[proc_index]->Add(mks);
+                op_too_long_threshold = m_ResolutionNotFoundOpTooLong[proc_index];
+            } else {
                 PSG_ERROR("No processor for per processor timing (" +
                           to_string(eResolutionNotFound) + "). Ignore and continue.");
+            }
             break;
         case eResolutionFound:
-            if (processor)
-                m_ResolutionFoundTiming[m_ProcGroupToIndex[processor->GetGroupName()]]->Add(mks);
-            else
+            if (processor) {
+                m_ResolutionFoundTiming[proc_index]->Add(mks);
+                op_too_long_threshold = m_ResolutionFoundOpTooLong[proc_index];
+            } else {
                 PSG_ERROR("No processor for per processor timing (" +
                           to_string(eResolutionFound) + "). Ignore and continue.");
+            }
             break;
         case eBacklog:
             m_BacklogTiming->Add(mks);
@@ -1287,19 +1436,32 @@ bool COperationTiming::Register(IPSGS_Processor *  processor,
             if (index > 4)
                 index = 4;
             m_ResolutionFoundCassandraTiming[index]->Add(mks);
+            op_too_long_threshold = m_ResolutionCassFoundNOpTooLong[index];
             break;
         case eTseChunkRetrieve:
-            if (processor)
-                m_TSEChunkRetrieveTiming[m_ProcGroupToIndex[processor->GetGroupName()]][index]->Add(mks);
-            else
+            if (processor) {
+                m_TSEChunkRetrieveTiming[proc_index][index]->Add(mks);
+                if (status == eOpStatusNotFound) {
+                    op_too_long_threshold = m_TseChunkNotFoundOpTooLong[proc_index];
+                } else {
+                    // The threshold has to be prorated by 64kb
+                    op_too_long_threshold = m_TseChunkFoundOpTooLong[proc_index];
+                    op_too_long_threshold *= (unsigned int)(blob_size / 65536) + 1;
+                }
+            } else {
                 PSG_ERROR("No processor for per processor timing (" +
                           to_string(eTseChunkRetrieve) + "). Ignore and continue.");
+            }
             break;
         case eNAResolve:
             if (processor) {
-                string      group_name = processor->GetGroupName();
                 if (group_name == "CDD" || group_name == "SNP") {
-                    m_NAResolveTiming[m_ProcGroupToIndex[group_name]][index]->Add(mks);
+                    m_NAResolveTiming[proc_index][index]->Add(mks);
+                    if (status == eOpStatusNotFound) {
+                        op_too_long_threshold = m_NAResolveNotFoundOpTooLong[proc_index];
+                    } else {
+                        op_too_long_threshold = m_NAResolveFoundOpTooLong[proc_index];
+                    }
                 } else {
                     PSG_ERROR("NA resolve timing is supported for "
                               "CDD and SNP only. Received from: " + group_name);
@@ -1311,9 +1473,9 @@ bool COperationTiming::Register(IPSGS_Processor *  processor,
             break;
         case eCDDNAResolveAndRetrieve:
             if (processor) {
-                string      group_name = processor->GetGroupName();
                 if (group_name == "CDD") {
                     m_CDDNAResolveAndRetrieveTiming[index]->Add(mks);
+                    op_too_long_threshold = m_CDDNaResolveAndRetrieveOpTooLong[index];
                 } else {
                     PSG_ERROR("NA resolve and retrieve timing is supported for "
                               "CDD only. Received from: " + group_name);
@@ -1325,13 +1487,30 @@ bool COperationTiming::Register(IPSGS_Processor *  processor,
             }
             break;
         case eVDBOpen:
-            m_VDBOpenTiming[index]->Add(mks);
+            if (processor) {
+                if (group_name == "WGS" || group_name == "SNP") {
+                    m_VDBOpenTiming[proc_index][index]->Add(mks);
+                    if (status == eOpStatusNotFound) {
+                        op_too_long_threshold = m_VDBOpenFailureOpTooLong[proc_index];
+                    } else {
+                        op_too_long_threshold = m_VDBOpenSuccessOpTooLong[proc_index];
+                    }
+                } else {
+                    PSG_ERROR("VDB open timing is supported for "
+                              "WGS and SNP only. Received from: " + group_name);
+                }
+            } else {
+                PSG_ERROR("No processor for per processor timing (" +
+                          to_string(eVDBOpen) + "). Ignore and continue.");
+            }
             break;
         case eSNP_PTISLookup:
             m_SNPPTISLookupTiming[index]->Add(mks);
+            op_too_long_threshold = m_PtisLookupOpTooLong[index];
             break;
         case eWGS_VDBLookup:
             m_WGSVDBLookupTiming[index]->Add(mks);
+            op_too_long_threshold = m_WGSVDBLookupOpTooLong[index];
             break;
         default:
             break;
@@ -1343,11 +1522,8 @@ bool COperationTiming::Register(IPSGS_Processor *  processor,
     // method at CHttpConnection::x_MaintainBacklog and it will be logged (if
     // log is switched on) regardless of the threshold.
     if (processor != nullptr) {
-        string      proc_group = processor->GetGroupName();
-        size_t      proc_index = m_ProcGroupToIndex[proc_group];
-        size_t      log_threshold = m_ProcIndexToLogTimingThreshold[proc_index];
-        if (log_threshold > 0) {
-            if (mks > log_threshold) {
+        if (op_too_long_threshold > 0) {
+            if (mks > op_too_long_threshold) {
                 auto        app = CPubseqGatewayApp::GetInstance();
                 app->GetCounters().Increment(processor,
                                              CPSGSCounters::ePSGS_OpTooLong);
@@ -1361,16 +1537,16 @@ bool COperationTiming::Register(IPSGS_Processor *  processor,
                 CRequestContextResetter     context_resetter;
                 request->SetRequestContext();
 
-                if (proc_group == "CASSANDRA") {
+                if (group_name == "CASSANDRA") {
                     GetDiagContext().Extra().Print("op_too_long", mks)
                                             .Print(m_TooLongIDs[operation], mks)
-                                            .Print("processor", proc_group)
+                                            .Print("processor", group_name)
                                             .Print("datacenter", datacenter)
                                             .Print("active_stmt", app->GetCassandraActiveStatements());
                 } else {
                     GetDiagContext().Extra().Print("op_too_long", mks)
                                             .Print(m_TooLongIDs[operation], mks)
-                                            .Print("processor", proc_group);
+                                            .Print("processor", group_name);
                 }
                 return true;
             }
@@ -1636,7 +1812,6 @@ void COperationTiming::Rotate(void)
         m_PublicCommentRetrieveTiming[k]->Rotate();
         m_AccVerHistoryRetrieveTiming[k]->Rotate();
         m_IPGResolveRetrieveTiming[k]->Rotate();
-        m_VDBOpenTiming[k]->Rotate();
         m_SNPPTISLookupTiming[k]->Rotate();
         m_WGSVDBLookupTiming[k]->Rotate();
         m_CDDNAResolveAndRetrieveTiming[k]->Rotate();
@@ -1657,6 +1832,12 @@ void COperationTiming::Rotate(void)
     for (size_t  k = 0; k < m_NAResolveTiming.size(); ++k) {
         for (size_t  m = 0; m < m_NAResolveTiming[k].size(); ++m) {
             m_NAResolveTiming[k][m]->Rotate();
+        }
+    }
+
+    for (size_t  k = 0; k < m_VDBOpenTiming.size(); ++k) {
+        for (size_t  m = 0; m < m_VDBOpenTiming[k].size(); ++m) {
+            m_VDBOpenTiming[k][m]->Rotate();
         }
     }
 
@@ -1755,7 +1936,6 @@ void COperationTiming::RotateAvgPerfTimeSeries(void)
         m_PublicCommentRetrieveTiming[k]->RotateAvgTimeSeries();
         m_AccVerHistoryRetrieveTiming[k]->RotateAvgTimeSeries();
         m_IPGResolveRetrieveTiming[k]->RotateAvgTimeSeries();
-        m_VDBOpenTiming[k]->RotateAvgTimeSeries();
         m_SNPPTISLookupTiming[k]->RotateAvgTimeSeries();
         m_WGSVDBLookupTiming[k]->RotateAvgTimeSeries();
         m_CDDNAResolveAndRetrieveTiming[k]->RotateAvgTimeSeries();
@@ -1776,6 +1956,12 @@ void COperationTiming::RotateAvgPerfTimeSeries(void)
     for (size_t  k = 0; k < m_NAResolveTiming.size(); ++k) {
         for (size_t  m = 0; m < m_NAResolveTiming[k].size(); ++m) {
             m_NAResolveTiming[k][m]->RotateAvgTimeSeries();
+        }
+    }
+
+    for (size_t  k = 0; k < m_VDBOpenTiming.size(); ++k) {
+        for (size_t  m = 0; m < m_VDBOpenTiming[k].size(); ++m) {
+            m_VDBOpenTiming[k][m]->RotateAvgTimeSeries();
         }
     }
 
@@ -1865,7 +2051,6 @@ void COperationTiming::Reset(void)
             m_PublicCommentRetrieveTiming[k]->Reset();
             m_AccVerHistoryRetrieveTiming[k]->Reset();
             m_IPGResolveRetrieveTiming[k]->Reset();
-            m_VDBOpenTiming[k]->Reset();
             m_SNPPTISLookupTiming[k]->Reset();
             m_WGSVDBLookupTiming[k]->Reset();
             m_CDDNAResolveAndRetrieveTiming[k]->Reset();
@@ -1886,6 +2071,12 @@ void COperationTiming::Reset(void)
         for (size_t  k = 0; k < m_NAResolveTiming.size(); ++k) {
             for (size_t  m = 0; m < m_NAResolveTiming[k].size(); ++m) {
                 m_NAResolveTiming[k][m]->Reset();
+            }
+        }
+
+        for (size_t  k = 0; k < m_VDBOpenTiming.size(); ++k) {
+            for (size_t  m = 0; m < m_VDBOpenTiming[k].size(); ++m) {
+                m_VDBOpenTiming[k][m]->Reset();
             }
         }
 
@@ -2001,7 +2192,8 @@ COperationTiming::Serialize(int  most_ancient_time,
             for (const auto &  name_to_histogram : m_NamesMap) {
                 if (name_to_histogram.second.m_Timing == nullptr) {
                     // Some items need to skip, e.g. NA resolve is collected
-                    // only for CDD and SNP processors
+                    // only for CDD and SNP processors or VDB open is collected
+                    // only for WGS and SNP processors.
                     continue;
                 }
                 ret.SetByKey(name_to_histogram.first,
@@ -2262,25 +2454,6 @@ COperationTiming::x_UpdateMaxReqsStat(size_t  index,
 }
 
 
-size_t COperationTiming::x_GetLogThreshold(const string &  proc_group_name)
-{
-    auto        app = CPubseqGatewayApp::GetInstance();
-    auto        settings = app->Settings();
-
-    // Note: the setting is in ms however the timing is collected in mks so
-    //       there is ... * 1000 in the return statements
-
-    if (proc_group_name == "CASSANDRA") return settings.m_CassandraProcessorLogTimingThreshold * 1000;
-    if (proc_group_name == "CDD")       return settings.m_CDDProcessorLogTimingThreshold * 1000;
-    if (proc_group_name == "WGS")       return settings.m_WGSProcessorLogTimingThreshold * 1000;
-    if (proc_group_name == "SNP")       return settings.m_SNPProcessorLogTimingThreshold * 1000;
-
-    PSG_WARNING("No individual timing log threshold found for " + proc_group_name +
-                " processor. Server wide will be used.");
-    return settings.m_LogTimingThreshold * 1000;
-}
-
-
 unsigned int
 COperationTiming::x_GetExecTooLongThreshold(const string &  proc_group_name,
                                             CPSGS_Request::EPSGS_Type  request_type)
@@ -2288,25 +2461,29 @@ COperationTiming::x_GetExecTooLongThreshold(const string &  proc_group_name,
     auto        app = CPubseqGatewayApp::GetInstance();
     auto        settings = app->Settings();
 
-    // Note: the setting is in ms however the timing is collected in mks so
-    //       there is ... * 1000 in the return statements
-
     if (proc_group_name == "CASSANDRA") {
         switch (request_type) {
             case CPSGS_Request::ePSGS_ResolveRequest:
-                return settings.m_CassandraProcessorIdResolveExecTooLongMs * 1000;
+                return settings.GetTooLongValueMks(proc_group_name,
+                                                   "id_resolve_exec_too_long_ms");
             case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
-                return settings.m_CassandraProcessorIdGetExecTooLongMs * 1000;
+                return settings.GetTooLongValueMks(proc_group_name,
+                                                   "id_get_exec_too_long_ms");
             case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
-                return settings.m_CassandraProcessorIdGetBlobExecTooLongMs * 1000;
+                return settings.GetTooLongValueMks(proc_group_name,
+                                                   "id_get_blob_exec_too_long_ms");
             case CPSGS_Request::ePSGS_AnnotationRequest:
-                return settings.m_CassandraProcessorIdGetNaExecTooLongMs * 1000;
+                return settings.GetTooLongValueMks(proc_group_name,
+                                                   "id_get_na_exec_too_long_ms");
             case CPSGS_Request::ePSGS_TSEChunkRequest:
-                return settings.m_CassandraProcessorIdGetTseChunkExecTooLongMs * 1000;
+                return settings.GetTooLongValueMks(proc_group_name,
+                                                   "id_get_tse_chunk_exec_too_long_ms");
             case CPSGS_Request::ePSGS_AccessionVersionHistoryRequest:
-                return settings.m_CassandraProcessorIdGetAccVerHistoryExecTooLongMs * 1000;
+                return settings.GetTooLongValueMks(proc_group_name,
+                                                   "id_get_acc_ver_history_exec_too_long_ms");
             case CPSGS_Request::ePSGS_IPGResolveRequest:
-                return settings.m_CassandraProcessorIpgResolveExecTooLongMs * 1000;
+                return settings.GetTooLongValueMks(proc_group_name,
+                                                   "ipg_resolve_exec_too_long_ms");
             default:
                 break;
         }
@@ -2315,7 +2492,8 @@ COperationTiming::x_GetExecTooLongThreshold(const string &  proc_group_name,
     if (proc_group_name == "CDD") {
         switch (request_type) {
             case CPSGS_Request::ePSGS_AnnotationRequest:
-                return settings.m_CDDProcessorIdGetNaExecTooLongMs * 1000;
+                return settings.GetTooLongValueMks(proc_group_name,
+                                                   "id_get_na_exec_too_long_ms");
             default:
                 break;
         }
@@ -2324,13 +2502,17 @@ COperationTiming::x_GetExecTooLongThreshold(const string &  proc_group_name,
     if (proc_group_name == "WGS") {
         switch (request_type) {
             case CPSGS_Request::ePSGS_ResolveRequest:
-                return settings.m_WGSProcessorIdResolveExecTooLongMs * 1000;
+                return settings.GetTooLongValueMks(proc_group_name,
+                                                   "id_resolve_exec_too_long_ms");
             case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
-                return settings.m_WGSProcessorIdGetExecTooLongMs * 1000;
+                return settings.GetTooLongValueMks(proc_group_name,
+                                                   "id_get_exec_too_long_ms");
             case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
-                return settings.m_WGSProcessorIdGetBlobExecTooLongMs * 1000;
+                return settings.GetTooLongValueMks(proc_group_name,
+                                                   "id_get_blob_exec_too_long_ms");
             case CPSGS_Request::ePSGS_TSEChunkRequest:
-                return settings.m_WGSProcessorIdGetTseChunkExecTooLongMs * 1000;
+                return settings.GetTooLongValueMks(proc_group_name,
+                                                   "id_get_tse_chunk_exec_too_long_ms");
             default:
                 break;
         }
@@ -2339,11 +2521,14 @@ COperationTiming::x_GetExecTooLongThreshold(const string &  proc_group_name,
     if (proc_group_name == "SNP") {
         switch (request_type) {
             case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
-                return settings.m_SNPProcessorIdGetBlobExecTooLongMs * 1000;
+                return settings.GetTooLongValueMks(proc_group_name,
+                                                   "id_get_blob_exec_too_long_ms");
             case CPSGS_Request::ePSGS_AnnotationRequest:
-                return settings.m_SNPProcessorIdGetNaExecTooLongMs * 1000;
+                return settings.GetTooLongValueMks(proc_group_name,
+                                                   "id_get_na_exec_too_long_ms");
             case CPSGS_Request::ePSGS_TSEChunkRequest:
-                return settings.m_SNPProcessorIdGetTseChunkExecTooLongMs * 1000;
+                return settings.GetTooLongValueMks(proc_group_name,
+                                                   "id_get_tse_chunk_exec_too_long_ms");
             default:
                 break;
         }

@@ -74,7 +74,8 @@ class CIPGResolveCallback
                     app->GetTiming().Register(m_Processor, eIPGResolveRetrieve,
                                               eOpStatusNotFound,
                                               m_RetrieveTiming,
-                                              m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
+                                              m_FetchDetails->GetLoader()->GetConnectionDatacenterName(),
+                                              0);
                     app->GetCounters().Increment(
                                     m_Processor,
                                     CPSGSCounters::ePSGS_IPGResolveNotFound);
@@ -82,7 +83,8 @@ class CIPGResolveCallback
                     app->GetTiming().Register(m_Processor, eIPGResolveRetrieve,
                                               eOpStatusFound,
                                               m_RetrieveTiming,
-                                              m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
+                                              m_FetchDetails->GetLoader()->GetConnectionDatacenterName(),
+                                              m_Count);
                 }
             }
 

@@ -222,7 +222,7 @@ class CPSGSCounters
         return counter > ePSGS_MaxIndividualCounter;
     }
 
-    void Increment(IPSGS_Processor *  processor,
+    void Increment(const IPSGS_Processor *  processor,
                    EPSGS_CounterType  counter);
     uint64_t GetValue(EPSGS_CounterType  counter);
     uint64_t GetFinishedRequestsCounter(void);

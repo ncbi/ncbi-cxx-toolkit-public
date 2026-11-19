@@ -351,7 +351,14 @@ class COperationTiming
         // Blob size is taken into consideration only if
         // operation == eBlobRetrieve
         // returns true => too long
-       bool Register(IPSGS_Processor *  processor,
+       bool Register(const IPSGS_Processor *  processor,
+                     EPSGOperation  operation,
+                     EPSGOperationStatus  status,
+                     const psg_time_point_t &  op_begin_ts,
+                     const psg_time_point_t &  op_end_ts,
+                     const string &  datacenter,
+                     size_t  blob_size=0);
+       bool Register(const IPSGS_Processor *  processor,
                      EPSGOperation  operation,
                      EPSGOperationStatus  status,
                      const psg_time_point_t &  op_begin_ts,
@@ -392,7 +399,6 @@ class COperationTiming
                                  uint64_t &  max_errors,
                                  uint64_t &  max_warnings,
                                  uint64_t &  max_not_found) const;
-        size_t x_GetLogThreshold(const string &  proc_group_name);
         unsigned int x_GetExecTooLongThreshold(const string &  proc_group_name,
                                                CPSGS_Request::EPSGS_Type  request_type);
         bool x_NeedExecTooLongLogging(IPSGS_Processor::EPSGS_Status  proc_finish_status,
@@ -435,7 +441,7 @@ class COperationTiming
         vector<unique_ptr<CPublicCommentRetrieveTiming>>    m_PublicCommentRetrieveTiming;
         vector<unique_ptr<CAccVerHistoryRetrieveTiming>>    m_AccVerHistoryRetrieveTiming;
         vector<unique_ptr<CIPGResolveRetrieveTiming>>       m_IPGResolveRetrieveTiming;
-        vector<unique_ptr<CVDBOpenTiming>>                  m_VDBOpenTiming;
+        vector<vector<unique_ptr<CVDBOpenTiming>>>          m_VDBOpenTiming;
         vector<unique_ptr<CSNPPTISLookupTiming>>            m_SNPPTISLookupTiming;
         vector<unique_ptr<CWGSVDBLookupTiming>>             m_WGSVDBLookupTiming;
 
@@ -501,11 +507,43 @@ class COperationTiming
         map<string, SInfo>          m_NamesMap;
 
         map<string, size_t>         m_ProcGroupToIndex;
-        map<size_t, size_t>         m_ProcIndexToLogTimingThreshold;
 
         // Thresholds for execution too long per processor per request
         using RequestThresholds = array<unsigned int, CPSGS_Request::ePSGS_UnknownRequest>;
         vector<RequestThresholds>   m_ExecTooLongThresholdMks;
+
+        // Thresholds for op too long
+        array<unsigned int, 2>      m_LookupLmdbSi2csiOpTooLong{};
+        array<unsigned int, 2>      m_LookupLmdbBioseqInfoOpTooLong{};
+        array<unsigned int, 2>      m_LookupLmdbBlobPropOpTooLong{};
+        array<unsigned int, 2>      m_LookupCassSi2csiOpTooLong{};
+        array<unsigned int, 2>      m_LookupCassBioseqInfoOpTooLong{};
+        array<unsigned int, 2>      m_LookupCassBlobPropOpTooLong{};
+        array<unsigned int, 2>      m_MyNCBIRetrieveOpTooLong{};
+        unsigned int                m_MyNCBIRetrieveErrorOpTooLong{};
+        array<unsigned int, 2>      m_ResolutionLmdbOpTooLong{};
+        array<unsigned int, 2>      m_ResolutionCassOpTooLong{};
+        vector<unsigned int>        m_BlobRetrieveNotFoundOpTooLong{};
+        vector<unsigned int>        m_BlobRetrieveFoundOpTooLong{};
+        vector<unsigned int>        m_NARetrieveFoundOpTooLong{};
+        vector<unsigned int>        m_NARetrieveNotFoundOpTooLong{};
+        array<unsigned int, 2>      m_SplitHistoryOpTooLong{};
+        array<unsigned int, 2>      m_PublicCommentOpTooLong{};
+        array<unsigned int, 2>      m_AccVerHistOpTooLong{};
+        array<unsigned int, 2>      m_IpgResolveOpTooLong{};
+        vector<unsigned int>        m_ResolutionErrorOpTooLong{};
+        vector<unsigned int>        m_ResolutionNotFoundOpTooLong{};
+        vector<unsigned int>        m_ResolutionFoundOpTooLong{};
+        array<unsigned int, 5>      m_ResolutionCassFoundNOpTooLong{};
+        vector<unsigned int>        m_TseChunkFoundOpTooLong{};
+        vector<unsigned int>        m_TseChunkNotFoundOpTooLong{};
+        vector<unsigned int>        m_NAResolveFoundOpTooLong{};
+        vector<unsigned int>        m_NAResolveNotFoundOpTooLong{};
+        array<unsigned int, 2>      m_CDDNaResolveAndRetrieveOpTooLong{};
+        array<unsigned int, 2>      m_PtisLookupOpTooLong{};
+        array<unsigned int, 2>      m_WGSVDBLookupOpTooLong{};
+        vector<unsigned int>        m_VDBOpenSuccessOpTooLong{};
+        vector<unsigned int>        m_VDBOpenFailureOpTooLong{};
 
         mutable mutex               m_Lock; // reset-rotate-serialize lock
 

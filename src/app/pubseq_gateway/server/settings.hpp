@@ -56,6 +56,8 @@ struct SPubseqGatewaySettings
                                       const string &  processor_id);
     size_t GetProcessorIPThrottlingThreshold(const string &  processor_id) const;
     size_t GetProcessorIPThrottlingLimit(const string &  processor_id) const;
+    unsigned int GetTooLongValueMks(const string &  proc_group,
+                                    const string &  val_name) const;
 
     bool IsAuthProtectedCommand(const string &  cmd) const;
 
@@ -79,7 +81,6 @@ struct SPubseqGatewaySettings
     size_t                              m_HttpMaxBacklog;
     size_t                              m_HttpMaxRunning;
     size_t                              m_LogSamplingRatio;
-    size_t                              m_LogTimingThreshold;
 
     size_t                              m_ConnThrottleThreshold;
     size_t                              m_ConnThrottleByHost;
@@ -146,14 +147,7 @@ struct SPubseqGatewaySettings
     bool                                m_SeqIdResolveAlways;
     size_t                              m_CassandraProcessorThrottleThreshold;
     size_t                              m_CassandraProcessorThrottleByIp;
-    size_t                              m_CassandraProcessorLogTimingThreshold;
-    unsigned int                        m_CassandraProcessorIdResolveExecTooLongMs;
-    unsigned int                        m_CassandraProcessorIpgResolveExecTooLongMs;
-    unsigned int                        m_CassandraProcessorIdGetExecTooLongMs;
-    unsigned int                        m_CassandraProcessorIdGetBlobExecTooLongMs;
-    unsigned int                        m_CassandraProcessorIdGetTseChunkExecTooLongMs;
-    unsigned int                        m_CassandraProcessorIdGetNaExecTooLongMs;
-    unsigned int                        m_CassandraProcessorIdGetAccVerHistoryExecTooLongMs;
+    map<string, unsigned int>           m_CassandraTooLongThresholdsMs;
 
     // [LMDB_PROCESSOR]
     string                              m_LMDBProcessorHealthCommand;
@@ -165,11 +159,10 @@ struct SPubseqGatewaySettings
     double                              m_CDDHealthTimeoutSec;
     size_t                              m_CDDProcessorThrottleThreshold;
     size_t                              m_CDDProcessorThrottleByIp;
-    size_t                              m_CDDProcessorLogTimingThreshold;
     unsigned int                        m_CDDProcessorMaxConn;
     double                              m_CDDProcessorBackendTimeout;
     int                                 m_CDDProcessorErrorRate;
-    unsigned int                        m_CDDProcessorIdGetNaExecTooLongMs;
+    map<string, unsigned int>           m_CDDTooLongThresholdsMs;
 
     // [WGS_PROCESSOR]
     bool                                m_WGSProcessorsEnabled;
@@ -177,7 +170,6 @@ struct SPubseqGatewaySettings
     double                              m_WGSHealthTimeoutSec;
     size_t                              m_WGSProcessorThrottleThreshold;
     size_t                              m_WGSProcessorThrottleByIp;
-    size_t                              m_WGSProcessorLogTimingThreshold;
     unsigned int                        m_WGSProcessorMaxConn;
     size_t                              m_WGSProcessorVdbCacheSize;
     unsigned int                        m_WGSProcessorIndexUpdateTime;
@@ -187,10 +179,7 @@ struct SPubseqGatewaySettings
                                         m_WGSProcessorCompressData;
     uint64_t                            m_WGSProcessorCassProcTimeoutMs;
     int                                 m_WGSProcessorErrorRate;
-    unsigned int                        m_WGSProcessorIdGetExecTooLongMs;
-    unsigned int                        m_WGSProcessorIdGetBlobExecTooLongMs;
-    unsigned int                        m_WGSProcessorIdResolveExecTooLongMs;
-    unsigned int                        m_WGSProcessorIdGetTseChunkExecTooLongMs;
+    map<string, unsigned int>           m_WGSTooLongThresholdsMs;
 
     // [SNP_PROCESSOR]
     bool                                m_SNPProcessorsEnabled;
@@ -198,7 +187,6 @@ struct SPubseqGatewaySettings
     double                              m_SNPHealthTimeoutSec;
     size_t                              m_SNPProcessorThrottleThreshold;
     size_t                              m_SNPProcessorThrottleByIp;
-    size_t                              m_SNPProcessorLogTimingThreshold;
     unsigned int                        m_SNPProcessorMaxConn;
     size_t                              m_SNPGCCacheSize;
     size_t                              m_SNPMissingGCSize;
@@ -211,9 +199,7 @@ struct SPubseqGatewaySettings
     bool                                m_SNPProcessorAllowNonRefSeq;
     objects::CSeq_id::ESNPScaleLimit    m_SNPProcessorScaleLimit;
     int                                 m_SNPProcessorErrorRate;
-    unsigned int                        m_SNPProcessorIdGetNaExecTooLongMs;
-    unsigned int                        m_SNPProcessorIdGetBlobExecTooLongMs;
-    unsigned int                        m_SNPProcessorIdGetTseChunkExecTooLongMs;
+    map<string, unsigned int>           m_SNPTooLongThresholdsMs;
 
     // [COUNTERS]
     // Configured counter/statistics ID to name/description
@@ -246,6 +232,7 @@ struct SPubseqGatewaySettings
     // [APDATA]
     size_t                              m_SeqIdRefreshSec;
 
+
 private:
     void x_ReadServerSection(const CNcbiRegistry &   registry);
     void x_ReadStatisticsSection(const CNcbiRegistry &   registry);
@@ -270,13 +257,11 @@ private:
                                          const string &  proc_id,
                                          size_t &  threshold_val,
                                          size_t &  by_ip_val);
-    void x_ReadProcessorLogTimingThreshold(const CNcbiRegistry &   registry,
-                                           const string &  proc_id,
-                                           size_t &  log_timing_threshold_val);
-    unsigned int x_ReadExecToolLong(const CNcbiRegistry &   registry,
-                                    const string &  section,
-                                    const string &  value,
-                                    unsigned int  default_value);
+    unsigned int x_ReadToolLongValue(const CNcbiRegistry &   registry,
+                                     const string &  section,
+                                     const string &  value,
+                                     unsigned int  default_value);
+    void x_ReadTooLongValues(const CNcbiRegistry &   registry);
 
     void x_ValidateServerSection(void);
     void x_ValidateProcessorThrottlingServerSectionSettings(void);
