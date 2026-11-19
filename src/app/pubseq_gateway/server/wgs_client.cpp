@@ -494,10 +494,9 @@ END_LOCAL_NAMESPACE;
 /////////////////////////////////////////////////////////////////////////////
 
 
-CWGSClient::CWGSClient(CPSGS_WGSProcessor& processor, const SWGSProcessor_Config& config)
+CWGSClient::CWGSClient(const SWGSProcessor_Config& config)
     : m_Config(config),
-      m_WGSDbCache(config.m_CacheSize, config.m_FileReopenTime, config.m_FileRecheckTime),
-      m_Processor(processor)
+      m_WGSDbCache(config.m_CacheSize, config.m_FileReopenTime, config.m_FileRecheckTime)
 {
 }
 
@@ -662,12 +661,22 @@ shared_ptr<SWGSData> CWGSClient::GetChunk(const string& id2info, int64_t chunk_i
 }
 
 
+thread_local const CPSGS_WGSProcessor* CWGSClient::m_Processor = nullptr;
+
+void CWGSClient::SetProcessor(const CPSGS_WGSProcessor* processor)
+{
+    _ASSERT(!processor || !m_Processor);
+    m_Processor = processor;
+}
+
+
 void CWGSClient::x_RegisterTiming(psg_time_point_t start,
                                   EPSGOperation operation,
                                   EPSGOperationStatus status)
 {
+    if (!m_Processor) return;
     CPubseqGatewayApp::GetInstance()->
-        GetTiming().Register(&m_Processor, operation, status, start, "wgs");
+        GetTiming().Register(const_cast<CPSGS_WGSProcessor*>(m_Processor), operation, status, start, "wgs");
 }
 
 

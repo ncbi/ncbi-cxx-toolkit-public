@@ -118,7 +118,7 @@ CPSGS_WGSProcessor::CPSGS_WGSProcessor(void)
       m_OutputFormat(SPSGS_ResolveRequest::ePSGS_NativeFormat)
 {
     x_LoadConfig();
-    m_Client = make_shared<CWGSClient>(*this, *m_Config);
+    m_Client = make_shared<CWGSClient>(*m_Config);
 }
 
 
@@ -173,6 +173,7 @@ bool CPSGS_WGSProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
 {
     if ( !x_IsEnabled(*request) ) return false;
     _ASSERT(m_Client);
+    CWGSClientProcessorGuard guard(*m_Client, *this);
     return m_Client->CanProcessRequest(*request);
 }
 
@@ -290,7 +291,10 @@ void CPSGS_WGSProcessor::ResolveSeqId(void)
                     " processor is resolving seq-id " + m_SeqId->AsFastaString());
         }
         try {
-            m_WGSData = m_Client->ResolveSeqId(*m_SeqId);
+            {
+                CWGSClientProcessorGuard guard(*m_Client, *this);
+                m_WGSData = m_Client->ResolveSeqId(*m_SeqId);
+            }
             if ( m_NeedTrace ) {
                 SendTrace(kWGSProcessorName +
                           " processor finished resolving seq-id " +
@@ -404,9 +408,13 @@ void CPSGS_WGSProcessor::GetBlobBySeqId(void)
         }
         try {
             CWGSClient::SWGSSeqInfo seq;
-            m_WGSData = m_Client->GetSeqInfoBySeqId(*m_SeqId, seq, m_ExcludedBlobs);
+            {
+                CWGSClientProcessorGuard guard(*m_Client, *this);
+                m_WGSData = m_Client->GetSeqInfoBySeqId(*m_SeqId, seq, m_ExcludedBlobs);
+            }
             if ( m_WGSData ) {
                 if (x_CheckExcludedCache()  &&  m_WGSData->m_GetResult == SWGSData::eResult_Found) {
+                    CWGSClientProcessorGuard guard(*m_Client, *this);
                     m_Client->GetWGSData(m_WGSData, seq);
                 }
             }
@@ -508,7 +516,10 @@ void CPSGS_WGSProcessor::GetBlobByBlobId(void)
             SendTrace(kWGSProcessorName + " processor is fetching blob " + m_PSGBlobId);
         }
         try {
-            m_WGSData = m_Client->GetBlobByBlobId(m_PSGBlobId);
+            {
+                CWGSClientProcessorGuard guard(*m_Client, *this);
+                m_WGSData = m_Client->GetBlobByBlobId(m_PSGBlobId);
+            }
             if ( m_NeedTrace ) {
                 SendTrace(kWGSProcessorName + " processor finished fetching blob " + m_PSGBlobId);
             }
@@ -602,7 +613,10 @@ void CPSGS_WGSProcessor::GetChunk(void)
                     " processor is fetching chunk " + m_Id2Info + "." + NStr::NumericToString(m_ChunkId));
         }
         try {
-            m_WGSData = m_Client->GetChunk(m_Id2Info, m_ChunkId);
+            {
+                CWGSClientProcessorGuard guard(*m_Client, *this);
+                m_WGSData = m_Client->GetChunk(m_Id2Info, m_ChunkId);
+            }
             if ( m_NeedTrace ) {
                 SendTrace(kWGSProcessorName +
                           " processor finished fetching chunk " + m_Id2Info + "." + NStr::NumericToString(m_ChunkId));

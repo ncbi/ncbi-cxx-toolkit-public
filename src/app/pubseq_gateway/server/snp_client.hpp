@@ -89,6 +89,7 @@ struct SSNPData
     CRef<objects::CID2S_Chunk> m_Chunk;
     int m_SplitVersion = 0;
     psg_time_point_t m_Start = psg_clock_t::now();
+    psg_time_point_t m_Stop = m_Start;
 };
 
 
@@ -315,18 +316,20 @@ public:
                                     TProcessorPriority priority = 0) const;
     bool CanProcessRequest(CPSGS_Request& request, TProcessorPriority priority) const;
 
-    vector<SSNPData> GetAnnotInfo(CPSGS_SNPProcessor& processor, const objects::CSeq_id_Handle& id,
+    vector<SSNPData> GetAnnotInfo(const objects::CSeq_id_Handle& id,
         const string& name, objects::CSeq_id::ESNPScaleLimit scale_limit);
-    SSNPData GetBlobByBlobId(CPSGS_SNPProcessor& processor, const string& blob_id);
-    SSNPData GetChunk(CPSGS_SNPProcessor& processor, const string& id2info, int chunk_id);
+    SSNPData GetBlobByBlobId(const string& blob_id);
+    SSNPData GetChunk(const string& id2info, int chunk_id);
 
-    CRef<CSNPFileInfo> GetFileInfo(CPSGS_SNPProcessor& processor, const string& acc);
-    CRef<CSNPSeqInfo> GetSeqInfo(CPSGS_SNPProcessor& processor, const CSNPBlobId& blob_id);
+    CRef<CSNPFileInfo> GetFileInfo(const string& acc);
+    CRef<CSNPSeqInfo> GetSeqInfo(const CSNPBlobId& blob_id);
     
     bool HaveValidSeq_id(const SPSGS_AnnotRequest& request) const;
 
     bool IsValidSeqId(const objects::CSeq_id_Handle& idh) const;
     bool IsValidSeqId(const string& id, int id_type, int version = 0) const;
+
+    void SetProcessor(const CPSGS_SNPProcessor* processor);
 
 private:
     friend class CSNPFileInfo;
@@ -336,8 +339,7 @@ private:
     CRef<objects::CID2S_Seq_annot_Info> x_GetFeatInfo(const string& name, const objects::CSeq_id_Handle& id);
     CRef<objects::CID2S_Seq_annot_Info> x_GetGraphInfo(const string& name, const objects::CSeq_id_Handle& id);
 
-    void x_RegisterTiming(CPSGS_SNPProcessor& processor,
-                          psg_time_point_t start,
+    void x_RegisterTiming(psg_time_point_t start,
                           EPSGOperation operation,
                           EPSGOperationStatus status);
     
@@ -345,6 +347,25 @@ private:
     shared_ptr<objects::CVDBMgr> m_Mgr;
     CRef<objects::CSnpPtisClient> m_PTISClient;
     TSNPDbCache m_SNPDbCache;
+    static thread_local const CPSGS_SNPProcessor* m_Processor;
+};
+
+
+class CSNPClientProcessorGuard
+{
+public:
+    CSNPClientProcessorGuard(CSNPClient& client, const CPSGS_SNPProcessor& processor) : m_Client(client)
+    { 
+        m_Client.SetProcessor(&processor);
+    }
+
+    ~CSNPClientProcessorGuard(void)
+    {
+        m_Client.SetProcessor(nullptr);
+    }
+
+private:
+    CSNPClient& m_Client;
 };
 
 

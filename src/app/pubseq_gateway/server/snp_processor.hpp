@@ -119,17 +119,16 @@ private:
                                const string& message);
     void x_OnResolutionGoodData(void);
 
-    void x_RegisterTiming(psg_time_point_t start,
+    void x_RegisterTiming(psg_time_point_t start, psg_time_point_t stop,
                           EPSGOperation operation,
                           EPSGOperationStatus status,
                           size_t size);
-    void x_RegisterTimingFound(psg_time_point_t start,
+    void x_RegisterTimingFound(psg_time_point_t start, psg_time_point_t stop,
                                EPSGOperation operation,
                                const objects::CID2_Reply_Data& data);
     void x_RegisterTimingNotFound(EPSGOperation operation);
     void x_WriteData(objects::CID2_Reply_Data& data, const CSerialObject& obj) const;
     void x_SendAnnotInfo(const SSNPData& data);
-    void x_SendAnnotInfo(void);
     void x_SendBlob(void);
     void x_SendChunk(void);
     void x_SendSplitInfo(const SSNPData& data);

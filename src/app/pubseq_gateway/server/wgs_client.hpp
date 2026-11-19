@@ -180,7 +180,7 @@ public:
         AutoPtr<SWGSSeqInfo>            m_RootSeq;
     };
 
-    CWGSClient(CPSGS_WGSProcessor& processor, const SWGSProcessor_Config& config);
+    CWGSClient(const SWGSProcessor_Config& config);
     ~CWGSClient(void);
 
     CRef<objects::CWGSResolver> GetWGSResolver(void);
@@ -221,6 +221,8 @@ public:
     static string GetPSGBlobId(const CID2_Blob_Id& blob_id);
     static void SetSeqId(CSeq_id& id, int seq_id_type, const string& seq_id);
     static bool IsOSGBlob(const CID2_Blob_Id& blob_id);
+
+    void SetProcessor(const CPSGS_WGSProcessor* processor);
 
 private:
     enum EAllowSeqType {
@@ -286,7 +288,25 @@ private:
     CRef<objects::CWGSResolver> m_Resolver;
     TWGSDbCache m_WGSDbCache;
     CRef<CThreadNonStop> m_IndexUpdateThread;
-    CPSGS_WGSProcessor& m_Processor;
+    static thread_local const CPSGS_WGSProcessor* m_Processor;
+};
+
+
+class CWGSClientProcessorGuard
+{
+public:
+    CWGSClientProcessorGuard(CWGSClient& client, const CPSGS_WGSProcessor& processor) : m_Client(client)
+    { 
+        m_Client.SetProcessor(&processor);
+    }
+
+    ~CWGSClientProcessorGuard(void)
+    {
+        m_Client.SetProcessor(nullptr);
+    }
+
+private:
+    CWGSClient& m_Client;
 };
 
 

@@ -226,8 +226,8 @@ bool CPSGS_SNPProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
 {
     try {
         if (!x_IsEnabled(*request)) return false;
-        if (!m_Client->CanProcessRequest(*request, 0)) return false;
-        return true;
+        CSNPClientProcessorGuard guard(*m_Client, *this);
+        return m_Client->CanProcessRequest(*request, 0);
     }
     catch ( exception& exc ) {
         x_SendError(reply, "Exception in CanProcess: ", exc);
@@ -430,8 +430,11 @@ void CPSGS_SNPProcessor::GetAnnotation(void)
         try {
             for (auto& id : m_SeqIds) {
                 if (!m_Client->IsValidSeqId(id)) continue;
-                auto data = m_Client->GetAnnotInfo(*this, id, name, m_ScaleLimit);
-                m_SNPData.insert(m_SNPData.end(), data.begin(), data.end());
+                {
+                    CSNPClientProcessorGuard guard(*m_Client, *this);
+                    auto data = m_Client->GetAnnotInfo(id, name, m_ScaleLimit);
+                    m_SNPData.insert(m_SNPData.end(), data.begin(), data.end());
+                }
                 if ( GetRequest()->NeedTrace() ) {
                     SendTrace(kSNPProcessorName +
                               " processor got annotation for " + id.AsString());
@@ -558,7 +561,8 @@ void CPSGS_SNPProcessor::GetBlobByBlobId(void)
                 SendTrace(kSNPProcessorName +
                           " processor trying to get blob " + m_PSGBlobId);
             }
-            m_SNPData.push_back(m_Client->GetBlobByBlobId(*this, m_PSGBlobId));
+            CSNPClientProcessorGuard guard(*m_Client, *this);
+            m_SNPData.push_back(m_Client->GetBlobByBlobId(m_PSGBlobId));
         }
         catch (...) {
             if ( GetRequest()->NeedTrace() ) {
@@ -650,7 +654,8 @@ void CPSGS_SNPProcessor::GetChunk(void)
                 SendTrace(kSNPProcessorName +
                           " processor trying to get chunk " + m_Id2Info + "." + NStr::NumericToString(m_ChunkId));
             }
-            SSNPData data = m_Client->GetChunk(*this, m_Id2Info, m_ChunkId);
+            CSNPClientProcessorGuard guard(*m_Client, *this);
+            SSNPData data = m_Client->GetChunk(m_Id2Info, m_ChunkId);
             m_SNPData.push_back(data);
         }
         catch (...) {
@@ -706,17 +711,17 @@ void CPSGS_SNPProcessor::OnGotChunk(void)
 }
 
 
-void CPSGS_SNPProcessor::x_RegisterTiming(psg_time_point_t start,
+void CPSGS_SNPProcessor::x_RegisterTiming(psg_time_point_t start, psg_time_point_t stop,
                                           EPSGOperation operation,
                                           EPSGOperationStatus status,
                                           size_t blob_size)
 {
     CPubseqGatewayApp::GetInstance()->
-        GetTiming().Register(this, operation, status, start, "snp", blob_size);
+        GetTiming().Register(this, operation, status, start, stop, "snp", blob_size);
 }
 
 
-void CPSGS_SNPProcessor::x_RegisterTimingFound(psg_time_point_t start,
+void CPSGS_SNPProcessor::x_RegisterTimingFound(psg_time_point_t start, psg_time_point_t stop,
                                                EPSGOperation operation,
                                                const CID2_Reply_Data& data)
 {
@@ -724,13 +729,13 @@ void CPSGS_SNPProcessor::x_RegisterTimingFound(psg_time_point_t start,
     for ( auto& chunk : data.GetData() ) {
         blob_size += chunk->size();
     }
-    x_RegisterTiming(start, operation, eOpStatusFound, blob_size);
+    x_RegisterTiming(start, stop, operation, eOpStatusFound, blob_size);
 }
 
 
 void CPSGS_SNPProcessor::x_RegisterTimingNotFound(EPSGOperation operation)
 {
-    x_RegisterTiming(m_Start, operation, eOpStatusNotFound, 0);
+    x_RegisterTiming(m_Start, psg_clock_t::now(), operation, eOpStatusNotFound, 0);
 }
 
 
@@ -756,7 +761,7 @@ void CPSGS_SNPProcessor::x_SendAnnotInfo(const SSNPData& data)
         }
         return;
     }
-    x_RegisterTiming(data.m_Start, eNAResolve, eOpStatusFound, 0);
+    x_RegisterTiming(data.m_Start, data.m_Stop, eNAResolve, eOpStatusFound, 0);
     CJsonNode json(CJsonNode::NewObjectNode());
     json.SetString("blob_id", data.m_BlobId);
     ostringstream annot_str;
@@ -765,14 +770,6 @@ void CPSGS_SNPProcessor::x_SendAnnotInfo(const SSNPData& data)
     }
     json.SetString("seq_annot_info", NStr::Base64Encode(annot_str.str(), 0));
     GetReply()->PrepareNamedAnnotationData(data.m_Name, kSNPProcessorName, json.Repr(CJsonNode::fStandardJson));
-}
-
-
-void CPSGS_SNPProcessor::x_SendAnnotInfo(void)
-{
-    for (auto& data : m_SNPData) {
-        x_SendAnnotInfo(data);
-    }
 }
 
 
@@ -790,7 +787,7 @@ void CPSGS_SNPProcessor::x_SendChunk(void)
     for (auto& data : m_SNPData) {
         CID2_Reply_Data id2_data;
         x_WriteData(id2_data, *data.m_Chunk);
-        x_RegisterTimingFound(data.m_Start, eTseChunkRetrieve, id2_data);
+        x_RegisterTimingFound(data.m_Start, data.m_Stop, eTseChunkRetrieve, id2_data);
         CBlobRecord chunk_blob_props;
         s_SetBlobDataProps(chunk_blob_props, id2_data);
         x_SendChunkBlobProps(m_Id2Info, m_ChunkId, chunk_blob_props);
@@ -811,7 +808,7 @@ void CPSGS_SNPProcessor::x_SendSplitInfo(const SSNPData& data)
     CBlobRecord split_info_blob_props;
     CID2_Reply_Data id2_data;
     x_WriteData(id2_data, info);
-    x_RegisterTimingFound(data.m_Start, eNARetrieve, id2_data);
+    x_RegisterTimingFound(data.m_Start, data.m_Stop, eNARetrieve, id2_data);
     s_SetBlobDataProps(split_info_blob_props, id2_data);
     x_SendChunkBlobProps(id2_info, kSplitInfoChunk, split_info_blob_props);
     x_SendChunkBlobData(id2_info, kSplitInfoChunk, id2_data);
@@ -824,7 +821,7 @@ void CPSGS_SNPProcessor::x_SendMainEntry(const SSNPData& data)
     string main_blob_id = m_PSGBlobId + ".0.0";
     CID2_Reply_Data id2_data;
     x_WriteData(id2_data, entry);
-    x_RegisterTimingFound(data.m_Start, eNARetrieve, id2_data);
+    x_RegisterTimingFound(data.m_Start, data.m_Stop, eNARetrieve, id2_data);
 
     CBlobRecord main_blob_props;
     s_SetBlobDataProps(main_blob_props, id2_data);
