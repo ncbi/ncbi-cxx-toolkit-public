@@ -1275,7 +1275,6 @@ static CRef<COrg_ref> fill_orgref(SetOfSpecies& sosp)
 /**********************************************************/
 static ViralHostList GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end)
 {
-    char* line;
     char* p;
     char* q;
     char* r;
@@ -1298,14 +1297,10 @@ static ViralHostList GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end
     ViralHostList vhl;
     auto          tvhp = vhl.before_begin();
 
-    line                       = StringNew(subdbp->mBuf.len + 1);
-    ch                         = subdbp->mBuf.ptr[subdbp->mBuf.len - 1];
-    subdbp->mBuf.ptr[subdbp->mBuf.len - 1] = '\0';
-    line[0]                    = '\n';
-    line[1]                    = '\0';
-    StringCat(line, subdbp->mBuf.ptr);
-    subdbp->mBuf.ptr[subdbp->mBuf.len - 1] = ch;
+    string buf("\n");
+    buf.append(subdbp->mBuf.ptr, subdbp->mBuf.len - 1);
 
+    char* line = buf.data();
     if (! StringEquNI(line, "\nOH   NCBI_TaxID=")) {
         ch = '\0';
         p  = StringChr(line + 1, '\n');
@@ -1369,7 +1364,6 @@ static ViralHostList GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end
             p = q;
         }
     }
-    MemFree(line);
 
     if (vhl.empty())
         FtaErrPost(SEV_WARNING, ERR_SOURCE_NoNcbiTaxIDLookup, "No legal NCBI TaxIDs found in OH line.");
@@ -1800,7 +1794,6 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
     bool         pdbnew;
     bool         check_embl_prot;
     size_t       len = 0;
-    Char         ch;
 
     CSeq_id::E_Choice ptype;
     CSeq_id::E_Choice ntype;
@@ -1811,12 +1804,10 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
     if (! SrchNodeType(entry, ParFlatSP_DR, &len, &offset))
         return;
 
-    ch          = offset[len];
-    offset[len] = '\0';
-    str         = StringNew(len + 1);
-    StringCpy(str, "\n");
-    StringCat(str, offset);
-    offset[len]     = ch;
+    string buf("\n");
+    buf.append(offset, len);
+    str = buf.data();
+
     pdbold          = false;
     pdbnew          = false;
     auto embl_tail  = embl_acc_list.before_begin();
@@ -2010,7 +2001,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
     ens_tran_list.clear();
     ens_prot_list.clear();
     ens_gene_list.clear();
-    MemFree(str);
+    buf.clear();
 
     if (pdbold && pdbnew) {
         FtaErrPost(SEV_REJECT, ERR_FORMAT_MixedPDBXrefs, "Both old and new types of PDB cross-references exist on this record. Only one style is allowed.");
