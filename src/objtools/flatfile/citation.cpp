@@ -184,7 +184,7 @@ static int GetCitSerialFromQual(const CGb_qual& qual)
         ++p;
 
     if (*p)
-        return fta_atoi<int>(p);
+        return fta_atoi(p);
 
     return -1;
 }

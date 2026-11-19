@@ -1,4 +1,5 @@
-/* ===========================================================================
+/* $Id$
+ * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
@@ -109,7 +110,6 @@ struct SourceFeatBlk {
     CRef<COrgName>   orgname;
 
     bool full   = false;
-    bool toolong = false;
     bool focus  = false;
     bool tg     = false;
     bool lookup = false;
@@ -320,7 +320,6 @@ static string_view OrganelleFirstToken[] = {
     "chromatophore",
     "hydrogenosome",
     "mitochondrion",
-    "nitroplast",
     "nucleomorph",
     "plastid",
 };
@@ -567,7 +566,7 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkList& sfbl, Int
                 *q = '\0';
                 if (NStr::EqualNocase(val_ptr, "taxon"))
                     if (ibp->taxid <= ZERO_TAX_ID)
-                        ibp->taxid = TAX_ID_FROM(int, fta_atoi<int>(q + 1));
+                        ibp->taxid = TAX_ID_FROM(int, fta_atoi(q + 1));
                 *q = ':';
                 continue;
             }
@@ -631,10 +630,6 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkList& sfbl, Int
             }
             if (qual_str == "variety") {
                 variety = val_ptr;
-                continue;
-            }
-            if (qual_str == "chromosome") {
-                sfbp->genome = CBioSource::eGenome_chromosome;
                 continue;
             }
             if (qual_str == "submitter_seqid") {
@@ -951,28 +946,24 @@ static Int4 CheckSourceFeatCoverage(SourceFeatBlkList& sfbl, MinMaxList& mml, si
             for (r = q; IS_DIGIT(*r);)
                 r++;
             if (*r == '\0') {
-                i = fta_atoi<Int4>(q);
+                i = fta_atoi(q);
                 if (i > 0) {
                     min = i;
                     max = i;
                 }
             } else if (*r == '.' && r[1] == '.') {
                 *r++ = '\0';
-                min  = fta_atoi<Int4>(q);
+                min  = fta_atoi(q);
                 if (min > 0) {
                     for (q = ++r; IS_DIGIT(*r);)
                         r++;
                     if (*r == '\0')
-                        max = fta_atoi<Int4>(q);
+                        max = fta_atoi(q);
                 }
             }
             if (min > 0 && max > 0) {
-                if (min == 1) {
-                    if ((size_t)max == len)
-                        tsfbp->full = true;
-                    else if ((size_t)max > len)
-                        tsfbp->toolong = true;
-                }
+                if (min == 1 && (size_t)max == len)
+                    tsfbp->full = true;
                 MinMax newval(tsfbp->name, min, max, tsfbp->skip);
                 for (auto tmmp = mml.begin();; ++tmmp) {
                     if (min < tmmp->min) {
@@ -1511,7 +1502,6 @@ static void SourceFeatDerive(SourceFeatBlkList& sfbl,
     sfb.namstr   = res->namstr ? StringSave(res->namstr) : nullptr;
     sfb.location = res->location ? StringSave(res->location) : nullptr;
     sfb.full     = res->full;
-    sfb.toolong  = res->toolong;
     sfb.focus    = res->focus;
     sfb.lookup   = res->lookup;
     sfb.genome   = res->genome;
@@ -1579,11 +1569,7 @@ static void PickTheDescrSource(SourceFeatBlkList& sfbl)
 
     if (next(sfbl.begin()) == sfbl.end()) {
         if (! sfbl.front().full) {
-            if (sfbl.front().toolong) {
-                FtaErrPost(SEV_REJECT, ERR_SOURCE_SingleSourceTooLong, "Source feature exceeds the entire length of the sequence.");
-            } else {
-                FtaErrPost(SEV_REJECT, ERR_SOURCE_SingleSourceTooShort, "Source feature does not span the entire length of the sequence.");
-            }
+            FtaErrPost(SEV_WARNING, ERR_SOURCE_SingleSourceTooShort, "Source feature does not span the entire length of the sequence.");
         }
         return;
     }
@@ -1972,7 +1958,7 @@ static bool UpdateRawBioSource(SourceFeatBlkList& sfbl, Parser::ESource source, 
                         dropped = true;
                         break;
                     }
-                    if (i == 5)
+                    if (i == 4)
                         ibp->got_plastid = true;
                     if (newgen < 0)
                         newgen = StringMatchIcase(GenomicSourceFeatQual,
@@ -1984,7 +1970,7 @@ static bool UpdateRawBioSource(SourceFeatBlkList& sfbl, Parser::ESource source, 
                         dropped = true;
                         break;
                     }
-                    if (i == 5)
+                    if (i == 4)
                         ibp->got_plastid = true;
                     if (newgen < 0)
                         newgen = StringMatchIcase(GenomicSourceFeatQual, val_ptr);
@@ -2344,14 +2330,19 @@ static bool CheckForENV(const SourceFeatBlkList& sfbl, IndexblkPtr ibp, Parser::
 /**********************************************************/
 static char* CheckPcrPrimersTag(char* str)
 {
-    if (ConsumeStr(str, "fwd_name") || ConsumeStr(str, "rev_name") ||
-        ConsumeStr(str, "fwd_seq") || ConsumeStr(str, "rev_seq")) {
-    } else
+    if (StringEquN(str, "fwd_name", 8) ||
+        StringEquN(str, "rev_name", 8))
+        str += 8;
+    else if (StringEquN(str, "fwd_seq", 7) ||
+             StringEquN(str, "rev_seq", 7))
+        str += 7;
+    else
         return nullptr;
 
-    ConsumeChar(str, ' ');
-    if (ConsumeChar(str, ':'))
-        return str;
+    if (*str == ' ')
+        str++;
+    if (*str == ':')
+        return (str + 1);
     return nullptr;
 }
 
@@ -2745,7 +2736,7 @@ static void CheckCollectionDate(const SourceFeatBlkList& sfbl, Parser::ESource s
                             break;
                     if (*p != '\0')
                         bad = 1;
-                    else if (fta_atoi<int>(q) > date.GetYear())
+                    else if (fta_atoi(q) > date.GetYear())
                         bad = 3;
                 } else if (len == 8) {
                     if (val[3] != '-')
@@ -2777,7 +2768,7 @@ static void CheckCollectionDate(const SourceFeatBlkList& sfbl, Parser::ESource s
                         if (*p != '\0')
                             bad = 1;
                         else {
-                            year = fta_atoi<Int4>(q);
+                            year = fta_atoi(q);
                             if (year > date.GetYear() ||
                                 (year == date.GetYear() && month > date.GetMonth()))
                                 bad = 3;
@@ -2795,7 +2786,7 @@ static void CheckCollectionDate(const SourceFeatBlkList& sfbl, Parser::ESource s
                         else {
                             if (*p == '0')
                                 p++;
-                            day = fta_atoi<Int4>(p);
+                            day = fta_atoi(p);
                             p   = val + 3;
                             if (source == Parser::ESource::DDBJ) {
                                 if (IS_LOWER(p[0]))
@@ -2828,7 +2819,7 @@ static void CheckCollectionDate(const SourceFeatBlkList& sfbl, Parser::ESource s
                             if (*p != '\0')
                                 bad = 1;
                             else {
-                                year = fta_atoi<Int4>(q) - 1900;
+                                year = fta_atoi(q) - 1900;
                                 if (year > date.GetYear() ||
                                     (year == date.GetYear() && month > date.GetMonth()) ||
                                     (year == date.GetYear() && month == date.GetMonth() && day > date.GetDay()))
@@ -3228,7 +3219,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
         GetSeqLocation(*feat, tsfbp->location, seqid, &err, pp, "source");
 
         if (err) {
-            FtaErrPost(SEV_REJECT, ERR_FEATURE_Dropped, "/source|{}| range check detects problems. Entry dropped.", tsfbp->location);
+            FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped, "/source|{}| range check detects problems. Entry dropped.", tsfbp->location);
             break;
         }
 

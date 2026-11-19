@@ -365,21 +365,28 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
             if (name->empty())
                 continue;
 
+            len = name->size();
             for (q = p;; q++) {
                 q = StringChr(q, '(');
                 if (! q)
                     break;
-                const char* s = q + 1;
-                ConsumeStr(s, "acronym:") || ConsumeStr(s, "synonym:") ||
-                  ConsumeStr(s, "anamorph:") || ConsumeStr(s, "teleomorph:");
+                char* s = q + 1;
+                if (StringEquN(s, "acronym:", 8) ||
+                    StringEquN(s, "synonym:", 8))
+                    s += 8;
+                else if (StringEquN(s, "anamorph:", 9))
+                    s += 9;
+                else if (StringEquN(s, "teleomorph:", 11))
+                    s += 11;
                 if (*s == ' ')
                     while (*s == ' ')
                         s++;
-                if (ConsumeStrI(s, *name) && ConsumeChar(s, ')')) {
-                    while (*s == ' ')
-                        s++;
-                    if (*s != '\0')
-                        fta_StringCpy(q, s);
+                if (StringEquNI(s, name->c_str(), len) && s[len] == ')') {
+                    char* t = nullptr;
+                    for (t = s + len + 1; *t == ' ';)
+                        t++;
+                    if (*t != '\0')
+                        fta_StringCpy(q, t);
                     else {
                         if (q > p)
                             q--;

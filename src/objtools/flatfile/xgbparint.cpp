@@ -308,6 +308,8 @@ static void xlex_error_func(
 
 static unsigned advance_to(const char c, unsigned current_pos, const string& line)
 {
+    _ASSERT(current_pos > 0);
+
     auto pos = current_pos;
     while (pos < line.size()) {
         if (line[pos] == c) {
@@ -315,8 +317,6 @@ static unsigned advance_to(const char c, unsigned current_pos, const string& lin
         }
         ++pos;
     }
-
-    _ASSERT(pos > 0);
     return pos - 1;
 }
 
@@ -780,7 +780,7 @@ static void xgbgap(TTokenIt& current_it, TTokenConstIt end_it, CRef<CSeq_loc>& l
         if (it == end_it || it->choice != ETokenType::eRight) {
             return;
         }
-        auto pLoc = XGapToSeqLocEx(fta_atoi<Int4>(gapsize_it->data), unknown);
+        auto pLoc = XGapToSeqLocEx(fta_atoi(gapsize_it->data.c_str()), unknown);
         if (! pLoc) {
             return;
         }
@@ -834,7 +834,7 @@ static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt, TT
         fuzz.SetRange();
 
         if (currentPt->choice == ETokenType::eNumber) {
-            fuzz.SetRange().SetMin(fta_atoi<TSeqPos>(currentPt->data) - 1);
+            fuzz.SetRange().SetMin(fta_atoi(currentPt->data.c_str()) - 1);
             if (take_which == TAKE_FIRST) {
                 numPt = fuzz.GetRange().GetMin();
             }
@@ -848,7 +848,7 @@ static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt, TT
         else {
             ++currentPt;
             if (currentPt->choice == ETokenType::eNumber) {
-                fuzz.SetRange().SetMax(fta_atoi<TSeqPos>(currentPt->data) - 1);
+                fuzz.SetRange().SetMax(fta_atoi(currentPt->data.c_str()) - 1);
                 if (take_which == TAKE_SECOND) {
                     numPt = fuzz.GetRange().GetMax();
                 }
@@ -878,7 +878,7 @@ static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt, TT
             ++numErrors;
         } else {
             if (currentPt->choice == ETokenType::eNumber) {
-                numPt = fta_atoi<TSeqPos>(currentPt->data) - 1;
+                numPt = fta_atoi(currentPt->data.c_str()) - 1;
                 ++currentPt;
                 num_found = 1;
             }
@@ -910,7 +910,7 @@ static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt, TT
             }
 
             if (one_of_ok && currentPt->choice == ETokenType::eNumber) {
-                numPt = fta_atoi<TSeqPos>(currentPt->data) - 1;
+                numPt = fta_atoi(currentPt->data.c_str()) - 1;
                 ++currentPt;
             } else {
                 one_of_ok = false;

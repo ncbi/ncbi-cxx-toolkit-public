@@ -35,11 +35,7 @@
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 #include <corelib/ncbifile.hpp>
-#if __has_include(<flatfile_parser.hpp>)
-    #include <flatfile_parser.hpp>
-#else
-    #include <objtools/flatfile/flatfile_parser.hpp>
-#endif
+#include <objtools/flatfile/flatfile_parser.hpp>
 #include <common/test_assert.h>  /* This header must go last */
 
 

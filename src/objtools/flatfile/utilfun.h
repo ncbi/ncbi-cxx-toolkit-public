@@ -108,35 +108,11 @@ void PointToNextToken(char*& ptr);
  */
 string GetTheCurrentToken(char** ptr);
 
-template <typename U>
-bool ConsumeChar(U& iter, char c)
-{
-    if (*iter == c) {
-        ++iter;
-        return true;
-    }
-    return false;
-}
-
-template <typename U>
-bool ConsumeStr(U& iter, string_view s)
-{
-    if (StringEquN(iter, s.data(), s.size())) {
-        iter += s.size();
-        return true;
-    }
-    return false;
-}
-
-template <typename U>
-bool ConsumeStrI(U& iter, string_view s)
-{
-    if (StringEquNI(iter, s)) {
-        iter += s.size();
-        return true;
-    }
-    return false;
-}
+/* Search The character letter.
+ * Return NULL if not found; otherwise, return a pointer points first
+ * occurrence The character.
+ */
+char* SrchTheChar(string_view where, Char letter);
 
 /* Search The string.
  * Return NULL if not found; otherwise, return a pointer points first

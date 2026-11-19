@@ -318,7 +318,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     if (pp->source == Parser::ESource::USPTO) {
         protacc = CpTheQualValue(cds.SetQual(), "protein_id");
         CRef<CSeq_id>        pat_seq_id(new CSeq_id);
-        CRef<CPatent_seq_id> pat_id = MakeUsptoPatSeqId(protacc);
+        CRef<CPatent_seq_id> pat_id = MakeUsptoPatSeqId(protacc.c_str());
         pat_seq_id->SetPatent(*pat_id);
         ids.push_back(pat_seq_id);
         return;
@@ -383,7 +383,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     }
 
     const string protaccStr(protacc.c_str(), p);
-    const int    protaccVer(fta_atoi<int>(p + 1));
+    const int    protaccVer(fta_atoi(p + 1));
     protacc.clear();
 
     cho = GetProtAccOwner(protaccStr);
@@ -451,8 +451,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     else
         db = "WGS:";
 
-    db.append(ibp->mAccNum.substr(0,
-              ibp->mAccNum.find_first_of("0123456789", 0)));
+    db.append(ibp->mAccNum.substr(0, 4));
     ids.push_back(seq_id);
 }
 

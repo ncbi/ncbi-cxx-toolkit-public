@@ -217,13 +217,13 @@ void UnwrapAccessionRange(const CGB_block::TExtra_accessions& extra_accs, CGB_bl
         const Char* q;
         for (q = p; IS_DIGIT(*p);)
             p++;
-        num1 = fta_atoi<Int4>(q);
+        num1 = fta_atoi(q);
 
         for (p = last.c_str() + preflen; *p == '0';)
             p++;
         for (q = p; IS_DIGIT(*p);)
             p++;
-        num2 = fta_atoi<Int4>(q);
+        num2 = fta_atoi(q);
 
         ret.push_back(first);
 
@@ -615,6 +615,24 @@ string GetTheCurrentToken(char** ptr)
 
     CleanTailNonAlphaChar(str);
     return (str);
+}
+
+/**********************************************************
+ *
+ *   char* SrchTheChar(bptr, eptr, letter):
+ *
+ *      Search The character letter.
+ *      Return NULL if not found; otherwise, return
+ *   a pointer points first occurrence The character.
+ *
+ **********************************************************/
+char* SrchTheChar(string_view sv, Char letter)
+{
+    auto i = sv.find(letter);
+    if (i != string_view::npos)
+        return const_cast<char*>(sv.data() + i);
+    else
+        return nullptr;
 }
 
 /**********************************************************/
