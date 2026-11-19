@@ -106,7 +106,7 @@
 
 BEGIN_NCBI_SCOPE
 
-char*      XMLLoadEntry(ParserPtr pp, bool err);
+unique_ptr<string> XMLLoadEntry(ParserPtr pp, bool err);
 unique_ptr<string> XMLGetTagValue(const char* entry, const XmlIndex& xip);
 unique_ptr<string> XMLFindTagValue(const char* entry, const TXmlIndexList& xil, Int4 tag);
 TDataBlkList       XMLBuildRefDataBlk(char* entry, const TXmlIndexList& xil, int type);
