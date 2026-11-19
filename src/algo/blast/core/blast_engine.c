@@ -79,7 +79,7 @@
 #define CONV_NUCL2PROT_COORDINATES(length) (length) / CODON_LENGTH
 
 NCBI_XBLAST_EXPORT const int   kBlastMajorVersion = 2;
-NCBI_XBLAST_EXPORT const int   kBlastMinorVersion = 17;
+NCBI_XBLAST_EXPORT const int   kBlastMinorVersion = 18;
 NCBI_XBLAST_EXPORT const int   kBlastPatchVersion = 0;
 
 /** Structure to be passed to s_BlastSearchEngineCore, containing pointers
