@@ -697,11 +697,17 @@ CWGSDb CWGSClient::GetWGSDb(const string& prefix)
             slot->UpdateExpiration(m_WGSDbCache, prefix);
             try {
                 psg_time_point_t start = psg_clock_t::now();
-                wgs_db = CWGSDb(m_Mgr, prefix);
-                if ( s_AddMasterDescrLevel() != eAddMasterDescr_none ) {
-                    wgs_db.LoadMasterDescr();
+                try {
+                    wgs_db = CWGSDb(m_Mgr, prefix);
+                    if ( s_AddMasterDescrLevel() != eAddMasterDescr_none ) {
+                        wgs_db.LoadMasterDescr();
+                    }
+                    x_RegisterTiming(start, eVDBOpen, eOpStatusFound);
                 }
-                x_RegisterTiming(start, eVDBOpen, eOpStatusFound);
+                catch (...) {
+                    x_RegisterTiming(start, eVDBOpen, eOpStatusNotFound);
+                    throw;
+                }
             }
             catch ( CSraException& exc ) {
                 if ( exc.GetErrCode() == exc.eNotFoundDb ||
