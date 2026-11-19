@@ -276,6 +276,11 @@ if(NCBI_COMPONENT_ZSTD_FOUND AND
 endif()
 
 #############################################################################
+# LibLZMA (xz_utils)
+NCBI_define_Xcomponent(NAME LZMA LIB lzma)
+NCBIcomponent_report(LZMA)
+
+#############################################################################
 # BOOST
 if(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
 #set(Boost_COMPILER "-clang-darwin100")
@@ -336,7 +341,9 @@ NCBIcomponent_report(GIF)
 
 #############################################################################
 # TIFF
-NCBI_define_Xcomponent(NAME TIFF INTERFACELIB TIFF::TIFF MODULE libtiff-4 PACKAGE TIFF LIB tiff CHECK_INCLUDE tiffio.h)
+NCBI_define_Xcomponent(NAME TIFF INTERFACELIB TIFF::TIFF MODULE libtiff-4
+                       PACKAGE TIFF LIB tiff CHECK_INCLUDE tiffio.h
+                       ADD_COMPONENT LZMA)
 NCBIcomponent_report(TIFF)
 
 #############################################################################
