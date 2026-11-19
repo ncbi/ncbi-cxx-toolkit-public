@@ -382,8 +382,8 @@ static void BuildFeatureBlock(DataBlk& dbp)
 
     bptr = dbp.mBuf.ptr;
     eptr = bptr + dbp.mBuf.len;
-    ptr  = SrchTheChar(bptr, eptr, '\n');
-    if (! ptr)
+    ptr  = std::find(bptr, eptr, '\n');
+    if (ptr == eptr)
         return;
 
     bptr = ptr + 1;
@@ -394,7 +394,8 @@ static void BuildFeatureBlock(DataBlk& dbp)
         InsertDatablkVal(std::get<TDataBlkList>(dbp.mData), ParFlat_FEATBLOCK, bptr, eptr - bptr);
 
         do {
-            bptr = SrchTheChar(bptr, eptr, '\n');
+            bptr = std::find(bptr, eptr, '\n');
+            _ASSERT(bptr < eptr);
             bptr++;
 
             skip = false;
@@ -597,9 +598,9 @@ static bool TrimEmblFeatBlk(DataBlk& dbp)
 
     bptr = dbp.mBuf.ptr;
     eptr = bptr + dbp.mBuf.len;
-    ptr  = SrchTheChar(bptr, eptr, '\n');
+    ptr  = std::find(bptr, eptr, '\n');
 
-    while (ptr && ptr + 1 < eptr) {
+    while (ptr + 1 < eptr) {
         if (ptr[2] == 'H') {
             dbp.mBuf.len = dbp.mBuf.len - (ptr - dbp.mBuf.ptr + 1);
             dbp.mBuf.ptr = ptr + 1;
@@ -616,7 +617,7 @@ static bool TrimEmblFeatBlk(DataBlk& dbp)
             }
         }
 
-        ptr = SrchTheChar(bptr, eptr, '\n');
+        ptr = std::find(bptr, eptr, '\n');
     }
 
     return (flag);
@@ -1120,7 +1121,8 @@ string GetDescrComment(const char* offset, size_t len, Uint2 col_data, bool is_h
 
     const char* p;
     for (; bptr < eptr; bptr = p + 1) {
-        p = SrchTheChar(bptr, eptr, '\n');
+        p = std::find(bptr, eptr, '\n');
+        _ASSERT(p != eptr);
 
         /* skip HTG generated comments starting with '*' */
         if ((is_htg && bptr[col_data] == '*') ||

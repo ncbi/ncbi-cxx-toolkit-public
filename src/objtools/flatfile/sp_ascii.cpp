@@ -2789,7 +2789,6 @@ static SPFeatInputList ParseSPFeat(const DataBlk& entry, size_t seqlen)
     char*          eptr;
     char*          ptr1;
     char*          offset;
-    char*          endline;
     char*          str;
     const char*    delim;
     char*          quotes;
@@ -2811,7 +2810,11 @@ static SPFeatInputList ParseSPFeat(const DataBlk& entry, size_t seqlen)
 
     auto current = spfil.before_begin();
 
-    while (bptr < eptr && (endline = SrchTheChar(bptr, eptr, '\n'))) {
+    while (bptr < eptr) {
+        auto endline = std::find(bptr, eptr, '\n');
+        if (endline == eptr)
+            break;
+
         SPFeatInput temp;
 
         for (p = bptr, i = 0; *p != ' ' && *p != '\n' && i < 8; i++)
@@ -2964,8 +2967,9 @@ static SPFeatInputList ParseSPFeat(const DataBlk& entry, size_t seqlen)
                 quotes = nullptr;
             }
 
-            endline = SrchTheChar(bptr, eptr, '\n');
-            p       = endline - 1;
+            endline = std::find(bptr, eptr, '\n');
+            _ASSERT(endline < eptr);
+            p = endline - 1;
             if (p >= bptr && *p == '\"')
                 *p = '.';
             else

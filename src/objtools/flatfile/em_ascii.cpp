@@ -283,8 +283,8 @@ static void GetEmblDate(Parser::ESource source, const DataBlk& entry, CRef<CDate
     }
 
     while (offset < eptr) {
-        offset = SrchTheChar(offset, eptr, '\n');
-        if (! offset)
+        offset = std::find(offset, eptr, '\n');
+        if (offset >= eptr)
             break;
 
         offset++; /* newline */
@@ -445,7 +445,7 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
 
         string name;
         if (code < 0) {
-            ptr = SrchTheChar(bptr, eptr, ';');
+            ptr = std::find(bptr, eptr, ';');
             name.assign(bptr, ptr);
 
             if (NStr::EqualNocase(name, "MD5")) {
@@ -453,8 +453,8 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
                     if (NStr::Equal(ptr, 0, 2, "DR"))
                         break;
 
-                    ptr = SrchTheChar(ptr, eptr, '\n');
-                    if (*ptr == '\n')
+                    ptr = std::find(ptr, eptr, '\n');
+                    if (ptr < eptr)
                         ptr++;
                 }
                 continue;
@@ -475,19 +475,19 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
         }
 
         PointToNextToken(bptr); /* bptr points to primary_identifier */
-        p    = SrchTheChar(bptr, eptr, '\n');
-        ptr  = SrchTheChar(bptr, eptr, ';');
+        p   = std::find(bptr, eptr, '\n');
+        ptr = std::find(bptr, eptr, ';');
 
         string id, id1;
 
-        if (ptr && ptr < p) {
+        if (ptr < eptr && ptr < p) {
             id.assign(bptr, ptr);
             CleanTailNonAlphaChar(id);
 
             bptr = ptr;
             PointToNextToken(bptr); /* points to secondary_identifier */
         }
-        if (p) {
+        if (p < eptr) {
             id1.assign(bptr, p);
             CleanTailNonAlphaChar(id1);
         }
@@ -604,8 +604,8 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
             if (fta_StartsWith(ptr, "DR"sv))
                 break;
 
-            ptr = SrchTheChar(ptr, eptr, '\n');
-            if (*ptr == '\n')
+            ptr = std::find(ptr, eptr, '\n');
+            if (ptr < eptr)
                 ptr++;
         }
     }
