@@ -487,6 +487,13 @@ static CRef<CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
     if (p)
         *p = ch;
 
+    if(pp->format == Parser::EFormat::XML &&
+       pp->source == Parser::ESource::USPTO &&
+       (NStr::StartsWith(country, "USPP", NStr::eNocase) ||
+        NStr::StartsWith(country, "USRE", NStr::eNocase)) &&
+       isdigit(country[4]))
+        number = &country[2];
+
     string msg = NStr::Sanitize(number);
     if (pp->format == Parser::EFormat::EMBL ||
         pp->source == Parser::ESource::USPTO)
