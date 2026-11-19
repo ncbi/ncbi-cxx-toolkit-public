@@ -570,7 +570,7 @@ string CSNPSeqInfo::GetAnnotName(void) const
 }
 
 
-void CSNPSeqInfo::LoadBlob(SSNPData& data, bool split_enabled)
+void CSNPSeqInfo::LoadBlob(SSNPData& snpdata, bool split_enabled)
 {
     CRef<CSeq_entry> tse;
     CRef<CID2S_Split_Info> split_info;
@@ -589,19 +589,19 @@ void CSNPSeqInfo::LoadBlob(SSNPData& data, bool split_enabled)
     }
     if (split_enabled) {
         auto split = it.GetSplitInfoAndVersion(base_name, flags);
-        data.m_SplitInfo = split.first;
-        data.m_SplitVersion = split.second;
+        snpdata.m_SplitInfo = split.first;
+        snpdata.m_SplitVersion = split.second;
     }
     else {
-        data.m_TSE = it.GetEntry(base_name, flags);
+        snpdata.m_TSE = it.GetEntry(base_name, flags);
     }
 }
 
-void CSNPSeqInfo::LoadChunk(SSNPData& data, int chunk_id)
+void CSNPSeqInfo::LoadChunk(SSNPData& snpdata, int chunk_id)
 {
     string base_name = GetAnnotName();
     CSNPDbSeqIterator it = GetSeqIterator();
-    data.m_Chunk = it.GetChunkForVersion(base_name, chunk_id, data.m_SplitVersion);
+    snpdata.m_Chunk = it.GetChunkForVersion(base_name, chunk_id, snpdata.m_SplitVersion);
 }
 
 
@@ -952,26 +952,26 @@ vector<SSNPData> CSNPClient::GetAnnotInfo(const CSeq_id_Handle& id,
             {
                 CSNPBlobId blob_id = seq->GetBlobId();
                 blob_id.SetPrimaryTrackFeat();
-                SSNPData data;
-                data.m_BlobId = blob_id.ToString();
-                data.m_Name = name;
-                data.m_AnnotInfo.push_back(x_GetFeatInfo(name, id));
-                data.m_Stop = psg_clock_t::now();
-                ret.push_back(data);
+                SSNPData snpdata;
+                snpdata.m_BlobId = blob_id.ToString();
+                snpdata.m_Name = name;
+                snpdata.m_AnnotInfo.push_back(x_GetFeatInfo(name, id));
+                snpdata.m_Stop = psg_clock_t::now();
+                ret.push_back(snpdata);
             }
             {
                 CSNPBlobId blob_id = seq->GetBlobId();
                 blob_id.SetPrimaryTrackGraph();
-                SSNPData data;
-                data.m_BlobId = blob_id.ToString();
-                data.m_Name = name;
+                SSNPData snpdata;
+                snpdata.m_BlobId = blob_id.ToString();
+                snpdata.m_Name = name;
                 // add SNP overview graph type info
-                data.m_AnnotInfo.push_back(x_GetGraphInfo(name, id));
+                snpdata.m_AnnotInfo.push_back(x_GetGraphInfo(name, id));
                 // add SNP graph type info
                 string graph_name = CSeq_annot::CombineWithZoomLevel(name, info->GetDb().GetCoverageZoom());
-                data.m_AnnotInfo.push_back(x_GetGraphInfo(graph_name, id));
-                data.m_Stop = psg_clock_t::now();
-                ret.push_back(data);
+                snpdata.m_AnnotInfo.push_back(x_GetGraphInfo(graph_name, id));
+                snpdata.m_Stop = psg_clock_t::now();
+                ret.push_back(snpdata);
             }
         }
         else {
@@ -991,25 +991,25 @@ vector<SSNPData> CSNPClient::GetAnnotInfo(const CSeq_id_Handle& id,
             }
             seq->SetFilterIndex(filter_index);
             auto blob_id = seq->GetBlobId();
-            SSNPData data;
-            data.m_BlobId = blob_id.ToString();
-            data.m_Name = name;
-            data.m_AnnotInfo.push_back(x_GetFeatInfo(name, id));
+            SSNPData snpdata;
+            snpdata.m_BlobId = blob_id.ToString();
+            snpdata.m_Name = name;
+            snpdata.m_AnnotInfo.push_back(x_GetFeatInfo(name, id));
             string overview_name =
                 CSeq_annot::CombineWithZoomLevel(name, info->GetDb().GetOverviewZoom());
-            data.m_AnnotInfo.push_back(x_GetGraphInfo(overview_name, id));
+            snpdata.m_AnnotInfo.push_back(x_GetGraphInfo(overview_name, id));
             string coverage_name =
                 CSeq_annot::CombineWithZoomLevel(name, info->GetDb().GetCoverageZoom());
-            data.m_AnnotInfo.push_back(x_GetGraphInfo(coverage_name, id));
-            data.m_Stop = psg_clock_t::now();
-            ret.push_back(data);
+            snpdata.m_AnnotInfo.push_back(x_GetGraphInfo(coverage_name, id));
+            snpdata.m_Stop = psg_clock_t::now();
+            ret.push_back(snpdata);
         }
     }
     catch ( exception& exc ) {
-        SSNPData data;
-        data.m_Name = name;
-        data.m_Error = "Exception when handling get_na request: " + string(exc.what());
-        ret.push_back(data);
+        SSNPData snpdata;
+        snpdata.m_Name = name;
+        snpdata.m_Error = "Exception when handling get_na request: " + string(exc.what());
+        ret.push_back(snpdata);
     }
     return ret;
 }

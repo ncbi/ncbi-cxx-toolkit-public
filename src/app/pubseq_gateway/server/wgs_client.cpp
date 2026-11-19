@@ -1644,12 +1644,12 @@ void CWGSClient::GetSeqIds(SWGSSeqInfo& seq, list<CRef<CSeq_id> >& ids)
 bool CWGSClient::GetCompress(
     SWGSProcessor_Config::ECompressData comp,
     const SWGSSeqInfo& seq,
-    const CAsnBinData& data) const
+    const CAsnBinData& asndata) const
 {
     switch ( comp ) {
     case SWGSProcessor_Config::eCompressData_always: return true;
     case SWGSProcessor_Config::eCompressData_never: return false;
-    default: return dynamic_cast<const CSeq_entry*>(&data.GetMainObject()) &&  seq.IsMaster();
+    default: return dynamic_cast<const CSeq_entry*>(&asndata.GetMainObject()) &&  seq.IsMaster();
     }
 }
 
@@ -1667,14 +1667,14 @@ void CWGSClient::SetSeqId(CSeq_id& id, int seq_id_type, const string& seq_id)
 }
 
 
-void CWGSClient::GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq)
+void CWGSClient::GetBioseqInfo(shared_ptr<SWGSData>& wgsdata, SWGSSeqInfo& seq)
 {
     if ( !seq ) return;
 
-    data = make_shared<SWGSData>();
-    data->m_GetResult = SWGSData::eResult_Found;
-    data->m_BioseqInfo = make_shared<CBioseqInfoRecord>();
-    CBioseqInfoRecord& info = *data->m_BioseqInfo;
+    wgsdata = make_shared<SWGSData>();
+    wgsdata->m_GetResult = SWGSData::eResult_Found;
+    wgsdata->m_BioseqInfo = make_shared<CBioseqInfoRecord>();
+    CBioseqInfoRecord& info = *wgsdata->m_BioseqInfo;
 
     list< CRef<CSeq_id> > wgs_ids;
     GetSeqIds(seq, wgs_ids);
@@ -1684,12 +1684,12 @@ void CWGSClient::GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq)
         if ( id->IsGi() ) {
             gi = id->GetGi();
             info.SetGI(GI_TO(CBioseqInfoRecord::TGI, gi));
-            data->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_Gi;
+            wgsdata->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_Gi;
             continue;
         }
         else if ( auto text_id = id->GetTextseq_Id() ) {
             // only versioned accession goes to canonical id
-            if ( !(data->m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_CanonicalId) &&
+            if ( !(wgsdata->m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_CanonicalId) &&
                  text_id->IsSetAccession() && text_id->IsSetVersion() ) {
                 info.SetSeqIdType(id->Which());
                 info.SetAccession(text_id->GetAccession());
@@ -1697,7 +1697,7 @@ void CWGSClient::GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq)
                 if ( text_id->IsSetName() ) {
                     info.SetName(text_id->GetName());
                 }
-                data->m_BioseqInfoFlags |=
+                wgsdata->m_BioseqInfoFlags |=
                     SPSGS_ResolveRequest::fPSGS_CanonicalId |
                     SPSGS_ResolveRequest::fPSGS_Name;
                 continue;
@@ -1712,12 +1712,12 @@ void CWGSClient::GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq)
         CSeq_id gi_id(CSeq_id::e_Gi, gi);
         string content;
         gi_id.GetLabel(&content, CSeq_id::eFastaContent);
-        if ( !(data->m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_CanonicalId) ) {
+        if ( !(wgsdata->m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_CanonicalId) ) {
             // set canonical id from gi
             info.SetAccession(content);
             info.SetVersion(0);
             info.SetSeqIdType(gi_id.Which());
-            data->m_BioseqInfoFlags |=
+            wgsdata->m_BioseqInfoFlags |=
                 SPSGS_ResolveRequest::fPSGS_CanonicalId |
                 SPSGS_ResolveRequest::fPSGS_Name;
         }
@@ -1726,11 +1726,11 @@ void CWGSClient::GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq)
             psg_ids.insert(make_tuple(gi_id.Which(), std::move(content)));
         }
     }
-    if ( (data->m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_CanonicalId)  ||  !psg_ids.empty() ) {
+    if ( (wgsdata->m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_CanonicalId)  ||  !psg_ids.empty() ) {
         info.SetSeqIds(std::move(psg_ids));
         // all ids are requested, so we should get GI and acc.ver too if they exist
         info.SetGI(GI_TO(CBioseqInfoRecord::TGI, gi)); // even if it's zero
-        data->m_BioseqInfoFlags |=
+        wgsdata->m_BioseqInfoFlags |=
             SPSGS_ResolveRequest::fPSGS_SeqIds |
             SPSGS_ResolveRequest::fPSGS_CanonicalId |
             SPSGS_ResolveRequest::fPSGS_Gi;
@@ -1741,20 +1741,20 @@ void CWGSClient::GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq)
         info.SetHash(it.GetSeqHash());
         info.SetLength(it.GetSeqLength());
         info.SetMol(GetWGSDb(seq)->GetContigMolType());
-        data->m_BioseqInfoFlags |=
+        wgsdata->m_BioseqInfoFlags |=
             SPSGS_ResolveRequest::fPSGS_Hash |
             SPSGS_ResolveRequest::fPSGS_Length |
             SPSGS_ResolveRequest::fPSGS_MoleculeType;
         if ( it.HasTaxId() ) {
             info.SetTaxId(it.GetTaxId());
-            data->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_TaxId;
+            wgsdata->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_TaxId;
         }
     }
     if ( seq.IsScaffold() ) {
         CWGSScaffoldIterator it = GetScaffoldIterator(seq);
         info.SetLength(it.GetSeqLength());
         info.SetMol(GetWGSDb(seq)->GetScaffoldMolType());
-        data->m_BioseqInfoFlags |=
+        wgsdata->m_BioseqInfoFlags |=
             SPSGS_ResolveRequest::fPSGS_Length |
             SPSGS_ResolveRequest::fPSGS_MoleculeType;
     }
@@ -1762,12 +1762,12 @@ void CWGSClient::GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq)
         CWGSProteinIterator it = GetProteinIterator(seq);
         info.SetLength(it.GetSeqLength());
         info.SetMol(GetWGSDb(seq)->GetProteinMolType());
-        data->m_BioseqInfoFlags |=
+        wgsdata->m_BioseqInfoFlags |=
             SPSGS_ResolveRequest::fPSGS_Length |
             SPSGS_ResolveRequest::fPSGS_MoleculeType;
         if ( it.HasSeqHash() ) {
             info.SetHash(it.GetSeqHash());
-            data->m_BioseqInfoFlags |=
+            wgsdata->m_BioseqInfoFlags |=
                 SPSGS_ResolveRequest::fPSGS_Hash;
         }
         {{
@@ -1776,7 +1776,7 @@ void CWGSClient::GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq)
             // faster common taxid retrieval if possible
             if ( wgs->HasCommonTaxId() ) {
                 info.SetTaxId(wgs->GetCommonTaxId());
-                data->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_TaxId;
+                wgsdata->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_TaxId;
             }
             else {
                 // otherwise get taxid from root sequence (contig or protein itself)
@@ -1785,50 +1785,50 @@ void CWGSClient::GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq)
                     CWGSSeqIterator root_it = GetContigIterator(root_seq);
                     if ( root_it.HasTaxId() ) {
                         info.SetTaxId(root_it.GetTaxId());
-                        data->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_TaxId;
+                        wgsdata->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_TaxId;
                     }
                 }
                 if ( root_seq.IsProtein() ) {
                     if ( it.HasTaxId() ) {
                         info.SetTaxId(it.GetTaxId());
-                        data->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_TaxId;
+                        wgsdata->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_TaxId;
                     }
                 }
             }
         }}
     }
 
-    data->m_Id2BlobId.Reset(&GetBlobId(seq));
-    data->m_BlobId = GetPSGBlobId(*data->m_Id2BlobId);
-    data->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_BlobId;
-    if ( data->m_Id2BlobId->IsSetVersion() ) {
+    wgsdata->m_Id2BlobId.Reset(&GetBlobId(seq));
+    wgsdata->m_BlobId = GetPSGBlobId(*wgsdata->m_Id2BlobId);
+    wgsdata->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_BlobId;
+    if ( wgsdata->m_Id2BlobId->IsSetVersion() ) {
         // ID2 version is minutes since UNIX epoch
         // PSG date_changed is ms since UNIX epoch
-        info.SetDateChanged(data->m_Id2BlobId->GetVersion()*60000);
-        data->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_DateChanged;
+        info.SetDateChanged(wgsdata->m_Id2BlobId->GetVersion()*60000);
+        wgsdata->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_DateChanged;
     }
 
-    data->m_Id2BlobState = GetID2BlobState(seq);
-    info.SetState(data->GetPSGBioseqState());
-    data->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_State;
+    wgsdata->m_Id2BlobState = GetID2BlobState(seq);
+    info.SetState(wgsdata->GetPSGBioseqState());
+    wgsdata->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_State;
 }
 
 
-void CWGSClient::GetWGSData(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq0)
+void CWGSClient::GetWGSData(shared_ptr<SWGSData>& wgsdata, SWGSSeqInfo& seq0)
 {
-    if (!data) {
-        data = make_shared<SWGSData>();
-        data->m_GetResult = SWGSData::eResult_Found;
+    if (!wgsdata) {
+        wgsdata = make_shared<SWGSData>();
+        wgsdata->m_GetResult = SWGSData::eResult_Found;
     }
     SWGSSeqInfo& seq = GetRootSeq(seq0);
     
-    if ( !data->m_Id2BlobId ) data->m_Id2BlobId.Reset(&GetBlobId(seq0));
-    if ( data->m_BlobId.empty() ) data->m_BlobId = GetPSGBlobId(*data->m_Id2BlobId);
-    data->m_Id2BlobState = GetID2BlobState(seq0);
-    if ( data->IsForbidden() ) return;
+    if ( !wgsdata->m_Id2BlobId ) wgsdata->m_Id2BlobId.Reset(&GetBlobId(seq0));
+    if ( wgsdata->m_BlobId.empty() ) wgsdata->m_BlobId = GetPSGBlobId(*wgsdata->m_Id2BlobId);
+    wgsdata->m_Id2BlobState = GetID2BlobState(seq0);
+    if ( wgsdata->IsForbidden() ) return;
     
     if ( seq.IsMaster() ) {
-        data->m_Data = new CAsnBinData(*GetWGSDb(seq)->GetMasterSeq_entry());
+        wgsdata->m_Data = new CAsnBinData(*GetWGSDb(seq)->GetMasterSeq_entry());
     }
     else if ( seq.IsContig() ) {
         CWGSSeqIterator& it = GetContigIterator(seq);
@@ -1844,7 +1844,7 @@ void CWGSClient::GetWGSData(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq0)
         }
         auto asn_data = it.GetSplitInfoDataAndVersion(flags);
         if ( asn_data.first ) {
-            data->m_SplitVersion = asn_data.second;
+            wgsdata->m_SplitVersion = asn_data.second;
         }
         if ( !asn_data.first ) {
             asn_data.first = it.GetSeq_entryData(flags);
@@ -1852,7 +1852,7 @@ void CWGSClient::GetWGSData(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq0)
         if ( !asn_data.first ) {
             asn_data.first = new CAsnBinData(*it.GetSeq_entry(flags));
         }
-        data->m_Data = asn_data.first;
+        wgsdata->m_Data = asn_data.first;
     }
     else if ( seq.IsScaffold() ) {
         CWGSScaffoldIterator& it = GetScaffoldIterator(seq);
@@ -1863,7 +1863,7 @@ void CWGSClient::GetWGSData(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq0)
         else if ( s_MarkMasterDescr() ) {
             flags |= it.fMasterDescrMark;
         }
-        data->m_Data = new CAsnBinData(*it.GetSeq_entry(flags));
+        wgsdata->m_Data = new CAsnBinData(*it.GetSeq_entry(flags));
     }
     else if ( seq.IsProtein() ) {
         CWGSProteinIterator& it = GetProteinIterator(seq);
@@ -1874,13 +1874,13 @@ void CWGSClient::GetWGSData(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq0)
         else if ( s_MarkMasterDescr() ) {
             flags |= it.fMasterDescrMark;
         }
-        data->m_Data = new CAsnBinData(*it.GetSeq_entry(flags));
+        wgsdata->m_Data = new CAsnBinData(*it.GetSeq_entry(flags));
     }
-    if ( data->m_Data ) {
-        data->m_Compress = GetCompress(m_Config.m_CompressData, seq, *data->m_Data);
+    if ( wgsdata->m_Data ) {
+        wgsdata->m_Compress = GetCompress(m_Config.m_CompressData, seq, *wgsdata->m_Data);
     }
     else {
-        data.reset();
+        wgsdata.reset();
     }
 }
 

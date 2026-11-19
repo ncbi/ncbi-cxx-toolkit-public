@@ -85,8 +85,8 @@ public:
                              size_t  count,
                              size_t* written)
         {
-            const char* data = static_cast<const char*>(buffer);
-            m_Output.push_back(new TOctetString(data, data+count));
+            const char* pdata = static_cast<const char*>(buffer);
+            m_Output.push_back(new TOctetString(pdata, pdata+count));
             if ( written ) {
                 *written = count;
             }
@@ -484,9 +484,9 @@ void CPSGS_WGSProcessor::OnGotBlobBySeqId(void)
 }
 
 
-static void s_OnGotBlobByBlobId(void* data)
+static void s_OnGotBlobByBlobId(void* pdata)
 {
-    static_cast<CPSGS_WGSProcessor*>(data)->OnGotBlobByBlobId();
+    static_cast<CPSGS_WGSProcessor*>(pdata)->OnGotBlobByBlobId();
 }
 
 
@@ -580,9 +580,9 @@ void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
 }
 
 
-static void s_OnGotChunk(void* data)
+static void s_OnGotChunk(void* pdata)
 {
-    static_cast<CPSGS_WGSProcessor*>(data)->OnGotChunk();
+    static_cast<CPSGS_WGSProcessor*>(pdata)->OnGotChunk();
 }
 
 
@@ -722,12 +722,12 @@ void s_SetBlobState(CBlobRecord& blob_props, int id2_blob_state)
 }
 
 
-void s_SetBlobDataProps(CBlobRecord& blob_props, const CID2_Reply_Data& data)
+void s_SetBlobDataProps(CBlobRecord& blob_props, const CID2_Reply_Data& id2data)
 {
-    if ( data.GetData_compression() == data.eData_compression_gzip ) {
+    if ( id2data.GetData_compression() == id2data.eData_compression_gzip ) {
         blob_props.SetGzip(true);
     }
-    blob_props.SetNChunks(data.GetData().size());
+    blob_props.SetNChunks(id2data.GetData().size());
 }
 
 
@@ -743,10 +743,10 @@ void CPSGS_WGSProcessor::x_RegisterTiming(psg_time_point_t start,
 
 void CPSGS_WGSProcessor::x_RegisterTimingFound(psg_time_point_t start,
                                                EPSGOperation operation,
-                                               const CID2_Reply_Data& data)
+                                               const CID2_Reply_Data& id2data)
 {
     size_t blob_size = 0;
-    for ( auto& chunk : data.GetData() ) {
+    for ( auto& chunk : id2data.GetData() ) {
         blob_size += chunk->size();
     }
     x_RegisterTiming(start, operation, eOpStatusFound, blob_size);
@@ -809,11 +809,11 @@ void CPSGS_WGSProcessor::x_SendBlobForbidden(const string& psg_blob_id)
 }
 
 
-void CPSGS_WGSProcessor::x_SendBlobData(const string& psg_blob_id, const CID2_Reply_Data& data)
+void CPSGS_WGSProcessor::x_SendBlobData(const string& psg_blob_id, const CID2_Reply_Data& id2data)
 {
     size_t item_id = GetReply()->GetItemId();
     int chunk_no = 0;
-    for ( auto& chunk : data.GetData() ) {
+    for ( auto& chunk : id2data.GetData() ) {
         GetReply()->PrepareBlobData(item_id, GetName(), psg_blob_id,
             (const unsigned char*)chunk->data(), chunk->size(), chunk_no++);
     }
@@ -836,11 +836,11 @@ void CPSGS_WGSProcessor::x_SendChunkBlobProps(
 void CPSGS_WGSProcessor::x_SendChunkBlobData(
     const string& id2_info,
     TID2ChunkId chunk_id,
-    const CID2_Reply_Data& data)
+    const CID2_Reply_Data& id2data)
 {
     size_t item_id = GetReply()->GetItemId();
     int chunk_no = 0;
-    for ( auto& chunk : data.GetData() ) {
+    for ( auto& chunk : id2data.GetData() ) {
         GetReply()->PrepareTSEBlobData(item_id, GetName(),
             (const unsigned char*)chunk->data(), chunk->size(), chunk_no++,
             chunk_id, id2_info);
@@ -865,12 +865,12 @@ void CPSGS_WGSProcessor::x_SendSplitInfo(void)
     x_SendBlobProps(blob_id, main_blob_props);
     
     CBlobRecord split_info_blob_props;
-    CID2_Reply_Data data;
-    x_WriteData(data, *m_WGSData->m_Data, m_WGSData->m_Compress);
-    x_RegisterTimingFound(m_WGSData->m_Start, eBlobRetrieve, data);
-    s_SetBlobDataProps(split_info_blob_props, data);
+    CID2_Reply_Data id2data;
+    x_WriteData(id2data, *m_WGSData->m_Data, m_WGSData->m_Compress);
+    x_RegisterTimingFound(m_WGSData->m_Start, eBlobRetrieve, id2data);
+    s_SetBlobDataProps(split_info_blob_props, id2data);
     x_SendChunkBlobProps(id2_info, kSplitInfoChunk, split_info_blob_props);
-    x_SendChunkBlobData(id2_info, kSplitInfoChunk, data);
+    x_SendChunkBlobData(id2_info, kSplitInfoChunk, id2data);
 }
 
 
@@ -880,16 +880,16 @@ void CPSGS_WGSProcessor::x_SendMainEntry(void)
     CID2_Blob_Id& id2_blob_id = *m_WGSData->m_Id2BlobId;
     string main_blob_id = m_WGSData->m_BlobId;
 
-    CID2_Reply_Data data;
-    x_WriteData(data, *m_WGSData->m_Data, m_WGSData->m_Compress);
-    x_RegisterTimingFound(m_WGSData->m_Start, eBlobRetrieve, data);
+    CID2_Reply_Data id2data;
+    x_WriteData(id2data, *m_WGSData->m_Data, m_WGSData->m_Compress);
+    x_RegisterTimingFound(m_WGSData->m_Start, eBlobRetrieve, id2data);
 
     CBlobRecord main_blob_props;
     s_SetBlobVersion(main_blob_props, id2_blob_id);
     s_SetBlobState(main_blob_props, m_WGSData->GetID2BlobState());
-    s_SetBlobDataProps(main_blob_props, data);
+    s_SetBlobDataProps(main_blob_props, id2data);
     x_SendBlobProps(main_blob_id, main_blob_props);
-    x_SendBlobData(main_blob_id, data);
+    x_SendBlobData(main_blob_id, id2data);
 }
 
 
@@ -956,33 +956,33 @@ void CPSGS_WGSProcessor::x_SendChunk(void)
     auto split_version = m_WGSData->m_SplitVersion;
     string id2_info = GetPSGId2Info(id2_blob_id, split_version);
 
-    CID2_Reply_Data data;
-    x_WriteData(data, *m_WGSData->m_Data, m_WGSData->m_Compress);
-    x_RegisterTimingFound(m_WGSData->m_Start, eTseChunkRetrieve, data);
+    CID2_Reply_Data id2data;
+    x_WriteData(id2data, *m_WGSData->m_Data, m_WGSData->m_Compress);
+    x_RegisterTimingFound(m_WGSData->m_Start, eTseChunkRetrieve, id2data);
 
     CBlobRecord chunk_blob_props;
-    s_SetBlobDataProps(chunk_blob_props, data);
+    s_SetBlobDataProps(chunk_blob_props, id2data);
     x_SendChunkBlobProps(id2_info, m_ChunkId, chunk_blob_props);
-    x_SendChunkBlobData(id2_info, m_ChunkId, data);
+    x_SendChunkBlobData(id2_info, m_ChunkId, id2data);
 }
 
 
-void CPSGS_WGSProcessor::x_WriteData(CID2_Reply_Data& data,
+void CPSGS_WGSProcessor::x_WriteData(CID2_Reply_Data& id2data,
                                      const CAsnBinData& obj,
                                      bool compress) const
 {
-    data.SetData_format(CID2_Reply_Data::eData_format_asn_binary);
-    COSSWriter writer(data.SetData());
+    id2data.SetData_format(CID2_Reply_Data::eData_format_asn_binary);
+    COSSWriter writer(id2data.SetData());
     CWStream writer_stream(&writer);
     AutoPtr<CNcbiOstream> str;
     if ( compress ) {
-        data.SetData_compression(CID2_Reply_Data::eData_compression_gzip);
+        id2data.SetData_compression(CID2_Reply_Data::eData_compression_gzip);
         str.reset(new CCompressionOStream(writer_stream,
                                             new CZipStreamCompressor(ICompression::eLevel_Lowest),
                                             CCompressionIStream::fOwnProcessor));
     }
     else {
-        data.SetData_compression(CID2_Reply_Data::eData_compression_none);
+        id2data.SetData_compression(CID2_Reply_Data::eData_compression_none);
         str.reset(&writer_stream, eNoOwnership);
     }
     CObjectOStreamAsnBinary objstr(*str);

@@ -84,8 +84,8 @@ public:
                              size_t  count,
                              size_t* written)
         {
-            const char* data = static_cast<const char*>(buffer);
-            m_Output.push_back(new TOctetString(data, data+count));
+            const char* pdata = static_cast<const char*>(buffer);
+            m_Output.push_back(new TOctetString(pdata, pdata+count));
             if ( written ) {
                 *written = count;
             }
@@ -101,12 +101,12 @@ private:
 };
 
 
-void s_SetBlobDataProps(CBlobRecord& blob_props, const CID2_Reply_Data& data)
+void s_SetBlobDataProps(CBlobRecord& blob_props, const CID2_Reply_Data& id2data)
 {
-    if ( data.GetData_compression() == data.eData_compression_gzip ) {
+    if ( id2data.GetData_compression() == id2data.eData_compression_gzip ) {
         blob_props.SetGzip(true);
     }
-    blob_props.SetNChunks(data.GetData().size());
+    blob_props.SetNChunks(id2data.GetData().size());
 }
 
 
@@ -329,9 +329,9 @@ void CPSGS_SNPProcessor::Process()
 }
 
 
-static void s_OnGotAnnotation(void* data)
+static void s_OnGotAnnotation(void* pdata)
 {
-    static_cast<CPSGS_SNPProcessor*>(data)->OnGotAnnotation();
+    static_cast<CPSGS_SNPProcessor*>(pdata)->OnGotAnnotation();
 }
 
 
@@ -432,8 +432,8 @@ void CPSGS_SNPProcessor::GetAnnotation(void)
                 if (!m_Client->IsValidSeqId(id)) continue;
                 {
                     CSNPClientProcessorGuard guard(*m_Client, *this);
-                    auto data = m_Client->GetAnnotInfo(id, name, m_ScaleLimit);
-                    m_SNPData.insert(m_SNPData.end(), data.begin(), data.end());
+                    auto snpdata = m_Client->GetAnnotInfo(id, name, m_ScaleLimit);
+                    m_SNPData.insert(m_SNPData.end(), snpdata.begin(), snpdata.end());
                 }
                 if ( GetRequest()->NeedTrace() ) {
                     SendTrace(kSNPProcessorName +
@@ -442,10 +442,10 @@ void CPSGS_SNPProcessor::GetAnnotation(void)
             }
         }
         catch (exception& exc) {
-            SSNPData data;
-            data.m_Name = name;
-            data.m_Error = "Exception when handling get_na request: " + string(exc.what());
-            m_SNPData.push_back(data);
+            SSNPData snpdata;
+            snpdata.m_Name = name;
+            snpdata.m_Error = "Exception when handling get_na request: " + string(exc.what());
+            m_SNPData.push_back(snpdata);
         }
     }
     x_SetState("task_done");
@@ -496,18 +496,18 @@ void CPSGS_SNPProcessor::OnGotAnnotation(void)
     }
     set<string> has_error;
     set<string> has_data;
-    for (auto& data : m_SNPData) {
-        if ( !data.m_Error.empty() ) {
-            has_error.insert(data.m_Name);
-            x_SendError(data.m_Error);
+    for (auto& snpdata : m_SNPData) {
+        if ( !snpdata.m_Error.empty() ) {
+            has_error.insert(snpdata.m_Name);
+            x_SendError(snpdata.m_Error);
         }
         else {
             try {
-                has_data.insert(data.m_Name);
-                x_SendAnnotInfo(data);
+                has_data.insert(snpdata.m_Name);
+                x_SendAnnotInfo(snpdata);
             }
             catch (exception& exc) {
-                has_error.insert(data.m_Name);
+                has_error.insert(snpdata.m_Name);
                 m_SNPDataError = "Exception when handling a get_na request: " + string(exc.what());
                 x_SendError(m_SNPDataError);
                 x_ReportResultStatusForAllNA(SPSGS_AnnotRequest::ePSGS_RS_Error);
@@ -529,9 +529,9 @@ void CPSGS_SNPProcessor::OnGotAnnotation(void)
 }
 
 
-static void s_OnGotBlobByBlobId(void* data)
+static void s_OnGotBlobByBlobId(void* pdata)
 {
-    static_cast<CPSGS_SNPProcessor*>(data)->OnGotBlobByBlobId();
+    static_cast<CPSGS_SNPProcessor*>(pdata)->OnGotBlobByBlobId();
 }
 
 
@@ -621,9 +621,9 @@ void CPSGS_SNPProcessor::OnGotBlobByBlobId(void)
 }
 
 
-static void s_OnGotChunk(void* data)
+static void s_OnGotChunk(void* pdata)
 {
-    static_cast<CPSGS_SNPProcessor*>(data)->OnGotChunk();
+    static_cast<CPSGS_SNPProcessor*>(pdata)->OnGotChunk();
 }
 
 
@@ -655,8 +655,8 @@ void CPSGS_SNPProcessor::GetChunk(void)
                           " processor trying to get chunk " + m_Id2Info + "." + NStr::NumericToString(m_ChunkId));
             }
             CSNPClientProcessorGuard guard(*m_Client, *this);
-            SSNPData data = m_Client->GetChunk(m_Id2Info, m_ChunkId);
-            m_SNPData.push_back(data);
+            SSNPData snpdata = m_Client->GetChunk(m_Id2Info, m_ChunkId);
+            m_SNPData.push_back(snpdata);
         }
         catch (...) {
             m_SNPData.clear();
@@ -723,10 +723,10 @@ void CPSGS_SNPProcessor::x_RegisterTiming(psg_time_point_t start, psg_time_point
 
 void CPSGS_SNPProcessor::x_RegisterTimingFound(psg_time_point_t start, psg_time_point_t stop,
                                                EPSGOperation operation,
-                                               const CID2_Reply_Data& data)
+                                               const CID2_Reply_Data& id2data)
 {
     size_t blob_size = 0;
-    for ( auto& chunk : data.GetData() ) {
+    for ( auto& chunk : id2data.GetData() ) {
         blob_size += chunk->size();
     }
     x_RegisterTiming(start, stop, operation, eOpStatusFound, blob_size);
@@ -739,21 +739,21 @@ void CPSGS_SNPProcessor::x_RegisterTimingNotFound(EPSGOperation operation)
 }
 
 
-void CPSGS_SNPProcessor::x_WriteData(objects::CID2_Reply_Data& data, const CSerialObject& obj) const
+void CPSGS_SNPProcessor::x_WriteData(objects::CID2_Reply_Data& id2data, const CSerialObject& obj) const
 {
-    data.SetData_format(CID2_Reply_Data::eData_format_asn_binary);
-    data.SetData_compression(CID2_Reply_Data::eData_compression_none);
-    COSSWriter writer(data.SetData());
+    id2data.SetData_format(CID2_Reply_Data::eData_format_asn_binary);
+    id2data.SetData_compression(CID2_Reply_Data::eData_compression_none);
+    COSSWriter writer(id2data.SetData());
     CWStream writer_stream(&writer);
     CObjectOStreamAsnBinary objstr(writer_stream);
     objstr << obj;
 }
 
 
-void CPSGS_SNPProcessor::x_SendAnnotInfo(const SSNPData& data)
+void CPSGS_SNPProcessor::x_SendAnnotInfo(const SSNPData& snpdata)
 {
     SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
-    if ( annot_request.RegisterProcessedName(GetPriority(), data.m_Name) > GetPriority() ) {
+    if ( annot_request.RegisterProcessedName(GetPriority(), snpdata.m_Name) > GetPriority() ) {
         // higher priority processor already processed this request
         if ( GetRequest()->NeedTrace() ) {
             SendTrace(kSNPProcessorName +
@@ -761,33 +761,33 @@ void CPSGS_SNPProcessor::x_SendAnnotInfo(const SSNPData& data)
         }
         return;
     }
-    x_RegisterTiming(data.m_Start, data.m_Stop, eNAResolve, eOpStatusFound, 0);
+    x_RegisterTiming(snpdata.m_Start, snpdata.m_Stop, eNAResolve, eOpStatusFound, 0);
     CJsonNode json(CJsonNode::NewObjectNode());
-    json.SetString("blob_id", data.m_BlobId);
+    json.SetString("blob_id", snpdata.m_BlobId);
     ostringstream annot_str;
-    for (auto& it : data.m_AnnotInfo) {
+    for (auto& it : snpdata.m_AnnotInfo) {
         annot_str << MSerial_AsnBinary << *it;
     }
     json.SetString("seq_annot_info", NStr::Base64Encode(annot_str.str(), 0));
-    GetReply()->PrepareNamedAnnotationData(data.m_Name, kSNPProcessorName, json.Repr(CJsonNode::fStandardJson));
+    GetReply()->PrepareNamedAnnotationData(snpdata.m_Name, kSNPProcessorName, json.Repr(CJsonNode::fStandardJson));
 }
 
 
 void CPSGS_SNPProcessor::x_SendBlob(void)
 {
-    for (auto& data : m_SNPData) {
-        if (data.m_SplitInfo) x_SendSplitInfo(data);
-        if (data.m_TSE) x_SendMainEntry(data);
+    for (auto& snpdata : m_SNPData) {
+        if (snpdata.m_SplitInfo) x_SendSplitInfo(snpdata);
+        if (snpdata.m_TSE) x_SendMainEntry(snpdata);
     }
 }
 
 
 void CPSGS_SNPProcessor::x_SendChunk(void)
 {
-    for (auto& data : m_SNPData) {
+    for (auto& snpdata : m_SNPData) {
         CID2_Reply_Data id2_data;
-        x_WriteData(id2_data, *data.m_Chunk);
-        x_RegisterTimingFound(data.m_Start, data.m_Stop, eTseChunkRetrieve, id2_data);
+        x_WriteData(id2_data, *snpdata.m_Chunk);
+        x_RegisterTimingFound(snpdata.m_Start, snpdata.m_Stop, eTseChunkRetrieve, id2_data);
         CBlobRecord chunk_blob_props;
         s_SetBlobDataProps(chunk_blob_props, id2_data);
         x_SendChunkBlobProps(m_Id2Info, m_ChunkId, chunk_blob_props);
@@ -796,10 +796,10 @@ void CPSGS_SNPProcessor::x_SendChunk(void)
 }
 
 
-void CPSGS_SNPProcessor::x_SendSplitInfo(const SSNPData& data)
+void CPSGS_SNPProcessor::x_SendSplitInfo(const SSNPData& snpdata)
 {
-    const CID2S_Split_Info& info = *data.m_SplitInfo;
-    string id2_info = m_PSGBlobId + ".0." + NStr::NumericToString(data.m_SplitVersion);
+    const CID2S_Split_Info& info = *snpdata.m_SplitInfo;
+    string id2_info = m_PSGBlobId + ".0." + NStr::NumericToString(snpdata.m_SplitVersion);
     
     CBlobRecord main_blob_props;
     main_blob_props.SetId2Info(id2_info);
@@ -808,20 +808,20 @@ void CPSGS_SNPProcessor::x_SendSplitInfo(const SSNPData& data)
     CBlobRecord split_info_blob_props;
     CID2_Reply_Data id2_data;
     x_WriteData(id2_data, info);
-    x_RegisterTimingFound(data.m_Start, data.m_Stop, eNARetrieve, id2_data);
+    x_RegisterTimingFound(snpdata.m_Start, snpdata.m_Stop, eNARetrieve, id2_data);
     s_SetBlobDataProps(split_info_blob_props, id2_data);
     x_SendChunkBlobProps(id2_info, kSplitInfoChunk, split_info_blob_props);
     x_SendChunkBlobData(id2_info, kSplitInfoChunk, id2_data);
 }
 
 
-void CPSGS_SNPProcessor::x_SendMainEntry(const SSNPData& data)
+void CPSGS_SNPProcessor::x_SendMainEntry(const SSNPData& snpdata)
 {
-    const CSeq_entry& entry = *data.m_TSE;
+    const CSeq_entry& entry = *snpdata.m_TSE;
     string main_blob_id = m_PSGBlobId + ".0.0";
     CID2_Reply_Data id2_data;
     x_WriteData(id2_data, entry);
-    x_RegisterTimingFound(data.m_Start, data.m_Stop, eNARetrieve, id2_data);
+    x_RegisterTimingFound(snpdata.m_Start, snpdata.m_Stop, eNARetrieve, id2_data);
 
     CBlobRecord main_blob_props;
     s_SetBlobDataProps(main_blob_props, id2_data);
@@ -840,11 +840,11 @@ void CPSGS_SNPProcessor::x_SendBlobProps(const string& psg_blob_id, CBlobRecord&
 }
 
 
-void CPSGS_SNPProcessor::x_SendBlobData(const string& psg_blob_id, const CID2_Reply_Data& data)
+void CPSGS_SNPProcessor::x_SendBlobData(const string& psg_blob_id, const CID2_Reply_Data& id2data)
 {
     size_t item_id = GetReply()->GetItemId();
     int chunk_no = 0;
-    for ( auto& chunk : data.GetData() ) {
+    for ( auto& chunk : id2data.GetData() ) {
         GetReply()->PrepareBlobData(item_id, GetName(), psg_blob_id,
             (const unsigned char*)chunk->data(), chunk->size(), chunk_no++);
     }
@@ -861,11 +861,11 @@ void CPSGS_SNPProcessor::x_SendChunkBlobProps(const string& id2_info, int chunk_
 }
 
 
-void CPSGS_SNPProcessor::x_SendChunkBlobData(const string& id2_info, int chunk_id, const CID2_Reply_Data& data)
+void CPSGS_SNPProcessor::x_SendChunkBlobData(const string& id2_info, int chunk_id, const CID2_Reply_Data& id2data)
 {
     size_t item_id = GetReply()->GetItemId();
     int chunk_no = 0;
-    for ( auto& chunk : data.GetData() ) {
+    for ( auto& chunk : id2data.GetData() ) {
         GetReply()->PrepareTSEBlobData(item_id, GetName(),
             (const unsigned char*)chunk->data(), chunk->size(), chunk_no++,
             chunk_id, id2_info);

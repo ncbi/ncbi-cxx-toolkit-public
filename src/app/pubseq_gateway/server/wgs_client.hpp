@@ -195,7 +195,7 @@ public:
                                            SWGSSeqInfo& seq,
                                            const TBlobIds& excluded);
     // Get WGS blob data for an already resolved blob-id and seq-info.
-    void GetWGSData(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq0);
+    void GetWGSData(shared_ptr<SWGSData>& wgsdata, SWGSSeqInfo& seq0);
 
 public:
     enum EEnabledFlags {
@@ -272,11 +272,11 @@ private:
     TGi GetGi(SWGSSeqInfo& seq);
     void GetSeqIds(SWGSSeqInfo& seq, list<CRef<objects::CSeq_id> >& ids);
 
-    void GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq);
+    void GetBioseqInfo(shared_ptr<SWGSData>& wgsdata, SWGSSeqInfo& seq);
 
     bool GetCompress(SWGSProcessor_Config::ECompressData comp,
                      const SWGSSeqInfo& seq,
-                     const objects::CAsnBinData& data) const;
+                     const objects::CAsnBinData& asndata) const;
 
     void x_RegisterTiming(psg_time_point_t start,
                           EPSGOperation operation,

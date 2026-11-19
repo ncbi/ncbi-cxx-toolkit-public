@@ -231,8 +231,8 @@ public:
         return !m_IsPrimaryTrack || m_IsPrimaryTrackGraph;
     }
 
-    void LoadBlob(SSNPData& data, bool split_enabled);
-    void LoadChunk(SSNPData& data, int chunk_id);
+    void LoadBlob(SSNPData& snpdata, bool split_enabled);
+    void LoadChunk(SSNPData& snpdata, int chunk_id);
 
 protected:
     friend class CSNPClient;

@@ -123,7 +123,7 @@ private:
                           size_t blob_size);
     void x_RegisterTimingFound(psg_time_point_t start,
                                EPSGOperation operation,
-                               const objects::CID2_Reply_Data& data);
+                               const objects::CID2_Reply_Data& id2data);
     void x_RegisterTimingNotFound(EPSGOperation operation);
     EOutputFormat x_GetOutputFormat(void);
     void x_SendResult(const string& data_to_send, EOutputFormat output_format);
@@ -131,19 +131,19 @@ private:
     void x_SendBlobProps(void);
     void x_SendBlobProps(const string& psg_blob_id, CBlobRecord& blob_props);
     void x_SendBlobForbidden(const string& psg_blob_id);
-    void x_SendBlobData(const string& psg_blob_id, const objects::CID2_Reply_Data& data);
+    void x_SendBlobData(const string& psg_blob_id, const objects::CID2_Reply_Data& id2data);
     void x_SendChunkBlobProps(const string& id2_info,
                               TID2ChunkId chunk_id,
                               CBlobRecord& blob_props);
     void x_SendChunkBlobData(const string& id2_info,
                              TID2ChunkId chunk_id,
-                             const objects::CID2_Reply_Data& data);
+                             const objects::CID2_Reply_Data& id2data);
     void x_SendSplitInfo(void);
     void x_SendMainEntry(void);
     void x_SendForbidden(void);
     void x_SendBlob(void);
     void x_SendChunk(void);
-    void x_WriteData(objects::CID2_Reply_Data& data,
+    void x_WriteData(objects::CID2_Reply_Data& id2data,
                      const objects::CAsnBinData& obj,
                      bool compress) const;
 

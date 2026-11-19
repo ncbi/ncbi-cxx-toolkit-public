@@ -125,18 +125,18 @@ private:
                           size_t size);
     void x_RegisterTimingFound(psg_time_point_t start, psg_time_point_t stop,
                                EPSGOperation operation,
-                               const objects::CID2_Reply_Data& data);
+                               const objects::CID2_Reply_Data& id2data);
     void x_RegisterTimingNotFound(EPSGOperation operation);
-    void x_WriteData(objects::CID2_Reply_Data& data, const CSerialObject& obj) const;
-    void x_SendAnnotInfo(const SSNPData& data);
+    void x_WriteData(objects::CID2_Reply_Data& id2data, const CSerialObject& obj) const;
+    void x_SendAnnotInfo(const SSNPData& snpdata);
     void x_SendBlob(void);
     void x_SendChunk(void);
-    void x_SendSplitInfo(const SSNPData& data);
-    void x_SendMainEntry(const SSNPData& data);
+    void x_SendSplitInfo(const SSNPData& snpdata);
+    void x_SendMainEntry(const SSNPData& snpdata);
     void x_SendBlobProps(const string& psg_blob_id, CBlobRecord& blob_props);
-    void x_SendBlobData(const string& psg_blob_id, const objects::CID2_Reply_Data& data);
+    void x_SendBlobData(const string& psg_blob_id, const objects::CID2_Reply_Data& id2data);
     void x_SendChunkBlobProps(const string& id2_info, int chunk_id, CBlobRecord& blob_props);
-    void x_SendChunkBlobData(const string& id2_info, int chunk_id, const objects::CID2_Reply_Data& data);
+    void x_SendChunkBlobData(const string& id2_info, int chunk_id, const objects::CID2_Reply_Data& id2data);
     static void x_SendError(shared_ptr<CPSGS_Reply> reply,
                             const string& msg);
     static void x_SendError(shared_ptr<CPSGS_Reply> reply,
