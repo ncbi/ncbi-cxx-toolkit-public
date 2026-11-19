@@ -504,13 +504,10 @@ if(NOT NCBI_COMPONENT_VDB_DISABLED AND NOT NCBI_COMPONENT_VDB_FOUND)
     else() # Specifically check for "GCC"?
         set(NCBI_ThirdParty_VDB_COMPILER gcc)
     endif()
-    if(NCBI_PTBCFG_COMPONENT_StaticComponents)
-        set(vdb_extra ADD_COMPONENT ZSTD)
-    endif()
     NCBI_define_Xcomponent(NAME VDB INTERFACELIB ncbi-vdb::ncbi-vdb LIB ncbi-vdb
         LIBPATH_SUFFIX ${NCBI_ThirdParty_VDB_OS}/release/${NCBI_ThirdParty_VDB_ARCH}/lib
 #        LIBPATH_SUFFIX ${NCBI_ThirdParty_VDB_OS}/$<LOSTDCONFIG>/${NCBI_ThirdParty_VDB_ARCH}/lib
-        INCPATH_SUFFIX interfaces ${vdb_extra})
+        INCPATH_SUFFIX interfaces)
     if(NCBI_COMPONENT_VDB_FOUND)
         get_target_property(_inc ncbi-vdb::ncbi-vdb INTERFACE_INCLUDE_DIRECTORIES)
         set_property(TARGET ncbi-vdb::ncbi-vdb APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES
@@ -519,6 +516,10 @@ if(NOT NCBI_COMPONENT_VDB_DISABLED AND NOT NCBI_COMPONENT_VDB_FOUND)
             ${_inc}/cc/${NCBI_ThirdParty_VDB_COMPILER}/${NCBI_ThirdParty_VDB_ARCH}
             ${_inc}/cc/${NCBI_ThirdParty_VDB_COMPILER}
         )
+        if(NCBI_PTB_COMPONENT_StaticComponents
+           AND NCBI_COMPONENT_ZSTD_FOUND)
+            target_link_libs(ncbi-vdb::ncbi-vdb zstd::zstd)
+        endif()
         set(HAVE_NCBI_VDB 1)
     endif()
 endif()
