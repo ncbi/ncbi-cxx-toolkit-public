@@ -318,7 +318,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     if (pp->source == Parser::ESource::USPTO) {
         protacc = CpTheQualValue(cds.SetQual(), "protein_id");
         CRef<CSeq_id>        pat_seq_id(new CSeq_id);
-        CRef<CPatent_seq_id> pat_id = MakeUsptoPatSeqId(protacc.c_str());
+        CRef<CPatent_seq_id> pat_id = MakeUsptoPatSeqId(protacc);
         pat_seq_id->SetPatent(*pat_id);
         ids.push_back(pat_seq_id);
         return;
