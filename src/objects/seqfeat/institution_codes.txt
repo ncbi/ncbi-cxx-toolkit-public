@@ -182,6 +182,7 @@ ALD	s	Alderney Society and Museum
 ALDA	s	Seychelles Islands Foundation			
 ALEX	s	University of Alexandria, Department of Botany			
 ALF	s	Campus International de Baillarguet, Departement d'Elevage et de Medecine Veterinaire			
+ALFRED	s	Alfred University			
 ALGOBANK	c	ALGOBANK	AC<FRA>		
 ALGU	s	Universidade do Algarve			
 ALIRU	c	Australian Legume Inoculants Research Unit			
@@ -378,6 +379,7 @@ ASW<AUT>	c	Culture Collection of Algae at the University of Vienna
 ASYA	c	Istanbul Medeniyet University Antarctic Microalgae Culture Collection			
 ATA	s	Atatuerk UEniversitesi			
 ATB	s	Aging Tissue Bank			
+ATBUH	s	Abubakar Tafawa Balewa University Bauchi			
 ATCC	scb	American Type Culture Collection		https://www.atcc.org/Products/All/&spec;.aspx	
 ATCH	s	Chinese Academy of Tropical Agricultural Sciences			
 ATH	s	Goulandris Natural History Museum			
@@ -2604,6 +2606,7 @@ FUH	s	Firat UEniversitesi
 FUK	s	Fukui Botanical Garden			
 FULD	s	Verein fuer Naturkunde in Osthessen			
 FULPSB	s	Federal University of Lafia			
+FUM	s	Fur Museum			
 FUMH	s	Ferdowsi University			
 FUMT	s	University of Tokyo			
 FUNED	s	Fundacao Ezequiel Dias, Belo Horizonte			
@@ -3695,6 +3698,7 @@ ILFE	c	Lowland Forestry and Environment, University of Novi Sad
 ILH	s	Iowa Lakeside Laboratory			
 ILL	sc	University of Illinois, Plant Biology Department			
 ILLS	s	Illinois Natural History Survey			
+ILM	s	Iisalmi Nature Museum			
 ILMA	s	Istituto Leonardo Murialdo			
 ILPLA	s	Museo de La Plata, Instituto de Limnologia			
 ILRI	s	International Livestock Research Institute			
@@ -4245,6 +4249,7 @@ KIS	s	Universite de Kisangani
 KISA	s	Institut Congolais pour la Conservation de la Nature			
 KIT	c	Laboratorium voor Tropische Hygiene			
 KITAAS	s	Khaldunia College of Pharmacy Herbarium			
+KIUH	s	Karakoram International University			
 KIUJ	s	Kyusu University			
 KIZ	s	Kunming Institute of Zoology, Chinese Academy of Sciences			
 KKFC	s	Kasetsart University Kamphaengsaen campus Fungus Collection			
@@ -4277,6 +4282,7 @@ KMNH	s	Kitakyushu Museum and Institute of Natural History, Botany Department
 KMS	s	Kelowna Museum			
 KMSC	s	Kyoto Municipal Science Center for Youth			
 KMU	s	Karl-Marx-Universitat Leipzeg			
+KMUB	s	Karamanoglu Mehmetbey University			
 KMUT	s	Komaba Museum, University of Tokyo			
 KMV	s	Kunming Municipal Museum			
 KMVC	s	Krajske Muzeum Vychodnich Cech			
@@ -6418,6 +6424,7 @@ OPM	s	Okinawa Prefectual Museum
 ORC	s	Museo naturalistico dell'Orecchiella			
 ORE	s	University of Oregon, Biology Department			
 OREB	s	Karolinska Hoegre Allmaenna Laeroverket			
+ORHEHD	s	Orman Herbarium			
 ORI	s	Ocean Research Institute			
 ORIS	s	Institute of Steppe of the Ural branch of Russian Academy of Sciences			
 ORIT	s	University of Tokyo			
@@ -6639,6 +6646,7 @@ PLH	s	Plymouth City Museum and Art Gallery
 PLJ-UNS	s	Faculty of Agriculture, University of Novi Sad			
 PLMH	s	Pamantasan ng Lungsod ng Maynila			
 PLP	s	Institute of Himalayan Bioresource Technology			
+PLR	s	Federal State Budgetary Institution			
 PLU	s	Pacific Lutheran University			
 PLY	sc	Plymouth Institution and Athenaeum			
 PLYMOUTH	c	Plymouth Culture Collection			
@@ -7442,6 +7450,7 @@ SIFS	s	Sichuan Forestry School
 SIGMA	s	Station Internationale de Geobotanique Mediterraneenne et Alpine			
 SIIRT	s	Siirt University Kezer Campus			
 SIIS	s	Staten Island Institute of Arts and Sciences			
+SILP	s	Omar Al-Mukhtar University			
 SIM	s	Staten Island Institute of Arts and Sciences, Science Department			
 SIMF	s	Taurida National University, Botany Department			
 SIMS	s	Sherkin Island Marine Station			
@@ -7651,6 +7660,7 @@ SNCH	s	Sree Narayana College Kollam
 SNGM	s	Coleccion Paleontologica			
 SNHBM	s	Sharjah Natural History & Botanical Museum			
 SNHM	s	Sudan Natural History Museum	UKMS		
+SNHP	s	Saratoga National Historical Park			
 SNHS	s	Guildford Museum			
 SNJB	s	SNJB's KKHA Arts, SMGL Commerce & SPHJ Science College Chandwad, Dist. Nashik, Maharashtra, India. 423101.			
 SNM<SVK>	s	Slovak National Museum	SNMB		
@@ -7880,6 +7890,7 @@ SWAT	s	University of Swat Pakistan
 SWAU	s	Southwest Agricultural University, Horticulture Department			
 SWBR	s	Sweet Briar College, Biology Department			
 SWC	s	Swarthmore College, Biology Department			
+SWCBG	s	Southwestern College			
 SWCTU	s	Southwest Teachers University, Biology Department			
 SWE	s	Chandos House, Stowe School			
 SWF	s	Florida Gulf Coast University			
@@ -8123,6 +8134,7 @@ TMHNS	s	Tallahassee Museum of History & Natural Science
 TMI	s	Tottori Mycological Institute			
 TMM	s	Texas Memorial Museum	TMMC		
 TMMC	s	Texas Memorial Museum	TMM,TNHC		
+TMMU	s	Mollusk Museum, Faculty of Tropical Medicine, Mahidol University			
 TMN	s	Institute of the Problems of Northern Development			
 TMNH	s	Tianjin Museum of Natural History			
 TMP	s	Tampere Museums			
@@ -8444,6 +8456,7 @@ UDONECI	s	Universidad de Oriente
 UDS	s	University for Development Studies			
 UDSM	s	University of Dar es Salaam			
 UDU	s	Udmurt State University, Department of Biology and Chemistry			
+UDUHO	s	Usman Danfodio University			
 UDW	s	University of Durban-Westville, Botany Department			
 UE	s	University of the East			
 UEA	s	University of East Anglia			
@@ -8661,6 +8674,7 @@ UNAN	s	Universidad Nacional Autonoma de Nicaragua
 UNASAM	s	Universidad Nacional Santiago Antunez de Mayolo (David Smith Herbarium)			
 UNB	s	Connell Memorial Herbarium			
 UNB<BRA>	s	Universidade de Brasilia, Departamento de Zoologia			
+UNBA	s	Universidade Estadual Paulista, Campus Bauru			
 UNBC	s	University of Northern British Columbia			
 UNC-B	s	University of Northern Colorado			
 UNCA	s	University of North Carolina at Asheville			
@@ -8943,6 +8957,8 @@ UTF	s	The University of Tokyo Forests
 UTFH	s	College of Agriculture and Natural Resources, University of Tehran			
 UTG	s	University of Tuebingen			
 UTGD	s	Geology Department, The University of Tasmania			
+UTH	s	University of Thessaly			
+UTHF	s	University of Thessaly			
 UTHM	s	Universiti Tun Hussein Onn Malaysia (Pagoh Campus)			
 UTHSC	c	University of Texas Health Science Center			
 UTIM	s	University of Tennessee Insect Museum			
