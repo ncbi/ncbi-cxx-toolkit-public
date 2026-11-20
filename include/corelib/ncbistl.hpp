@@ -68,7 +68,7 @@
  */
 
 // Define to 0 to disable old outdated stuff
-//#define NCBISTL_ENABLE_DEPRECATED 1
+#define NCBISTL_ENABLE_DEPRECATED 1
 
 #ifdef NCBISTL_ENABLE_DEPRECATED
     /// @deprecated Replace, this macro will be removed soon
