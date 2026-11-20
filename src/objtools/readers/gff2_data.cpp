@@ -671,6 +671,9 @@ bool CGff2Record::xMigrateAttributes(
     TAttributes attrs_left(m_Attributes.begin(), m_Attributes.end());
     TAttrIt it;
 
+    attrs_left.erase("part"); // part attributes only affect feature locations 
+                              // and are handled elsewhere
+
     it = attrs_left.find("Note");
     if (it != attrs_left.end()) {
         pFeature->SetComment(xNormalizedAttributeValue(it->second));

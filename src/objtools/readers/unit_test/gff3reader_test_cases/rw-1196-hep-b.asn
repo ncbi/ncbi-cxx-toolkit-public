@@ -31,10 +31,6 @@ Seq-annot ::= {
           val "cds-AAF24660.1"
         },
         {
-          qual "part",
-          val "1"
-        },
-        {
           qual "product",
           val "polymerase"
         },
@@ -81,10 +77,6 @@ Seq-annot ::= {
           val "cds-AAF24661.1"
         },
         {
-          qual "part",
-          val "1"
-        },
-        {
           qual "product",
           val "large S protein"
         },
@@ -129,10 +121,6 @@ Seq-annot ::= {
         {
           qual "ID",
           val "cds-AAF24662.1"
-        },
-        {
-          qual "part",
-          val "1"
         },
         {
           qual "product",
