@@ -523,7 +523,7 @@ if(NOT NCBI_COMPONENT_VDB_DISABLED AND NOT NCBI_COMPONENT_VDB_FOUND)
             ${_inc}/cc/${NCBI_ThirdParty_VDB_COMPILER}/${NCBI_ThirdParty_VDB_ARCH}
             ${_inc}/cc/${NCBI_ThirdParty_VDB_COMPILER}
         )
-        if(NCBI_PTB_COMPONENT_StaticComponents
+        if(NCBI_PTBCFG_COMPONENT_StaticComponents
            AND NCBI_COMPONENT_ZSTD_FOUND)
             target_link_libraries(ncbi-vdb::ncbi-vdb zstd::zstd)
         endif()
