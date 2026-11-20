@@ -16,8 +16,6 @@
 #include "crypto_platform.h"
 #endif
 
-#include "crypto_struct.h"
-
 #include <stddef.h>
 
 #ifdef __DOXYGEN_ONLY__

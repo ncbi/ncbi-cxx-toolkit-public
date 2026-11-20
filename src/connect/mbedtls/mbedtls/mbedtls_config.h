@@ -1464,6 +1464,16 @@
 #define MBEDTLS_PSA_KEY_STORE_DYNAMIC
 
 /**
+ * Uncomment to enable p256-m. This is an alternative implementation of
+ * key generation, ECDH and (randomized) ECDSA on the curve SECP256R1.
+ * Compared to the default implementation:
+ *
+ * - p256-m has a much smaller code size and RAM footprint.
+ * - p256-m is only available via the PSA API. This includes the pk module
+ *   when #MBEDTLS_USE_PSA_CRYPTO is enabled.
+ * - p256-m does not support deterministic ECDSA, EC-JPAKE, custom protocols
+ *   over the core arithmetic, or deterministic derivation of keys.
+ *
  * We recommend enabling this option if your application uses the PSA API
  * and the only elliptic curve support it needs is ECDH and ECDSA over
  * SECP256R1.
