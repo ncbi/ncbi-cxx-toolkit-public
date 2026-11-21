@@ -1058,8 +1058,6 @@ seqdb needs $(SQLITE3_WRAPPER)
 seqdb needs blastdb
 seqdb needs3party $(LMDB_LIBS)
 seqdb needs3party $(SQLITE3_LIBS)
-seqdb_maintenance_cassandra needs psg_cassandra
-seqdb_maintenance_cassandra needs xutil
 seqedit needs seqset
 seqentry_comparator needs xobjwrite
 seqmasks_io needs $(OBJREAD_LIBS)
