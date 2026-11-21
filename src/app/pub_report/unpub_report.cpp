@@ -790,51 +790,57 @@ TEntrezId CUnpublishedReport::RetrievePMid(const CPubData& data) const
     return pmid;
 }
 
-bool CUnpublishedReport::FetchPub(TEntrezId pmid, const CPubData& data, CRef<CPubmed_entry>& pubmed_entry) const
+CRef<eutils::CPubmedArticleSet> CUnpublishedReport::FetchPubs(const vector<TEntrezId>& uids) const
 {
     CNcbiStrstream xml_stream;
-    eutils::CPubmedArticleSet pas;
+    CRef<eutils::CPubmedArticleSet> pas(new eutils::CPubmedArticleSet);
 
     CEutilsClient& eutils = GetEUtils();
-    vector<TEntrezId> uids { pmid };
 
     try {
         eutils.Fetch("PubMed", uids, xml_stream);
         if (xml_stream) {
-            xml_stream >> MSerial_Xml >> pas;
+            xml_stream >> MSerial_Xml >> *pas;
         }
     } catch (CException& e) {
         // skips exceptions those may occur during Fetch(...) and '>>'
         ERR_POST(Warning << "failed while fetching data from PubMed: " << e);
-        return false;
+        return {};
     }
 
-    const auto& pp = pas.GetPP().GetPP();
-    if (! pp.empty()) {
-        const auto& ppf = *pp.front();
-        if (ppf.IsPubmedArticle()) {
-            const eutils::CPubmedArticle& article = ppf.GetPubmedArticle();
-            pubmed_entry.Reset(article.ToPubmed_entry());
-        } else if (ppf.IsPubmedBookArticle()) {
-            const eutils::CPubmedBookArticle& article = ppf.GetPubmedBookArticle();
-            pubmed_entry.Reset(article.ToPubmed_entry());
-        }
+    return pas;
+}
+
+static
+unique_ptr<CPubData> ExtractArticleData(const eutils::CPubmedArticleSet::TPP::C_E& art, const CPubData& data, int max_date_check)
+{
+    CRef<CPubmed_entry> pubmed_entry;
+    if (art.IsPubmedArticle()) {
+        const eutils::CPubmedArticle& article = art.GetPubmedArticle();
+        pubmed_entry.Reset(article.ToPubmed_entry());
+    } else if (art.IsPubmedBookArticle()) {
+        const eutils::CPubmedBookArticle& article = art.GetPubmedBookArticle();
+        pubmed_entry.Reset(article.ToPubmed_entry());
+    } else {
+        return {};
     }
 
-    if (pubmed_entry && pubmed_entry->IsSetMedent() && pubmed_entry->GetMedent().IsSetCit()) {
+    if (pubmed_entry->IsSetMedent() && pubmed_entry->GetMedent().IsSetCit()) {
         const CCit_art& cit_art = pubmed_entry->GetMedent().GetCit();
         if (cit_art.IsSetFrom() && cit_art.GetFrom().IsJournal()) {
-            bool proceed = CheckDate(data.GetYear(), data.GetMonth(), m_max_date_check, cit_art.GetFrom().GetJournal()) && CheckRefs(pubmed_entry->GetMedent(), data.GetSeqIds());
+            bool proceed = CheckDate(data.GetYear(), data.GetMonth(), max_date_check, cit_art.GetFrom().GetJournal()) && CheckRefs(pubmed_entry->GetMedent(), data.GetSeqIds());
             if (proceed && cit_art.IsSetAuthors()) {
                 const CAuth_list& authors = cit_art.GetAuthors();
                 if (authors.IsSetNames() && FirstOrLastAuthorMatches(data.GetAuthors(), authors.GetNames())) {
-                    return true;
+                    auto pubmed_data = make_unique<CPubData>();
+                    CollectDataArt(cit_art, *pubmed_data);
+                    return pubmed_data;
                 }
             }
         }
     }
 
-    return false;
+    return {};
 }
 
 static AuthorNameMatch IsAuthorInList(const list<string>& auths, const string& author)
@@ -1014,11 +1020,8 @@ static void ReportJournal(CNcbiOstream& out, const char* prefix, const CPubData&
     }
 }
 
-static void ReportOnePub(CNcbiOstream& out, const CCit_art& pubmed_cit_art, const CPubData& data, TEntrezId pmid)
+static void ReportOnePub(CNcbiOstream& out, const CPubData& pubmed_data, const CPubData& data, TEntrezId pmid)
 {
-    CPubData pubmed_data;
-    CollectDataArt(pubmed_cit_art, pubmed_data);
-
     if (! pubmed_data.GetAuthors().empty() && ! pubmed_data.GetTitleWords().empty()) {
 
         out << "PMID " << ENTREZ_ID_TO(int, pmid) << '\t';
@@ -1057,11 +1060,13 @@ void CUnpublishedReport::CompleteReport()
     for (const auto& pub : m_pubs) {
         TEntrezId pmid = RetrievePMid(*pub);
         if (pmid != ZERO_ENTREZ_ID) {
-            CRef<CPubmed_entry> pubmed_entry;
-            if (FetchPub(pmid, *pub, pubmed_entry)) {
-                NCBI_ASSERT(pubmed_entry->IsSetMedent() && pubmed_entry->GetMedent().IsSetCit(),
-                            "MedEntry and MedEntry.Cit should be present at this point");
-                ReportOnePub(m_out, pubmed_entry->GetMedent().GetCit(), *pub, pmid);
+            vector<TEntrezId> uids { pmid };
+            auto pas = FetchPubs(uids);
+            if (pas && pas->IsSetPP() && pas->GetPP().IsSetPP() && ! pas->GetPP().GetPP().empty()) {
+                auto pubmed_data = ExtractArticleData(*pas->GetPP().GetPP().front(), *pub, m_max_date_check);
+                if (pubmed_data) {
+                    ReportOnePub(m_out, *pubmed_data, *pub, pmid);
+                }
             }
         }
     }

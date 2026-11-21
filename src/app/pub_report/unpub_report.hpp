@@ -37,6 +37,7 @@
 #include <set>
 
 #include <corelib/ncbistre.hpp>
+#include <objtools/eutils/efetch/PubmedArticleSet.hpp>
 
 #include "base_report.hpp"
 
@@ -80,7 +81,7 @@ private:
     CEutilsClient& GetEUtils() const;
 
     TEntrezId RetrievePMid(const CPubData& data) const;
-    bool FetchPub(TEntrezId pmid, const CPubData& data, CRef<CPubmed_entry>& pubmed_entry) const;
+    CRef<eutils::CPubmedArticleSet> FetchPubs(const vector<TEntrezId>& uids) const;
 
     typedef std::list<std::shared_ptr<CPubData>> TPubs;
 
