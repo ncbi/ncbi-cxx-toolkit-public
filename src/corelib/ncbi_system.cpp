@@ -285,9 +285,6 @@ bool SetMemoryLimit(size_t max_size,
                     TLimitsPrintHandler handler, 
                     TLimitsPrintParameter parameter)
 {
-    if (s_MemoryLimitSoft == max_size) {
-        return true;
-    }
     CFastMutexGuard LOCK(s_Limits_Handler_Mutex);
     s_SetPrintHandler(handler, parameter);
 
@@ -599,8 +596,9 @@ string CSystemInfo::GetUserName(void)
 
 unsigned int CSystemInfo::GetCpuCount(void)
 {
-    static unsigned int cpu = 0;
-    if (!cpu) {
+    static const unsigned int cpu = []() -> unsigned int {
+        unsigned int cpu = 0;
+
 #if defined(NCBI_OS_MSWIN)
         SYSTEM_INFO si;
         GetSystemInfo(&si);
@@ -636,7 +634,8 @@ unsigned int CSystemInfo::GetCpuCount(void)
         if (!cpu) {
             cpu = 1;
         }
-    }
+        return cpu;
+    }();
     return cpu;
 }
 
@@ -945,6 +944,7 @@ bool CSystemInfo::IsCIEnvironment(ECI* ci_ptr)
     for (const auto& c : ci_check_list) {
         if ( NcbiSys_getenv(c.env) ) {
             ci = c.type;
+            break;
         }
     }
     if (ci_ptr) {
