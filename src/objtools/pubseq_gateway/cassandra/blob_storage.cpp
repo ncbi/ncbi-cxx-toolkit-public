@@ -427,23 +427,31 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_ResolveServiceName(
         string item_host;
         string item_port_token;
         if (NStr::SplitInTwo(item, ":", item_host, item_port_token)) {
-            int16_t item_port = NStr::StringToNumeric<short>(item_port_token, NStr::fConvErr_NoThrow);
+            auto item_port = NStr::StringToNumeric<short>(item_port_token, NStr::fConvErr_NoThrow);
             item_port = item_port ? item_port : CCassConnection::kCassDefaultPort;
-            item_host = GetAddressString(item_host, is_hostlist);
-            if (item_host.empty()) {
-                return ESatInfoRefreshSchemaResult::eLbsmServiceNotResolved;
+            auto resolved_host = GetAddressString(item_host, is_hostlist);
+            if (resolved_host.empty()) {
+                ERR_POST(Info << "CSatInfoSchema::x_AddClusterByServiceName failed to resolve host name: '" << item_host << "'");
             }
-            connection_points.push_back(GetConnectionPointKey(item_host, item_port, registry_section));
+            else {
+                connection_points.push_back(GetConnectionPointKey(resolved_host, item_port, registry_section));
+            }
         }
         else {
-            item = GetAddressString(item, is_hostlist);
-            if (item.empty()) {
-                return ESatInfoRefreshSchemaResult::eLbsmServiceNotResolved;
+            auto resolved_host = GetAddressString(item, is_hostlist);
+            if (resolved_host.empty()) {
+                ERR_POST(Info << "CSatInfoSchema::x_AddClusterByServiceName failed to resolve host name: '" << item << "'");
             }
-            connection_points.push_back(
-                GetConnectionPointKey(item_host, CCassConnection::kCassDefaultPort, registry_section)
-            );
+            else {
+                connection_points.push_back(
+                    GetConnectionPointKey(resolved_host, CCassConnection::kCassDefaultPort, registry_section)
+                );
+            }
         }
+    }
+    if (connection_points.empty()) {
+        ERR_POST(Info << "CSatInfoSchema::x_AddClusterByServiceName final connection points list is empty");
+        return ESatInfoRefreshSchemaResult::eLbsmServiceNotResolved;
     }
     return {};
 }

@@ -137,6 +137,7 @@ TEST_F(CGetPublicCommentTest, BasicSuppressed)
                 comment);
         }
     );
+    EXPECT_EQ(get_comment.DescribeForDebugging(), "PublicComment:[keyspace=satncbi_extended,sat_key=130921029,flags=50]");
     wait_function(get_comment);
     EXPECT_EQ(1UL, call_count);
 }
@@ -163,6 +164,7 @@ TEST_F(CGetPublicCommentTest, BasicSuppressedFromDifferencesTask)
                 " criteria identified problems with the assembly or annotation.", comment);
         }
     );
+    EXPECT_EQ(get_comment.DescribeForDebugging(), "PublicComment:[keyspace=satncbi_extended,sat_key=130921029,flags=50]");
     wait_function(get_comment);
     EXPECT_EQ(1UL, call_count);
 }
@@ -189,6 +191,7 @@ TEST_F(CGetPublicCommentTest, BasicWithdrawn)
                 "Please contact info@ncbi.nlm.nih.gov for further details.", comment);
         }
     );
+    EXPECT_EQ(get_comment.DescribeForDebugging(), "PublicComment:[keyspace=satncbi_extended,sat_key=1888383,flags=138]");
     wait_function(get_comment);
     EXPECT_EQ(1UL, call_count);
 }
@@ -216,6 +219,7 @@ TEST_F(CGetPublicCommentTest, WithdrawnWithDefaultCommentFromSatInfo)
                 "Contact info@ncbi.nlm.nih.gov for further information", comment);
         }
     );
+    EXPECT_EQ(get_comment.DescribeForDebugging(), "PublicComment:[keyspace=satncbi_extended,sat_key=4317,flags=266]");
     wait_function(get_comment);
     EXPECT_EQ(1UL, call_count);
 }
@@ -243,6 +247,7 @@ TEST_F(CGetPublicCommentTest, WithdrawnWithDefaultCommentFromSatInfo2)
                 "Contact info@ncbi.nlm.nih.gov for further information", comment);
         }
     );
+    EXPECT_EQ(get_comment.DescribeForDebugging(), "PublicComment:[keyspace=satncbi_extended,sat_key=4317,flags=266]");
     wait_function(get_comment);
     EXPECT_EQ(1UL, call_count);
 }
@@ -267,6 +272,7 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultComment)
             EXPECT_EQ(suppressed_value, comment);
         }
     );
+    EXPECT_EQ(get_comment.DescribeForDebugging(), "PublicComment:[keyspace=satncbi_extended,sat_key=2147483647,flags=16]");
     wait_function(get_comment);
     EXPECT_EQ(1UL, call_count);
 }
@@ -295,6 +301,7 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentNotConfigured)
             ++call_count;
         }
     );
+    EXPECT_EQ(get_comment.DescribeForDebugging(), "PublicComment:[keyspace=satncbi_extended,sat_key=2147483647,flags=16]");
     wait_function(get_comment);
     EXPECT_EQ(0UL, call_count);
     EXPECT_EQ(1UL, error_call_count);
@@ -326,6 +333,7 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentWrongMessage)
             ++call_count;
         }
     );
+    EXPECT_EQ(get_comment.DescribeForDebugging(), "PublicComment:[keyspace=satncbi_extended,sat_key=2147483647,flags=16]");
     wait_function(get_comment);
     EXPECT_EQ(0UL, call_count);
     EXPECT_EQ(1UL, error_call_count);
@@ -348,6 +356,7 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentFromSatInfo)
                 "Contact info@ncbi.nlm.nih.gov for further information", comment);
         }
     );
+    EXPECT_EQ(get_comment.DescribeForDebugging(), "PublicComment:[keyspace=satncbi_extended,sat_key=2147483647,flags=16]");
     wait_function(get_comment);
     EXPECT_EQ(1UL, call_count);
 }
@@ -400,6 +409,7 @@ TEST_F(CGetPublicCommentTest, AliveBlob)
             EXPECT_EQ("", comment);
         }
     );
+    EXPECT_EQ(get_comment.DescribeForDebugging(), "PublicComment:[keyspace=satncbi_extended,sat_key=538172168,flags=2]");
     wait_function(get_comment);
     EXPECT_EQ(1UL, call_count);
 }

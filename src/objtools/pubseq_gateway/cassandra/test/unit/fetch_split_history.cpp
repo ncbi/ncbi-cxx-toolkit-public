@@ -96,6 +96,7 @@ TEST_F(CFetchSplitHistoryTest, EmptyHistory) {
                 << status << ", code - " << code << ", message - '" << message << "')";
         }
     );
+    EXPECT_EQ(fetch.DescribeForDebugging(), "FetchSplitHistory:[keyspace=psg_test_sat_4,sat_key=1,split_version=-1]");
     bool done = fetch.Wait();
     while (!done) {
         usleep(100);
@@ -120,6 +121,7 @@ TEST_F(CFetchSplitHistoryTest, FetchAllVersions) {
                 << status << ", code - " << code << ", message - '" << message << "')";
         }
     );
+    EXPECT_EQ(fetch.DescribeForDebugging(), "FetchSplitHistory:[keyspace=psg_test_sat_4,sat_key=340865818,split_version=-1]");
     bool done = fetch.Wait();
     while (!done) {
         usleep(100);
@@ -149,6 +151,7 @@ TEST_F(CFetchSplitHistoryTest, FetchOneVersion) {
                 << status << ", code - " << code << ", message - '" << message << "')";
         }
     );
+    EXPECT_EQ(fetch.DescribeForDebugging(), "FetchSplitHistory:[keyspace=psg_test_sat_4,sat_key=340865818,split_version=1565300000]");
     bool done = fetch.Wait();
     while (!done) {
         usleep(100);

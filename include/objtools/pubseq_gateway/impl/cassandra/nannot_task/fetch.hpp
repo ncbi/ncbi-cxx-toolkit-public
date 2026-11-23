@@ -137,6 +137,26 @@ public:
         );
     }
 
+    [[nodiscard]]
+    string DescribeForDebugging() const override
+    {
+        string result = format("NAnnotFetch:[keyspace={},accession={},version={},seq_id_type={}",
+            GetKeySpace(), m_Accession, m_Version, m_SeqIdType
+        );
+        if (!m_AnnotNamesTemp.empty()) {
+            for (CTempString const& item : m_AnnotNamesTemp) {
+                result.append(format(",name='{}'", static_cast<std::string>(item)));
+            }
+        }
+        else {
+            for (auto const& item : m_AnnotNames) {
+                result.append(format(",name='{}'", item));
+            }
+        }
+        result.append("]");
+        return result;
+    }
+
 protected:
     void Wait1() override;
 

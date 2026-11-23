@@ -62,7 +62,7 @@ class CCassStatusHistoryTaskGetPublicComment
         eError = CCassBlobWaiter::eError
     };
 
- public:
+public:
     using TCommentCallback = function<void(string comment, bool isFound)>;
 
     CCassStatusHistoryTaskGetPublicComment(
@@ -75,10 +75,16 @@ class CCassStatusHistoryTaskGetPublicComment
     void SetMessages(shared_ptr<CPSGMessages> messages);
     void SetCommentCallback(TCommentCallback callback);
 
- protected:
+    [[nodiscard]]
+    string DescribeForDebugging() const override
+    {
+        return format("PublicComment:[keyspace={},sat_key={},flags={}]", GetKeySpace(), GetKey(), m_BlobFlags);
+    }
+
+protected:
     void Wait1() override;
 
- private:
+private:
     void JumpToReplaced(CBlobRecord::TSatKey replaced);
 
     TCommentCallback m_CommentCallback{nullptr};

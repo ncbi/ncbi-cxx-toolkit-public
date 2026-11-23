@@ -60,7 +60,7 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
         eError = CCassBlobWaiter::eError
     };
 
- public:
+public:
     CCassBioseqInfoTaskFetch(shared_ptr<CCassConnection> connection,
                              const string & keyspace,
                              CBioseqInfoFetchRequest const& request,
@@ -70,10 +70,17 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
     void SetConsumeCallback(TBioseqInfoConsumeCallback callback);
     void AllowInheritance(bool value);
 
- protected:
+    [[nodiscard]]
+    string DescribeForDebugging() const override
+    {
+        return format("BioseqInfoFetch:[keyspace={},{},inheritance={}]",
+            GetKeySpace(), m_Request.DescribeForDebugging(), m_InheritanceAllowed ? "true" : "false");
+    }
+
+protected:
     void Wait1() override;
 
- private:
+private:
     void x_InitializeQuery();
     void x_InitializeAliveRecordQuery();
     void x_PopulateRecord(CBioseqInfoRecord& record) const;
@@ -84,7 +91,6 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
     void x_MergeSeqIds(CBioseqInfoRecord& target, CBioseqInfoRecord const& source);
     bool x_InheritanceRequired();
 
- private:
     CBioseqInfoFetchRequest m_Request;
     string m_Accession;
     TBioseqInfoConsumeCallback m_ConsumeCallback;
@@ -92,7 +98,7 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
     set<size_t> m_InheritanceRequired;
     bool m_InheritanceAllowed{true};
 
- protected:
+protected:
     unsigned int m_PageSize{CCassQuery::DEFAULT_PAGE_SIZE};
     unsigned int m_RestartCounter{0};
 };

@@ -58,7 +58,7 @@ class CCassSI2CSITaskFetch : public CCassBlobWaiter
         eError = CCassBlobWaiter::eError
     };
 
- public:
+public:
     CCassSI2CSITaskFetch(shared_ptr<CCassConnection> connection,
                          const string &              keyspace,
                          CSi2CsiFetchRequest const&  request,
@@ -67,17 +67,23 @@ class CCassSI2CSITaskFetch : public CCassBlobWaiter
 
     void SetConsumeCallback(TSI2CSIConsumeCallback callback);
 
- protected:
+    [[nodiscard]]
+    string DescribeForDebugging() const override
+    {
+        return format("Si2csiFetch:[keyspace={},{}]", GetKeySpace(), m_Request.DescribeForDebugging());
+    }
+
+protected:
     void Wait1() override;
 
- private:
+private:
     void x_InitializeQuery();
 
     CSi2CsiFetchRequest    m_Request;
     TSI2CSIConsumeCallback m_ConsumeCallback{nullptr};
     vector<CSI2CSIRecord>  m_Records;
 
- protected:
+protected:
     unsigned int m_PageSize{CCassQuery::DEFAULT_PAGE_SIZE};
     unsigned int m_RestartCounter{0};
 };

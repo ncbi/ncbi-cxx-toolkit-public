@@ -395,6 +395,12 @@ public:
         );
     }
 
+    [[nodiscard]]
+    virtual string DescribeForDebugging() const
+    {
+        return format("BlobWaiter:[keyspace={},sat_key={}]", m_Keyspace, m_Key);
+    }
+
 protected:
     enum EBlobWaiterState {
         eInit = 0,
