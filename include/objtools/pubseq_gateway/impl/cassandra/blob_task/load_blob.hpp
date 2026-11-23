@@ -160,7 +160,7 @@ public:
     [[nodiscard]]
     string DescribeForDebugging() const override
     {
-        return format("LoadBlob:[keyspace={},sat_key={},modified={},load_chunks:{},explicit_blob:{}]",
+        return format("LoadBlob:[keyspace={},sat_key={},modified={},load_chunks={},explicit_blob={}]",
             GetKeySpace(), GetSatKey(), m_Modified,
             m_LoadChunks ? "true" : "false",
             m_ExplicitBlob ? "true" : "false"
