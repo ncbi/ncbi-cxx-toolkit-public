@@ -47,7 +47,7 @@ BEGIN_IDBLOB_SCOPE
 class CBioseqInfoFetchRequest
 {
     using TFields = uint8_t;
- public:
+public:
     enum class EFields : TFields {
         eAccession = 1,
         eVersion = 2,
@@ -168,7 +168,23 @@ class CBioseqInfoFetchRequest
         return result;
     }
 
- private:
+    [[nodiscard]]
+    string DescribeForDebugging() const
+    {
+        string result = format("accession='{}'", m_Accession);
+        if (HasField(EFields::eGI)) {
+            result.append(format(",gi={}", m_GI));
+        }
+        if (HasField(EFields::eVersion)) {
+            result.append(format(",version={}", m_Version));
+        }
+        if (HasField(EFields::eSeqIdType)) {
+            result.append(format(",seqidtype={}", m_SeqIdType));
+        }
+        return result;
+    }
+
+private:
     void SetField(EFields value)
     {
         m_State |= static_cast<TFields>(value);
@@ -184,7 +200,7 @@ class CBioseqInfoFetchRequest
 class CBlobFetchRequest
 {
     using TFields = uint8_t;
- public:
+public:
     enum class EFields : TFields {
         eSat = 1,
         eSatKey = 2,
@@ -281,7 +297,7 @@ class CBlobFetchRequest
         return result;
     }
 
- private:
+private:
     void SetField(EFields value)
     {
         m_State |= static_cast<TFields>(value);
@@ -296,7 +312,7 @@ class CBlobFetchRequest
 class CSi2CsiFetchRequest
 {
     using TFields = uint8_t;
- public:
+public:
     enum class EFields : TFields {
         eSecSeqId = 1,
         eSecSeqIdType = 2,
@@ -353,6 +369,22 @@ class CSi2CsiFetchRequest
         return *this;
     }
 
+    [[nodiscard]]
+    string DescribeForDebugging() const
+    {
+        string result;
+        if (HasField(EFields::eSecSeqId)) {
+            result.append(format("sec_seq_id={},", m_SecSeqId));
+        }
+        if (HasField(EFields::eSecSeqIdType)) {
+            result.append(format("sec_seq_id_type={},", m_SecSeqIdType));
+        }
+        if (result.size()) {
+            result.resize(result.size() - 1);
+        }
+        return result;
+    }
+
     string ToString() const
     {
         string result("CSi2CsiFetchRequest");
@@ -371,7 +403,7 @@ class CSi2CsiFetchRequest
         return result;
     }
 
- private:
+private:
     void SetField(EFields value)
     {
         m_State |= static_cast<TFields>(value);

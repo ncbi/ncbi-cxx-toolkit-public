@@ -120,7 +120,7 @@ TEST_F(CPsgApiTest, ResolutionByGi) {
         },
         error_function
     );
-
+    EXPECT_EQ(si2csi_fetch.DescribeForDebugging(), "Si2csiFetch:[keyspace=idmain2,sec_seq_id=3786039]");
     si2csi_wait(si2csi_fetch);
     EXPECT_EQ(1UL, call_count);
     ASSERT_EQ(1UL, si2csi_records.size());

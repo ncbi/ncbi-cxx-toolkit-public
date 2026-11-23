@@ -109,6 +109,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionNotFound) {
         },
         error_function
     );
+    EXPECT_EQ(fetch.DescribeForDebugging(), "BioseqInfoFetch:[keyspace=idmain2,accession='FAKEACCESSION',inheritance=true]");
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
     EXPECT_EQ(0UL, actual_records.size());
@@ -127,6 +128,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionMultiple) {
         },
         error_function
     );
+    EXPECT_EQ(fetch.DescribeForDebugging(), "BioseqInfoFetch:[keyspace=idmain2,accession='H82419',inheritance=true]");
     EXPECT_EQ("DC1", fetch.GetConnectionDatacenterName());
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
@@ -157,6 +159,7 @@ TEST_F(CBioseqInfoTaskFetchTest, DISABLED_AccessionVersionMultiple) {
         },
         error_function
     );
+    EXPECT_EQ(fetch.DescribeForDebugging(), "");
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
     ASSERT_EQ(5UL, actual_records.size());
@@ -185,6 +188,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionVersionSingle) {
         },
         error_function
     );
+    EXPECT_EQ(fetch.DescribeForDebugging(), "BioseqInfoFetch:[keyspace=idmain2,accession='H82419',version=1,inheritance=true]");
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
     ASSERT_EQ(1UL, actual_records.size());
@@ -208,6 +212,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionSeqIdType) {
         },
         error_function
     );
+    EXPECT_EQ(fetch.DescribeForDebugging(), "BioseqInfoFetch:[keyspace=idmain2,accession='H82419',seqidtype=7,inheritance=true]");
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
     ASSERT_EQ(1UL, actual_records.size());
@@ -231,6 +236,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionGISingle) {
         },
         error_function
     );
+    EXPECT_EQ(fetch.DescribeForDebugging(), "BioseqInfoFetch:[keyspace=idmain2,accession='H82419',gi=11278869,inheritance=true]");
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
     ASSERT_EQ(1UL, actual_records.size());
@@ -255,6 +261,7 @@ TEST_F(CBioseqInfoTaskFetchTest, DISABLED_SeqIdsInheritance) {
         },
         error_function
     );
+    EXPECT_EQ(fetch.DescribeForDebugging(), "");
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
     ASSERT_EQ(1UL, actual_records.size());
@@ -289,6 +296,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionGIWrongVersion) {
         },
         error_function
     );
+    EXPECT_EQ(fetch.DescribeForDebugging(), "BioseqInfoFetch:[keyspace=idmain2,accession='AC005299',gi=3643631,version=5,inheritance=true]");
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
 }

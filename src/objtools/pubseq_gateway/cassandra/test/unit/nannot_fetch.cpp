@@ -219,6 +219,7 @@ TEST_F(CNAnnotTaskFetchTest, SingleRetrievalVector) {
                 << status << ", code - " << code << ", message - '" << message << "')";
         }
     );
+    EXPECT_EQ(fetch.DescribeForDebugging(), "NAnnotFetch:[keyspace=nannotg3,accession=NW_017889270,version=1,seq_id_type=10,name='NA000122202.1']");
     bool done = fetch.Wait();
     while (!done) {
         usleep(100);
@@ -250,6 +251,7 @@ TEST_F(CNAnnotTaskFetchTest, SingleRetrievalTempString) {
                 << status << ", code - " << code << ", message - '" << message << "')";
         }
     );
+    EXPECT_EQ(fetch.DescribeForDebugging(), "NAnnotFetch:[keyspace=nannotg3,accession=NW_017889270,version=1,seq_id_type=10,name='NA000122202.1']");
     bool done = fetch.Wait();
     while (!done) {
         usleep(100);
@@ -309,6 +311,7 @@ TEST_F(CNAnnotTaskFetchTest, MultipleRetrieval) {
                 << status << ", code - " << code << ", message - '" << message << "')";
         }
     );
+    EXPECT_EQ(fetch.DescribeForDebugging(), "NAnnotFetch:[keyspace=nannotg3,accession=NW_017889270,version=1,seq_id_type=10]");
     bool done = fetch.Wait();
     while (!done) {
         usleep(100);

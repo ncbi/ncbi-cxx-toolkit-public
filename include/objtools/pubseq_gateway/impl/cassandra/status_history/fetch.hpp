@@ -58,7 +58,7 @@ class CCassStatusHistoryTaskFetch
         eDone = CCassBlobWaiter::eDone,
         eError = CCassBlobWaiter::eError
     };
- public:
+public:
     CCassStatusHistoryTaskFetch(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -74,9 +74,18 @@ class CCassStatusHistoryTaskFetch
         TDataErrorCallback data_error_cb
     );
     unique_ptr<CBlobStatusHistoryRecord> Consume();
- protected:
+
+    [[nodiscard]]
+    string DescribeForDebugging() const override
+    {
+        return format("StatusHistory:[keyspace={},sat_key={},done_when={}]",
+            GetKeySpace(), GetKey(), m_DoneWhen.has_value() ? m_DoneWhen.value() : -1
+        );
+    }
+
+protected:
     void Wait1() override;
- private:
+private:
     optional<int64_t> m_DoneWhen;
     unique_ptr<CBlobStatusHistoryRecord> m_Record;
 };

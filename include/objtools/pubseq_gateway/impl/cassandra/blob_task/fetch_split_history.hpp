@@ -66,7 +66,7 @@ class CCassBlobTaskFetchSplitHistory
         eError = CCassBlobWaiter::eError
     };
 
- public:
+public:
     static const SSplitHistoryRecord::TSplitVersion kAllVersions = -1;
     using TConsumeCallback = function<void(vector<SSplitHistoryRecord> &&)>;
 
@@ -94,10 +94,18 @@ class CCassBlobTaskFetchSplitHistory
 
     void SetConsumeCallback(TConsumeCallback callback);
 
- protected:
+    [[nodiscard]]
+    string DescribeForDebugging() const override
+    {
+        return format("FetchSplitHistory:[keyspace={},sat_key={},split_version={}]",
+            GetKeySpace(), GetKey(), m_SplitVersion
+        );
+    }
+
+protected:
     void Wait1() override;
 
- private:
+private:
     SSplitHistoryRecord::TSplitVersion m_SplitVersion;
     vector<SSplitHistoryRecord> m_Result;
     TConsumeCallback m_ConsumeCallback;
