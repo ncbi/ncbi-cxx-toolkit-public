@@ -100,8 +100,7 @@ struct SDllHandle;
 ///      4) the Windows directory;
 ///      5) the directories that are listed in the PATH environment variable.
 ///
-/// NOTE: All methods of this class except the destructor throw exception
-/// CCoreException::eDll on error.
+/// DLL loading and unloading errors are reported as CCoreException::eDll.
 
 class CDll
 {
@@ -160,6 +159,8 @@ public:
     ///   Can be either DLL basename or an absolute file path.
     /// @param flags
     ///   Define how to load/unload DLL and interpret passed name.
+    /// @throws CCoreException
+    ///   With error code eDll if immediate DLL loading fails.
     /// @sa
     ///   Basename discussion in CDll header, EFlags
     NCBI_XNCBI_EXPORT
@@ -175,6 +176,8 @@ public:
     ///   Choice to unload DLL in destructor.
     /// @param treat_as
     ///   Choice to transform the DLL base name.
+    /// @throws CCoreException
+    ///   With error code eDll if immediate DLL loading fails.
     /// @sa
     ///   Basename discussion in CDll header,
     ///   ELoad, EAutoUnload, EBasename definition.
@@ -198,6 +201,8 @@ public:
     ///   Name of DLL.
     /// @param flags
     ///   Define how to load/unload DLL and interpret passed name.
+    /// @throws CCoreException
+    ///   With error code eDll if immediate DLL loading fails.
     /// @sa
     ///   Basename discussion in CDll header, EFlags
     NCBI_XNCBI_EXPORT
@@ -221,6 +226,8 @@ public:
     ///   Choice to unload DLL in destructor.
     /// @param treat_as
     ///   Choice to transform the DLL base name.
+    /// @throws CCoreException
+    ///   With error code eDll if immediate DLL loading fails.
     /// @sa
     ///   Basename discussion in CDll header,
     ///   ELoad, EAutoUnload, EBasename definition.
@@ -242,6 +249,9 @@ public:
     /// If Load() is called more than once without calling Unload() in between,
     /// then it will do nothing.
     ///
+    /// @throws CCoreException
+    ///   With error code eDll if DLL loading fails.
+    ///
     /// @note If the DLL links against the core "xncbi" library, loading it may
     /// result in reinvoking static initializers, with potential consequences
     /// ranging from having to retune diagnostic settings to crashing at exit.
@@ -259,6 +269,8 @@ public:
     /// Unload DLL.
     ///
     /// Do nothing and do not generate errors if the DLL is not loaded.
+    /// @throws CCoreException
+    ///   With error code eDll if DLL unloading fails.
     NCBI_XNCBI_EXPORT void Unload(void);
 
     /// Get DLLs entry point (function).
@@ -267,6 +279,8 @@ public:
     /// return the entry point's address on success, or return NULL on error.
     /// If the DLL is not loaded yet, then this method will call Load(),
     /// which can result in throwing an exception if Load() fails.
+    /// @throws CCoreException
+    ///   With error code eDll if loading the DLL before symbol lookup fails.
     /// @sa
     ///   GetEntryPoint_Data
     template <class TFunc>
@@ -285,6 +299,8 @@ public:
     /// return the entry point's address on success, or return NULL on error.
     /// If the DLL is not loaded yet, then this method will call Load(),
     /// which can result in throwing an exception if Load() fails.
+    /// @throws CCoreException
+    ///   With error code eDll if loading the DLL before symbol lookup fails.
     /// @sa
     ///   GetEntryPoint_Func
     template <class TData>
@@ -315,6 +331,8 @@ public:
     ///   Size of pointer.
     /// @return
     ///   The entry point's address on success, or return NULL on error.
+    /// @throws CCoreException
+    ///   With error code eDll if loading the DLL before symbol lookup fails.
     /// @sa
     ///   GetEntryPoint_Func, GetEntryPoint_Data
     NCBI_XNCBI_EXPORT
@@ -421,6 +439,8 @@ public:
                                    CDll::EAutoUnload unload = CDll::eAutoUnload); 
 
     /// Destructor.
+    ///
+    /// DLL unloading exceptions are caught and reported.
     NCBI_XNCBI_EXPORT ~CDllResolver();
 
     /// Try to load DLL from the specified file and resolve the entry point.
@@ -434,6 +454,8 @@ public:
     ///   Name of the driver (substitute for ${driver} macro)
     /// @return
     ///   TRUE if DLL is successfully loaded and entry point resolved.
+    /// @throws CCoreException
+    ///   With error code eDll if unloading a candidate DLL during cleanup fails.
     /// @sa
     ///   GetResolvedEntries
     NCBI_XNCBI_EXPORT 
@@ -446,6 +468,8 @@ public:
     ///    Container with file names to try.
     /// @param driver_name
     ///    Driver name
+    /// @throws CCoreException
+    ///   With error code eDll if unloading a candidate DLL during cleanup fails.
     /// @sa
     ///   GetResolvedEntries
     template<class TClass>
@@ -481,6 +505,8 @@ public:
     ///   Container with file candidate masks.
     /// @param extra_path
     ///   Extra "standard" paths to search the DLLs in
+    /// @throws CCoreException
+    ///   With error code eDll if unloading a candidate DLL during cleanup fails.
     /// @sa
     ///   GetResolvedEntries, x_AddExtraDllPath
     template<class TClass1, class TClass2>
@@ -538,6 +564,10 @@ public:
     }
 
     /// Unload all resolved DLLs.
+    ///
+    /// @throws CCoreException
+    ///   With error code eDll if unloading a DLL fails while automatic unloading
+    ///   is enabled.
     NCBI_XNCBI_EXPORT void Unload();
 
 private:

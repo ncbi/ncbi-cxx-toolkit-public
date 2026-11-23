@@ -284,7 +284,11 @@ CDllResolver::CDllResolver(const vector<string>& entry_point_names,
 
 CDllResolver::~CDllResolver()
 {
-    Unload();
+    try {
+        Unload();
+    } catch (const CException& e) {
+        NCBI_REPORT_EXCEPTION_X(3, "CDllResolver destructor", e);
+    }
 }
 
 bool CDllResolver::TryCandidate(const string& file_name,
@@ -311,7 +315,7 @@ bool CDllResolver::TryCandidate(const string& file_name,
                 CDirEntry::SplitPath(dll_name, 0, &base_name, 0);
                 NStr::Replace(*it, "${basename}", base_name, entry_point_name);
                 if (!driver_name.empty()) {
-                    NStr::Replace(*it, "${driver}", driver_name, entry_point_name);
+                    NStr::ReplaceInPlace(entry_point_name, "${driver}", driver_name);
                 }
             }
 
