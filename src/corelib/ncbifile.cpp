@@ -6865,10 +6865,9 @@ void CFileIO::SetFilePos(Int8 offset, EPositionMoveMethod move_method) const
 Uint8 CFileIO::GetFileSize(void) const
 {
 #if defined(NCBI_OS_MSWIN)
-    DWORD size_hi = 0;
-    DWORD size_lo = ::GetFileSize(m_Handle, &size_hi);
-    if (size_lo != INVALID_FILE_SIZE) {
-        return ((unsigned __int64)size_hi << 32) | size_lo;
+    LARGE_INTEGER size;
+    if (::GetFileSizeEx(m_Handle, &size)) {
+        return static_cast<Uint8>(size.QuadPart);
     }
 #elif defined(NCBI_OS_UNIX)
     TNcbiSys_fstat st;

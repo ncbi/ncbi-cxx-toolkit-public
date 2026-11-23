@@ -1366,6 +1366,7 @@ static void s_TEST_FileIO(void)
             n = fio.Read(buf, sizeof(buf));
             _TROUBLE;
         } catch (CFileException&) { }
+        assert( fio.GetFileSize() == (Int8)data_len );
         fio.Close();
         // Check if the file exists now
         assert( f.Exists() );
@@ -1396,6 +1397,7 @@ static void s_TEST_FileIO(void)
         assert( f.Exists() );
         n = fio.Write(data, data_len);
         assert( n == data_len );
+        assert( fio.GetFileSize() == (Int8)data_len );
         fio.Close();
         assert( f.GetLength() == (Int8)data_len );
     }}
@@ -1406,6 +1408,7 @@ static void s_TEST_FileIO(void)
         fio.Open(filename, CFileIO::eCreate, CFileIO::eReadWrite);
         n = fio.Write(data, data_len);
         assert( n == data_len );
+        assert( fio.GetFileSize() == (Int8)data_len );
         fio.Close();
         // Check if the file exists now
         assert( f.Exists() );
