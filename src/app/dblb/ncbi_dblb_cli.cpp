@@ -36,6 +36,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <util/static_map.hpp>
 #include <util/xregexp/arg_regexp.hpp>
+#include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_service.h>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ext/ncbi_dblb_svcmapper.hpp>
@@ -123,6 +124,7 @@ int CDBLBClientApp::Run(void)
     typedef CStaticArrayMap<const char*, TRunner, PNocase_CStr> TRunnerMap;
     DEFINE_STATIC_ARRAY_MAP(TRunnerMap, sc_Runners, kRunners);
 
+    CONNECT_Init();
     TRunnerMap::const_iterator it
         = sc_Runners.find(GetArgs().GetCommand().c_str());
     _ASSERT(it != sc_Runners.end());
