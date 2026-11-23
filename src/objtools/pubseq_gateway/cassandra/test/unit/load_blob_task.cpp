@@ -117,7 +117,7 @@ TEST_F(CBlobTaskLoadBlobTest, StaleBlobRecordFromCache) {
     cache_blob->SetSize(12509);
     cache_blob->SetNChunks(1);
     CCassBlobTaskLoadBlob fetch(sm_Env.Get().connection, m_KeyspaceName, std::move(cache_blob), true, fn404);
-    EXPECT_EQ(fetch.DescribeForDebugging(), "LoadBlob:[keyspace=satncbi_extended,sat_key=2155365,modified=1342057137103,load_chunks:true,explicit_blob:true]");
+    EXPECT_EQ(fetch.DescribeForDebugging(), "LoadBlob:[keyspace=satncbi_extended,sat_key=2155365,modified=1342057137103,load_chunks=true,explicit_blob=true]");
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
 }
@@ -134,14 +134,14 @@ TEST_F(CBlobTaskLoadBlobTest, ExpiredLastModified) {
         EXPECT_EQ(CCassandraException::eNotFound, code);
     };
     CCassBlobTaskLoadBlob fetch(sm_Env.Get().connection, m_KeyspaceName, 2155365, 1342057137103, true, fn404);
-    EXPECT_EQ(fetch.DescribeForDebugging(), "LoadBlob:[keyspace=satncbi_extended,sat_key=2155365,modified=1342057137103,load_chunks:true,explicit_blob:false]");
+    EXPECT_EQ(fetch.DescribeForDebugging(), "LoadBlob:[keyspace=satncbi_extended,sat_key=2155365,modified=1342057137103,load_chunks=true,explicit_blob=false]");
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
 }
 
 TEST_F(CBlobTaskLoadBlobTest, LatestBlobVersion) {
     CCassBlobTaskLoadBlob fetch(sm_Env.Get().connection, m_BlobChunkKeyspace, 2155365, true, error_function);
-    EXPECT_EQ(fetch.DescribeForDebugging(), "LoadBlob:[keyspace=psg_test_sat_4,sat_key=2155365,modified=-1,load_chunks:true,explicit_blob:false]");
+    EXPECT_EQ(fetch.DescribeForDebugging(), "LoadBlob:[keyspace=psg_test_sat_4,sat_key=2155365,modified=-1,load_chunks=true,explicit_blob=false]");
     wait_function(fetch);
     EXPECT_TRUE(fetch.IsBlobPropsFound());
     auto blob = fetch.ConsumeBlobRecord();
@@ -154,7 +154,7 @@ TEST_F(CBlobTaskLoadBlobTest, LatestBlobVersion) {
 
 TEST_F(CBlobTaskLoadBlobTest, ConfidentialDateInThePast) {
     CCassBlobTaskLoadBlob fetch(sm_Env.Get().connection, m_BlobChunkKeyspace, 38748105, false, error_function);
-    EXPECT_EQ(fetch.DescribeForDebugging(), "LoadBlob:[keyspace=psg_test_sat_4,sat_key=38748105,modified=-1,load_chunks:false,explicit_blob:false]");
+    EXPECT_EQ(fetch.DescribeForDebugging(), "LoadBlob:[keyspace=psg_test_sat_4,sat_key=38748105,modified=-1,load_chunks=false,explicit_blob=false]");
     wait_function(fetch);
     EXPECT_TRUE(fetch.IsBlobPropsFound());
     auto blob = fetch.ConsumeBlobRecord();
@@ -168,7 +168,7 @@ TEST_F(CBlobTaskLoadBlobTest, ConfidentialDateInThePast) {
 
 TEST_F(CBlobTaskLoadBlobTest, ConfidentialDateInTheFuture) {
     CCassBlobTaskLoadBlob fetch(sm_Env.Get().connection, m_BlobChunkKeyspace, 38748106, false, error_function);
-    EXPECT_EQ(fetch.DescribeForDebugging(), "LoadBlob:[keyspace=psg_test_sat_4,sat_key=38748106,modified=-1,load_chunks:false,explicit_blob:false]");
+    EXPECT_EQ(fetch.DescribeForDebugging(), "LoadBlob:[keyspace=psg_test_sat_4,sat_key=38748106,modified=-1,load_chunks=false,explicit_blob=false]");
     wait_function(fetch);
     EXPECT_TRUE(fetch.IsBlobPropsFound());
     auto blob = fetch.ConsumeBlobRecord();
@@ -260,7 +260,7 @@ TEST_F(CBlobTaskLoadBlobTest, ExplicitBlobProperties) {
     blob_prop->SetKey(numeric_limits<CBlobRecord::TSatKey>::max());
     blob_prop->SetNChunks(1);
     CCassBlobTaskLoadBlob fetch(sm_Env.Get().connection, "fake_keyspace", std::move(blob_prop), true, error_function);
-    EXPECT_EQ(fetch.DescribeForDebugging(), "LoadBlob:[keyspace=fake_keyspace,sat_key=2147483647,modified=0,load_chunks:true,explicit_blob:true]");
+    EXPECT_EQ(fetch.DescribeForDebugging(), "LoadBlob:[keyspace=fake_keyspace,sat_key=2147483647,modified=0,load_chunks=true,explicit_blob=true]");
     wait_function(fetch);
     EXPECT_TRUE(fetch.IsBlobPropsFound());
     EXPECT_EQ(call_count, 1);
