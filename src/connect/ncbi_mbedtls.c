@@ -83,61 +83,32 @@ struct SNcbiMbedTlsCred {
 #  if defined(MBEDTLS_THREADING_ALT)  &&  defined(NCBI_THREADS)
 #    ifdef MBEDTLS_THREADING_PTHREAD
 #      error "MBEDTLS_THREADING_ALT and MBEDTLS_THREADING_PTHREAD conflict"
+#    elif !defined(NCBI_OS_MSWIN)
+#      error "Use MBEDTLS_THREADING_ALT only under Windows"
 #    endif /*MBEDTLS_THREADING_PTHREAD*/
-static void mbtls_user_mutex_init(MT_LOCK* lock)
+/* None of these Windows functions offers any feedback.  Mutex
+ * functions do, but their need to accommodate possible cross-process
+ * use likely gives them more overhead, and as of Mbed TLS 4.x, we'll
+ * also need condition variables, which integrate smoothly only with
+ * critical sections and slim reader/writer locks, which yield no
+ * feedback either. */
+static void mbtls_user_mutex_init(CRITICAL_SECTION* lock)
 {
-    *lock = MT_LOCK_AddRef(g_CORE_MT_Lock);
+    InitializeCriticalSection(lock);
 }
-static void mbtls_user_mutex_deinit(MT_LOCK* lock)
+static void mbtls_user_mutex_deinit(CRITICAL_SECTION* lock)
 {
-    if (*lock) {
-        if (!(*lock = MT_LOCK_Delete(*lock))) {
-            /* NB: Do not use CORE_SetLOCK() here! */
-            g_CORE_MT_Lock = 0;
-        } else
-            *lock = 0;
-    } else
-        CORE_LOG_X(20, eLOG_Warning, "NULL MT_LOCK deinit in MBEDTLS");
+    DeleteCriticalSection(lock);
 }
-static int mbtls_user_mutex_lock(MT_LOCK* lock)
+static int mbtls_user_mutex_lock(CRITICAL_SECTION* lock)
 {
-    if (lock) {
-        switch (MT_LOCK_Do(*lock, eMT_Lock)) {
-        case -1:
-#ifdef MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE
-            return MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE;
-#else
-            return MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED;
-#endif
-        case  0:
-            return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
-        case  1:
-            return 0;
-        default:
-            break;
-        }
-    }
-    return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
+    EnterCriticalSection(lock);
+    return 0;
 }
-static int mbtls_user_mutex_unlock(MT_LOCK* lock)
+static int mbtls_user_mutex_unlock(CRITICAL_SECTION* lock)
 {
-    if (lock) {
-        switch (MT_LOCK_Do(*lock, eMT_Unlock)) {
-        case -1:
-#ifdef MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE
-            return MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE;
-#else
-            return MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED;
-#endif
-        case  0:
-            return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
-        case  1:
-            return 0;
-        default:
-            break;
-        }
-    }
-    return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
+    LeaveCriticalSection(lock);
+    return 0;
 }
 #  endif /*MBEDTLS_THREADING_ALT && NCBI_THREADS*/
 

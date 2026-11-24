@@ -26,17 +26,17 @@
  *
  * ===========================================================================
  *
- * Author:  Anton Lavrentiev
+ * Author:  Aaron Ucko
  *
  * File Description:
  *   MBEDTLS support for SSL in connection library
  *
  */
 
+#include <winsock2.h>
+#include <synchapi.h>
 
-struct MT_LOCK_tag;
-typedef struct MT_LOCK_tag* MT_LOCK;
-typedef MT_LOCK mbedtls_threading_mutex_t;
+typedef CRITICAL_SECTION mbedtls_threading_mutex_t;
 
 
 #endif /*CONNECT___MBEDTLS__THREADING_ALT__H*/
