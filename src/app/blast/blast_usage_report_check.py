@@ -34,6 +34,7 @@ from __future__ import annotations
 import configparser
 import os
 from pathlib import Path
+import platform
 import shutil
 import subprocess
 import sys
@@ -60,6 +61,14 @@ Options:
 
 class CheckError(RuntimeError):
     pass
+
+
+def is_windows() -> bool:
+    """True when running on Windows, whether Python is native, Cygwin, or MSYS."""
+    if os.name == "nt" or sys.platform in ("win32", "cygwin", "msys"):
+        return True
+    # Fallback: uname-based names like CYGWIN_NT-10.0, MSYS_NT-..., MINGW64_NT-...
+    return platform.system().upper().startswith(("CYGWIN", "MSYS", "MINGW", "WINDOWS"))
 
 
 def wants_help(argv: list[str]) -> bool:
@@ -120,7 +129,7 @@ def make_env(home: Path) -> dict[str, str]:
 
 
 def local_config_path(home: Path) -> Path:
-    return home / ("ncbi.ini" if os.name == "nt" else ".ncbirc")
+    return home / ("ncbi.ini" if is_windows() else ".ncbirc")
 
 
 def run_app(
