@@ -70,16 +70,29 @@ class CAccVerHistCallback
         {
             if (last) {
                 auto    app = CPubseqGatewayApp::GetInstance();
+                auto *  loader = m_FetchDetails->GetLoader();
+                bool    too_long = false;
                 if (m_Count == 0) {
-                    app->GetTiming().Register(m_Processor, eAccVerHistRetrieve,
-                                              eOpStatusNotFound, m_RetrieveTiming,
-                                              m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
+                    too_long = app->GetTiming().Register(
+                                    m_Processor, eAccVerHistRetrieve,
+                                    eOpStatusNotFound, m_RetrieveTiming,
+                                    loader->GetConnectionDatacenterName());
                     app->GetCounters().Increment(m_Processor,
                                                  CPSGSCounters::ePSGS_AccVerHistoryNotFound);
                 } else {
-                    app->GetTiming().Register(m_Processor, eAccVerHistRetrieve,
-                                              eOpStatusFound, m_RetrieveTiming,
-                                              m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
+                    too_long = app->GetTiming().Register(
+                                    m_Processor, eAccVerHistRetrieve,
+                                    eOpStatusFound, m_RetrieveTiming,
+                                    loader->GetConnectionDatacenterName());
+                }
+                if (too_long) {
+                    auto    request = m_Processor->GetRequest();
+
+                    CRequestContextResetter     context_resetter;
+                    request->SetRequestContext();
+
+                    GetDiagContext().Extra().Print("too_long_fetch",
+                                                   loader->DescribeForDebugging());
                 }
             }
 

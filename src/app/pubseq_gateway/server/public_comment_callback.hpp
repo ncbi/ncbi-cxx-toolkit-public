@@ -72,10 +72,20 @@ class CPublicCommentConsumeCallback
             if (!is_found)
                 op_status = eOpStatusNotFound;
 
-            CPubseqGatewayApp::GetInstance()->GetTiming().
-                Register(m_Processor, ePublicCommentRetrieve, op_status,
-                         m_PublicCommentRetrieveTiming,
-                         m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
+            auto *  loader = m_FetchDetails->GetLoader();
+            bool    too_long = CPubseqGatewayApp::GetInstance()->GetTiming().
+                            Register(m_Processor, ePublicCommentRetrieve, op_status,
+                                     m_PublicCommentRetrieveTiming,
+                                     loader->GetConnectionDatacenterName());
+            if (too_long) {
+                auto    request = m_Processor->GetRequest();
+
+                CRequestContextResetter     context_resetter;
+                request->SetRequestContext();
+
+                GetDiagContext().Extra().Print("too_long_fetch",
+                                               loader->DescribeForDebugging());
+            }
 
             m_ConsumeCB(m_FetchDetails, comment, is_found);
         }
@@ -106,12 +116,23 @@ class CPublicCommentErrorCallback
                         EDiagSev  severity,
                         const string &  message)
         {
-            if (status == CRequestStatus::e404_NotFound)
-                CPubseqGatewayApp::GetInstance()->GetTiming().
-                    Register(m_Processor, ePublicCommentRetrieve,
-                             eOpStatusNotFound,
-                             m_PublicCommentRetrieveTiming,
-                             m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
+            if (status == CRequestStatus::e404_NotFound) {
+                auto *  loader = m_FetchDetails->GetLoader();
+                bool    too_long = CPubseqGatewayApp::GetInstance()->GetTiming().
+                                Register(m_Processor, ePublicCommentRetrieve,
+                                         eOpStatusNotFound,
+                                         m_PublicCommentRetrieveTiming,
+                                         loader->GetConnectionDatacenterName());
+                if (too_long) {
+                    auto    request = m_Processor->GetRequest();
+
+                    CRequestContextResetter     context_resetter;
+                    request->SetRequestContext();
+
+                    GetDiagContext().Extra().Print("too_long_fetch",
+                                                   loader->DescribeForDebugging());
+                }
+            }
             m_ErrorCB(m_FetchDetails, status, code, severity, message);
         }
 

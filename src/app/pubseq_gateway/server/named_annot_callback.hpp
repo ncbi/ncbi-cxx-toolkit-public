@@ -73,16 +73,29 @@ class CNamedAnnotationCallback
         {
             if (last) {
                 auto    app = CPubseqGatewayApp::GetInstance();
-                if (m_AnnotCount == 0)
-                    app->GetTiming().Register(m_Processor, eNARetrieve,
-                                              eOpStatusNotFound,
-                                              m_RetrieveTiming,
-                                              m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
-                else
-                    app->GetTiming().Register(m_Processor, eNARetrieve,
-                                              eOpStatusFound,
-                                              m_RetrieveTiming,
-                                              m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
+                auto *  loader = m_FetchDetails->GetLoader();
+                bool    too_long = false;
+                if (m_AnnotCount == 0) {
+                    too_long = app->GetTiming().Register(
+                                    m_Processor, eNARetrieve,
+                                    eOpStatusNotFound, m_RetrieveTiming,
+                                    loader->GetConnectionDatacenterName());
+                } else {
+                    too_long = app->GetTiming().Register(
+                                    m_Processor, eNARetrieve,
+                                    eOpStatusFound, m_RetrieveTiming,
+                                    loader->GetConnectionDatacenterName());
+                }
+
+                if (too_long) {
+                    auto    request = m_Processor->GetRequest();
+
+                    CRequestContextResetter     context_resetter;
+                    request->SetRequestContext();
+
+                    GetDiagContext().Extra().Print("too_long_fetch",
+                                                   loader->DescribeForDebugging());
+                }
             }
 
             ++m_AnnotCount;

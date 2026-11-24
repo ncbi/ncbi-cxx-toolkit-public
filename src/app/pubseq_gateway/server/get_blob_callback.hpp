@@ -77,11 +77,12 @@ class CBlobChunkCallback
             if (chunk_no >= 0) {
                 m_BlobSize += data_size;
             } else {
+                auto *  loader = m_FetchDetails->GetLoader();
                 bool    too_long = CPubseqGatewayApp::GetInstance()->GetTiming().
                                         Register(m_Processor, m_RetrieveStatistic,
                                                  eOpStatusFound,
                                                  m_BlobRetrieveTiming,
-                                                 m_FetchDetails->GetLoader()->GetConnectionDatacenterName(),
+                                                 loader->GetConnectionDatacenterName(),
                                                  m_BlobSize);
                 if (too_long) {
                     auto    request = m_Processor->GetRequest();
@@ -90,7 +91,7 @@ class CBlobChunkCallback
                     request->SetRequestContext();
 
                     GetDiagContext().Extra().Print("too_long_fetch",
-                                                   m_FetchDetails->Serialize());
+                                                   loader->DescribeForDebugging());
                 }
             }
 
@@ -138,19 +139,30 @@ class CBlobPropCallback
                 }
 
                 if (m_NeedTiming) {
-                    CPubseqGatewayApp *  app = CPubseqGatewayApp::GetInstance();
-                    if (is_found)
-                        app->GetTiming().Register(m_Processor,
-                                                  eLookupCassBlobProp,
-                                                  eOpStatusFound,
-                                                  m_BlobPropTiming,
-                                                  m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
-                    else
-                        app->GetTiming().Register(m_Processor,
-                                                  eLookupCassBlobProp,
-                                                  eOpStatusNotFound,
-                                                  m_BlobPropTiming,
-                                                  m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
+                    CPubseqGatewayApp *     app = CPubseqGatewayApp::GetInstance();
+                    auto *                  loader = m_FetchDetails->GetLoader();
+                    bool                    too_long = false;
+                    if (is_found) {
+                        too_long = app->GetTiming().Register(
+                                            m_Processor, eLookupCassBlobProp,
+                                            eOpStatusFound, m_BlobPropTiming,
+                                            loader->GetConnectionDatacenterName());
+                    } else {
+                        too_long = app->GetTiming().Register(
+                                            m_Processor, eLookupCassBlobProp,
+                                            eOpStatusNotFound, m_BlobPropTiming,
+                                            loader->GetConnectionDatacenterName());
+                    }
+
+                    if (too_long) {
+                        auto    request = m_Processor->GetRequest();
+
+                        CRequestContextResetter     context_resetter;
+                        request->SetRequestContext();
+
+                        GetDiagContext().Extra().Print("too_long_fetch",
+                                                       loader->DescribeForDebugging());
+                    }
                 }
 
                 m_InProcess = true;
@@ -192,11 +204,22 @@ class CGetBlobErrorCallback
                         EDiagSev  severity,
                         const string &  message)
         {
-            if (status == CRequestStatus::e404_NotFound)
-                CPubseqGatewayApp::GetInstance()->GetTiming().
+            if (status == CRequestStatus::e404_NotFound) {
+                auto *  loader = m_FetchDetails->GetLoader();
+                bool    too_long = CPubseqGatewayApp::GetInstance()->GetTiming().
                     Register(m_Processor, m_RetrieveStatistic, eOpStatusNotFound,
                              m_BlobRetrieveTiming,
-                             m_FetchDetails->GetLoader()->GetConnectionDatacenterName());
+                             loader->GetConnectionDatacenterName());
+                if (too_long) {
+                    auto    request = m_Processor->GetRequest();
+
+                    CRequestContextResetter     context_resetter;
+                    request->SetRequestContext();
+
+                    GetDiagContext().Extra().Print("too_long_fetch",
+                                                   loader->DescribeForDebugging());
+                }
+            }
             m_BlobErrorCB(m_FetchDetails, status, code, severity, message);
         }
 

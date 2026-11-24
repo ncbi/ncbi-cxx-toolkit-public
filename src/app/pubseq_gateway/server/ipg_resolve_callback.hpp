@@ -70,21 +70,32 @@ class CIPGResolveCallback
         {
             if (is_last) {
                 auto    app = CPubseqGatewayApp::GetInstance();
+                auto *  loader = m_FetchDetails->GetLoader();
+                bool    too_long = false;
                 if (m_Count == 0) {
-                    app->GetTiming().Register(m_Processor, eIPGResolveRetrieve,
-                                              eOpStatusNotFound,
-                                              m_RetrieveTiming,
-                                              m_FetchDetails->GetLoader()->GetConnectionDatacenterName(),
-                                              0);
+                    too_long = app->GetTiming().Register(
+                                    m_Processor, eIPGResolveRetrieve,
+                                    eOpStatusNotFound, m_RetrieveTiming,
+                                    loader->GetConnectionDatacenterName(), 0);
                     app->GetCounters().Increment(
                                     m_Processor,
                                     CPSGSCounters::ePSGS_IPGResolveNotFound);
                 } else {
-                    app->GetTiming().Register(m_Processor, eIPGResolveRetrieve,
-                                              eOpStatusFound,
-                                              m_RetrieveTiming,
-                                              m_FetchDetails->GetLoader()->GetConnectionDatacenterName(),
-                                              m_Count);
+                    too_long = app->GetTiming().Register(
+                                    m_Processor, eIPGResolveRetrieve,
+                                    eOpStatusFound, m_RetrieveTiming,
+                                    loader->GetConnectionDatacenterName(),
+                                    m_Count);
+                }
+
+                if (too_long) {
+                    auto    request = m_Processor->GetRequest();
+
+                    CRequestContextResetter     context_resetter;
+                    request->SetRequestContext();
+
+                    GetDiagContext().Extra().Print("too_long_fetch",
+                                                   loader->DescribeForDebugging());
                 }
             }
 
