@@ -58,8 +58,6 @@
 
 #include <objtools/eutils/efetch/PubmedArticle.hpp>
 #include <objtools/eutils/efetch/PubmedArticleSet.hpp>
-#include <objtools/eutils/efetch/PubmedBookArticle.hpp>
-#include <objtools/eutils/efetch/PubmedBookArticleSet.hpp>
 
 #include <connect/ncbi_conn_stream.hpp>
 
@@ -814,16 +812,11 @@ CRef<eutils::CPubmedArticleSet> CUnpublishedReport::FetchPubs(const vector<TEntr
 static
 unique_ptr<CPubData> ExtractArticleData(const eutils::CPubmedArticleSet::TPP::C_E& art, const CPubData& data, int max_date_check)
 {
-    CRef<CPubmed_entry> pubmed_entry;
-    if (art.IsPubmedArticle()) {
-        const eutils::CPubmedArticle& article = art.GetPubmedArticle();
-        pubmed_entry.Reset(article.ToPubmed_entry());
-    } else if (art.IsPubmedBookArticle()) {
-        const eutils::CPubmedBookArticle& article = art.GetPubmedBookArticle();
-        pubmed_entry.Reset(article.ToPubmed_entry());
-    } else {
+    if (! art.IsPubmedArticle()) {
         return {};
     }
+
+    CRef<CPubmed_entry> pubmed_entry(art.GetPubmedArticle().ToPubmed_entry());
 
     if (pubmed_entry->IsSetMedent() && pubmed_entry->GetMedent().IsSetCit()) {
         const CCit_art& cit_art = pubmed_entry->GetMedent().GetCit();
