@@ -31,9 +31,12 @@
  */
 
 #include <mbedtls/error.h>
-#include <mbedtls/ctr_drbg.h>
-#include <mbedtls/entropy.h>
 #include <mbedtls/ssl.h>
+#  include <mbedtls/version.h>
+#  if MBEDTLS_VERSION_MAJOR < 4
+#    include <mbedtls/ctr_drbg.h>
+#    include <mbedtls/entropy.h>
+#  endif
 
 #include <corelib/ncbimisc.hpp>
 
@@ -41,6 +44,7 @@
 
 BEGIN_NCBI_SCOPE
 
+#if MBEDTLS_VERSION_MAJOR < 4
 NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ctr_drbg_free);
 NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ctr_drbg_init);
 NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ctr_drbg_random);
@@ -48,6 +52,7 @@ NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ctr_drbg_seed);
 NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_entropy_free);
 NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_entropy_func);
 NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_entropy_init);
+#endif
 NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_pk_free);
 NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_pk_init);
 NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_pk_parse_key);
@@ -55,7 +60,9 @@ NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_close_notify);
 NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_conf_alpn_protocols);
 NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_conf_authmode);
 NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_conf_own_cert);
+#if MBEDTLS_VERSION_MAJOR < 4
 NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_conf_rng);
+#endif
 NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_config_defaults);
 NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_config_free);
 NCBI_EXPORT_FUNC_DECLARE(XCONNECT, mbedtls_ssl_config_init);

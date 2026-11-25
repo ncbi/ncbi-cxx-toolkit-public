@@ -43,15 +43,17 @@
 
 #if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
 
-#  include <mbedtls/ctr_drbg.h>
 #  include <mbedtls/debug.h>
-#  include <mbedtls/entropy.h>
 #  include <mbedtls/error.h>
 #  include <mbedtls/pk.h>
 #  include <mbedtls/net_sockets.h>
 #  include <mbedtls/ssl.h>
 #  include <mbedtls/threading.h>
 #  include <mbedtls/version.h>
+#  if MBEDTLS_VERSION_MAJOR < 4
+#    include <mbedtls/ctr_drbg.h>
+#    include <mbedtls/entropy.h>
+#  endif
 #  ifdef MBEDTLS_PSA_CRYPTO_C
 #    include <psa/crypto.h>
 #  endif /*MBEDTLS_PSA_CRYPTO_C*/
@@ -86,8 +88,8 @@ struct SNcbiMbedTlsCred {
 #    elif !defined(NCBI_OS_MSWIN)
 #      error "Use MBEDTLS_THREADING_ALT only under Windows"
 #    endif /*MBEDTLS_THREADING_PTHREAD*/
-/* None of these Windows functions offers any feedback.  Mutex
- * functions do, but their need to accommodate possible cross-process
+/* These Windows functions generally offer no feedback.  Mutex functions
+ * supply feedback, but their need to accommodate possible cross-process
  * use likely gives them more overhead, and as of Mbed TLS 4.x, we'll
  * also need condition variables, which integrate smoothly only with
  * critical sections and slim reader/writer locks, which yield no
@@ -110,6 +112,37 @@ static int mbtls_user_mutex_unlock(CRITICAL_SECTION* lock)
     LeaveCriticalSection(lock);
     return 0;
 }
+#    if MBEDTLS_VERSION_MAJOR >= 4
+static int mbtls_user_cond_init(CONDITION_VARIABLE* cond)
+{
+    InitializeConditionVariable(cond);
+    return 0;
+}
+static void mbtls_user_cond_destroy(CONDITION_VARIABLE* cond)
+{
+    /* no-op */
+}
+static int mbtls_user_cond_signal(CONDITION_VARIABLE* cond)
+{
+    WakeConditionVariable(cond);
+    return 0;
+}
+static int mbtls_user_cond_broadcast(CONDITION_VARIABLE* cond)
+{
+    WakeAllConditionVariable(cond);
+    return 0;
+}
+static int mbtls_user_cond_wait(CONDITION_VARIABLE* cond,
+                                CRITICAL_SECTION* lock)
+{
+    BOOL status = SleepConditionVariableCS(cond, lock, INFINITE);
+    if (status) {
+        return 0;
+    } else {
+        return MBEDTLS_ERR_THREADING_USAGE_ERROR;
+    }
+}
+#    endif /*MBEDTLS_VERSION_MAJOR >= 4*/
 #  endif /*MBEDTLS_THREADING_ALT && NCBI_THREADS*/
 
 #  ifdef __cplusplus
@@ -142,8 +175,10 @@ static int         x_MbedTlsPush  (void*, const unsigned char*, size_t);
 
 
 static volatile int             s_MbedTlsLogLevel;
+#if MBEDTLS_VERSION_MAJOR < 4
 static mbedtls_entropy_context  s_MbedTlsEntropy;
 static mbedtls_ctr_drbg_context s_MbedTlsCtrDrbg;
+#endif
 static mbedtls_ssl_config       s_MbedTlsConf;
 static volatile FSSLPull        s_Pull;
 static volatile FSSLPush        s_Push;
@@ -211,6 +246,14 @@ static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
     case MBEDTLS_ERR_SSL_TIMEOUT:
         status = eIO_Timeout;
         break;
+#ifdef PSA_ERROR_NOT_SUPPORTED
+    case PSA_ERROR_NOT_SUPPORTED:
+#endif
+#if defined(MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED) \
+    && ( !defined(PSA_ERROR_NOT_SUPPORTED) \
+        || MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED != PSA_ERROR_NOT_SUPPORTED)
+    case MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED:
+#endif
 #ifdef MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE
     case MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE:
 #endif
@@ -223,13 +266,22 @@ static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
     case MBEDTLS_ERR_SSL_UNKNOWN_CIPHER:
 #endif
     case MBEDTLS_ERR_SSL_INTERNAL_ERROR:
-#ifdef MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED
-    case MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED:
-#endif
         status = eIO_NotSupported;
         break;
-    case MBEDTLS_ERR_THREADING_BAD_INPUT_DATA:
+#ifdef PSA_ERROR_BUFFER_TOO_SMALL
+    case PSA_ERROR_BUFFER_TOO_SMALL:
+#endif
+#ifdef PSA_ERROR_INVALID_ARGUMENT
+    case PSA_ERROR_INVALID_ARGUMENT:
+#endif
+#if defined(MBEDTLS_ERR_SSL_BAD_INPUT_DATA) \
+    && ( !defined(PSA_ERROR_INVALID_ARGUMENT) \
+        || MBEDTLS_ERR_SSL_BAD_INPUT_DATA != PSA_ERROR_INVALID_ARGUMENT)
     case MBEDTLS_ERR_SSL_BAD_INPUT_DATA:
+#endif
+#ifdef MBEDTLS_ERR_THREADING_BAD_INPUT_DATA
+    case MBEDTLS_ERR_THREADING_BAD_INPUT_DATA:
+#endif
         status = eIO_InvalidArg;
         break;
     case MBEDTLS_ERR_SSL_CONN_EOF:
@@ -508,6 +560,14 @@ again:
     if (x_read <= 0) {
         status = x_ErrorToStatus(x_read, (mbedtls_ssl_context*) session,
                                  eIO_Read);
+#ifdef MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET
+        if (x_read == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
+            char errbuf[256];
+            mbedtls_strerror(x_read, errbuf, sizeof(errbuf));
+            CORE_LOGF_X(14, eLOG_Info, ("%s", errbuf));
+            goto again;
+        }
+#endif
         if (status == eIO_Success  &&  x_read == MBEDTLS_ERR_SSL_WANT_READ)
             goto again;
         *error = x_read;
@@ -659,6 +719,11 @@ static EIO_Status x_InitLocking(void)
     EIO_Status status;
 
 #  ifdef NCBI_THREADS
+#    if MBEDTLS_VERSION_MAJOR >= 4
+#      ifndef MBEDTLS_THREADING_C
+    return eIO_NotSupported;
+#      endif
+#    else
     switch (mbedtls_version_check_feature("MBEDTLS_THREADING_C")) {
     case  0:
         break;
@@ -669,6 +734,7 @@ static EIO_Status x_InitLocking(void)
     default:
         return eIO_Unknown;
     }
+#    endif /*MBEDTLS_VERSION_MAJOR*/
 #  endif /*NCBI_THREADS*/
 
 #  ifdef MBEDTLS_THREADING_PTHREAD
@@ -680,7 +746,15 @@ static EIO_Status x_InitLocking(void)
         mbedtls_threading_set_alt(mbtls_user_mutex_init,
                                   mbtls_user_mutex_deinit,
                                   mbtls_user_mutex_lock,
-                                  mbtls_user_mutex_unlock);
+                                  mbtls_user_mutex_unlock
+#if MBEDTLS_VERSION_MAJOR >= 4
+                                  , mbtls_user_cond_init,
+                                  mbtls_user_cond_destroy,
+                                  mbtls_user_cond_signal,
+                                  mbtls_user_cond_broadcast,
+                                  mbtls_user_cond_wait
+#endif
+                                  );
         MT_LOCK_Do(lock, eMT_Unlock);
         status = eIO_Success;
     } else
@@ -703,16 +777,20 @@ static void x_MbedTlsExit(int/*bool*/ nopsa)
     s_Push = 0;
     s_Pull = 0;
 
+#if MBEDTLS_VERSION_MAJOR < 4
     mbedtls_ctr_drbg_free(&s_MbedTlsCtrDrbg);
     mbedtls_entropy_free(&s_MbedTlsEntropy);
+#endif
 #ifdef MBEDTLS_PSA_CRYPTO_C
     if (!nopsa)
         mbedtls_psa_crypto_free();
 #endif /*MBEDTLS_PSA_CRYPTO_C*/
     mbedtls_ssl_config_free(&s_MbedTlsConf);
     mbedtls_debug_set_threshold(s_MbedTlsLogLevel = 0);
+#if MBEDTLS_VERSION_MAJOR < 4
     memset(&s_MbedTlsCtrDrbg, 0, sizeof(s_MbedTlsCtrDrbg));
     memset(&s_MbedTlsEntropy, 0, sizeof(s_MbedTlsEntropy));
+#endif
     memset(&s_MbedTlsConf,    0, sizeof(s_MbedTlsConf));
 #  if defined(MBEDTLS_THREADING_ALT)  &&  defined(NCBI_THREADS)
     mbedtls_threading_free_alt();
@@ -734,13 +812,21 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
     psa_status_t psa_status;
 #endif /*MBEDTLS_PSA_CRYPTO_C*/
     EIO_Status status;
+#if MBEDTLS_VERSION_MAJOR >= 4
+    const char* version;
+#else
     char version[80];
+#endif
     const char* val;
     char buf[32];
 
     CORE_TRACE("MbedTlsInit(): Enter");
 
+#if MBEDTLS_VERSION_MAJOR >= 4
+    version = mbedtls_version_get_string();
+#else
     mbedtls_version_get_string(version);
+#endif
     if (strcasecmp(MBEDTLS_VERSION_STRING, version) != 0) {
         CORE_LOGF_X(5, eLOG_Critical,
                     ("%s version mismatch: %s headers vs. %s runtime",
@@ -797,6 +883,7 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
         goto out;
     }
 
+#if MBEDTLS_VERSION_MAJOR < 4
     mbedtls_entropy_init(&s_MbedTlsEntropy);
     mbedtls_ctr_drbg_init(&s_MbedTlsCtrDrbg); 
 
@@ -808,6 +895,7 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
     }
     mbedtls_ssl_conf_rng(&s_MbedTlsConf,
                          mbedtls_ctr_drbg_random, &s_MbedTlsCtrDrbg);
+#endif
 
 #ifdef MBEDTLS_PSA_CRYPTO_C
     if ((psa_status = psa_crypto_init()) != PSA_SUCCESS) {
@@ -1003,7 +1091,7 @@ NCBI_CRED NcbiCreateMbedTlsCertCredentials(const void* cert,
     err = mbedtls_pk_parse_key(xcred->pkey,
                                (const unsigned char*) pkey, pkeysz ? pkeysz
                                : strlen((const char*) pkey) + 1, 0, 0
-#if MBEDTLS_VERSION_MAJOR >= 3
+#if MBEDTLS_VERSION_MAJOR == 3
                                , mbedtls_ctr_drbg_random, &s_MbedTlsCtrDrbg
 #endif
                                );
@@ -1013,8 +1101,12 @@ NCBI_CRED NcbiCreateMbedTlsCertCredentials(const void* cert,
                            "mbedTLS cannot parse private key");
         goto out;
     }
+#if MBEDTLS_VERSION_MAJOR >= 4
+    CORE_TRACEF(("Private key loaded"));
+#else
     CORE_TRACEF(("Private key loaded: %s",
                  mbedtls_pk_get_name(xcred->pkey)));
+#endif
 
     return ncbi_cred;
 

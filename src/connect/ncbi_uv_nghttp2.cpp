@@ -711,8 +711,10 @@ private:
 
     mbedtls_ssl_context m_Ssl;
     mbedtls_ssl_config m_Conf;
+#if MBEDTLS_VERSION_MAJOR < 4
     mbedtls_ctr_drbg_context m_CtrDrbg;
     mbedtls_entropy_context m_Entropy;
+#endif
     mbedtls_x509_crt m_Cert;
     mbedtls_pk_context m_Pkey;
     array<const char*, 2> m_Protocols;
@@ -745,11 +747,14 @@ SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const TAddrNCred& addr_n_cred, size_t rd_
     /* The above line can otherwise be ineffective. */
     mbedtls_ssl_conf_max_tls_version(&m_Conf, MBEDTLS_SSL_VERSION_TLS1_2);
 #endif
+#if MBEDTLS_VERSION_MAJOR < 4
     mbedtls_entropy_init(&m_Entropy);
     mbedtls_ctr_drbg_init(&m_CtrDrbg);
+#endif
     mbedtls_x509_crt_init(&m_Cert);
     mbedtls_pk_init(&m_Pkey);
 
+#if MBEDTLS_VERSION_MAJOR < 4
     auto d_rv = mbedtls_ctr_drbg_seed(&m_CtrDrbg, mbedtls_entropy_func, &m_Entropy, nullptr, 0);
 
     if (d_rv) {
@@ -758,6 +763,7 @@ SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const TAddrNCred& addr_n_cred, size_t rd_
     }
 
     mbedtls_ssl_conf_rng(&m_Conf, mbedtls_ctr_drbg_random, &m_CtrDrbg);
+#endif
     auto p_rv = psa_crypto_init();
 
     if (p_rv != PSA_SUCCESS) {
@@ -803,7 +809,7 @@ SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const TAddrNCred& addr_n_cred, size_t rd_
     auto pk_rv = mbedtls_pk_parse_key(
         &m_Pkey, reinterpret_cast<const unsigned char*>(pkey.data()),
         pkey.size() + 1, nullptr, 0
-#if MBEDTLS_VERSION_MAJOR >= 3
+#if MBEDTLS_VERSION_MAJOR == 3
         , mbedtls_ctr_drbg_random, &m_CtrDrbg
 #endif
         );
@@ -825,8 +831,10 @@ SUvNgHttp2_TlsImpl::~SUvNgHttp2_TlsImpl()
 {
     mbedtls_x509_crt_free(&m_Cert);
     mbedtls_pk_free(&m_Pkey);
+#if MBEDTLS_VERSION_MAJOR < 4
     mbedtls_entropy_free(&m_Entropy);
     mbedtls_ctr_drbg_free(&m_CtrDrbg);
+#endif
     mbedtls_ssl_config_free(&m_Conf);
     mbedtls_ssl_free(&m_Ssl);
 }
