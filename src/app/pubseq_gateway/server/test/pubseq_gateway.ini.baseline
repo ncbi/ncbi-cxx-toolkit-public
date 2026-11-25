@@ -237,3 +237,7 @@ async = true
 ;ASYNC_BUFFER_MAX_LINES = 100
 Async_Discard_On_Overflow = true
 
+
+[ID2SNP]
+PTIS_NAME = hvar-dbsnpprimarytrack--production.ocpprod-be.p2.ncbi.nlm.nih.gov:80
+
