@@ -1855,7 +1855,8 @@ DALLAS	s	Dallas Zoo
 DAM	s	Damietta University			
 DANV	s	Umweltamt Darmstadt			
 DAO	s	Agriculture and Agri-Food Canada			
-DAOM	sc	National Mycological Herbarium, Agriculture and Agri-Food Canada	CCFC,DAOMC		
+DAOM	sc	National Mycological Herbarium, Agriculture and Agri-Food Canada			
+DAOMC	c	Canadian Collection of Fungal Cultures, Agriculture and Agri-Food Canada			
 DAR	sc	Plant Pathology Herbarium			
 DARCC	sc	NSW Plant Pathology & Mycology Culture Collection			
 DARI	s	Insect Collection, New South Wales Department of Agriculture			
