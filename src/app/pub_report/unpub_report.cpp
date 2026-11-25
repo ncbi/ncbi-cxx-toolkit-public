@@ -344,9 +344,6 @@ static void CollectDataArt(const CCit_art& cit, CPubData& data)
     NCBI_ASSERT(cit.IsSetFrom() && cit.GetFrom().IsJournal(), "cit should be a journal");
     const CCit_jour& from_journal = cit.GetFrom().GetJournal();
 
-    NCBI_ASSERT(from_journal.IsSetImp(), "Imprint should be set");
-    const CImprint& imprint = from_journal.GetImp();
-
     if (cit.IsSetAuthors()) {
         data.SetAuthors(cit.GetAuthors());
     }
@@ -364,16 +361,21 @@ static void CollectDataArt(const CCit_art& cit, CPubData& data)
         }
     }
 
-    if (imprint.IsSetDate() && imprint.GetDate().IsStd()) {
-        data.SetDate(imprint.GetDate().GetStd());
-    }
+    NCBI_ASSERT(from_journal.IsSetImp(), "Imprint should be set");
+    if (from_journal.IsSetImp()) {
+        const CImprint& imprint = from_journal.GetImp();
 
-    if (imprint.IsSetVolume()) {
-        data.SetVolume(imprint.GetVolume());
-    }
+        if (imprint.IsSetDate() && imprint.GetDate().IsStd()) {
+            data.SetDate(imprint.GetDate().GetStd());
+        }
 
-    if (imprint.IsSetPages()) {
-        data.SetPages(imprint.GetPages());
+        if (imprint.IsSetVolume()) {
+            data.SetVolume(imprint.GetVolume());
+        }
+
+        if (imprint.IsSetPages()) {
+            data.SetPages(imprint.GetPages());
+        }
     }
 }
 
